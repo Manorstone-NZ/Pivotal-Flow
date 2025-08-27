@@ -1,0 +1,7 @@
+:root {
+  --pf-color-primary: #D15300;
+  --pf-color-on-primary: #FFFFFF;
+  --pf-color-surface: #F5E6CC;
+  --pf-color-text: #222222;
+}
+body { background: var(--pf-color-surface); color: var(--pf-color-text); font-family: system-ui, Inter, Arial, sans-serif; }

@@ -1,14 +1,9 @@
-# Repository Structure
-
 apps/
-  frontend/              React TS app
-  backend/               Node TS service
+  frontend/
+  backend/
 packages/
-  shared/                Shared models and utils
-  ui/                    Design system and icons
-infra/
-  db/                    Migrations and seed
-  ci/                    CI workflows
+  shared/
 docs/
-  adr/                   Architecture decision records
-  specs/                 Rendered specs and diagrams
+  specs/
+infra/
+  ci/
