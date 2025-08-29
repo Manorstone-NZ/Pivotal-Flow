@@ -1,5 +1,14 @@
-export type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E };
-export const ok = <T>(value: T): Result<T> => ({ ok: true, value });
-export const err = <E>(error: E): Result<never, E> => ({ ok: false, error });
+// Export all shared types and utilities
+export * from './constants.js';
+export * from './utils.js';
+export * from './validation.js';
+export * from './prisma.js';
+export * from './redis.js';
 
-export interface User { id: string; email: string; displayName: string; roles: string[]; }
+// Explicitly export key schemas to ensure they're available
+export { healthStatusSchema, healthCheckSchema } from './validation.js';
+
+// Export security and tenancy modules
+export * from './security/password.js';
+export * from './security/jwt-types.js';
+export * from './tenancy/guard.js';
