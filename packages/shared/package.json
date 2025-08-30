@@ -26,13 +26,13 @@
       "import": "./dist/types/user.js",
       "types": "./dist/types/user.d.ts"
     },
+    "./db/repo.users": {
+      "import": "./dist/db/repo.users.js",
+      "types": "./dist/db/repo.users.d.ts"
+    },
     "./metrics": {
       "import": "./dist/metrics/index.js",
       "types": "./dist/metrics/index.d.ts"
-    },
-    "./security/password": {
-      "import": "./dist/security/password.js",
-      "types": "./dist/security/password.d.ts"
     }
   },
   "scripts": {

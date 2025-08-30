@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
 import { config } from '../../lib/config.js';
 import { logger } from '../../lib/logger.js';
-import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types.js';
+import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types';
 
 export function createTokenManager(app: FastifyInstance) {
   const alg = 'HS256';

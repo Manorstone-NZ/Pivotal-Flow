@@ -154,7 +154,7 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
       }
 
       // Prevent deactivating the last admin user
-      if (!isActive && currentUser.roles.some(role => role.name === 'admin' && role.isActive)) {
+      if (!isActive && currentUser.roles.some((role: any) => role.name === 'admin' && role.isActive)) {
         const adminCount = await prisma.userRole.count({
           where: {
             userId: { not: targetUserId },

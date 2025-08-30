@@ -1,8 +1,8 @@
 // User service layer - Prisma calls only, no HTTP logic
 
 import { PrismaClient, Prisma } from '@prisma/client';
-import type { UserPublic, UserCreateRequest, UserUpdateRequest, UserListSort } from '@pivotal-flow/shared/types/user.js';
-import type { UserListFilters } from '@pivotal-flow/shared/db/repo.users.js';
+import type { UserPublic, UserCreateRequest, UserUpdateRequest, UserListSort } from '@pivotal-flow/shared/types/user';
+import type { UserListFilters } from '@pivotal-flow/shared/db/repo.users';
 
 const prisma = new PrismaClient();
 
