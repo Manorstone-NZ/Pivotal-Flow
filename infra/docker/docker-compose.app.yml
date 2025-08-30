@@ -1,0 +1,57 @@
+# infra/docker/docker-compose.app.yml
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - ../../.env
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - devnet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: apps/frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+    networks:
+      - devnet
+
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
+    env_file:
+      - ../../.env
+    volumes:
+      - ../..:/app:ro
+    entrypoint: [ "sh", "-lc", "corepack enable && pnpm -w add -D prisma && npx prisma migrate deploy" ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - devnet
+    restart: "no"
+
+networks:
+  devnet:
+    external: true
