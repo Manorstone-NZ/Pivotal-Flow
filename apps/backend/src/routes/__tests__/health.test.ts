@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { healthRoutes } from '../health.js';
 
 describe('Health Routes', () => {

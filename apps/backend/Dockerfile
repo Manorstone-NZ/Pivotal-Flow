@@ -31,7 +31,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 
 # generate prisma first, then build shared
 RUN pnpm -C apps/backend exec prisma -v
-RUN pnpm -C apps/backend run db:generate
+RUN pnpm -C apps/backend run db:generate \
+ && echo "Prisma client generated successfully"
 
 # build shared and prove dist exists
 RUN pnpm -C packages/shared run build \
