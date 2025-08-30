@@ -13,6 +13,15 @@ import { errorHandler } from './lib/error-handler.js';
 import { requestLogger } from './lib/request-logger.js';
 import { register, collectDefaultMetrics } from 'prom-client';
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
+import {
+  listUsersRoute,
+  createUserRoute,
+  getUserRoute,
+  updateUserRoute,
+  assignRoleRoute,
+  removeRoleRoute,
+  updateUserStatusRoute
+} from './modules/users/index.js';
 
 // Enable default metrics collection
 collectDefaultMetrics({ register });
@@ -47,6 +56,15 @@ async function registerPlugins() {
   await app.register(logoutRoute, { prefix: '/v1/auth' });
   await app.register(meRoute, { prefix: '/v1/auth' });
 
+  // Register users routes
+  await app.register(listUsersRoute);
+  await app.register(createUserRoute);
+  await app.register(getUserRoute);
+  await app.register(updateUserRoute);
+  await app.register(assignRoleRoute);
+  await app.register(removeRoleRoute);
+  await app.register(updateUserStatusRoute);
+
   // Hooks
   app.addHook('onRequest', requestLogger);
   app.setErrorHandler(errorHandler);
@@ -74,6 +92,7 @@ async function registerPlugins() {
       tags: [
         { name: 'auth', description: 'Authentication endpoints' },
         { name: 'health', description: 'Health and monitoring endpoints' },
+        { name: 'Users', description: 'User management endpoints' },
       ],
       paths: {
         '/v1/auth/login': {

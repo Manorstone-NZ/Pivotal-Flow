@@ -12,3 +12,6 @@ export { healthStatusSchema, healthCheckSchema } from './validation.js';
 export * from './security/password.js';
 export * from './security/jwt-types.js';
 export * from './tenancy/guard.js';
+
+// Export user management types
+export * from './types/user.js';

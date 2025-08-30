@@ -21,6 +21,10 @@
     "./tenancy/guard": {
       "import": "./dist/tenancy/guard.js",
       "types": "./dist/tenancy/guard.d.ts"
+    },
+    "./types/user": {
+      "import": "./dist/types/user.js",
+      "types": "./dist/types/user.d.ts"
     }
   },
   "scripts": {
