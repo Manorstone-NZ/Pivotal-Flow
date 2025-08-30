@@ -15,3 +15,6 @@ export * from './tenancy/guard.js';
 
 // Export user management types
 export * from './types/user.js';
+
+// Export database layer
+export * from './db/index.js';
