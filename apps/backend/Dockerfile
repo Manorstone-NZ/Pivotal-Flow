@@ -31,13 +31,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 
 # build shared first and prove dist exists
 RUN pnpm -C packages/shared run build \
- && ls -la packages/shared/dist
+ && echo "Shared files emitted:" \
+ && node -e "console.log(require('fs').readdirSync('packages/shared/dist'))" \
+ && ls -la packages/shared/dist \
+ && node -e "console.log('shared main', require('./packages/shared/package.json').main)"
 
-# prove prisma exists, then generate client
+# prisma and backend build
 RUN pnpm -C apps/backend exec prisma -v
 RUN pnpm -C apps/backend run db:generate
-
-# build backend
 RUN pnpm -C apps/backend run build
 
 FROM base AS deploy
