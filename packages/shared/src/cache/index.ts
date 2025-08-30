@@ -8,8 +8,8 @@ export interface CacheOptions {
 export interface CacheKeyOptions {
   organizationId: string;
   resource: string;
-  identifier?: string;
-  action?: string;
+  identifier?: string | undefined;
+  action?: string | undefined;
 }
 
 export interface CacheMetrics {

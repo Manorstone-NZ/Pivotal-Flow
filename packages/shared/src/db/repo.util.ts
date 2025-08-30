@@ -1,7 +1,7 @@
 // Repository utilities for pagination, sorting, and filter builders
 
 import type { Prisma } from '@prisma/client';
-import type { PaginationOptions, FilterOptions, SortOptions } from './repo.base.js';
+import type { PaginationOptions } from './repo.base.js';
 
 export interface PaginationBuilderOptions {
   page: number;

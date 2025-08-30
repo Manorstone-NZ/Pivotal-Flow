@@ -1,7 +1,8 @@
 // Audit repository for append events with non-blocking write pattern
 
 import type { PrismaClient, Prisma } from '@prisma/client';
-import type { BaseRepository, BaseRepositoryOptions } from './repo.base.js';
+import { BaseRepository } from './repo.base.js';
+import type { BaseRepositoryOptions } from './repo.base.js';
 import { withTx, createTxOptions } from './withTx.js';
 
 export interface AuditEventData {
@@ -16,7 +17,7 @@ export interface AuditEventData {
 export interface AuditLogEntry {
   id: string;
   organizationId: string;
-  userId: string;
+  userId: string | null;
   action: string;
   entityType: string;
   entityId: string;
@@ -27,13 +28,13 @@ export interface AuditLogEntry {
 }
 
 export interface AuditLogFilters {
-  action?: string;
-  entityType?: string;
-  entityId?: string;
-  userId?: string;
-  createdFrom?: Date;
-  createdTo?: Date;
-  organizationId?: string;
+  action?: string | undefined;
+  entityType?: string | undefined;
+  entityId?: string | undefined;
+  userId?: string | undefined;
+  createdFrom?: Date | undefined;
+  createdTo?: Date | undefined;
+  organizationId?: string | undefined;
 }
 
 export interface AuditLogOptions {
@@ -90,9 +91,9 @@ export class AuditRepository extends BaseRepository {
             action: eventData.action,
             entityType: eventData.entityType,
             entityId: eventData.entityId,
-            oldValues: eventData.oldValues || null,
-            newValues: eventData.newValues || null,
-            metadata: eventData.metadata || null
+            oldValues: eventData.oldValues as any || undefined,
+            newValues: eventData.newValues as any || undefined,
+            metadata: eventData.metadata as any || undefined
           }
         });
       });
@@ -106,9 +107,9 @@ export class AuditRepository extends BaseRepository {
             action: eventData.action,
             entityType: eventData.entityType,
             entityId: eventData.entityId,
-            oldValues: eventData.oldValues || null,
-            newValues: eventData.newValues || null,
-            metadata: eventData.metadata || null
+                      oldValues: eventData.oldValues as any || undefined,
+          newValues: eventData.newValues as any || undefined,
+          metadata: eventData.metadata as any || undefined
           }
         });
       } catch (fallbackError) {
@@ -136,9 +137,9 @@ export class AuditRepository extends BaseRepository {
           action: event.action,
           entityType: event.entityType,
           entityId: event.entityId,
-          oldValues: event.oldValues || null,
-          newValues: event.newValues || null,
-          metadata: event.metadata || null
+          oldValues: event.oldValues as any || undefined,
+          newValues: event.newValues as any || undefined,
+          metadata: event.metadata as any || undefined
         }));
 
         await tx.auditLog.createMany({
@@ -312,7 +313,7 @@ export class AuditRepository extends BaseRepository {
           this.getAuditLogs({
             page,
             pageSize,
-            filters: { ...filters, action }
+            filters: { ...filters, action: action || undefined }
           })
         )
       );
@@ -364,7 +365,7 @@ export class AuditRepository extends BaseRepository {
     }
 
     if (entityTypes && entityTypes.length > 0) {
-      filters.entityType = entityTypes[0]; // For now, just use first entity type
+      filters.entityType = entityTypes[0] || undefined; // For now, just use first entity type
     }
 
     return this.getAuditLogs({

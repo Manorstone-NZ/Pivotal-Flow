@@ -1,7 +1,8 @@
 // Users repository with reads and writes used by users module
 
 import type { PrismaClient, Prisma } from '@prisma/client';
-import type { BaseRepository, BaseRepositoryOptions, PaginationOptions, PaginationResult, FilterOptions, SortOptions } from './repo.base.js';
+import { BaseRepository } from './repo.base.js';
+import type { BaseRepositoryOptions, PaginationOptions, PaginationResult } from './repo.base.js';
 import type { FilterBuilderOptions, SortBuilderOptions } from './repo.util.js';
 import { FilterBuilder, SortBuilder, QueryBuilder, PaginationBuilder } from './repo.util.js';
 import { withTx, createTxOptions } from './withTx.js';
@@ -82,23 +83,37 @@ export class UsersRepository extends BaseRepository {
       const query = QueryBuilder.buildUserQuery(filters, sort, { skip, take });
       const countQuery = QueryBuilder.buildUserCountQuery(filters);
 
-      // Execute queries
+      // Execute queries with userRoles included
+      const baseQuery = this.scopeToOrganization(query) as any;
+      
+      // Remove select if it exists and use include instead
+      const { select, ...queryWithoutSelect } = baseQuery;
+      
       const [users, total] = await Promise.all([
-        this.prisma.user.findMany(this.scopeToOrganization(query)),
-        this.prisma.user.count(this.scopeToOrganization(countQuery))
+        this.prisma.user.findMany({
+          ...queryWithoutSelect,
+          include: {
+            userRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }),
+        this.prisma.user.count(this.scopeToOrganization(countQuery) as any)
       ]);
 
       // Transform user roles
-      const usersWithRoles: UserWithRoles[] = users.map(user => ({
+      const usersWithRoles: UserWithRoles[] = users.map((user: any) => ({
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         status: user.status,
         mfaEnabled: user.mfaEnabled,
         createdAt: user.createdAt,
-        userRoles: user.userRoles.map(ur => ({
+        userRoles: user.userRoles?.map((ur: any) => ({
           role: ur.role
-        }))
+        })) || []
       }));
 
       return this.buildPaginationResult(usersWithRoles, total, pagination);
@@ -157,9 +172,9 @@ export class UsersRepository extends BaseRepository {
             email: data.email.toLowerCase(),
             firstName: data.firstName,
             lastName: data.lastName,
-            displayName: data.displayName,
-            timezone: data.timezone,
-            locale: data.locale,
+            displayName: data.displayName || null,
+            timezone: data.timezone || 'UTC',
+            locale: data.locale || 'en-US',
             organizationId: this.options.organizationId,
             status: 'active',
             passwordHash: this.generateTemporaryPassword()

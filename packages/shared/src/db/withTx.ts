@@ -1,6 +1,6 @@
 // Transaction helper using Prisma $transaction with timeout and retry on serialization error
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export interface TransactionOptions {
   timeout?: number; // milliseconds
@@ -57,14 +57,14 @@ export async function withTx<T>(
       });
 
       // Execute the transaction
-      const transactionPromise = prisma.$transaction(fn, {
+      const transactionPromise = prisma.$transaction(fn as any, {
         timeout: timeout - 1000, // Leave 1 second buffer
         maxWait: timeout - 2000, // Leave 2 second buffer for connection
         isolationLevel: 'ReadCommitted' // Default isolation level
       });
 
       // Race between transaction and timeout
-      return await Promise.race([transactionPromise, timeoutPromise]);
+      return await Promise.race([transactionPromise, timeoutPromise]) as T;
     } catch (error) {
       lastError = error;
 
@@ -214,8 +214,8 @@ export const TransactionPatterns = {
           action: 'users.update',
           entityType: 'User',
           entityId: userId,
-          newValues: updates,
-          metadata: auditData
+          newValues: updates as any,
+          metadata: auditData as any
         }
       });
 

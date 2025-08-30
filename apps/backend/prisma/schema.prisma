@@ -96,6 +96,12 @@ model User {
   auditLogs             AuditLog[]
 
   @@unique([organizationId, email])
+  
+  // Performance indexes
+  @@index([organizationId, status, deletedAt], name: "idx_users_org_status_deleted")
+  @@index([organizationId, email], name: "idx_users_org_email")
+  @@index([organizationId, createdAt(sort: Desc)], name: "idx_users_org_created")
+  
   @@map("users")
 }
 
@@ -115,6 +121,11 @@ model Role {
   userRoles     UserRole[]
 
   @@unique([organizationId, name])
+  
+  // Performance indexes
+  @@index([organizationId, isActive], name: "idx_roles_org_active")
+  @@index([organizationId, name], name: "idx_roles_org_name")
+  
   @@map("roles")
 }
 
@@ -135,6 +146,11 @@ model UserRole {
   assignedByUser User?    @relation("AssignedBy", fields: [assignedBy], references: [id])
 
   @@unique([userId, roleId, organizationId])
+  
+  // Performance indexes
+  @@index([organizationId, userId, isActive], name: "idx_user_roles_org_user_active")
+  @@index([organizationId, roleId, isActive], name: "idx_user_roles_org_role_active")
+  
   @@map("user_roles")
 }
 
@@ -196,5 +212,10 @@ model AuditLog {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User?        @relation(fields: [userId], references: [id])
 
+  // Performance indexes
+  @@index([organizationId, createdAt(sort: Desc)], name: "idx_audit_logs_org_created")
+  @@index([organizationId, entityType, entityId], name: "idx_audit_logs_org_entity")
+  @@index([organizationId, action, createdAt(sort: Desc)], name: "idx_audit_logs_org_action")
+  
   @@map("audit_logs")
 }

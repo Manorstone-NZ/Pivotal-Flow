@@ -41,11 +41,7 @@ export interface UserListResponse {
   totalPages: number;
 }
 
-export interface UserListFilters {
-  q?: string; // Partial match on email or displayName
-  isActive?: boolean;
-  roleId?: string;
-}
+// UserListFilters moved to repository layer
 
 export interface UserListSort {
   field: 'email' | 'createdAt';

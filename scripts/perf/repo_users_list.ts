@@ -4,8 +4,8 @@
 // Runs list operation ten times and prints median and p95
 
 import { PrismaClient } from '@prisma/client';
-import { UsersRepository } from '../../packages/shared/src/db/repo.users.js';
-import { MemoryCacheProvider, CacheWrapper } from '../../packages/shared/src/db/cache/index.js';
+import { UsersRepository } from '../../packages/shared/dist/db/repo.users.js';
+import { MemoryCacheProvider, CacheWrapper } from '../../packages/shared/dist/cache/index.js';
 
 interface PerformanceMetrics {
   operation: string;

@@ -1,6 +1,6 @@
 // Base repository with common helpers for tenant scoping, safe select, explicit DTO shapes, and error mapping
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export interface BaseRepositoryOptions {
   organizationId: string;
@@ -32,12 +32,6 @@ export interface SortOptions {
   direction: 'asc' | 'desc';
 }
 
-export interface RepositoryError {
-  code: string;
-  message: string;
-  details?: unknown;
-}
-
 export class RepositoryError extends Error {
   constructor(
     public readonly code: string,
@@ -58,16 +52,19 @@ export abstract class BaseRepository {
   /**
    * Enforce organization scoping on all queries
    */
-  protected scopeToOrganization<T extends { organizationId: string }>(
-    query: Prisma.Args<T, 'findMany' | 'findFirst' | 'count' | 'updateMany' | 'deleteMany'>
-  ): Prisma.Args<T, 'findMany' | 'findFirst' | 'count' | 'updateMany' | 'deleteMany'> {
-    return {
-      ...query,
-      where: {
-        ...query.where,
-        organizationId: this.options.organizationId
-      }
-    } as Prisma.Args<T, 'findMany' | 'findFirst' | 'count' | 'updateMany' | 'deleteMany'>;
+  protected scopeToOrganization<T extends Record<string, any>>(
+    query: T
+  ): T {
+    if (query && typeof query === 'object' && 'where' in query) {
+      return {
+        ...query,
+        where: {
+          ...(query['where'] as any),
+          organizationId: this.options.organizationId
+        }
+      } as T;
+    }
+    return query;
   }
 
   /**
@@ -104,7 +101,7 @@ export abstract class BaseRepository {
   /**
    * Build search filter for text fields
    */
-  protected buildSearchFilter(fields: string[], query?: string): Prisma.StringFilter | undefined {
+  protected buildSearchFilter(fields: string[], query?: string): any {
     if (!query) return undefined;
 
     return {
@@ -165,7 +162,7 @@ export abstract class BaseRepository {
   /**
    * Build order by clause for Prisma
    */
-  protected buildOrderBy(sort: SortOptions): Prisma.OrderByWithRelationInput {
+  protected buildOrderBy(sort: SortOptions): any {
     if (sort.field === 'email') {
       return { email: sort.direction };
     }
