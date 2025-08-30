@@ -21,7 +21,10 @@ const loggerOptions: pino.LoggerOptions = {
   },
 };
 
-if (config.logging.pretty && !config.isProduction) {
+// Check if cloud shipping is enabled
+const isCloudShipping = process.env.LOG_CLOUD_SHIPPING === 'true';
+
+if (config.logging.pretty && !config.isProduction && !isCloudShipping) {
   loggerOptions.transport = {
     target: 'pino-pretty',
     options: {

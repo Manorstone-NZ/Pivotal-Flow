@@ -1,0 +1,175 @@
+groups:
+  - name: pivotal-flow-service-alerts
+    rules:
+      - alert: BackendServiceDown
+        expr: up{job="pivotal-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service has been down for more than 2 minutes"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "HTTP 5xx error rate is {{ $value }}% over 5 minutes (threshold: 2%)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+      - alert: SlowRequests
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) * 1000 > 500
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Slow requests detected"
+          description: "P95 response time is {{ $value }}ms over 5 minutes (threshold: 500ms)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+  - name: pivotal-flow-database-alerts
+    rules:
+      - alert: DatabaseSlowQueries
+        expr: increase(pivotal_repository_operation_duration_seconds_count{operation=~".*query.*"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High number of slow database queries"
+          description: "{{ $value }} slow queries detected in the last 5 minutes (threshold: 10)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-02-db-issues.md"
+
+      - alert: DatabaseHighConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High database connection count"
+          description: "Database has {{ $value }} active connections (threshold: 80)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-02-db-issues.md"
+
+      - alert: DatabaseConnectionFailure
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection failure"
+          description: "Cannot connect to PostgreSQL database"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-02-db-issues.md"
+
+  - name: pivotal-flow-cache-alerts
+    rules:
+      - alert: RedisHighEvictions
+        expr: rate(redis_evicted_keys_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High Redis eviction rate"
+          description: "Redis is evicting {{ $value }} keys per second (threshold: 1)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-03-cache-issues.md"
+
+      - alert: RedisConnectionFailure
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis connection failure"
+          description: "Cannot connect to Redis cache"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-03-cache-issues.md"
+
+      - alert: CacheLowHitRate
+        expr: pivotal_cache_hit_rate{cache_type="redis"} < 80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value }}% (threshold: 80%)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-03-cache-issues.md"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value }}% (threshold: 80%)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-03-cache-issues.md"
+
+  - name: pivotal-flow-nodejs-alerts
+    rules:
+      - alert: NodeJSHighCPU
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High Node.js CPU usage"
+          description: "Node.js process CPU usage is {{ $value }}% (threshold: 80%)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+      - alert: NodeJSHighMemory
+        expr: process_resident_memory_bytes > 1e9
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High Node.js memory usage"
+          description: "Node.js process memory usage is {{ $value }} bytes (threshold: 1GB)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+      - alert: NodeJSEventLoopLag
+        expr: nodejs_eventloop_lag_seconds * 1000 > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High Node.js event loop lag"
+          description: "Event loop lag is {{ $value }}ms (threshold: 100ms)"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+  - name: pivotal-flow-infrastructure-alerts
+    rules:
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring service is not responding"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard service is not responding"
+          runbook_url: "https://github.com/Manorstone-NZ/Pivotal-Flow/docs/runbooks/rb-01-backend-down.md"
