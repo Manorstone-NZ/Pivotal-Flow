@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { hashPassword } from '@pivotal-flow/shared/security/password.js';
+import { hashPassword } from '@pivotal-flow/shared/security/password';
 
 const prisma = new PrismaClient();
 

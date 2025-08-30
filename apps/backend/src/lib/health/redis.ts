@@ -1,5 +1,5 @@
 import { getRedisHealth } from '@pivotal-flow/shared';
-import { createRedisLogger } from '../logger';
+import { createRedisLogger } from '../logger.js';
 
 export async function checkRedisHealth() {
   const startTime = Date.now();

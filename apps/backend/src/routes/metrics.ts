@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { register } from 'prom-client';
-import { config } from '../lib/config';
-import { logger } from '../lib/logger';
+import { config } from '../lib/config.js';
+import { logger } from '../lib/logger.js';
 
 // Default metrics are already collected in main index.ts
 

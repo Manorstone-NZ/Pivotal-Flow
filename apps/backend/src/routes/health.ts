@@ -1,9 +1,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { healthStatusSchema } from '@pivotal-flow/shared';
-import { logger } from '../lib/logger';
-import { checkDatabaseHealth } from '../lib/health/database';
-import { checkRedisHealth } from '../lib/health/redis';
-import { checkMetricsHealth } from '../lib/health/metrics';
+import { logger } from '../lib/logger.js';
+import { checkDatabaseHealth } from '../lib/health/database.js';
+import { checkRedisHealth } from '../lib/health/redis.js';
+import { checkMetricsHealth } from '../lib/health/metrics.js';
 
 // Health check response schema
 const healthResponseSchema = {

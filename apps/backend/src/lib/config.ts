@@ -37,7 +37,7 @@ const envSchema = z.object({
   RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).default(10), // Login attempts per window
   
   // CORS
-  CORS_ORIGIN: z.string().transform(val => val.split(',')).default('http://localhost:3000,http://localhost:3001'),
+  CORS_ORIGIN: z.string().default('http://localhost:5173'),
   
   // Logging
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),

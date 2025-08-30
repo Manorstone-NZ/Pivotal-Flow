@@ -1,28 +1,61 @@
 # apps/backend/Dockerfile
-FROM node:20-alpine AS deps
+
+ARG PNPM_VERSION=8.15.0
+
+FROM node:20-bookworm-slim AS base
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+ENV PNPM_HOME=/usr/local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY packages/shared/package.json packages/shared/package.json
-RUN corepack enable && pnpm fetch
+# fetch both prod and dev to warm the store for prisma too
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm fetch
 
-FROM node:20-alpine AS builder
-WORKDIR /app
+FROM base AS build
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 make g++ openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app /app
 COPY . .
-RUN corepack enable \
- && pnpm install --frozen-lockfile \
- && pnpm -F @pivotalflow/backend run build
+RUN test -f apps/backend/prisma/schema.prisma || (echo "Missing apps/backend/prisma/schema.prisma" && exit 1)
 
-FROM node:20-alpine AS runner
-WORKDIR /app
+# install at the workspace root to create proper node_modules and links
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# build shared first and prove dist exists
+RUN pnpm -C packages/shared run build \
+ && ls -la packages/shared/dist
+
+# prove prisma exists, then generate client
+RUN pnpm -C apps/backend exec prisma -v
+RUN pnpm -C apps/backend run db:generate
+
+# build backend
+RUN pnpm -C apps/backend run build
+
+FROM base AS deploy
+COPY --from=build /app /app
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm -C apps/backend deploy --prod /out \
+ && ls -la /out/node_modules/@pivotal-flow/shared \
+ && ls -la /out/node_modules/.prisma \
+ && node -e "console.log('deploy client', require('/out/node_modules/@prisma/client/package.json').version)"
+
+FROM node:20-bookworm-slim AS runner
 ENV NODE_ENV=production
-# create nonroot user
-RUN addgroup -S nodejs && adduser -S nodeuser -G nodejs
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
+ENV HOST=0.0.0.0
+WORKDIR /app
+RUN useradd -m -u 10001 nodeuser
+COPY --from=deploy /out/ /app/
 USER nodeuser
 EXPOSE 3000
-CMD ["node", "apps/backend/dist/index.js"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+CMD ["node", "--enable-source-maps", "apps/backend/dist/index.js"]

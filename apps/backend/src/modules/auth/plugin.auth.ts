@@ -10,7 +10,6 @@ import { createTokenManager } from './tokens.js';
 export default fp(async function authPlugin(app) {
   // Register cookie plugin first
   await app.register(cookie, { 
-    hook: 'onRequest',
     secret: config.auth.cookieSecret,
     parseOptions: {
       httpOnly: true,

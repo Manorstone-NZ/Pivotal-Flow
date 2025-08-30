@@ -1,4 +1,4 @@
-#!/bin/bash
+t#!/bin/bash
 
 # Main Deployment Script for Pivotal Flow Applications
 # This script builds and deploys backend and frontend containers

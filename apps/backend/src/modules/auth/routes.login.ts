@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { verifyPassword } from '@pivotal-flow/shared/security/password.js';
+import { verifyPassword } from '@pivotal-flow/shared/security/password';
 import { createAuditLogger } from '../../lib/audit-logger.js';
 import { logger } from '../../lib/logger.js';
 import type { LoginRequest, LoginResponse, AuthError } from './schemas.js';

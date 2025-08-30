@@ -1,12 +1,13 @@
 # infra/docker/docker-compose.app.yml
-version: "3.9"
 
 services:
   backend:
     build:
-      context: ../..
+      context: ../../
       dockerfile: apps/backend/Dockerfile
     env_file:
+      - ../../.env.example
+      - ../../apps/backend/.env.example
       - ../../.env
     environment:
       PORT: 3000
@@ -20,11 +21,7 @@ services:
       - "3000:3000"
     networks:
       - devnet
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
+    # Healthcheck is now built into the Dockerfile
 
   frontend:
     build:
@@ -41,6 +38,8 @@ services:
     image: node:20-alpine
     working_dir: /app
     env_file:
+      - ../../.env.example
+      - ../../apps/backend/.env.example
       - ../../.env
     volumes:
       - ../..:/app:ro

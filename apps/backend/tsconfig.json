@@ -4,11 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": false,
-    "moduleDetection": "force"
+    "paths": {
+      "@pivotal-flow/shared": ["../../packages/shared/src"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],

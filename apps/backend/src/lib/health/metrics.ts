@@ -1,5 +1,5 @@
-import { config } from '../config';
-import { logger } from '../logger';
+import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 export async function checkMetricsHealth() {
   const startTime = Date.now();

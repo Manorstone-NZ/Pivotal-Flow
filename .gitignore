@@ -19,6 +19,12 @@ build/
 .env.production
 .env.production.local
 .env.*.local
+!.env.example
+
+# Backend environment files
+apps/backend/.env
+apps/backend/.env.local
+!apps/backend/.env.example
 
 # Logs
 logs/

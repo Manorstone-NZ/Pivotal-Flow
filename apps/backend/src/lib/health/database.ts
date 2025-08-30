@@ -1,5 +1,5 @@
 import { getDatabaseHealth } from '@pivotal-flow/shared';
-import { createDbLogger } from '../logger';
+import { createDbLogger } from '../logger.js';
 
 export async function checkDatabaseHealth() {
   const startTime = Date.now();

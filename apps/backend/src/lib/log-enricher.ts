@@ -4,10 +4,10 @@ import type { RequestLogger } from './logger.js';
 export interface LogContext {
   userId?: string;
   organizationId?: string;
-  route?: string;
+  route?: string | undefined;
   status?: number;
   duration?: number;
-  userAgent?: string;
+  userAgent?: string | undefined;
   ip?: string;
 }
 
@@ -28,9 +28,9 @@ export class LogEnricher {
     };
 
     // Extract user and organization from JWT token if available
-    if (request.user) {
-      enrichedContext.userId = request.user.id;
-      enrichedContext.organizationId = request.user.organizationId;
+    if (request.user && typeof request.user === 'object' && 'id' in request.user) {
+      enrichedContext.userId = (request.user as any).id;
+      enrichedContext.organizationId = (request.user as any).organizationId;
     }
 
     // Extract from headers if available (for API keys, etc.)
@@ -49,7 +49,7 @@ export class LogEnricher {
    * Enriches response logging with status and duration
    */
   static enrichResponseLogger(
-    request: FastifyRequest,
+    _request: FastifyRequest,
     reply: FastifyReply,
     logger: RequestLogger,
     startTime: number
@@ -88,6 +88,6 @@ export class LogEnricher {
    * Formats logs for cloud shipping (JSON without pretty formatting)
    */
   static isCloudShippingEnabled(): boolean {
-    return process.env.LOG_CLOUD_SHIPPING === 'true';
+    return process.env['LOG_CLOUD_SHIPPING'] === 'true';
   }
 }

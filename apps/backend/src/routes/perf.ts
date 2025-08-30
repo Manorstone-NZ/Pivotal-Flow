@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { logger } from '../lib/logger';
+import { logger } from '../lib/logger.js';
 import { prometheusMetrics } from '@pivotal-flow/shared/metrics';
 
 // Performance summary response schema

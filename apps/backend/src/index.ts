@@ -6,6 +6,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+
 import { logger } from './lib/logger.js';
 import { config } from './lib/config.js';
 
@@ -15,6 +16,7 @@ import { register, collectDefaultMetrics } from 'prom-client';
 import { metricsRoutes } from './routes/metrics.js';
 import { performanceRoutes } from './routes/perf.js';
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
+import prismaPlugin from './plugins/prisma.js';
 import {
   listUsersRoute,
   createUserRoute,
@@ -58,6 +60,9 @@ async function registerPlugins() {
     timeWindow: config.rateLimit.window, // number or string eg '1 minute'
   });
 
+  // Prisma plugin (register early for database access)
+  await app.register(prismaPlugin);
+
   // Authentication plugin
   await app.register(authPlugin);
 
@@ -66,6 +71,10 @@ async function registerPlugins() {
   await app.register(refreshRoute, { prefix: '/v1/auth' });
   await app.register(logoutRoute, { prefix: '/v1/auth' });
   await app.register(meRoute, { prefix: '/v1/auth' });
+
+  // Hooks before routes
+  app.addHook('onRequest', requestLogger);
+  app.setErrorHandler(errorHandler);
 
   // Register users routes
   await app.register(listUsersRoute);
@@ -76,16 +85,11 @@ async function registerPlugins() {
   await app.register(removeRoleRoute);
   await app.register(updateUserStatusRoute);
 
-  // Hooks first (before routes to avoid surprises)
-  app.addHook('onRequest', requestLogger);
-  app.setErrorHandler(errorHandler);
-
   // Register metrics routes
   await app.register(metricsRoutes, { prefix: '/v1/metrics' });
   await app.register(performanceRoutes, { prefix: '/v1/perf' });
 
-  // Swagger (register after routes to ensure discovery)
-  logger.info({ step: 'swagger:register' }, 'Registering Swagger plugin');
+  // Swagger clean up - JSON at /docs/json and UI at /docs
   await app.register(swagger as any, {
     openapi: {
       openapi: '3.0.0',
@@ -94,7 +98,6 @@ async function registerPlugins() {
         description: 'Business Management Platform API',
         version: '0.1.0',
       },
-      // omit servers to use browser origin and avoid 0.0.0.0 in UI
       components: {
         securitySchemes: {
           bearerAuth: {
@@ -110,13 +113,10 @@ async function registerPlugins() {
         { name: 'Users', description: 'User management endpoints' },
       ],
     },
-      // Enable automatic route discovery
-  exposeRoute: true,
-  routePrefix: '/docs/json',
+    exposeRoute: true,
+    routePrefix: '/docs/json',
   });
-  logger.info({ step: 'swagger:registered' }, 'Swagger plugin registered');
 
-  logger.info({ step: 'swagger-ui:register' }, 'Registering Swagger UI plugin');
   await app.register(swaggerUi as any, {
     routePrefix: '/docs',
     uiConfig: {
@@ -124,7 +124,6 @@ async function registerPlugins() {
       deepLinking: false,
     },
   });
-  logger.info({ step: 'swagger-ui:registered' }, 'Swagger UI plugin registered');
 }
 
 // Routes
@@ -150,6 +149,15 @@ app.get('/health', async () => {
     message: 'Server is healthy',
     version: '0.1.0',
   };
+});
+
+app.get('/health/db', async (req, reply) => {
+  try {
+    await (req.server as any).prisma.$queryRaw`select 1`;
+    return reply.send({ status: "ok" });
+  } catch {
+    return reply.code(500).send({ status: "db_error" });
+  }
 });
 
 // Top-level metrics endpoint (gated by config)
