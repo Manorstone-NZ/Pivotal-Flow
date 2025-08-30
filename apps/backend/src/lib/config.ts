@@ -30,6 +30,12 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(100),
   RATE_LIMIT_WINDOW: z.coerce.number().int().min(1000).default(15 * 60 * 1000), // 15 minutes
   
+  // Rate Limiting Tiers
+  RATE_LIMIT_UNAUTH_MAX: z.coerce.number().int().min(1).default(100), // Unauthenticated users
+  RATE_LIMIT_AUTH_MAX: z.coerce.number().int().min(1).default(1000), // Authenticated users
+  RATE_LIMIT_ADMIN_MAX: z.coerce.number().int().min(1).default(5000), // Admin users
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).default(10), // Login attempts per window
+  
   // CORS
   CORS_ORIGIN: z.string().transform(val => val.split(',')).default('http://localhost:3000,http://localhost:3001'),
   
@@ -82,6 +88,10 @@ export const config = {
     enabled: env.RATE_LIMIT_ENABLED,
     max: env.RATE_LIMIT_MAX,
     window: env.RATE_LIMIT_WINDOW,
+    unauth: env.RATE_LIMIT_UNAUTH_MAX,
+    auth: env.RATE_LIMIT_AUTH_MAX,
+    admin: env.RATE_LIMIT_ADMIN_MAX,
+    login: env.RATE_LIMIT_LOGIN_MAX,
   },
   
   cors: {

@@ -10,7 +10,7 @@ export async function errorHandler(
   reply: FastifyReply
 ): Promise<void> {
   const requestId = (request as any).requestId || 'unknown';
-  const requestLogger = logger.child({ requestId, route: request.routerPath });
+  const requestLogger = logger.child({ requestId, route: request.url });
   
   let statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR;
   let message = 'Internal Server Error';

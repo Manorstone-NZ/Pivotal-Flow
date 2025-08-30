@@ -1,0 +1,118 @@
+
+> pivotal-flow@0.1.0 dev /home/damian/Developments/Pivotal-Flow
+> pnpm --filter backend dev
+
+
+> @pivotal-flow/backend@0.1.0 dev /home/damian/Developments/Pivotal-Flow/apps/backend
+> tsx watch src/index.ts
+
+[2025-08-30 16:22:46.183 +1200] [32mINFO[39m: [36mStartup at 2025-08-30T04:22:46.183Z - WATCHER WORKING![39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:22:46.183 +1200] [32mINFO[39m: [36mStarting server[39m
+    env: "development"
+    version: "0.1.0"
+    port: 3000
+    host: "localhost"
+    startupTime: "2025-08-30T04:22:46.183Z"
+    message: "🚀 BACKEND STARTUP - NEW INSTANCE - FILE WATCHING TEST"
+[2025-08-30 16:22:46.184 +1200] [32mINFO[39m: [36mPrometheus metrics test ok[39m
+    env: "development"
+    version: "0.1.0"
+    length: 7001
+[2025-08-30 16:22:46.198 +1200] [32mINFO[39m: [36mAuthentication plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:22:46.198 +1200] [32mINFO[39m: [36mRegistering Swagger plugin[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger:register"
+[2025-08-30 16:22:46.210 +1200] [32mINFO[39m: [36mSwagger plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger:registered"
+[2025-08-30 16:22:46.210 +1200] [32mINFO[39m: [36mRegistering Swagger UI plugin[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger-ui:register"
+[2025-08-30 16:22:46.231 +1200] [32mINFO[39m: [36mSwagger UI plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger-ui:registered"
+[2025-08-30 16:22:46.231 +1200] [32mINFO[39m: [36mEnsuring plugins are ready[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:22:46.252 +1200] [32mINFO[39m: [36mCalling app.listen[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:22:46.258 +1200] [31mERROR[39m (Error): [36mFailed to start server[39m
+    env: "development"
+    version: "0.1.0"
+    message: "listen EADDRINUSE: address already in use 127.0.0.1:3000"
+    stack: "Error: listen EADDRINUSE: address already in use 127.0.0.1:3000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at GetAddrInfoReqWrap.callback (node:net:2206:7)\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8)"
+    code: "EADDRINUSE"
+    errno: -98
+    syscall: "listen"
+    address: "127.0.0.1"
+    port: 3000
+[2025-08-30 16:22:46.258 +1200] [31mERROR[39m: [36mCritical server error - exiting[39m
+    env: "development"
+    version: "0.1.0"
+4:23:39 PM [tsx] change in ./src/index.ts Rerunning...
+c[2025-08-30 16:23:39.547 +1200] [32mINFO[39m: [36mStartup at 2025-08-30T04:23:39.547Z - WATCHER WORKING![39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:23:39.547 +1200] [32mINFO[39m: [36mStarting server[39m
+    env: "development"
+    version: "0.1.0"
+    port: 3000
+    host: "localhost"
+    startupTime: "2025-08-30T04:23:39.547Z"
+    message: "🚀 BACKEND STARTUP - NEW INSTANCE - FILE WATCHING TEST"
+[2025-08-30 16:23:39.549 +1200] [32mINFO[39m: [36mPrometheus metrics test ok[39m
+    env: "development"
+    version: "0.1.0"
+    length: 7003
+[2025-08-30 16:23:39.578 +1200] [32mINFO[39m: [36mAuthentication plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:23:39.578 +1200] [32mINFO[39m: [36mRegistering Swagger plugin[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger:register"
+[2025-08-30 16:23:39.615 +1200] [32mINFO[39m: [36mSwagger plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger:registered"
+[2025-08-30 16:23:39.615 +1200] [32mINFO[39m: [36mRegistering Swagger UI plugin[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger-ui:register"
+[2025-08-30 16:23:39.637 +1200] [32mINFO[39m: [36mSwagger UI plugin registered[39m
+    env: "development"
+    version: "0.1.0"
+    step: "swagger-ui:registered"
+[2025-08-30 16:23:39.637 +1200] [32mINFO[39m: [36mEnsuring plugins are ready[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:23:39.658 +1200] [32mINFO[39m: [36mCalling app.listen[39m
+    env: "development"
+    version: "0.1.0"
+[2025-08-30 16:23:39.667 +1200] [31mERROR[39m (Error): [36mFailed to start server[39m
+    env: "development"
+    version: "0.1.0"
+    message: "listen EADDRINUSE: address already in use 127.0.0.1:3000"
+    stack: "Error: listen EADDRINUSE: address already in use 127.0.0.1:3000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at GetAddrInfoReqWrap.callback (node:net:2206:7)\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8)"
+    code: "EADDRINUSE"
+    errno: -98
+    syscall: "listen"
+    address: "127.0.0.1"
+    port: 3000
+[2025-08-30 16:23:39.667 +1200] [31mERROR[39m: [36mCritical server error - exiting[39m
+    env: "development"
+    version: "0.1.0"
+/home/damian/Developments/Pivotal-Flow/apps/backend:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @pivotal-flow/backend@0.1.0 dev: `tsx watch src/index.ts`
+Command failed with signal "SIGTERM"
+Terminated
+ ELIFECYCLE  Command failed with exit code 143.

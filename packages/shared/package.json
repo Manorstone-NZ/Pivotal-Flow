@@ -5,6 +5,24 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./security/password": {
+      "import": "./dist/security/password.js",
+      "types": "./dist/security/password.d.ts"
+    },
+    "./security/jwt-types": {
+      "import": "./dist/security/jwt-types.js",
+      "types": "./dist/security/jwt-types.d.ts"
+    },
+    "./tenancy/guard": {
+      "import": "./dist/tenancy/guard.js",
+      "types": "./dist/tenancy/guard.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

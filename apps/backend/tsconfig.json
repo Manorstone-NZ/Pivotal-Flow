@@ -6,7 +6,7 @@
     "composite": true,
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "moduleDetection": "force"
   },

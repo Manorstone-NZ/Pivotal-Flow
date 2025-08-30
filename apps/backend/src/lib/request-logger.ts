@@ -13,7 +13,7 @@ export async function requestLogger(
   (request as any).requestId = requestId;
   
   // Create request-specific logger
-  const requestLogger = createRequestLogger(requestId, request.routerPath);
+  const requestLogger = createRequestLogger(requestId, request.url);
   
   // Log request start
   requestLogger.info({

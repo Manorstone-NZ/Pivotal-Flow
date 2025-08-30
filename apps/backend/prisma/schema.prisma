@@ -37,6 +37,7 @@ model Organization {
   organizationSettings OrganizationSetting[]
   customers          Customer[]
   userRoles          UserRole[]
+  auditLogs          AuditLog[]
 
   @@map("organizations")
 }
@@ -92,6 +93,7 @@ model User {
   organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userRoles             UserRole[]
   assignedUserRoles     UserRole[] @relation("AssignedBy")
+  auditLogs             AuditLog[]
 
   @@unique([organizationId, email])
   @@map("users")
@@ -172,4 +174,27 @@ model Customer {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("customers")
+}
+
+// Audit & Compliance System
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String   @db.VarChar(100)
+  entityType     String   @db.VarChar(100)
+  entityId       String
+  oldValues      Json?
+  newValues      Json?
+  ipAddress      String?  @db.VarChar(45)
+  userAgent      String?
+  sessionId      String?  @db.VarChar(255)
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }
