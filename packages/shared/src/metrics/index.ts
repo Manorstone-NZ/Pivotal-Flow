@@ -1,0 +1,258 @@
+// Performance metrics collection for cache and repository operations
+
+export interface CacheMetrics {
+  hits: number;
+  misses: number;
+  sets: number;
+  busts: number;
+  errors: number;
+}
+
+export interface RepositoryMetrics {
+  operation: string;
+  duration: number;
+  timestamp: Date;
+  success: boolean;
+  error: string | undefined;
+}
+
+export interface PerformanceSummary {
+  cache: {
+    hitRate: number; // percentage
+    totalRequests: number;
+    metrics: CacheMetrics;
+  };
+  repositories: {
+    topOperations: Array<{
+      operation: string;
+      avgDuration: number;
+      p50: number;
+      p95: number;
+      p99: number;
+      totalCalls: number;
+    }>;
+    totalOperations: number;
+  };
+  timestamp: Date;
+}
+
+/**
+ * Metrics collector for cache and repository performance
+ */
+export class MetricsCollector {
+  private cacheMetrics: CacheMetrics = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+    busts: 0,
+    errors: 0
+  };
+
+  private repositoryMetrics: RepositoryMetrics[] = [];
+  private readonly maxRepositoryMetrics = 1000; // Keep last 1000 operations
+
+  /**
+   * Record cache hit
+   */
+  recordCacheHit(): void {
+    this.cacheMetrics.hits++;
+  }
+
+  /**
+   * Record cache miss
+   */
+  recordCacheMiss(): void {
+    this.cacheMetrics.misses++;
+  }
+
+  /**
+   * Record cache set
+   */
+  recordCacheSet(): void {
+    this.cacheMetrics.sets++;
+  }
+
+  /**
+   * Record cache bust
+   */
+  recordCacheBust(): void {
+    this.cacheMetrics.busts++;
+  }
+
+  /**
+   * Record cache error
+   */
+  recordCacheError(): void {
+    this.cacheMetrics.errors++;
+  }
+
+  /**
+   * Record repository operation
+   */
+  recordRepositoryOperation(operation: string, duration: number, success: boolean, error?: string): void {
+    const metric: RepositoryMetrics = {
+      operation,
+      duration,
+      timestamp: new Date(),
+      success,
+      error
+    };
+
+    this.repositoryMetrics.push(metric);
+
+    // Keep only the last maxRepositoryMetrics
+    if (this.repositoryMetrics.length > this.maxRepositoryMetrics) {
+      this.repositoryMetrics = this.repositoryMetrics.slice(-this.maxRepositoryMetrics);
+    }
+  }
+
+  /**
+   * Get current cache metrics
+   */
+  getCacheMetrics(): CacheMetrics {
+    return { ...this.cacheMetrics };
+  }
+
+  /**
+   * Get cache hit rate as percentage
+   */
+  getCacheHitRate(): number {
+    const total = this.cacheMetrics.hits + this.cacheMetrics.misses;
+    if (total === 0) return 0;
+    return Math.round((this.cacheMetrics.hits / total) * 100);
+  }
+
+  /**
+   * Get repository performance summary
+   */
+  getRepositoryPerformance(): Array<{
+    operation: string;
+    avgDuration: number;
+    p50: number;
+    p95: number;
+    p99: number;
+    totalCalls: number;
+  }> {
+    const operationMap = new Map<string, number[]>();
+
+    // Group durations by operation
+    for (const metric of this.repositoryMetrics) {
+      if (!operationMap.has(metric.operation)) {
+        operationMap.set(metric.operation, []);
+      }
+      operationMap.get(metric.operation)!.push(metric.duration);
+    }
+
+    // Calculate statistics for each operation
+    const results: Array<{
+      operation: string;
+      avgDuration: number;
+      p50: number;
+      p95: number;
+      p99: number;
+      totalCalls: number;
+    }> = [];
+
+    for (const [operation, durations] of operationMap) {
+      if (durations.length === 0) continue;
+
+      const sorted = durations.sort((a, b) => a - b);
+      const totalCalls = durations.length;
+      const avgDuration = durations.reduce((sum, d) => sum + d, 0) / totalCalls;
+      const p50 = this.calculatePercentile(sorted, 50);
+      const p95 = this.calculatePercentile(sorted, 95);
+      const p99 = this.calculatePercentile(sorted, 99);
+
+      results.push({
+        operation,
+        avgDuration: Math.round(avgDuration * 100) / 100,
+        p50: Math.round(p50 * 100) / 100,
+        p95: Math.round(p95 * 100) / 100,
+        p99: Math.round(p99 * 100) / 100,
+        totalCalls
+      });
+    }
+
+    // Sort by average duration (slowest first)
+    return results.sort((a, b) => b.avgDuration - a.avgDuration);
+  }
+
+  /**
+   * Get complete performance summary
+   */
+  getPerformanceSummary(): PerformanceSummary {
+    const topOperations = this.getRepositoryPerformance().slice(0, 10); // Top 10 operations
+
+    return {
+      cache: {
+        hitRate: this.getCacheHitRate(),
+        totalRequests: this.cacheMetrics.hits + this.cacheMetrics.misses,
+        metrics: this.getCacheMetrics()
+      },
+      repositories: {
+        topOperations,
+        totalOperations: this.repositoryMetrics.length
+      },
+      timestamp: new Date()
+    };
+  }
+
+  /**
+   * Reset all metrics
+   */
+  reset(): void {
+    this.cacheMetrics = {
+      hits: 0,
+      misses: 0,
+      sets: 0,
+      busts: 0,
+      errors: 0
+    };
+    this.repositoryMetrics = [];
+  }
+
+  /**
+   * Calculate percentile from sorted array
+   */
+  private calculatePercentile(sorted: number[], percentile: number): number {
+    if (sorted.length === 0) return 0;
+    
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    const safeIndex = Math.max(0, index);
+    return sorted[safeIndex] || 0;
+  }
+}
+
+// Global metrics collector instance
+export const globalMetrics = new MetricsCollector();
+
+/**
+ * Decorator to automatically record repository operation metrics
+ */
+export function recordMetrics(operation: string) {
+  return function (_target: any, _propertyName: string, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (...args: any[]) {
+      const start = Date.now();
+      let success = false;
+      let error: string | undefined;
+
+      try {
+        const result = await method.apply(this, args);
+        success = true;
+        return result;
+      } catch (err) {
+        error = err instanceof Error ? err.message : String(err);
+        throw err;
+      } finally {
+        const duration = Date.now() - start;
+        globalMetrics.recordRepositoryOperation(operation, duration, success, error);
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+export { prometheusMetrics } from './prometheus.js';

@@ -3,6 +3,8 @@
 export interface CacheOptions {
   ttl?: number; // seconds
   prefix?: string;
+  jitter?: boolean; // Enable jittered TTL to prevent stampede
+  jitterRange?: number; // Jitter range in seconds (default: 10% of TTL)
 }
 
 export interface CacheKeyOptions {
@@ -104,6 +106,31 @@ export class CacheKeyBuilder {
     });
   }
 
+  static buildOrgSettingsKey(organizationId: string): string {
+    return this.build({
+      organizationId,
+      resource: 'org',
+      action: 'settings'
+    });
+  }
+
+  static buildOrgRolesKey(organizationId: string): string {
+    return this.build({
+      organizationId,
+      resource: 'org',
+      action: 'roles'
+    });
+  }
+
+  static buildRolePermissionsKey(organizationId: string, roleId: string): string {
+    return this.build({
+      organizationId,
+      resource: 'org',
+      identifier: 'role',
+      action: `${roleId}:perms`
+    });
+  }
+
   private static hashFilters(filters: Record<string, unknown>): string {
     const sorted = Object.keys(filters)
       .sort()
@@ -125,6 +152,8 @@ export class CacheKeyBuilder {
  * Cache wrapper with getOrSet, ttl, and bust helpers
  */
 export class CacheWrapper {
+  private readonly inFlightRequests = new Map<string, Promise<any>>();
+  
   constructor(
     private readonly provider: CacheProvider,
     private readonly options: CacheOptions = {}
@@ -132,8 +161,35 @@ export class CacheWrapper {
 
   /**
    * Get value from cache, or set it using the provided function
+   * Implements single flight pattern to prevent stampede
    */
   async getOrSet<T>(
+    key: string,
+    fn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    // Check if request is already in flight
+    if (this.inFlightRequests.has(key)) {
+      return this.inFlightRequests.get(key)!;
+    }
+
+    // Create new request promise
+    const requestPromise = this._getOrSetInternal(key, fn, ttl);
+    this.inFlightRequests.set(key, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up in-flight request
+      this.inFlightRequests.delete(key);
+    }
+  }
+
+  /**
+   * Internal implementation of getOrSet
+   */
+  private async _getOrSetInternal<T>(
     key: string,
     fn: () => Promise<T>,
     ttl?: number
@@ -142,17 +198,31 @@ export class CacheWrapper {
       // Try to get from cache first
       const cached = await this.provider.get<T>(key);
       if (cached !== null) {
+        // Record cache hit
+        this.recordCacheHit();
         return cached;
       }
+
+      // Record cache miss
+      this.recordCacheMiss();
 
       // Cache miss, execute function
       const value = await fn();
       
+      // Calculate TTL with optional jitter
+      const finalTtl = this.calculateJitteredTtl(ttl || this.options.ttl);
+      
       // Store in cache
-      await this.provider.set(key, value, ttl || this.options.ttl);
+      await this.provider.set(key, value, finalTtl);
+      
+      // Record cache set
+      this.recordCacheSet();
       
       return value;
     } catch (error) {
+      // Record cache error
+      this.recordCacheError();
+
       // Log error but don't fail the operation
       console.warn('Cache operation failed:', {
         operation: 'getOrSet',
@@ -164,6 +234,22 @@ export class CacheWrapper {
       return await fn();
     }
   }
+
+  /**
+   * Calculate TTL with optional jitter to prevent stampede
+   */
+  private calculateJitteredTtl(baseTtl?: number): number | undefined {
+    if (!baseTtl || !this.options.jitter) {
+      return baseTtl;
+    }
+
+    const jitterRange = this.options.jitterRange || Math.max(1, Math.floor(baseTtl * 0.1));
+    const jitter = Math.floor(Math.random() * jitterRange);
+    
+    return baseTtl + jitter;
+  }
+
+
 
   /**
    * Get value from cache with TTL check
@@ -258,6 +344,92 @@ export class CacheWrapper {
    */
   async resetMetrics(): Promise<void> {
     await this.provider.resetMetrics();
+  }
+
+  /**
+   * Bust organization-level cache (settings, roles, permissions)
+   */
+  async bustOrgCache(organizationId: string): Promise<void> {
+    const keys = [
+      CacheKeyBuilder.buildOrgSettingsKey(organizationId),
+      CacheKeyBuilder.buildOrgRolesKey(organizationId)
+    ];
+    
+    await this.bust(keys);
+  }
+
+  /**
+   * Bust role-specific cache
+   */
+  async bustRoleCache(organizationId: string, roleId: string): Promise<void> {
+    const keys = [
+      CacheKeyBuilder.buildRolePermissionsKey(organizationId, roleId),
+      CacheKeyBuilder.buildOrgRolesKey(organizationId)
+    ];
+    
+    await this.bust(keys);
+  }
+
+  /**
+   * Bust user cache with explicit invalidation
+   */
+  async bustUserCache(organizationId: string, userId: string): Promise<void> {
+    const keys = [
+      CacheKeyBuilder.buildUserKey(organizationId, userId),
+      CacheKeyBuilder.buildUserKey(organizationId, userId, 'profile'),
+      CacheKeyBuilder.buildUserKey(organizationId, userId, 'roles')
+    ];
+    
+    await this.bust(keys);
+  }
+
+  /**
+   * Record cache hit for metrics
+   */
+  private async recordCacheHit(): Promise<void> {
+    try {
+      // Import metrics dynamically to avoid circular dependencies
+      const { globalMetrics } = await import('../metrics/index.js');
+      globalMetrics.recordCacheHit();
+    } catch (error) {
+      // Silently fail if metrics not available
+    }
+  }
+
+  /**
+   * Record cache miss for metrics
+   */
+  private async recordCacheMiss(): Promise<void> {
+    try {
+      const { globalMetrics } = await import('../metrics/index.js');
+      globalMetrics.recordCacheMiss();
+    } catch (error) {
+      // Silently fail if metrics not available
+    }
+  }
+
+  /**
+   * Record cache set for metrics
+   */
+  private async recordCacheSet(): Promise<void> {
+    try {
+      const { globalMetrics } = await import('../metrics/index.js');
+      globalMetrics.recordCacheSet();
+    } catch (error) {
+      // Silently fail if metrics not available
+    }
+  }
+
+  /**
+   * Record cache error for metrics
+   */
+  private async recordCacheError(): Promise<void> {
+    try {
+      const { globalMetrics } = await import('../metrics/index.js');
+      globalMetrics.recordCacheError();
+    } catch (error) {
+      // Silently fail if metrics not available
+    }
   }
 
   /**
@@ -370,3 +542,5 @@ export class MemoryCacheProvider implements CacheProvider {
     };
   }
 }
+
+export { RedisProvider } from './redis-provider.js';

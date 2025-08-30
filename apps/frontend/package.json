@@ -10,7 +10,10 @@
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "analyze": "npm run build && open dist/stats.html",
+    "analyze:open": "open dist/stats.html",
+    "analyze:build": "npm run build"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -27,6 +30,7 @@
     "playwright": "^1.47.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "rollup-plugin-visualizer": "^5.12.0"
   }
 }

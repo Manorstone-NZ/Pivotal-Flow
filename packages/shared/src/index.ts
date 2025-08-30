@@ -18,3 +18,7 @@ export * from './types/user.js';
 
 // Export database layer
 export * from './db/index.js';
+
+// Export cache and metrics
+export * from './cache/index.js';
+export { MetricsCollector, globalMetrics, recordMetrics } from './metrics/index.js';

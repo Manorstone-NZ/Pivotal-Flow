@@ -6,7 +6,7 @@ import type { BaseRepositoryOptions, PaginationOptions, PaginationResult } from 
 import type { FilterBuilderOptions, SortBuilderOptions } from './repo.util.js';
 import { FilterBuilder, SortBuilder, QueryBuilder, PaginationBuilder } from './repo.util.js';
 import { withTx, createTxOptions } from './withTx.js';
-import type { CacheWrapper } from '../cache/index.js';
+import { CacheWrapper, CacheKeyBuilder } from '../cache/index.js';
 
 export interface UserCreateData {
   email: string;
@@ -123,28 +123,21 @@ export class UsersRepository extends BaseRepository {
   }
 
   /**
-   * Get user by ID
+   * Get user by ID with roles and caching
+   * TTL: 15s with jitter for hot reads
    */
   async getUserById(userId: string): Promise<UserWithRoles | null> {
-    try {
-      const cacheKey = this.cache ? 
-        `pivotal:${this.options.organizationId}:user:${userId}` : 
-        null;
-
-      // Try cache first if available
-      if (this.cache && cacheKey) {
-        const cached = await this.cache.getOrSet(
-          cacheKey,
-          async () => this.fetchUserFromDb(userId),
-          300 // 5 minutes TTL
-        );
-        return cached;
-      }
-
-      return await this.fetchUserFromDb(userId);
-    } catch (error) {
-      this.handlePrismaError(error, 'getUserById');
+    if (!this.cache) {
+      return this.fetchUserFromDb(userId);
     }
+
+    const cacheKey = CacheKeyBuilder.buildUserKey(this.options.organizationId, userId);
+    
+    return this.cache.getOrSet(
+      cacheKey,
+      () => this.fetchUserFromDb(userId),
+      15 // 15 seconds TTL for hot reads
+    );
   }
 
   /**

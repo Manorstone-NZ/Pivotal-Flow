@@ -12,6 +12,8 @@ import { config } from './lib/config.js';
 import { errorHandler } from './lib/error-handler.js';
 import { requestLogger } from './lib/request-logger.js';
 import { register, collectDefaultMetrics } from 'prom-client';
+import { metricsRoutes } from './routes/metrics.js';
+import { performanceRoutes } from './routes/perf.js';
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
 import {
   listUsersRoute,
@@ -23,8 +25,17 @@ import {
   updateUserStatusRoute
 } from './modules/users/index.js';
 
-// Enable default metrics collection
-collectDefaultMetrics({ register });
+// Enable default metrics collection (once per process)
+const g = globalThis as any;
+if (!g.__metricsInit) {
+  try {
+    collectDefaultMetrics({ register });
+    g.__metricsInit = true;
+  } catch (error) {
+    // Metrics already registered, continue
+    logger.warn('Default metrics already registered, skipping');
+  }
+}
 
 const app = Fastify({
   logger: false,
@@ -65,9 +76,13 @@ async function registerPlugins() {
   await app.register(removeRoleRoute);
   await app.register(updateUserStatusRoute);
 
-  // Hooks
+  // Hooks first (before routes to avoid surprises)
   app.addHook('onRequest', requestLogger);
   app.setErrorHandler(errorHandler);
+
+  // Register metrics routes
+  await app.register(metricsRoutes, { prefix: '/v1/metrics' });
+  await app.register(performanceRoutes, { prefix: '/v1/perf' });
 
   // Swagger (register after routes to ensure discovery)
   logger.info({ step: 'swagger:register' }, 'Registering Swagger plugin');
@@ -94,188 +109,10 @@ async function registerPlugins() {
         { name: 'health', description: 'Health and monitoring endpoints' },
         { name: 'Users', description: 'User management endpoints' },
       ],
-      paths: {
-        '/v1/auth/login': {
-          post: {
-            tags: ['auth'],
-            summary: 'User login',
-            description: 'Authenticate user with email and password',
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      email: { type: 'string', format: 'email' },
-                      password: { type: 'string', minLength: 12 }
-                    },
-                    required: ['email', 'password']
-                  }
-                }
-              }
-            },
-            responses: {
-              '200': {
-                description: 'Login successful',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        accessToken: { type: 'string' },
-                        user: {
-                          type: 'object',
-                          properties: {
-                            id: { type: 'string' },
-                            email: { type: 'string' },
-                            displayName: { type: 'string' },
-                            roles: { type: 'array', items: { type: 'string' } },
-                            organizationId: { type: 'string' }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': {
-                description: 'Authentication failed',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        '/v1/auth/refresh': {
-          post: {
-            tags: ['auth'],
-            summary: 'Refresh access token',
-            description: 'Refresh access token using refresh token from cookie or body',
-            requestBody: {
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      refreshToken: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              '200': {
-                description: 'Token refreshed successfully',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        accessToken: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': {
-                description: 'Refresh failed',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        '/v1/auth/logout': {
-          post: {
-            tags: ['auth'],
-            summary: 'User logout',
-            description: 'Logout user and revoke refresh token',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Logout successful',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        message: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        '/v1/auth/me': {
-          get: {
-            tags: ['auth'],
-            summary: 'Get current user profile',
-            description: 'Retrieve current user profile information',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'User profile retrieved successfully',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'string' },
-                        email: { type: 'string' },
-                        displayName: { type: 'string' },
-                        roles: { type: 'array', items: { type: 'string' } },
-                        organizationId: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': {
-                description: 'Unauthorized',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     },
-    // Enable automatic route discovery
-    exposeRoute: true,
-    routePrefix: '/docs',
+      // Enable automatic route discovery
+  exposeRoute: true,
+  routePrefix: '/docs/json',
   });
   logger.info({ step: 'swagger:registered' }, 'Swagger plugin registered');
 
@@ -300,6 +137,7 @@ app.get('/', async () => {
       health: '/health',
       metrics: '/metrics',
       docs: '/docs',
+      docsJson: '/docs/json',
       auth: '/v1/auth',
     },
   };
@@ -314,16 +152,19 @@ app.get('/health', async () => {
   };
 });
 
-app.get('/metrics', async (_request, reply) => {
-  try {
-    const metrics = await register.metrics();
-    reply.header('Content-Type', register.contentType);
-    return reply.status(200).send(metrics);
-  } catch (error) {
-    logger.error({ err: error }, 'Failed to generate metrics');
-    return reply.status(500).send('Failed to generate metrics');
-  }
-});
+// Top-level metrics endpoint (gated by config)
+if (config.metrics.enabled) {
+  app.get('/metrics', async (_request, reply) => {
+    try {
+      const metrics = await register.metrics();
+      reply.header('Content-Type', register.contentType);
+      return reply.status(200).send(metrics);
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to generate metrics');
+      return reply.status(500).send('Failed to generate metrics');
+    }
+  });
+}
 
 app.get('/metrics/info', async () => {
   return {
@@ -370,13 +211,30 @@ async function startServer() {
 
     logger.info({}, 'Ensuring plugins are ready');
     await app.ready();
+    
+    // Fail loud in dev if boot fails - check after listen
 
     logger.info({}, 'Calling app.listen');
     await app.listen({
-      port: config.server.port,
+      port: Number(process.env['PORT']) || config.server.port,
       host: config.server.host,
     });
     logger.info({}, 'app.listen completed');
+
+    // Fail loud in dev if boot fails - check after listen
+    if (config.isDevelopment) {
+      try {
+        // Check if app is properly configured and listening
+        if (!app.server || !app.server.listening) {
+          logger.error({}, "Boot failed after listen - app not properly configured");
+          process.exit(1);
+        }
+        logger.info({}, "App is properly configured and listening");
+      } catch (error) {
+        logger.error({ err: error }, "Boot failed after listen - error in configuration check");
+        process.exit(1);
+      }
+    }
 
     try {
       // Generate OpenAPI specification
@@ -423,6 +281,13 @@ async function startServer() {
     }
   }
 }
+
+// Single start guard to prevent accidental double starts during watch reloads
+if ((globalThis as any).__appStarted) {
+  logger.warn({}, "App already started in this process");
+  setTimeout(() => process.exit(0), 50); // Give time for logs to flush
+}
+(globalThis as any).__appStarted = true;
 
 startServer().catch((error) => {
   logger.fatal({ err: error }, 'Fatal error during server startup');
