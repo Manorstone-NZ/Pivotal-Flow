@@ -29,16 +29,18 @@ RUN test -f apps/backend/prisma/schema.prisma || (echo "Missing apps/backend/pri
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# build shared first and prove dist exists
+# generate prisma first, then build shared
+RUN pnpm -C apps/backend exec prisma -v
+RUN pnpm -C apps/backend run db:generate
+
+# build shared and prove dist exists
 RUN pnpm -C packages/shared run build \
  && echo "Shared files emitted:" \
  && node -e "console.log(require('fs').readdirSync('packages/shared/dist'))" \
  && ls -la packages/shared/dist \
  && node -e "console.log('shared main', require('./packages/shared/package.json').main)"
 
-# prisma and backend build
-RUN pnpm -C apps/backend exec prisma -v
-RUN pnpm -C apps/backend run db:generate
+# build backend
 RUN pnpm -C apps/backend run build
 
 FROM base AS deploy

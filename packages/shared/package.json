@@ -27,10 +27,7 @@
       "import": "./dist/types/user.js",
       "types": "./dist/types/user.d.ts"
     },
-    "./db/repo.users": {
-      "import": "./dist/db/repo.users.js",
-      "types": "./dist/db/repo.users.d.ts"
-    },
+
     "./metrics": {
       "import": "./dist/metrics/index.js",
       "types": "./dist/metrics/index.d.ts"
@@ -42,7 +39,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.7.0",
     "argon2": "^0.40.0",
     "ioredis": "^5.3.2",
     "prom-client": "^15.1.0",

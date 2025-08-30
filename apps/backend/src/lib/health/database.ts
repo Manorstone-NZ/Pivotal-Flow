@@ -1,4 +1,4 @@
-import { getDatabaseHealth } from '@pivotal-flow/shared';
+import { getDatabaseHealth } from './utils.js';
 import { createDbLogger } from '../logger.js';
 
 export async function checkDatabaseHealth() {

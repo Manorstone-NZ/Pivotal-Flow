@@ -2,7 +2,7 @@
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import type { UserPublic, UserCreateRequest, UserUpdateRequest, UserListSort } from '@pivotal-flow/shared/types/user';
-import type { UserListFilters } from '@pivotal-flow/shared/db/repo.users';
+import type { UserListFilters } from '../../types/database.js';
 
 const prisma = new PrismaClient();
 

@@ -1,4 +1,4 @@
-import { getRedisHealth } from '@pivotal-flow/shared';
+import { getRedisHealth } from './utils.js';
 import { createRedisLogger } from '../logger.js';
 
 export async function checkRedisHealth() {
