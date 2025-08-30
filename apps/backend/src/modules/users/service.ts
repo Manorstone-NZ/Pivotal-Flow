@@ -97,14 +97,14 @@ export async function listUsers(options: UserListOptions): Promise<UserListResul
   });
 
   // Transform to UserPublic format
-  const items: UserPublic[] = users.map(user => ({
+  const items: UserPublic[] = users.map((user: any) => ({
     id: user.id,
     email: user.email,
     displayName: user.displayName,
     isActive: user.status === 'active',
     mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
-    roles: user.userRoles.map(ur => ur.role)
+    roles: user.userRoles.map((ur: any) => ur.role)
   }));
 
   return { items, total, totalPages };
@@ -153,7 +153,7 @@ export async function getUserById(userId: string, organizationId: string): Promi
     isActive: user.status === 'active',
     mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
-    roles: user.userRoles.map(ur => ur.role)
+    roles: user.userRoles.map((ur: any) => ur.role)
   };
 }
 
@@ -206,7 +206,7 @@ export async function createUser(data: UserCreateRequest, organizationId: string
     isActive: user.status === 'active',
     mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
-    roles: user.userRoles.map(ur => ur.role)
+    roles: user.userRoles.map((ur: any) => ur.role)
   };
 }
 
