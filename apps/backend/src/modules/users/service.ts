@@ -1,8 +1,9 @@
 // User service layer - Prisma calls only, no HTTP logic
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import type { UserPublic, UserCreateRequest, UserUpdateRequest, UserListSort } from '@pivotal-flow/shared/types/user';
 import type { UserListFilters } from '../../types/database.js';
+import type { UserWhereInput, UserOrderByWithRelationInput, UserUpdateInput } from '../../types/prisma.js';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,7 @@ export async function listUsers(options: UserListOptions): Promise<UserListResul
   const { organizationId, filters = {}, sort = { field: 'createdAt', direction: 'desc' }, page, pageSize } = options;
 
   // Build where clause
-  const where: Prisma.UserWhereInput = {
+  const where: UserWhereInput = {
     organizationId,
     deletedAt: null,
     ...(filters.isActive !== undefined && { status: filters.isActive ? 'active' : 'inactive' }),
@@ -51,7 +52,7 @@ export async function listUsers(options: UserListOptions): Promise<UserListResul
   }
 
   // Build order by clause
-  const orderBy: Prisma.UserOrderByWithRelationInput = {};
+  const orderBy: UserOrderByWithRelationInput = {};
   if (sort.field === 'email') {
     orderBy.email = sort.direction;
   } else {
@@ -217,7 +218,7 @@ export async function updateUser(
   organizationId: string, 
   data: UserUpdateRequest
 ): Promise<UserPublic | null> {
-  const updateData: Prisma.UserUpdateInput = {};
+  const updateData: UserUpdateInput = {};
   
   if (data.displayName !== undefined) {
     updateData.displayName = data.displayName;
