@@ -3,7 +3,7 @@ import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
 import { logger } from "../../lib/logger.js";
 import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
 import { config } from "../../lib/config.js";
-import { AuthService } from "./service.sql.js";
+import { AuthService } from "./service.drizzle.js";
 
 export const loginRoute: FastifyPluginAsync = async fastify => {
   const auditLogger = createAuditLogger(fastify);

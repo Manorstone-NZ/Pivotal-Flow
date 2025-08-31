@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { logger } from '../../lib/logger.js';
 import type { MeResponse, AuthError } from './schemas.js';
-import { AuthService } from './service.sql.js';
+import { AuthService } from './service.drizzle.js';
 
 export const meRoute: FastifyPluginAsync = async (fastify) => {
 
