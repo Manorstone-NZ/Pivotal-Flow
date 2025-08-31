@@ -1,7 +1,7 @@
 // Remove role from user route with RBAC and audit logging
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { removeRoleFromUser } from './service.sql.js';
+import { removeRoleFromUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 

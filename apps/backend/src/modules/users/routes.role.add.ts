@@ -4,7 +4,7 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { 
   roleAssignmentSchema
 } from './schemas.js';
-import { addRoleToUser } from './service.sql.js';
+import { addRoleToUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 

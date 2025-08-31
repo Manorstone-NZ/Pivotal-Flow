@@ -3,8 +3,10 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and, like, desc, asc, isNull, count } from 'drizzle-orm';
 import { users, roles, userRoles } from '../../lib/schema.js';
-import type { UserPublic, UserListSort } from '@pivotal-flow/shared/types/user';
+import type { UserPublic, UserListSort, UserCreateRequest, UserUpdateRequest } from '@pivotal-flow/shared/types/user';
 import type { UserListFilters } from '../../types/database.js';
+import { hashPassword } from '@pivotal-flow/shared/security/password';
+import crypto from 'crypto';
 
 export interface UserListOptions {
   organizationId: string;
@@ -221,4 +223,294 @@ export async function getUserById(userId: string, organizationId: string, fastif
   }
 
   return user;
+}
+
+/**
+ * Create new user using Drizzle ORM
+ */
+export async function createUser(userData: UserCreateRequest, organizationId: string, fastify: FastifyInstance): Promise<UserWithRoles> {
+  const { email, firstName, lastName, displayName } = userData;
+  // Note: Password and role assignment will be implemented in future iterations
+  const password = 'temporary-password';
+  const roleIds: string[] = [];
+
+  // Check if user already exists
+  const existingUser = await fastify.db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.email, email),
+      eq(users.organizationId, organizationId),
+      isNull(users.deletedAt)
+    ))
+    .limit(1);
+
+  if (existingUser.length > 0) {
+    throw new Error('User with this email already exists');
+  }
+
+  // Create user
+  const hashedPassword = await hashPassword(password);
+  const [userResult] = await fastify.db
+    .insert(users)
+    .values({
+      id: crypto.randomUUID(),
+      email,
+      firstName,
+      lastName,
+      displayName,
+      passwordHash: hashedPassword,
+      status: 'active',
+      mfaEnabled: false,
+      organizationId,
+    })
+    .returning({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      displayName: users.displayName,
+      status: users.status,
+      mfaEnabled: users.mfaEnabled,
+      createdAt: users.createdAt,
+      organizationId: users.organizationId,
+    });
+
+  if (!userResult) {
+    throw new Error('Failed to create user');
+  }
+
+  const userId = userResult.id;
+
+  // Assign roles
+  if (roleIds.length > 0) {
+    for (const roleId of roleIds) {
+      await fastify.db
+        .insert(userRoles)
+        .values({
+          id: crypto.randomUUID(),
+          userId,
+          roleId,
+          organizationId,
+          isActive: true,
+        });
+    }
+  }
+
+  // Return created user with roles
+  const createdUser = await getUserById(userId, organizationId, fastify);
+  if (!createdUser) {
+    throw new Error('Failed to create user');
+  }
+
+  return createdUser;
+}
+
+/**
+ * Update user using Drizzle ORM
+ */
+export async function updateUser(
+  userId: string, 
+  updateData: UserUpdateRequest, 
+  organizationId: string, 
+  fastify: FastifyInstance
+): Promise<UserWithRoles> {
+  const { displayName } = updateData;
+  // Note: Status and MFA settings will be implemented in future iterations
+  const status = 'active';
+  const mfaEnabled = false;
+
+  const [result] = await fastify.db
+    .update(users)
+    .set({
+      displayName,
+      status,
+      mfaEnabled,
+    })
+    .where(and(
+      eq(users.id, userId),
+      eq(users.organizationId, organizationId),
+      isNull(users.deletedAt)
+    ))
+    .returning({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      status: users.status,
+      mfaEnabled: users.mfaEnabled,
+      createdAt: users.createdAt,
+      organizationId: users.organizationId,
+    });
+
+  if (!result) {
+    throw new Error('User not found');
+  }
+
+  // Return updated user with roles
+  const updatedUser = await getUserById(userId, organizationId, fastify);
+  if (!updatedUser) {
+    throw new Error('Failed to update user');
+  }
+
+  return updatedUser;
+}
+
+/**
+ * Add role to user using Drizzle ORM
+ */
+export async function addRoleToUser(
+  userId: string, 
+  roleId: string, 
+  organizationId: string, 
+  fastify: FastifyInstance
+): Promise<void> {
+  // Check if user exists
+  const userExists = await fastify.db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.id, userId),
+      eq(users.organizationId, organizationId),
+      isNull(users.deletedAt)
+    ))
+    .limit(1);
+
+  if (userExists.length === 0) {
+    throw new Error('User not found');
+  }
+
+  // Check if role exists
+  const roleExists = await fastify.db
+    .select({ id: roles.id })
+    .from(roles)
+    .where(eq(roles.isActive, true))
+    .limit(1);
+
+  if (roleExists.length === 0) {
+    throw new Error('Role not found');
+  }
+
+  // Check if user already has this role
+  const existingRole = await fastify.db
+    .select({ id: userRoles.id })
+    .from(userRoles)
+    .where(and(
+      eq(userRoles.userId, userId),
+      eq(userRoles.roleId, roleId)
+    ))
+    .limit(1);
+
+  if (existingRole.length > 0) {
+    // Update existing role to active
+    await fastify.db
+      .update(userRoles)
+      .set({
+        isActive: true,
+      })
+      .where(and(
+        eq(userRoles.userId, userId),
+        eq(userRoles.roleId, roleId)
+      ));
+  } else {
+    // Create new user role
+    await fastify.db
+      .insert(userRoles)
+      .values({
+        id: crypto.randomUUID(),
+        userId,
+        roleId,
+        organizationId,
+        isActive: true,
+      });
+  }
+}
+
+/**
+ * Remove role from user using Drizzle ORM
+ */
+export async function removeRoleFromUser(
+  userId: string, 
+  roleId: string, 
+  organizationId: string, 
+  fastify: FastifyInstance
+): Promise<void> {
+  // Check if user exists
+  const userExists = await fastify.db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.id, userId),
+      eq(users.organizationId, organizationId),
+      isNull(users.deletedAt)
+    ))
+    .limit(1);
+
+  if (userExists.length === 0) {
+    throw new Error('User not found');
+  }
+
+  // Deactivate user role
+  await fastify.db
+    .update(userRoles)
+    .set({
+      isActive: false,
+    })
+    .where(and(
+      eq(userRoles.userId, userId),
+      eq(userRoles.roleId, roleId)
+    ));
+}
+
+/**
+ * Get user roles using Drizzle ORM
+ */
+export async function getUserRoles(userId: string, fastify: FastifyInstance): Promise<Array<{
+  id: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  isActive: boolean;
+}>> {
+  const result = await fastify.db
+    .select({
+      id: roles.id,
+      name: roles.name,
+      description: roles.description,
+      isSystem: roles.isSystem,
+      isActive: roles.isActive,
+    })
+    .from(userRoles)
+    .innerJoin(roles, eq(userRoles.roleId, roles.id))
+    .where(and(
+      eq(userRoles.userId, userId),
+      eq(userRoles.isActive, true),
+      eq(roles.isActive, true)
+    ));
+
+  return result.map(row => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    isSystem: row.isSystem,
+    isActive: row.isActive
+  }));
+}
+
+/**
+ * Check if user has role using Drizzle ORM
+ */
+export async function userHasRole(userId: string, roleName: string, fastify: FastifyInstance): Promise<boolean> {
+  const result = await fastify.db
+    .select({ id: roles.id })
+    .from(userRoles)
+    .innerJoin(roles, eq(userRoles.roleId, roles.id))
+    .where(and(
+      eq(userRoles.userId, userId),
+      eq(userRoles.isActive, true),
+      eq(roles.name, roleName),
+      eq(roles.isActive, true)
+    ))
+    .limit(1);
+
+  return result.length > 0;
 }

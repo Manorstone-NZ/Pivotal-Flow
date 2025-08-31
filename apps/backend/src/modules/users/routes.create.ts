@@ -3,7 +3,7 @@
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { ZodError, type infer as ZodInfer } from "zod";
 import { userCreateSchema } from "./schemas.js";
-import { createUser } from "./service.sql.js";
+import { createUser } from "./service.drizzle.js";
 import { canManageUsers, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
 

@@ -1,7 +1,7 @@
 // Get user by ID route with RBAC and organization guard
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import { getUserById } from "./service.sql.js";
+import { getUserById } from "./service.drizzle.js";
 import { canAccessUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
 

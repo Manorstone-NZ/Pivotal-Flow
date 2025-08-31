@@ -2,7 +2,7 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import { userUpdateSchema } from "./schemas.js";
-import { getUserById, updateUser } from "./service.sql.js";
+import { getUserById, updateUser } from "./service.drizzle.js";
 import { canModifyUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
 

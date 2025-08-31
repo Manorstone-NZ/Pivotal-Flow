@@ -6,7 +6,7 @@ import {
   userListFiltersSchema, 
   userListSortSchema
 } from './schemas.js';
-import { listUsers } from './service.sql.js';
+import { listUsers } from './service.drizzle.js';
 import { canViewUsers, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 
