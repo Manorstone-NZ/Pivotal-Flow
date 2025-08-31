@@ -12,6 +12,8 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://pivotal:pivotal@postgres:5432/pivotal
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,8 +44,8 @@ services:
       - ../../apps/backend/.env.example
       - ../../.env
     volumes:
-      - ../..:/app:ro
-    entrypoint: [ "sh", "-lc", "corepack enable && pnpm -w add -D prisma && npx prisma migrate deploy" ]
+      - ../..:/app
+    entrypoint: [ "sh", "-lc", "cd apps/backend && corepack enable && pnpm install && npx prisma migrate deploy" ]
     depends_on:
       postgres:
         condition: service_healthy

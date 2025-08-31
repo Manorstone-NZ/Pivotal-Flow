@@ -1,7 +1,7 @@
 // Users module exports
 
 export * from './schemas.js';
-export * from './service.js';
+export * from './service.sql.js';
 export * from './rbac.js';
 
 // Route exports

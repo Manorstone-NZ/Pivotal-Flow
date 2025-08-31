@@ -1,207 +1,119 @@
-import type { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
-import { verifyPassword } from '@pivotal-flow/shared/security/password';
-import { createAuditLogger } from '../../lib/audit-logger.js';
-import { logger } from '../../lib/logger.js';
-import type { LoginRequest, LoginResponse, AuthError } from './schemas.js';
+import type { FastifyPluginAsync } from "fastify";
+import { createAuditLogger } from "../../lib/audit-logger.js";
+import { logger } from "../../lib/logger.js";
+import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
+import { config } from "../../lib/config.js";
+import { AuthService } from "./service.sql.js";
 
-export const loginRoute: FastifyPluginAsync = async (fastify) => {
-  // Initialize dependencies
-  const prisma = new PrismaClient();
-  const auditLogger = createAuditLogger(prisma);
+export const loginRoute: FastifyPluginAsync = async fastify => {
+  const auditLogger = createAuditLogger(fastify);
 
   fastify.post<{ Body: LoginRequest; Reply: LoginResponse | AuthError }>(
-    '/login',
+    "/login",
     {
+      // per route rate limit for unauthenticated calls
+      config: { rateLimit: { max: config.rateLimit.max, timeWindow: config.rateLimit.window } },
       schema: {
+        tags: ["auth"],
+        summary: "User login",
+        description: "Authenticate user with email and password",
         body: {
-          type: 'object',
+          type: "object",
+          required: ["email", "password"],
           properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 12 },
+            email: { type: "string", format: "email" },
+            password: { type: "string", minLength: 12 }
           },
-          required: ['email', 'password'],
+          additionalProperties: false
         },
         response: {
           200: {
-            type: 'object',
+            type: "object",
+            required: ["accessToken", "user"],
             properties: {
-              accessToken: { type: 'string' },
+              accessToken: { type: "string" },
               user: {
-                type: 'object',
+                type: "object",
+                required: ["id", "email", "displayName", "roles", "organizationId"],
                 properties: {
-                  id: { type: 'string' },
-                  email: { type: 'string' },
-                  displayName: { type: 'string' },
-                  roles: { type: 'array', items: { type: 'string' } },
-                  organizationId: { type: 'string' },
+                  id: { type: "string" },
+                  email: { type: "string" },
+                  displayName: { type: "string" },
+                  roles: { type: "array", items: { type: "string" } },
+                  organizationId: { type: "string" }
                 },
-                required: ['id', 'email', 'displayName', 'roles', 'organizationId'],
-              },
+                additionalProperties: false
+              }
             },
-            required: ['accessToken', 'user'],
+            additionalProperties: false
           },
-          401: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' },
-              message: { type: 'string' },
-              code: { type: 'string' },
-            },
-            required: ['error', 'message', 'code'],
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' },
-              message: { type: 'string' },
-              code: { type: 'string' },
-            },
-            required: ['error', 'message', 'code'],
-          },
-        },
-        tags: ['auth'],
-        summary: 'User login',
-        description: 'Authenticate user with email and password',
-      },
+          401: errorShape(),
+          500: errorShape()
+        }
+      }
     },
     async (request, reply) => {
-      const { email, password } = request.body as LoginRequest;
-
-      // Use the decorated tokenManager from the app
       const tokenManager = fastify.tokenManager;
+      const { email: rawEmail, password } = request.body;
+      const authService = new AuthService(fastify);
+
+      const email = rawEmail.trim().toLowerCase();
 
       try {
-        // Find user by email and organization (multi-tenant)
-        const user = await prisma.user.findFirst({
-          where: { 
-            email,
-          },
-          select: {
-            id: true,
-            email: true,
-            displayName: true,
-            passwordHash: true,
-            organizationId: true,
-            status: true,
-            userRoles: {
-              select: {
-                role: {
-                  select: {
-                    name: true,
-                  },
-                },
-              },
-              where: {
-                isActive: true,
-              },
-            },
-          },
-        });
-
-        if (!user || user.status !== 'active') {
-          logger.warn({ email, event: 'auth.login_failed', reason: 'user_not_found' }, 'Login failed: user not found or inactive');
-          
-          // Log audit event for failed login
-          await auditLogger.logAuthEvent(
-            'auth.login_failed',
-            'unknown', // We don't know the organization for failed logins
-            null,
-            { email, reason: 'user_not_found' },
-            request
-          );
-          
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            message: 'Invalid email or password',
-            code: 'INVALID_CREDENTIALS',
-          });
-        }
-
-        // Verify password
-        if (!user.passwordHash) {
-          logger.warn({ email, userId: user.id, event: 'auth.login_failed', reason: 'no_password_hash' }, 'Login failed: no password hash');
-          
-          // Log audit event for failed login
-          await auditLogger.logAuthEvent(
-            'auth.login_failed',
-            user.organizationId,
-            user.id,
-            { email, reason: 'no_password_hash' },
-            request
-          );
-          
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            message: 'Invalid email or password',
-            code: 'INVALID_CREDENTIALS',
-          });
-        }
+        // Authenticate user with database
+        const user = await authService.authenticateUser(email, password);
         
-        const isValidPassword = await verifyPassword(password, user.passwordHash);
-        if (!isValidPassword) {
-          logger.warn({ email, userId: user.id, event: 'auth.login_failed', reason: 'invalid_password' }, 'Login failed: invalid password');
-          
-          // Log audit event for failed login
-          await auditLogger.logAuthEvent(
-            'auth.login_failed',
-            user.organizationId,
-            user.id,
-            { email, reason: 'invalid_password' },
-            request
-          );
-          
+        if (!user) {
+          // Log failed login attempt
+          try {
+            await auditLogger.logAuthEvent(
+              "auth.login_failed",
+              "unknown",
+              "unknown",
+              { email, reason: "invalid_credentials" },
+              request
+            );
+          } catch (auditError) {
+            logger.warn({ err: auditError }, "Audit log write failed for failed login");
+          }
+
           return reply.status(401).send({
-            error: 'Unauthorized',
-            message: 'Invalid email or password',
-            code: 'INVALID_CREDENTIALS',
+            error: "Unauthorized",
+            message: "Invalid email or password",
+            code: "INVALID_CREDENTIALS"
           });
         }
 
-        // Extract roles from userRoles relation
-        const roles = (user as any).userRoles.map((ur: any) => ur.role.name);
-
-        // Generate tokens
         const accessToken = await tokenManager.signAccessToken({
           sub: user.id,
           org: user.organizationId,
-          roles,
+          roles: user.roles
         });
 
         const refreshToken = await tokenManager.signRefreshToken({
           sub: user.id,
           org: user.organizationId,
-          roles,
+          roles: user.roles
         });
 
-        // Set refresh token as HTTP-only cookie
-        reply.setCookie('refreshToken', refreshToken, {
+        reply.setCookie("refreshToken", refreshToken, {
           httpOnly: true,
-          secure: process.env['COOKIE_SECURE'] === 'true',
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 7 * 24 * 60 * 60, // 7 days
+          secure: config.auth.cookieSecure,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60
         });
 
-        // Log successful login
-        logger.info({ 
-          userId: user.id, 
-          email: user.email, 
-          organizationId: user.organizationId,
-          event: 'auth.login_success' 
-        }, 'User logged in successfully');
-
-        // Log audit event for successful login
         try {
           await auditLogger.logAuthEvent(
-            'auth.login',
+            "auth.login",
             user.organizationId,
             user.id,
             { email: user.email },
             request
           );
         } catch (auditError) {
-          logger.warn({ err: auditError }, 'Failed to log audit event for successful login');
+          logger.warn({ err: auditError }, "Audit log write failed for login");
         }
 
         return reply.status(200).send({
@@ -209,19 +121,32 @@ export const loginRoute: FastifyPluginAsync = async (fastify) => {
           user: {
             id: user.id,
             email: user.email,
-            displayName: user.displayName ?? 'Unknown User',
-            roles,
-            organizationId: user.organizationId,
-          },
+            displayName: user.displayName || '',
+            roles: user.roles,
+            organizationId: user.organizationId
+          }
         });
-      } catch (error) {
-        logger.error({ err: error, email, event: 'auth.login_error' }, 'Login error occurred');
+      } catch (err) {
+        logger.error({ err, event: "auth.login_error" }, "Login error");
         return reply.status(500).send({
-          error: 'Internal Server Error',
-          message: 'An error occurred during login',
-          code: 'LOGIN_ERROR',
+          error: "Internal Server Error",
+          message: "An error occurred during login",
+          code: "LOGIN_ERROR"
         });
       }
     }
   );
 };
+
+function errorShape() {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["error", "message", "code"],
+    properties: {
+      error: { type: "string" },
+      message: { type: "string" },
+      code: { type: "string" }
+    }
+  } as const;
+}

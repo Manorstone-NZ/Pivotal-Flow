@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyRequest, FastifyInstance } from 'fastify';
 
 export interface AuditEvent {
   action: string;
@@ -13,10 +12,10 @@ export interface AuditEvent {
 }
 
 export class AuditLogger {
-  private prisma: PrismaClient;
+  private fastify: FastifyInstance;
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
+  constructor(fastify: FastifyInstance) {
+    this.fastify = fastify;
   }
 
   /**
@@ -44,7 +43,15 @@ export class AuditLogger {
         data.newValues = event.newValues;
       }
 
-      await this.prisma.auditLog.create({ data });
+      await this.fastify.db.query(`
+        INSERT INTO audit_logs (
+          action, entity_type, entity_id, organization_id, user_id, 
+          ip_address, user_agent, session_id, old_values, new_values, metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `, [
+        data.action, data.entityType, data.entityId, data.organizationId, data.userId,
+        data.ipAddress, data.userAgent, data.sessionId, data.oldValues, data.newValues, data.metadata
+      ]);
     } catch (error) {
       // Log error but don't fail the request
       // Using console.error as fallback when logger fails
@@ -76,6 +83,6 @@ export class AuditLogger {
   }
 }
 
-export function createAuditLogger(prisma: PrismaClient): AuditLogger {
-  return new AuditLogger(prisma);
+export function createAuditLogger(fastify: FastifyInstance): AuditLogger {
+  return new AuditLogger(fastify);
 }

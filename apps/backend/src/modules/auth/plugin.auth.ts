@@ -113,11 +113,15 @@ export default fp(async function authPlugin(app) {
       '/health',
       '/metrics',
       '/docs',
+      '/docs/',
       '/docs/json',
+      '/docs/static',
+      '/docs/static/',
       '/'
     ];
     
-    if (publicRoutes.includes(request.url)) {
+    // Check if route is public
+    if (publicRoutes.includes(request.url) || request.url.startsWith('/docs/')) {
       return;
     }
 

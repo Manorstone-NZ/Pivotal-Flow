@@ -15,8 +15,10 @@ import { requestLogger } from './lib/request-logger.js';
 import { register, collectDefaultMetrics } from 'prom-client';
 import { metricsRoutes } from './routes/metrics.js';
 import { performanceRoutes } from './routes/perf.js';
+// Test auth route removed - no longer needed
+// import { swaggerUIRoute } from './routes/swagger-ui.js'; // Using standard plugin instead
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
-import prismaPlugin from './plugins/prisma.js';
+import databasePlugin from './plugins/database.js';
 import {
   listUsersRoute,
   createUserRoute,
@@ -60,36 +62,40 @@ async function registerPlugins() {
     timeWindow: config.rateLimit.window, // number or string eg '1 minute'
   });
 
-  // Prisma plugin (register early for database access)
-  await app.register(prismaPlugin);
+  // Database plugin (register early for database access)
+  await app.register(databasePlugin);
 
   // Authentication plugin
   await app.register(authPlugin);
 
-  // Register authentication routes
-  await app.register(loginRoute, { prefix: '/v1/auth' });
-  await app.register(refreshRoute, { prefix: '/v1/auth' });
-  await app.register(logoutRoute, { prefix: '/v1/auth' });
-  await app.register(meRoute, { prefix: '/v1/auth' });
+  // Register authentication routes directly on app for Swagger compatibility
+  app.register(loginRoute, { prefix: '/v1/auth' });
+  app.register(refreshRoute, { prefix: '/v1/auth' });
+  app.register(logoutRoute, { prefix: '/v1/auth' });
+  app.register(meRoute, { prefix: '/v1/auth' });
+  
+  // Swagger UI will be registered after routes
+  
+  // Test routes removed - no longer needed
 
   // Hooks before routes
   app.addHook('onRequest', requestLogger);
   app.setErrorHandler(errorHandler);
 
-  // Register users routes
-  await app.register(listUsersRoute);
-  await app.register(createUserRoute);
-  await app.register(getUserRoute);
-  await app.register(updateUserRoute);
-  await app.register(assignRoleRoute);
-  await app.register(removeRoleRoute);
-  await app.register(updateUserStatusRoute);
+  // Register users routes directly on app for Swagger compatibility
+  app.register(listUsersRoute);
+  app.register(createUserRoute);
+  app.register(getUserRoute);
+  app.register(updateUserRoute);
+  app.register(assignRoleRoute);
+  app.register(removeRoleRoute);
+  app.register(updateUserStatusRoute);
 
   // Register metrics routes
   await app.register(metricsRoutes, { prefix: '/v1/metrics' });
   await app.register(performanceRoutes, { prefix: '/v1/perf' });
 
-  // Swagger clean up - JSON at /docs/json and UI at /docs
+  // Swagger registration - AFTER all routes are registered
   await app.register(swagger as any, {
     openapi: {
       openapi: '3.0.0',
@@ -115,6 +121,7 @@ async function registerPlugins() {
     },
     exposeRoute: true,
     routePrefix: '/docs/json',
+    transformStaticCSP: (header: string) => header,
   });
 
   await app.register(swaggerUi as any, {
@@ -122,7 +129,26 @@ async function registerPlugins() {
     uiConfig: {
       docExpansion: 'list',
       deepLinking: false,
+      tryItOutEnabled: true,
     },
+    transformStaticCSS: (css: string) => {
+      // Add custom CSS for better authentication instructions
+      return css + `
+        .swagger-ui .auth-wrapper {
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 4px;
+          margin-bottom: 10px;
+        }
+        .swagger-ui .auth-wrapper::before {
+          content: "🔑 To test protected endpoints: 1) Get a fresh token from /v1/auth/login 2) Click 'Authorize' button above 3) Enter 'Bearer <your-token>'";
+          display: block;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 5px;
+        }
+      `;
+    }
   });
 }
 

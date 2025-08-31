@@ -6,7 +6,7 @@ import {
   userListFiltersSchema, 
   userListSortSchema
 } from './schemas.js';
-import { listUsers } from './service.js';
+import { listUsers } from './service.sql.js';
 import { canViewUsers, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 
@@ -132,7 +132,7 @@ export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
       const userContext = extractUserContext(request);
       
       // Check permissions
-      const permissionCheck = await canViewUsers(userContext);
+      const permissionCheck = await canViewUsers(userContext, fastify);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,
@@ -172,7 +172,7 @@ export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
         sort,
         page: pagination.page,
         pageSize: pagination.pageSize
-      });
+      }, fastify);
 
       // Log successful operation
       logger.info({

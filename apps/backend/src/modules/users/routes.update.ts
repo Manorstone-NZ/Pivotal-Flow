@@ -1,18 +1,13 @@
 // Update user route with RBAC and audit logging
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { 
-  userUpdateSchema
-} from './schemas.js';
-import { getUserById, updateUser } from './service.js';
-import { canModifyUser, extractUserContext } from './rbac.js';
-import { logger } from '../../lib/logger.js';
-import { PrismaClient } from '@prisma/client';
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import { userUpdateSchema } from "./schemas.js";
+import { getUserById, updateUser } from "./service.sql.js";
+import { canModifyUser, extractUserContext } from "./rbac.js";
+import { logger } from "../../lib/logger.js";
 
-const prisma = new PrismaClient();
-
-export const updateUserRoute: FastifyPluginAsync = async (fastify) => {
-  fastify.patch('/v1/users/:id', {
+export const updateUserRoute: FastifyPluginAsync = async fastify => {
+  fastify.patch("/v1/users/:id", {
     schema: {
       tags: ['Users'],
       summary: 'Update user profile fields',
@@ -103,162 +98,142 @@ export const updateUserRoute: FastifyPluginAsync = async (fastify) => {
             code: { type: 'string' }
           },
           additionalProperties: false
-        },
-        429: {
-          type: 'object',
-          required: ['error', 'message', 'code'],
-          properties: {
-            error: { type: 'string' },
-            message: { type: 'string' },
-            code: { type: 'string' }
-          },
-          additionalProperties: false
         }
       }
     }
   }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
-      // Extract user context
       const userContext = extractUserContext(request);
       const { id: targetUserId } = request.params;
 
-      // Check permissions
-      const permissionCheck = await canModifyUser(userContext, targetUserId);
+      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify);
       if (!permissionCheck.hasPermission) {
-        logger.warn({
-          userId: userContext.userId,
-          action: 'users.update',
+        logger.warn({ 
+          userId: userContext.userId, 
+          action: "users.update", 
           targetUserId,
-          reason: permissionCheck.reason,
-          message: 'Permission denied for updating user'
+          reason: permissionCheck.reason, 
+          message: "Permission denied for updating user" 
         });
-        
         return reply.status(403).send({
-          error: 'Forbidden',
-          message: 'Insufficient permissions to update this user',
-          code: 'INSUFFICIENT_PERMISSIONS'
+          error: "Forbidden", 
+          message: "Insufficient permissions to update this user",
+          code: "INSUFFICIENT_PERMISSIONS"
         });
       }
 
-      // Validate request body
       const updateData = userUpdateSchema.parse(request.body);
-
-      // Get current user data for audit logging
-      const currentUser = await getUserById(targetUserId, userContext.organizationId);
+      const currentUser = await getUserById(targetUserId, userContext.organizationId, fastify);
       if (!currentUser) {
         return reply.status(404).send({
-          error: 'Not Found',
-          message: 'User not found in this organization',
-          code: 'USER_NOT_FOUND'
+          error: "Not Found", 
+          message: "User not found in this organization", 
+          code: "USER_NOT_FOUND"
         });
       }
 
-      // Update user - filter out undefined values
-      const filteredUpdateData = {
-        ...(updateData.displayName !== undefined && { displayName: updateData.displayName }),
-        ...(updateData.isActive !== undefined && { isActive: updateData.isActive })
-      };
-      
-      const updatedUser = await updateUser(targetUserId, userContext.organizationId, filteredUpdateData);
-
+      const updatedUser = await updateUser(targetUserId, updateData as any, userContext.organizationId, fastify);
       if (!updatedUser) {
         return reply.status(404).send({
-          error: 'Not Found',
-          message: 'User not found in this organization',
-          code: 'USER_NOT_FOUND'
+          error: "Not Found", 
+          message: "User not found in this organization", 
+          code: "USER_NOT_FOUND"
         });
       }
 
-      // Prepare audit data
       const oldValues: Record<string, any> = {};
       const newValues: Record<string, any> = {};
-
       if (updateData.displayName !== undefined) {
         oldValues['displayName'] = currentUser.displayName;
         newValues['displayName'] = updateData.displayName;
       }
-
       if (updateData.isActive !== undefined) {
-        oldValues['isActive'] = currentUser.isActive;
+        oldValues['isActive'] = currentUser.status === 'active';
         newValues['isActive'] = updateData.isActive;
       }
 
-      // Log audit event for general update
-      await prisma.auditLog.create({
-        data: {
-          organizationId: userContext.organizationId,
-          userId: userContext.userId,
-          action: 'users.update',
-          entityType: 'User',
-          entityId: targetUserId,
-          oldValues,
-          newValues,
-          metadata: {
+      // write audits using SQL
+      await fastify.db.query(
+        `INSERT INTO audit_logs (
+          id, "organizationId", "userId", "action", "entityType", "entityId", 
+          "oldValues", "newValues", "metadata", "createdAt"
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW()
+        )`,
+        [
+          userContext.organizationId,
+          userContext.userId,
+          'users.update',
+          'User',
+          targetUserId,
+          JSON.stringify(oldValues),
+          JSON.stringify(newValues),
+          JSON.stringify({
             actorUserId: userContext.userId,
             targetUserId,
             organizationId: userContext.organizationId
-          }
-        }
-      });
+          })
+        ]
+      );
 
-      // Log separate audit event for status change if applicable
-      if (updateData.isActive !== undefined && updateData.isActive !== currentUser.isActive) {
-        await prisma.auditLog.create({
-          data: {
-            organizationId: userContext.organizationId,
-            userId: userContext.userId,
-            action: 'users.status_changed',
-            entityType: 'User',
-            entityId: targetUserId,
-            oldValues: { isActive: currentUser.isActive },
-            newValues: { isActive: updateData.isActive },
-            metadata: {
+      if (updateData.isActive !== undefined && updateData.isActive !== (currentUser.status === 'active')) {
+        await fastify.db.query(
+          `INSERT INTO audit_logs (
+            id, "organizationId", "userId", "action", "entityType", "entityId", 
+            "oldValues", "newValues", "metadata", "createdAt"
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW()
+          )`,
+          [
+            userContext.organizationId,
+            userContext.userId,
+            'users.status_changed',
+            'User',
+            targetUserId,
+            JSON.stringify({ isActive: currentUser.status === 'active' }),
+            JSON.stringify({ isActive: updateData.isActive }),
+            JSON.stringify({
               actorUserId: userContext.userId,
               targetUserId,
               organizationId: userContext.organizationId,
-              previousStatus: currentUser.isActive ? 'active' : 'inactive',
-              newStatus: updateData.isActive ? 'active' : 'inactive'
-            }
-          }
-        });
+              previousStatus: currentUser.status === 'active' ? "active" : "inactive",
+              newStatus: updateData.isActive ? "active" : "inactive"
+            })
+          ]
+        );
       }
 
-      // Log successful operation
       logger.info({
-        userId: userContext.userId,
-        action: 'users.update',
+        userId: userContext.userId, 
+        action: "users.update", 
         targetUserId,
-        organizationId: userContext.organizationId,
+        organizationId: userContext.organizationId, 
         updatedFields: Object.keys(newValues),
-        message: 'User updated successfully'
+        message: "User updated successfully"
       });
 
-      // Return response
       return reply.status(200).send(updatedUser);
-
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Validation Error')) {
+      if (error instanceof Error && error.message.includes("Validation Error")) {
         return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid request body',
-          code: 'VALIDATION_ERROR',
+          error: "Validation Error", 
+          message: "Invalid request body",
+          code: "VALIDATION_ERROR", 
           details: error.message
         });
       }
-
       logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         stack: error instanceof Error ? error.stack : undefined,
-        action: 'users.update',
-        targetUserId: request.params.id,
-        message: 'Error updating user'
+        action: "users.update", 
+        targetUserId: (request.params as any).id,
+        message: "Error updating user"
       });
-
       return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'An error occurred while updating the user',
-        code: 'INTERNAL_ERROR'
+        error: "Internal Server Error", 
+        message: "An error occurred while updating the user",
+        code: "INTERNAL_ERROR"
       });
     }
   });
-}
+};

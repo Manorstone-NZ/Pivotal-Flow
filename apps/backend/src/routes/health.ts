@@ -69,7 +69,7 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
       try {
         // Check all services in parallel
         const [dbHealth, redisHealth, metricsHealth] = await Promise.allSettled([
-          checkDatabaseHealth(),
+          checkDatabaseHealth(fastify),
           checkRedisHealth(),
           checkMetricsHealth(),
         ]);

@@ -1,13 +1,11 @@
 // Health-related functions moved from shared package
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import type { FastifyInstance } from 'fastify';
 
 /**
  * Get database connection info for health checks
  */
-export async function getDatabaseHealth(): Promise<{
+export async function getDatabaseHealth(fastify: FastifyInstance): Promise<{
   status: 'ok' | 'error';
   message: string;
   timestamp: string;
@@ -16,12 +14,12 @@ export async function getDatabaseHealth(): Promise<{
   const startTime = Date.now();
   
   try {
-    // Add timeout to prevent hanging
+    // Use fastify.db for health check
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Database connection timeout')), 5000);
     });
     
-    const queryPromise = prisma.$queryRaw`SELECT 1`;
+    const queryPromise = fastify.db.query('SELECT 1');
     
     await Promise.race([queryPromise, timeoutPromise]);
     

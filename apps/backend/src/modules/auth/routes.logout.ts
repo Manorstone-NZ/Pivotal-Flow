@@ -1,12 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { createAuditLogger } from '../../lib/audit-logger.js';
 import { logger } from '../../lib/logger.js';
 import type { LogoutResponse } from './schemas.js';
 
 export const logoutRoute: FastifyPluginAsync = async (fastify) => {
-  const prisma = new PrismaClient();
-  const auditLogger = createAuditLogger(prisma);
+  const auditLogger = createAuditLogger(fastify);
 
   fastify.post<{ Reply: LogoutResponse }>(
     '/logout',

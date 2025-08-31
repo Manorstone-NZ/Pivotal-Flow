@@ -1,10 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { logger } from '../../lib/logger.js';
 import type { MeResponse, AuthError } from './schemas.js';
+import { AuthService } from './service.sql.js';
 
 export const meRoute: FastifyPluginAsync = async (fastify) => {
-  const prisma = new PrismaClient();
 
   fastify.get<{ Reply: MeResponse | AuthError }>(
     '/me',
@@ -60,31 +59,10 @@ export const meRoute: FastifyPluginAsync = async (fastify) => {
           });
         }
 
-        // Fetch current user data from database
-        const userData = await prisma.user.findUnique({
-          where: { id: user.userId },
-          select: {
-            id: true,
-            email: true,
-            displayName: true,
-            organizationId: true,
-            status: true,
-            userRoles: {
-              select: {
-                role: {
-                  select: {
-                    name: true,
-                  },
-                },
-              },
-              where: {
-                isActive: true,
-              },
-            },
-          },
-        });
+        const authService = new AuthService(fastify);
+        const userData = await authService.getUserById(user.userId);
 
-        if (!userData || userData.status !== 'active') {
+        if (!userData) {
           logger.warn({ 
             userId: user.userId, 
             event: 'auth.me_failed', 
@@ -98,9 +76,6 @@ export const meRoute: FastifyPluginAsync = async (fastify) => {
           });
         }
 
-        // Extract roles from userRoles relation
-        const roles = (userData as any).userRoles.map((ur: any) => ur.role.name);
-
         // Log successful profile retrieval
         logger.debug({ 
           userId: user.userId, 
@@ -111,8 +86,8 @@ export const meRoute: FastifyPluginAsync = async (fastify) => {
         return reply.status(200).send({
           id: userData.id,
           email: userData.email,
-          displayName: userData.displayName ?? 'Unknown User',
-          roles,
+          displayName: userData.displayName || '',
+          roles: userData.roles,
           organizationId: userData.organizationId,
         });
       } catch (error) {

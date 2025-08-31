@@ -1,12 +1,9 @@
 // Remove role from user route with RBAC and audit logging
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { removeRole } from './service.js';
+import { removeRoleFromUser } from './service.sql.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/v1/users/:id/roles/:roleId', {
@@ -94,7 +91,7 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
       const { id: targetUserId, roleId } = request.params;
 
       // Check permissions
-      const permissionCheck = await canModifyUser(userContext, targetUserId);
+      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify.prisma);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,
@@ -113,53 +110,34 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
       }
 
       // Remove role from user
-      const result = await removeRole(targetUserId, roleId, userContext.organizationId);
+      await removeRoleFromUser(targetUserId, roleId, userContext.organizationId, fastify);
 
-      if (!result.success) {
-        if (result.error === 'USER_NOT_FOUND') {
-          return reply.status(404).send({
-            error: 'Not Found',
-            message: 'User not found in this organization',
-            code: 'USER_NOT_FOUND'
-          });
-        }
-        
-        if (result.error === 'ROLE_NOT_FOUND') {
-          return reply.status(404).send({
-            error: 'Not Found',
-            message: 'Role not found in this organization',
-            code: 'ROLE_NOT_FOUND'
-          });
-        }
-
-        return reply.status(400).send({
-          error: 'Bad Request',
-          message: result.message || 'Failed to remove role',
-          code: 'ROLE_REMOVAL_FAILED'
-        });
-      }
-
-      // Log audit event
-      await prisma.auditLog.create({
-        data: {
-          organizationId: userContext.organizationId,
-          userId: userContext.userId,
-          action: 'users.role_removed',
-          entityType: 'User',
-          entityId: targetUserId,
-          oldValues: {
-            roleId,
-            action: 'role_removed'
-          },
-          metadata: {
+      // Log audit event (simplified for now)
+      try {
+        await fastify.db.query(`
+          INSERT INTO audit_logs (
+            id, organization_id, user_id, action, entity_type, entity_id,
+            old_values, metadata, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
+          )
+        `, [
+          userContext.organizationId,
+          userContext.userId,
+          'users.role_removed',
+          'User',
+          targetUserId,
+          JSON.stringify({ roleId, action: 'role_removed' }),
+          JSON.stringify({
             actorUserId: userContext.userId,
             targetUserId,
             organizationId: userContext.organizationId,
-            roleId,
-            wasRemoved: result.wasRemoved
-          }
-        }
-      });
+            roleId
+          })
+        ]);
+      } catch (auditError) {
+        logger.warn({ err: auditError }, 'Audit log write failed for role removal');
+      }
 
       // Log successful operation
       logger.info({
@@ -168,16 +146,13 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
         targetUserId,
         roleId,
         organizationId: userContext.organizationId,
-        wasRemoved: result.wasRemoved,
         message: 'Role removed successfully'
       });
 
       // Return response
       return reply.status(200).send({
         success: true,
-        message: result.wasRemoved 
-          ? 'Role removed successfully' 
-          : 'Role was not assigned to user'
+        message: 'Role removed successfully'
       });
 
     } catch (error) {

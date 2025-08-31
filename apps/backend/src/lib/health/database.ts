@@ -1,7 +1,8 @@
 import { getDatabaseHealth } from './utils.js';
 import { createDbLogger } from '../logger.js';
+import type { FastifyInstance } from 'fastify';
 
-export async function checkDatabaseHealth() {
+export async function checkDatabaseHealth(fastify: FastifyInstance) {
   const startTime = Date.now();
   const dbLogger = createDbLogger('health_check');
   
@@ -9,7 +10,7 @@ export async function checkDatabaseHealth() {
     dbLogger.debug('Starting database health check');
     
     // Use the shared Prisma client for health check
-    const healthResult = await getDatabaseHealth();
+    const healthResult = await getDatabaseHealth(fastify);
     
     const latency = Date.now() - startTime;
     const timestamp = new Date().toISOString();

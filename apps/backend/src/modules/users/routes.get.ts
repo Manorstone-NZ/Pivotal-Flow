@@ -1,7 +1,7 @@
 // Get user by ID route with RBAC and organization guard
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import { getUserById } from "./service.js";
+import { getUserById } from "./service.sql.js";
 import { canAccessUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
 
@@ -104,7 +104,7 @@ export const getUserRoute: FastifyPluginAsync = async (fastify) => {
       const userContext = extractUserContext(request);
       const { id: targetUserId } = request.params;
 
-      const permissionCheck = await canAccessUser(userContext, targetUserId);
+      const permissionCheck = await canAccessUser(userContext, targetUserId, fastify);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,
@@ -121,7 +121,7 @@ export const getUserRoute: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      const user = await getUserById(targetUserId, userContext.organizationId);
+      const user = await getUserById(targetUserId, userContext.organizationId, fastify);
       if (!user) {
         logger.warn({
           userId: userContext.userId,

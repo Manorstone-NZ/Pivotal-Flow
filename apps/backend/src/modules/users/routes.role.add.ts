@@ -4,12 +4,9 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { 
   roleAssignmentSchema
 } from './schemas.js';
-import { assignRole } from './service.js';
+import { addRoleToUser } from './service.sql.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/roles', {
@@ -104,7 +101,7 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
       const { id: targetUserId } = request.params;
 
       // Check permissions
-      const permissionCheck = await canModifyUser(userContext, targetUserId);
+      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify.prisma);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,
@@ -125,53 +122,34 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
       const { roleId } = roleAssignmentSchema.parse(request.body);
 
       // Assign role to user
-      const result = await assignRole(targetUserId, roleId, userContext.organizationId, userContext.userId);
+      await addRoleToUser(targetUserId, roleId, userContext.organizationId, fastify);
 
-      if (!result.success) {
-        if (result.error === 'USER_NOT_FOUND') {
-          return reply.status(404).send({
-            error: 'Not Found',
-            message: 'User not found in this organization',
-            code: 'USER_NOT_FOUND'
-          });
-        }
-        
-        if (result.error === 'ROLE_NOT_FOUND') {
-          return reply.status(404).send({
-            error: 'Not Found',
-            message: 'Role not found in this organization',
-            code: 'ROLE_NOT_FOUND'
-          });
-        }
-
-        return reply.status(400).send({
-          error: 'Bad Request',
-          message: result.message || 'Failed to assign role',
-          code: 'ROLE_ASSIGNMENT_FAILED'
-        });
-      }
-
-      // Log audit event
-      await prisma.auditLog.create({
-        data: {
-          organizationId: userContext.organizationId,
-          userId: userContext.userId,
-          action: 'users.role_added',
-          entityType: 'User',
-          entityId: targetUserId,
-          newValues: {
-            roleId,
-            action: 'role_assigned'
-          },
-          metadata: {
+      // Log audit event (simplified for now)
+      try {
+        await fastify.db.query(`
+          INSERT INTO audit_logs (
+            id, organization_id, user_id, action, entity_type, entity_id,
+            new_values, metadata, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
+          )
+        `, [
+          userContext.organizationId,
+          userContext.userId,
+          'users.role_added',
+          'User',
+          targetUserId,
+          JSON.stringify({ roleId, action: 'role_assigned' }),
+          JSON.stringify({
             actorUserId: userContext.userId,
             targetUserId,
             organizationId: userContext.organizationId,
-            roleId,
-            wasNewAssignment: result.wasNewAssignment
-          }
-        }
-      });
+            roleId
+          })
+        ]);
+      } catch (auditError) {
+        logger.warn({ err: auditError }, 'Audit log write failed for role assignment');
+      }
 
       // Log successful operation
       logger.info({
@@ -180,16 +158,13 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
         targetUserId,
         roleId,
         organizationId: userContext.organizationId,
-        wasNewAssignment: result.wasNewAssignment,
         message: 'Role assigned successfully'
       });
 
       // Return response
       return reply.status(200).send({
         success: true,
-        message: result.wasNewAssignment 
-          ? 'Role assigned successfully' 
-          : 'Role was already assigned to user'
+        message: 'Role assigned successfully'
       });
 
     } catch (error) {

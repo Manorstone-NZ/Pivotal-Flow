@@ -1,12 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { createAuditLogger } from '../../lib/audit-logger.js';
 import { logger } from '../../lib/logger.js';
 import type { RefreshRequest, RefreshResponse, AuthError } from './schemas.js';
 
 export const refreshRoute: FastifyPluginAsync = async (fastify) => {
-  const prisma = new PrismaClient();
-  const auditLogger = createAuditLogger(prisma);
+  const auditLogger = createAuditLogger(fastify);
 
   fastify.post<{ Body: RefreshRequest; Reply: RefreshResponse | AuthError }>(
     '/refresh',
