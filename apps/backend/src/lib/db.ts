@@ -17,8 +17,13 @@ export const db = drizzle(client, { schema });
 
 // Create a hybrid interface for backward compatibility
 export const hybridDb = {
-  // Drizzle ORM
-  ...db,
+  // Drizzle ORM methods
+  select: db.select.bind(db),
+  insert: db.insert.bind(db),
+  update: db.update.bind(db),
+  delete: db.delete.bind(db),
+  execute: db.execute.bind(db),
+  transaction: db.transaction.bind(db),
   
   // Raw query method for backward compatibility
   async query(sql: string, params?: any[]) {
