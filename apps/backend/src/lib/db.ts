@@ -3,7 +3,7 @@ import postgres from 'postgres';
 import * as schema from './schema.js';
 
 // Create postgres connection
-const connectionString = process.env.DATABASE_URL || 'postgresql://pivotal:pivotal@localhost:5432/pivotal';
+const connectionString = process.env['DATABASE_URL'] || 'postgresql://pivotal:pivotal@localhost:5432/pivotal';
 
 // Create postgres client
 const client = postgres(connectionString, {
@@ -14,6 +14,27 @@ const client = postgres(connectionString, {
 
 // Create Drizzle database instance
 export const db = drizzle(client, { schema });
+
+// Create a hybrid interface for backward compatibility
+export const hybridDb = {
+  // Drizzle ORM
+  ...db,
+  
+  // Raw query method for backward compatibility
+  async query(sql: string, params?: any[]) {
+    try {
+      return await client.unsafe(sql, params);
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
+  },
+  
+  // Disconnect method
+  async disconnect() {
+    await client.end();
+  }
+};
 
 // Export the client for direct use if needed
 export { client };

@@ -91,7 +91,7 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
       const { id: targetUserId, roleId } = request.params;
 
       // Check permissions
-      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify.prisma);
+      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,

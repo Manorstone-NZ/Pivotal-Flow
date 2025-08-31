@@ -101,7 +101,7 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
       const { id: targetUserId } = request.params;
 
       // Check permissions
-      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify.prisma);
+      const permissionCheck = await canModifyUser(userContext, targetUserId, fastify);
       if (!permissionCheck.hasPermission) {
         logger.warn({
           userId: userContext.userId,

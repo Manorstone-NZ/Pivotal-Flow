@@ -1,11 +1,11 @@
 import fp from 'fastify-plugin';
-import { db, client } from '../lib/db.js';
+import { hybridDb, client } from '../lib/db.js';
 
 export default fp(async app => {
   // Skip migrations for now to avoid database issues
   // await runMigrations();
   
-  app.decorate('db', db);
+  app.decorate('db', hybridDb);
   app.addHook('onClose', async () => {
     // Close the database connection
     await client.end();
@@ -14,6 +14,6 @@ export default fp(async app => {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    db: typeof db;
+    db: typeof hybridDb;
   }
 }

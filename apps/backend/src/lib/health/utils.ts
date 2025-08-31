@@ -6,7 +6,7 @@ import { healthCheck } from '../db.js';
 /**
  * Get database connection info for health checks
  */
-export async function getDatabaseHealth(fastify: FastifyInstance): Promise<{
+export async function getDatabaseHealth(_fastify: FastifyInstance): Promise<{
   status: 'ok' | 'error';
   message: string;
   timestamp: string;
@@ -22,7 +22,11 @@ export async function getDatabaseHealth(fastify: FastifyInstance): Promise<{
     
     const queryPromise = healthCheck();
     
-    const result = await Promise.race([queryPromise, timeoutPromise]);
+    const result = await Promise.race([queryPromise, timeoutPromise]) as {
+      status: 'ok' | 'error';
+      message: string;
+      latency: number;
+    };
     
     const latency = Date.now() - startTime;
     const timestamp = new Date().toISOString();
