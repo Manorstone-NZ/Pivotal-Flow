@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { db } from '../lib/db.js';
+import { db, client } from '../lib/db.js';
 
 export default fp(async app => {
   // Skip migrations for now to avoid database issues
@@ -8,7 +8,7 @@ export default fp(async app => {
   app.decorate('db', db);
   app.addHook('onClose', async () => {
     // Close the database connection
-    await db.disconnect();
+    await client.end();
   });
 });
 

@@ -1,6 +1,7 @@
 // Health-related functions moved from shared package
 
 import type { FastifyInstance } from 'fastify';
+import { healthCheck } from '../db.js';
 
 /**
  * Get database connection info for health checks
@@ -14,21 +15,21 @@ export async function getDatabaseHealth(fastify: FastifyInstance): Promise<{
   const startTime = Date.now();
   
   try {
-    // Use fastify.db for health check
+    // Use Drizzle health check
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Database connection timeout')), 5000);
     });
     
-    const queryPromise = fastify.db.query('SELECT 1');
+    const queryPromise = healthCheck();
     
-    await Promise.race([queryPromise, timeoutPromise]);
+    const result = await Promise.race([queryPromise, timeoutPromise]);
     
     const latency = Date.now() - startTime;
     const timestamp = new Date().toISOString();
     
     return {
-      status: 'ok',
-      message: 'Database connection successful',
+      status: result.status,
+      message: result.message,
       timestamp,
       latency,
     };

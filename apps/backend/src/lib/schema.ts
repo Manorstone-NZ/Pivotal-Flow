@@ -1,59 +1,155 @@
-import { pgTable, text, timestamp, boolean, uuid, jsonb } from 'drizzle-orm/pg-core';
-
-// Users table
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').notNull().unique(),
-  displayName: text('display_name'),
-  passwordHash: text('password_hash'),
-  organizationId: uuid('organization_id').notNull(),
-  status: text('status').default('active'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+import { pgTable, text, timestamp, boolean, uuid, jsonb, integer, varchar } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 // Organizations table
 export const organizations = pgTable('organizations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  slug: text('slug').notNull().unique(),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  id: text('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  domain: varchar('domain', { length: 255 }),
+  industry: varchar('industry', { length: 100 }),
+  size: varchar('size', { length: 50 }),
+  timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
+  currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+  taxId: varchar('taxId', { length: 100 }),
+  address: jsonb('address'),
+  contactInfo: jsonb('contactInfo'),
+  settings: jsonb('settings').notNull().default('{}'),
+  subscriptionPlan: varchar('subscriptionPlan', { length: 50 }).notNull().default('basic'),
+  subscriptionStatus: varchar('subscriptionStatus', { length: 20 }).notNull().default('active'),
+  trialEndsAt: timestamp('trialEndsAt', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+});
+
+// Users table
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  username: varchar('username', { length: 100 }).unique(),
+  firstName: varchar('firstName', { length: 100 }).notNull(),
+  lastName: varchar('lastName', { length: 100 }).notNull(),
+  displayName: varchar('displayName', { length: 200 }),
+  avatarUrl: text('avatarUrl'),
+  phone: varchar('phone', { length: 20 }),
+  timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
+  locale: varchar('locale', { length: 10 }).notNull().default('en-US'),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  emailVerified: boolean('emailVerified').notNull().default(false),
+  emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', precision: 3 }),
+  lastLoginAt: timestamp('lastLoginAt', { mode: 'date', precision: 3 }),
+  loginCount: integer('loginCount').notNull().default(0),
+  failedLoginAttempts: integer('failedLoginAttempts').notNull().default(0),
+  lockedUntil: timestamp('lockedUntil', { mode: 'date', precision: 3 }),
+  passwordHash: varchar('passwordHash', { length: 255 }),
+  mfaEnabled: boolean('mfaEnabled').notNull().default(false),
+  mfaSecret: varchar('mfaSecret', { length: 255 }),
+  preferences: jsonb('preferences').notNull().default('{}'),
+  metadata: jsonb('metadata').notNull().default('{}'),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
 });
 
 // Roles table
 export const roles = pgTable('roles', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull().unique(),
+  id: text('id').primaryKey(),
+  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  createdAt: timestamp('created_at').defaultNow(),
+  permissions: jsonb('permissions').notNull().default('[]'),
+  isSystem: boolean('isSystem').notNull().default(false),
+  isActive: boolean('isActive').notNull().default(true),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // User roles junction table
 export const userRoles = pgTable('user_roles', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id),
-  roleId: uuid('role_id').notNull().references(() => roles.id),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  roleId: text('roleId').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  assignedBy: text('assignedBy').references(() => users.id, { onDelete: 'set null' }),
+  assignedAt: timestamp('assignedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expiresAt', { mode: 'date', precision: 3 }),
+  isActive: boolean('isActive').notNull().default(true),
 });
 
 // Audit logs table
 export const auditLogs = pgTable('audit_logs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  action: text('action').notNull(),
-  entityType: text('entity_type').notNull(),
-  entityId: text('entity_id').notNull(),
-  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
-  userId: uuid('user_id').references(() => users.id),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  sessionId: text('session_id'),
-  oldValues: jsonb('old_values'),
-  newValues: jsonb('new_values'),
-  metadata: jsonb('metadata'),
-  createdAt: timestamp('created_at').defaultNow(),
+  id: text('id').primaryKey(),
+  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('userId').references(() => users.id, { onDelete: 'set null' }),
+  action: varchar('action', { length: 100 }).notNull(),
+  entityType: varchar('entityType', { length: 100 }).notNull(),
+  entityId: text('entityId').notNull(),
+  oldValues: jsonb('oldValues'),
+  newValues: jsonb('newValues'),
+  ipAddress: varchar('ipAddress', { length: 45 }),
+  userAgent: text('userAgent'),
+  sessionId: varchar('sessionId', { length: 255 }),
+  metadata: jsonb('metadata').notNull().default('{}'),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
+
+// Relations
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+  roles: many(roles),
+  userRoles: many(userRoles),
+  auditLogs: many(auditLogs),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
+  userRoles: many(userRoles),
+  assignedRoles: many(userRoles, { relationName: 'assignedBy' }),
+  auditLogs: many(auditLogs),
+}));
+
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [roles.organizationId],
+    references: [organizations.id],
+  }),
+  userRoles: many(userRoles),
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+  organization: one(organizations, {
+    fields: [userRoles.organizationId],
+    references: [organizations.id],
+  }),
+  assignedBy: one(users, {
+    fields: [userRoles.assignedBy],
+    references: [users.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [auditLogs.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
 
 // Types for TypeScript
 export type User = typeof users.$inferSelect;
