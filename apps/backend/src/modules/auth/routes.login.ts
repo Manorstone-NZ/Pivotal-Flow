@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { createAuditLogger } from "../../lib/audit-logger.js";
+import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
 import { logger } from "../../lib/logger.js";
 import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
 import { config } from "../../lib/config.js";
