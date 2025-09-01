@@ -63,6 +63,7 @@ export const QuoteLineItemSchema = z.object({
   lineNumber: z.number().int().positive(),
   type: z.enum(Object.values(LineItemType) as [string, ...string[]]).default(LineItemType.SERVICE),
   description: z.string().min(1).max(1000),
+  sku: z.string().max(50).optional(), // SKU/code for rate card lookup
   quantity: z.number().positive(),
   unitPrice: MoneyAmountSchema,
   unitCost: MoneyAmountSchema.optional(),
@@ -258,8 +259,8 @@ export function validateQuoteData(data: z.infer<typeof CreateQuoteSchema>): { is
 
     // Handle both Decimal objects and string/number values
     const unitPriceAmount = typeof lineItem.unitPrice.amount === 'object' && lineItem.unitPrice.amount !== null && 'toNumber' in lineItem.unitPrice.amount
-      ? lineItem.unitPrice.amount.toNumber()
-      : parseFloat(lineItem.unitPrice.amount as string);
+      ? (lineItem.unitPrice.amount as unknown as { toNumber(): number }).toNumber()
+      : parseFloat(String(lineItem.unitPrice.amount));
     
     if (unitPriceAmount < 0) {
       errors.push(`Line item ${lineItem.lineNumber} unit price cannot be negative`);

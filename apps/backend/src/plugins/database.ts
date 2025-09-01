@@ -1,16 +1,39 @@
 import fp from 'fastify-plugin';
-import { db, client } from '../lib/db.js';
+import { initializeDatabase, getDatabase, getClient } from '../lib/db.js';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 export default fp(async app => {
-  // Skip migrations for now to avoid database issues
-  // await runMigrations();
-  
-  app.decorate('db', db);
-  app.addHook('onClose', async () => {
-    // Close the database connection
-    await client.end();
-  });
+  try {
+    // Initialize the database
+    await initializeDatabase();
+    
+    // Get the initialized database instance
+    const db = getDatabase();
+    const client = getClient();
+    
+    // Decorate the app with the database instance
+    app.decorate('db', db);
+    
+    // Add cleanup hook
+    app.addHook('onClose', async () => {
+      try {
+        // Close the database connection
+        if (client) {
+          await client.end();
+        }
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (app.log as any).error('Error closing database connection:', error);
+      }
+    });
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (app.log as any).info('✅ Database plugin registered successfully');
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (app.log as any).error('❌ Failed to register database plugin:', error);
+    throw error;
+  }
 });
 
 declare module 'fastify' {

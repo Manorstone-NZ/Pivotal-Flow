@@ -48,7 +48,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
       }
     },
     async (request, reply) => {
-      const tokenManager = fastify.tokenManager;
+      const tokenManager = (fastify as any).tokenManager;
       const { email: rawEmail, password } = request.body;
       const authService = new AuthService(fastify);
 
@@ -116,7 +116,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
           user: {
             id: user.id,
             email: user.email,
-            displayName: user.displayName || '',
+            displayName: user.displayName ?? '',
             roles: user.roles,
             organizationId: user.organizationId
           }

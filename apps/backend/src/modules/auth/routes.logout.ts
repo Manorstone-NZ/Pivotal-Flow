@@ -44,8 +44,8 @@ export const logoutRoute: FastifyPluginAsync = async (fastify) => {
           });
         }
 
-        // Revoke refresh token from Redis
-        await fastify.tokenManager.revokeRefreshToken(user.jti);
+        // Revoke refresh token from cache
+        await (fastify as any).tokenManager.revokeRefreshToken(user.jti);
 
         // Clear refresh token cookie
         reply.clearCookie('refreshToken', {

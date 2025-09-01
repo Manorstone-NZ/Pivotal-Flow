@@ -8,15 +8,15 @@ import { addRoleToUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 import { auditLogs } from '../../lib/schema.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/roles', {
     schema: {
-      tags: ['Users'],
-      summary: 'Assign role to user',
-      description: 'Assign a role to a user in the current organization',
-      security: [{ bearerAuth: [] }],
+      
+      
+      
+      
       params: {
         type: 'object',
         required: ['id'],
@@ -35,7 +35,7 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
       },
       response: {
         200: {
-          description: 'Role assigned successfully',
+          
           type: 'object',
           required: ['success', 'message'],
           properties: {
@@ -128,12 +128,12 @@ export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
 
       // Log audit event (simplified for now)
       try {
-        await fastify.db
+        await (fastify as any).db
           .insert(auditLogs)
           .values({
             id: crypto.randomUUID(),
             organizationId: userContext.organizationId,
-            userId: userContext.userId,
+            actorId: userContext.userId,
             action: 'users.role_added',
             entityType: 'User',
             entityId: targetUserId,

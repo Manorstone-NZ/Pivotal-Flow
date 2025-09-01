@@ -8,10 +8,10 @@ import { logger } from "../../lib/logger.js";
 export const getUserRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get("/v1/users/:id", {
     schema: {
-      tags: ["Users"],
-      summary: "Get user by ID",
-      description: "Retrieve a specific user by ID within the current organization",
-      security: [{ bearerAuth: [] }],
+      
+      
+      
+      
 
       // Params must declare required as an array and block extra fields
       params: {

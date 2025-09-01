@@ -15,3 +15,7 @@ export * from './types/user.js';
 // Export cache and metrics
 export * from './cache/index.js';
 export { prometheusMetrics, globalMetrics, recordMetrics } from './metrics/index.js';
+
+// Export guards and database utilities
+export * from './guards/jsonbMonetaryGuard.js';
+export * from './db/filterGuard.js';

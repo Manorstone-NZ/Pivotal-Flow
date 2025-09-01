@@ -9,15 +9,15 @@ import {
 import { getUserById, updateUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/status', {
     schema: {
-      tags: ['Users'],
-      summary: 'Update user status',
-      description: 'Activate or deactivate a user in the current organization',
-      security: [{ bearerAuth: [] }],
+      
+      
+      
+      
       params: {
         type: 'object',
         required: ['id'],
@@ -36,7 +36,7 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
       },
       response: {
         200: {
-          description: 'User status updated successfully',
+          
           type: 'object',
           required: ['id', 'email', 'isActive', 'mfaEnabled', 'createdAt', 'roles'],
           properties: {
@@ -155,7 +155,7 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
 
       // Prevent deactivating the last admin user
       if (!isActive && currentUser.roles.some((role: any) => role.name === 'admin' && role.isActive)) {
-        const adminCountResult = await fastify.db
+        const adminCountResult = await (fastify as any).db
           .select({ count: count() })
           .from(userRoles)
           .innerJoin(roles, eq(userRoles.roleId, roles.id))
@@ -191,7 +191,7 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
       }
 
       // Update user status
-              const updatedUser = await updateUser(targetUserId, { displayName: currentUser.displayName || '' }, userContext.organizationId, fastify);
+              const updatedUser = await updateUser(targetUserId, { displayName: currentUser.displayName ?? '' }, userContext.organizationId, fastify);
 
               if (!updatedUser) {
           return reply.status(404).send({
@@ -203,12 +203,12 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
 
         // Log audit event for status change (simplified for now)
         try {
-          await fastify.db
+          await (fastify as any).db
             .insert(auditLogs)
             .values({
               id: crypto.randomUUID(),
               organizationId: userContext.organizationId,
-              userId: userContext.userId,
+              actorId: userContext.userId,
               action: 'users.status_changed',
               entityType: 'User',
               entityId: targetUserId,

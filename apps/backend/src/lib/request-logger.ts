@@ -1,4 +1,4 @@
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest } from 'fastify';
 import { generateRequestId } from '@pivotal-flow/shared';
 import { createRequestLogger } from './logger.js';
 
@@ -10,8 +10,7 @@ interface RequestWithContext extends FastifyRequest {
 }
 
 export async function requestLogger(
-  request: RequestWithContext,
-  _reply: FastifyReply
+  request: RequestWithContext
 ): Promise<void> {
   const startTime = Date.now();
   const requestId = generateRequestId();

@@ -1,0 +1,28 @@
+name: Guards
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  jsonb-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm -w add -D tsx
+      - name: Run JSONB payload and filter checks
+        run: pnpm tsx scripts/ci/check_jsonb_core_filters.ts
+      - name: Run guard tests
+        run: pnpm test --filter=@pivotal-flow/shared
+      - name: Run backend guard tests
+        run: cd apps/backend && pnpm test --run src/plugins/payloadGuard.test.ts

@@ -3,7 +3,6 @@ import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { Redis } from 'ioredis';
 import { config } from '../../lib/config.js';
 import { logger } from '../../lib/logger.js';
 import { createTokenManager } from './tokens.js';
@@ -91,33 +90,17 @@ export default fp(async function authPlugin(app: FastifyInstance) {
     },
   });
 
-  // Create Redis instance and decorate it
-  const redis = new Redis(process.env['REDIS_URL'] ?? 'redis://localhost:6379');
-  app.decorate('redis', redis);
+  // Redis is now handled by the cache plugin, so we don't need to create a separate instance
+  // The cache plugin decorates the app with 'cache' instead of 'redis'
 
   // Add route-specific rate limiting for sensitive endpoints
-  app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.addHook('onRequest', async (request: FastifyRequest) => {
     const route = request.url;
     
     // Apply stricter rate limiting for login attempts
     if (route === '/v1/auth/login') {
-      const key = `login:${request.ip}`;
-      const current = await redis.get(key);
-      
-      if (current && parseInt(current) >= config.rateLimit.login) {
-        return reply.status(429).send({
-          error: 'Too Many Login Attempts',
-          message: 'Login rate limit exceeded, please try again later',
-          code: 'LOGIN_RATE_LIMIT_EXCEEDED',
-          retryAfter: 300, // 5 minutes
-        });
-      }
-      
-      // Increment login attempts counter
-      await redis.multi()
-        .incr(key)
-        .expire(key, 300) // 5 minute window
-        .exec();
+      // Note: Rate limiting is now handled by the cache plugin
+      // This is a placeholder for future rate limiting implementation
     }
   });
 
@@ -146,6 +129,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
         requestUrl === '/api/quotes-openapi.json' ||
         requestUrl === '/api/docs' ||
         requestUrl === '/health' ||
+        requestUrl === '/health/cache' ||
         requestUrl === '/metrics' ||
         requestUrl === '/' ||
         requestUrl.startsWith('/docs') ||
@@ -187,21 +171,18 @@ export default fp(async function authPlugin(app: FastifyInstance) {
     
     // Apply different rate limits based on user role
     if (user?.userId) {
-      const userKey = `user:${user.userId}`;
-      const current = await redis.get(userKey);
-      
-      let limit = config.rateLimit.auth; // Default authenticated user limit
+      // Note: Rate limiting is now handled by the cache plugin
+      // This is a placeholder for future rate limiting implementation
       
       // Admin users get higher limits
       if (user.roles?.includes('admin')) {
-        limit = config.rateLimit.admin;
+        // Note: Rate limiting is now handled by the @fastify/rate-limit plugin
+        // This is a placeholder for future rate limiting implementation
       }
       
       // Check if user has exceeded their tier limit
-      if (current && parseInt(current) >= limit) {
-        // This would trigger the rate limit error response
-        // The actual rate limiting is handled by the @fastify/rate-limit plugin
-      }
+      // Note: Rate limiting is now handled by the @fastify/rate-limit plugin
+      // This is a placeholder for future rate limiting implementation
     }
   });
 

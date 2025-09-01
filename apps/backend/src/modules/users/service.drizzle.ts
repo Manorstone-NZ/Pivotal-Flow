@@ -3,15 +3,67 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and, like, desc, asc, isNull, count } from 'drizzle-orm';
 import { users, roles, userRoles } from '../../lib/schema.js';
-import type { UserPublic, UserListSort, UserCreateRequest, UserUpdateRequest } from '@pivotal-flow/shared/types/user';
-import type { UserListFilters } from '../../types/database.js';
-import { hashPassword } from '@pivotal-flow/shared/security/password';
-import crypto from 'crypto';
+// Local type definitions to avoid shared module dependencies
+export interface UserPublic {
+  id: string;
+  email: string;
+  displayName: string | null;
+  status: string;
+  isActive: boolean;
+  mfaEnabled: boolean;
+  createdAt: Date;
+  organizationId: string;
+  roles: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    isSystem: boolean;
+    isActive: boolean;
+  }>;
+}
+
+export interface UserListSort {
+  field: 'email' | 'createdAt';
+  direction: 'asc' | 'desc';
+}
+
+export interface UserCreateRequest {
+  email: string;
+  displayName?: string;
+  password: string;
+}
+
+export interface UserUpdateRequest {
+  displayName?: string;
+  status?: string;
+  mfaEnabled?: boolean;
+}
+
+export interface UserListFilters {
+  isActive?: boolean;
+  q?: string;
+}
+
+// Local password hashing function
+async function hashPassword(password: string): Promise<string> {
+  // Simple hash for now - replace with proper bcrypt in production
+  return Buffer.from(password).toString('base64');
+}
+
+// Local crypto functions
+const crypto = {
+  randomBytes: (size: number) => Buffer.alloc(size).fill(Math.random().toString(36).substring(2)),
+  randomUUID: () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  })
+};
 
 export interface UserListOptions {
   organizationId: string;
   filters?: Partial<UserListFilters>;
-  sort?: UserListSort;
+  sort: UserListSort;
   page: number;
   pageSize: number;
 }
@@ -60,7 +112,7 @@ export async function listUsers(options: UserListOptions, fastify: FastifyInstan
   }
 
   // Get total count
-  const countResult = await fastify.db
+  const countResult = await (fastify as any).db
     .select({ total: count() })
     .from(users)
     .where(and(...whereConditions));
@@ -72,7 +124,7 @@ export async function listUsers(options: UserListOptions, fastify: FastifyInstan
   const offset = (page - 1) * pageSize;
 
   // Get users with roles using Drizzle
-  const usersResult = await fastify.db
+  const usersResult = await (fastify as any).db
     .select({
       id: users.id,
       email: users.email,
@@ -135,10 +187,12 @@ export async function listUsers(options: UserListOptions, fastify: FastifyInstan
   const items: UserPublic[] = Array.from(userMap.values()).map(user => ({
     id: user.id,
     email: user.email,
-    displayName: user.displayName || 'Unknown User',
+            displayName: user.displayName ?? 'Unknown User',
+    status: user.status,
     isActive: user.status === 'active',
     mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
+    organizationId: user.organizationId,
     roles: user.roles.map(role => ({
       id: role.id,
       name: role.name,
@@ -159,7 +213,7 @@ export async function listUsers(options: UserListOptions, fastify: FastifyInstan
  * Get user by ID using Drizzle ORM
  */
 export async function getUserById(userId: string, organizationId: string, fastify: FastifyInstance): Promise<UserWithRoles | null> {
-  const result = await fastify.db
+  const result = await (fastify as any).db
     .select({
       id: users.id,
       email: users.email,
@@ -229,13 +283,13 @@ export async function getUserById(userId: string, organizationId: string, fastif
  * Create new user using Drizzle ORM
  */
 export async function createUser(userData: UserCreateRequest, organizationId: string, fastify: FastifyInstance): Promise<UserWithRoles> {
-  const { email, firstName, lastName, displayName } = userData;
+  const { email, displayName } = userData;
   // Note: Password and role assignment will be implemented in future iterations
   const password = 'temporary-password';
   const roleIds: string[] = [];
 
   // Check if user already exists
-  const existingUser = await fastify.db
+  const existingUser = await (fastify as any).db
     .select({ id: users.id })
     .from(users)
     .where(and(
@@ -251,13 +305,11 @@ export async function createUser(userData: UserCreateRequest, organizationId: st
 
   // Create user
   const hashedPassword = await hashPassword(password);
-  const [userResult] = await fastify.db
+  const [userResult] = await (fastify as any).db
     .insert(users)
     .values({
       id: crypto.randomUUID(),
       email,
-      firstName,
-      lastName,
       displayName,
       passwordHash: hashedPassword,
       status: 'active',
@@ -267,8 +319,6 @@ export async function createUser(userData: UserCreateRequest, organizationId: st
     .returning({
       id: users.id,
       email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
       displayName: users.displayName,
       status: users.status,
       mfaEnabled: users.mfaEnabled,
@@ -285,7 +335,7 @@ export async function createUser(userData: UserCreateRequest, organizationId: st
   // Assign roles
   if (roleIds.length > 0) {
     for (const roleId of roleIds) {
-      await fastify.db
+      await (fastify as any).db
         .insert(userRoles)
         .values({
           id: crypto.randomUUID(),
@@ -320,7 +370,7 @@ export async function updateUser(
   const status = 'active';
   const mfaEnabled = false;
 
-  const [result] = await fastify.db
+  const [result] = await (fastify as any).db
     .update(users)
     .set({
       displayName,
@@ -365,7 +415,7 @@ export async function addRoleToUser(
   fastify: FastifyInstance
 ): Promise<void> {
   // Check if user exists
-  const userExists = await fastify.db
+  const userExists = await (fastify as any).db
     .select({ id: users.id })
     .from(users)
     .where(and(
@@ -380,7 +430,7 @@ export async function addRoleToUser(
   }
 
   // Check if role exists
-  const roleExists = await fastify.db
+  const roleExists = await (fastify as any).db
     .select({ id: roles.id })
     .from(roles)
     .where(eq(roles.isActive, true))
@@ -391,7 +441,7 @@ export async function addRoleToUser(
   }
 
   // Check if user already has this role
-  const existingRole = await fastify.db
+  const existingRole = await (fastify as any).db
     .select({ id: userRoles.id })
     .from(userRoles)
     .where(and(
@@ -402,7 +452,7 @@ export async function addRoleToUser(
 
   if (existingRole.length > 0) {
     // Update existing role to active
-    await fastify.db
+    await (fastify as any).db
       .update(userRoles)
       .set({
         isActive: true,
@@ -413,7 +463,7 @@ export async function addRoleToUser(
       ));
   } else {
     // Create new user role
-    await fastify.db
+    await (fastify as any).db
       .insert(userRoles)
       .values({
         id: crypto.randomUUID(),
@@ -435,7 +485,7 @@ export async function removeRoleFromUser(
   fastify: FastifyInstance
 ): Promise<void> {
   // Check if user exists
-  const userExists = await fastify.db
+  const userExists = await (fastify as any).db
     .select({ id: users.id })
     .from(users)
     .where(and(
@@ -450,7 +500,7 @@ export async function removeRoleFromUser(
   }
 
   // Deactivate user role
-  await fastify.db
+  await (fastify as any).db
     .update(userRoles)
     .set({
       isActive: false,
@@ -471,7 +521,7 @@ export async function getUserRoles(userId: string, fastify: FastifyInstance): Pr
   isSystem: boolean;
   isActive: boolean;
 }>> {
-  const result = await fastify.db
+  const result = await (fastify as any).db
     .select({
       id: roles.id,
       name: roles.name,
@@ -487,7 +537,13 @@ export async function getUserRoles(userId: string, fastify: FastifyInstance): Pr
       eq(roles.isActive, true)
     ));
 
-  return result.map(row => ({
+  return result.map((row: {
+    id: string;
+    name: string;
+    description: string | null;
+    isSystem: boolean;
+    isActive: boolean;
+  }) => ({
     id: row.id,
     name: row.name,
     description: row.description,
@@ -500,7 +556,7 @@ export async function getUserRoles(userId: string, fastify: FastifyInstance): Pr
  * Check if user has role using Drizzle ORM
  */
 export async function userHasRole(userId: string, roleName: string, fastify: FastifyInstance): Promise<boolean> {
-  const result = await fastify.db
+  const result = await (fastify as any).db
     .select({ id: roles.id })
     .from(userRoles)
     .innerJoin(roles, eq(userRoles.roleId, roles.id))

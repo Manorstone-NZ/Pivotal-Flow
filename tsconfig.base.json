@@ -27,8 +27,8 @@
     "verbatimModuleSyntax": true,
     "baseUrl": ".",
     "paths": {
-      "@pivotal-flow/shared": ["packages/shared/src"],
-      "@pivotal-flow/shared/*": ["packages/shared/src/*"]
+      "@pivotal-flow/shared": ["packages/shared/dist"],
+      "@pivotal-flow/shared/*": ["packages/shared/dist/*"]
     }
   }
 }

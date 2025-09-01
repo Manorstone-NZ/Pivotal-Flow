@@ -5,15 +5,15 @@ import { removeRoleFromUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 import { auditLogs } from '../../lib/schema.js';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/v1/users/:id/roles/:roleId', {
     schema: {
-      tags: ['Users'],
-      summary: 'Remove role from user',
-      description: 'Remove a role from a user in the current organization',
-      security: [{ bearerAuth: [] }],
+      
+      
+      
+      
       params: {
         type: 'object',
         required: ['id', 'roleId'],
@@ -25,7 +25,7 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
       },
       response: {
         200: {
-          description: 'Role removed successfully',
+          
           type: 'object',
           required: ['success', 'message'],
           properties: {
@@ -116,12 +116,12 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
 
       // Log audit event (simplified for now)
       try {
-        await fastify.db
+        await (fastify as any).db
           .insert(auditLogs)
           .values({
             id: crypto.randomUUID(),
             organizationId: userContext.organizationId,
-            userId: userContext.userId,
+            actorId: userContext.userId,
             action: 'users.role_removed',
             entityType: 'User',
             entityId: targetUserId,

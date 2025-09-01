@@ -53,6 +53,41 @@ import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { withTx } from '../../lib/withTx.js';
 import { BaseRepository } from '../../lib/repo.base.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
+import { RateCardService } from '../rate-cards/service.js';
+import { PermissionService } from '../permissions/service.js';
+import { guardTypedFilters } from '@pivotal-flow/shared';
+
+/**
+ * JSONB Guard - Prevents business values from being stored in metadata
+ * This enforces the rule that JSONB may only hold optional metadata or rare exceptions
+ */
+function validateMetadataJSONB(data: any, context: string): void {
+  const forbiddenFields = [
+    'unitPrice', 'price', 'amount', 'total', 'subtotal', 'taxAmount', 'discountAmount',
+    'quantity', 'qty', 'unit', 'taxRate', 'taxClass', 'currency', 'exchangeRate'
+  ];
+
+  const checkObject = (obj: any, path: string = '') => {
+    if (obj && typeof obj === 'object') {
+      for (const [key, value] of Object.entries(obj)) {
+        const currentPath = path ? `${path}.${key}` : key;
+        
+        if (forbiddenFields.includes(key)) {
+          throw new Error(
+            `JSONB metadata cannot contain business values. Field '${key}' at path '${currentPath}' in ${context} is forbidden. ` +
+            `Business values must be stored in typed columns, not in metadata JSONB.`
+          );
+        }
+        
+        if (value && typeof value === 'object') {
+          checkObject(value, currentPath);
+        }
+      }
+    }
+  };
+
+  checkObject(data);
+}
 
 /**
  * Quote Service
@@ -67,6 +102,8 @@ import type { PaginationOptions } from '../../lib/repo.base.js';
 export class QuoteService extends BaseRepository {
   private quoteNumberGenerator: QuoteNumberGenerator;
   private auditLogger: AuditLogger;
+  private rateCardService: RateCardService;
+  private permissionService: PermissionService;
 
   constructor(
     db: PostgresJsDatabase<typeof import('../../lib/schema.js')>,
@@ -76,6 +113,8 @@ export class QuoteService extends BaseRepository {
     super(db, options);
     this.quoteNumberGenerator = new QuoteNumberGenerator(db);
     this.auditLogger = auditLogger || new AuditLogger(db as any);
+    this.rateCardService = new RateCardService(db, options, auditLogger);
+    this.permissionService = new PermissionService(db, options);
   }
 
   /**
@@ -88,23 +127,74 @@ export class QuoteService extends BaseRepository {
       throw new Error(`Quote validation failed: ${validation.errors.join(', ')}`);
     }
 
+    // Validate that line item metadata JSONB doesn't contain business values
+    for (const item of data.lineItems) {
+      if (item.metadata) {
+        validateMetadataJSONB(item.metadata, `quote line item ${item.lineNumber} metadata`);
+      }
+    }
+
     return withTx(this.db, async (tx) => {
       // Generate quote number
       const quoteNumber = await this.quoteNumberGenerator.generateQuoteNumber(this.options.organizationId);
 
-      // Calculate totals using the pricing library
+      // Check if user has permission to override prices
+      const canOverridePrice = await this.permissionService.canCurrentUserOverrideQuotePrice();
+      
+      // Resolve pricing for line items using rate cards
+      const pricingResolution = await this.rateCardService.resolvePricing(
+        data.lineItems.map(item => {
+          const mappedItem: any = {
+            lineNumber: item.lineNumber,
+            description: item.description,
+            serviceCategoryId: item.serviceCategoryId,
+            rateCardId: item.rateCardId,
+            taxRate: item.taxRate,
+            itemCode: item.sku // Pass SKU as itemCode for priority 2 lookup
+          };
+          
+          if (item.unitPrice) {
+            mappedItem.unitPrice = {
+              amount: item.unitPrice.amount.toNumber(),
+              currency: item.unitPrice.currency
+            };
+          }
+          
+          return mappedItem;
+        }),
+        canOverridePrice.hasPermission,
+        new Date(data.validFrom)
+      );
+
+      if (!pricingResolution.success || !pricingResolution.results) {
+        throw new Error(`Pricing resolution failed: ${pricingResolution.errors?.map(e => `Line ${e.lineNumber}: ${e.reason}`).join('; ')}`);
+      }
+
+      // At this point, we know results exists and is an array
+      const results = pricingResolution.results;
+
+      // Calculate totals using the pricing library with resolved prices
       const calculationInput = {
-        lineItems: data.lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: { amount: item.unitPrice.amount, currency: data.currency },
-          unit: 'hours', // Default unit
-          serviceType: item.type,
-          taxRate: item.taxRate,
-          discountType: item.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
-          discountValue: item.discountValue,
-          isTaxExempt: item.taxRate === 0
-        })),
+        lineItems: data.lineItems.map((item, index) => {
+          const resolvedPricing = results[index];
+          if (!resolvedPricing) {
+            throw new Error(`No pricing resolved for line item ${index + 1}`);
+          }
+          return {
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: { 
+              amount: resolvedPricing.unitPrice.toNumber(), 
+              currency: data.currency 
+            },
+            unit: 'hours', // Default unit
+            serviceType: item.type,
+            taxRate: resolvedPricing.taxRate.toNumber(),
+            discountType: item.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
+            discountValue: item.discountValue,
+            isTaxExempt: resolvedPricing.taxRate.toNumber() === 0
+          };
+        }),
         currency: data.currency,
         quoteDiscount: data.discountType && data.discountValue ? {
           type: data.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
@@ -147,26 +237,32 @@ export class QuoteService extends BaseRepository {
       await tx.insert(quotes).values(quoteData);
 
       // Create line items
-      const lineItemData = data.lineItems.map((item, index) => ({
-        id: crypto.randomUUID(),
-        quoteId: quoteData.id,
-        lineNumber: item.lineNumber,
-        type: item.type,
-        description: item.description,
-        quantity: item.quantity.toString(),
-        unitPrice: item.unitPrice.amount.toString(),
-        unitCost: item.unitCost?.amount.toString(),
-        taxRate: item.taxRate.toString(),
-        taxAmount: calculation.lineCalculations[index].taxAmount.amount.toString(),
-        discountType: item.discountType,
-        discountValue: item.discountValue ? item.discountValue.toString() : '0',
-        discountAmount: calculation.lineCalculations[index].discountAmount.amount.toString(),
-        subtotal: calculation.lineCalculations[index].subtotal.amount.toString(),
-        totalAmount: calculation.lineCalculations[index].totalAmount.amount.toString(),
-        serviceCategoryId: item.serviceCategoryId,
-        rateCardId: item.rateCardId,
-        metadata: item.metadata
-      }));
+      const lineItemData = data.lineItems.map((item, index) => {
+        const resolvedPricing = results[index];
+        if (!resolvedPricing) {
+          throw new Error(`No pricing resolved for line item ${index + 1}`);
+        }
+        return {
+          id: crypto.randomUUID(),
+          quoteId: quoteData.id,
+          lineNumber: item.lineNumber,
+          type: item.type,
+          description: item.description,
+          quantity: item.quantity.toString(),
+          unitPrice: resolvedPricing.unitPrice.toString(),
+          unitCost: item.unitCost?.amount.toString(),
+          taxRate: resolvedPricing.taxRate.toString(),
+          taxAmount: calculation.lineCalculations[index].taxAmount.amount.toString(),
+          discountType: item.discountType,
+          discountValue: item.discountValue ? item.discountValue.toString() : '0',
+          discountAmount: calculation.lineCalculations[index].discountAmount.amount.toString(),
+          subtotal: calculation.lineCalculations[index].subtotal.amount.toString(),
+          totalAmount: calculation.lineCalculations[index].totalAmount.amount.toString(),
+          serviceCategoryId: resolvedPricing.serviceCategoryId || item.serviceCategoryId,
+          rateCardId: resolvedPricing.rateCardId || item.rateCardId,
+          metadata: item.metadata
+        };
+      });
 
       await tx.insert(quoteLineItems).values(lineItemData);
 
@@ -223,13 +319,20 @@ export class QuoteService extends BaseRepository {
       if (data.notes !== undefined) updateData.notes = data.notes;
       if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
 
-      // Update line items if provided
-      if (data.lineItems) {
-        // Delete existing line items
-        await tx.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId));
+          // Update line items if provided
+    if (data.lineItems) {
+      // Validate that line item metadata JSONB doesn't contain business values
+      for (const item of data.lineItems) {
+        if (item.metadata) {
+          validateMetadataJSONB(item.metadata, `quote line item ${item.lineNumber} metadata`);
+        }
+      }
 
-        // Create new line items
-        const lineItemData = data.lineItems.map(item => ({
+      // Delete existing line items
+      await tx.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId));
+
+      // Create new line items
+      const lineItemData = data.lineItems.map(item => ({
           id: crypto.randomUUID(),
           quoteId,
           lineNumber: item.lineNumber,
@@ -453,6 +556,15 @@ export class QuoteService extends BaseRepository {
     pagination: PaginationOptions,
     filters: any = {}
   ): Promise<{ quotes: any[]; pagination: any }> {
+    // Guard against JSONB filter misuse
+    const check = guardTypedFilters(filters);
+    if (!check.ok) {
+      const e: any = new Error(check.reason);
+      e.statusCode = 400;
+      e.code = "JSONB_FILTER_FORBIDDEN";
+      throw e;
+    }
+
     const { page, pageSize } = pagination;
     const offset = (page - 1) * pageSize;
 

@@ -34,6 +34,14 @@
     "./metrics": {
       "import": "./dist/metrics/index.js",
       "types": "./dist/metrics/index.d.ts"
+    },
+    "./guards/jsonbMonetaryGuard": {
+      "import": "./dist/guards/jsonbMonetaryGuard.js",
+      "types": "./dist/guards/jsonbMonetaryGuard.d.ts"
+    },
+    "./db/filterGuard": {
+      "import": "./dist/db/filterGuard.js",
+      "types": "./dist/db/filterGuard.d.ts"
     }
   },
   "scripts": {

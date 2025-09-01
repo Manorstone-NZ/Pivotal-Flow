@@ -69,7 +69,7 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
         }
 
         // Verify refresh token
-        const decoded = await fastify.tokenManager.verifyToken(refreshToken);
+        const decoded = await (fastify as any).tokenManager.verifyToken(refreshToken);
         
         // Validate refresh token in Redis
         if (!decoded.jti) {
@@ -81,7 +81,7 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
           });
         }
         
-        const tokenData = await fastify.tokenManager.validateRefreshToken(decoded.jti);
+        const tokenData = await (fastify as any).tokenManager.validateRefreshToken(decoded.jti);
         if (!tokenData) {
           logger.warn({ 
             userId: decoded.sub, 
@@ -98,14 +98,14 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
         }
 
         // Rotate refresh token (revoke old, create new)
-        const newRefreshToken = await fastify.tokenManager.rotateRefreshToken(decoded.jti, {
+        const newRefreshToken = await (fastify as any).tokenManager.rotateRefreshToken(decoded.jti, {
           sub: decoded.sub,
           org: decoded.org,
           roles: decoded.roles ?? [],
         });
 
         // Generate new access token
-        const newAccessToken = await fastify.tokenManager.signAccessToken({
+        const newAccessToken = await (fastify as any).tokenManager.signAccessToken({
           sub: decoded.sub,
           org: decoded.org,
           roles: decoded.roles ?? [],

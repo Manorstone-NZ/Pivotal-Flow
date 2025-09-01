@@ -74,6 +74,7 @@ export const config = {
     port: env.REDIS_PORT,
     password: env.REDIS_PASSWORD,
     db: env.REDIS_DB,
+    enabled: true, // Always enable Redis for development
   },
   
   auth: {

@@ -16,16 +16,21 @@ import { performanceRoutes } from './routes/perf.js';
 // Test auth route removed - no longer needed
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
 import databasePlugin from './plugins/database.js';
-// import {
-//   listUsersRoute,
-//   createUserRoute,
-//   getUserRoute,
-//   updateUserRoute,
-//   assignRoleRoute,
-//   removeRoleRoute,
-//   updateUserStatusRoute
-// } from './modules/users/index.js';
+import { cachePlugin } from './plugins/cache.plugin.js';
+import {
+  listUsersRoute,
+  createUserRoute,
+  getUserRoute,
+  updateUserRoute,
+  assignRoleRoute,
+  removeRoleRoute,
+  updateUserStatusRoute
+} from './modules/users/index.js';
 import { registerQuoteRoutes } from './modules/quotes/index.js';
+import { rateCardRoutes } from './modules/rate-cards/index.js';
+import { permissionRoutes } from './modules/permissions/index.js';
+import { currencyRoutes } from './modules/currencies/routes.js';
+import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 
 // Enable default metrics collection (once per process)
 const g = globalThis as any;
@@ -62,6 +67,25 @@ async function registerPlugins() {
 
   // Database plugin (register early for database access)
   await app.register(databasePlugin);
+
+  // Cache plugin (Redis integration)
+  const cacheOptions: any = {
+    host: config.redis?.host || 'localhost',
+    port: config.redis?.port || 6379,
+    db: config.redis?.db || 0,
+    keyPrefix: 'pivotal-flow:',
+    ttl: 300, // 5 minutes default
+    enabled: config.redis?.enabled ?? true
+  };
+  
+  if (config.redis?.password) {
+    cacheOptions.password = config.redis.password;
+  }
+  
+  await app.register(cachePlugin, cacheOptions);
+
+  // Register payload guard plugin (enforces JSONB rules)
+  await app.register(payloadGuardPlugin);
 
   // Register manual OpenAPI documentation route BEFORE any Swagger plugins
   app.get('/api/quotes-openapi.json', {
@@ -447,7 +471,7 @@ async function registerPlugins() {
 </body>
 </html>`;
 
-    reply.type('text/html').send(html);
+    await reply.type('text/html').send(html);
   });
 
   // Register public documentation routes as a separate plugin BEFORE auth
@@ -551,10 +575,10 @@ async function registerPlugins() {
   await app.register(authPlugin);
 
   // Register authentication routes
-  app.register(loginRoute, { prefix: '/v1/auth' });
-  app.register(refreshRoute, { prefix: '/v1/auth' });
-  app.register(logoutRoute, { prefix: '/v1/auth' });
-  app.register(meRoute, { prefix: '/v1/auth' });
+  await app.register(loginRoute, { prefix: '/v1/auth' });
+  await app.register(refreshRoute, { prefix: '/v1/auth' });
+  await app.register(logoutRoute, { prefix: '/v1/auth' });
+  await app.register(meRoute, { prefix: '/v1/auth' });
   
   // Test routes removed - no longer needed
 
@@ -563,17 +587,25 @@ async function registerPlugins() {
   app.setErrorHandler(errorHandler);
 
   // Register users routes
-  // Temporarily disabled to focus on quotes module
-  // app.register(listUsersRoute);
-  // app.register(createUserRoute);
-  // app.register(getUserRoute);
-  // app.register(updateUserRoute);
-  // app.register(assignRoleRoute);
-  // app.register(removeRoleRoute);
-  // app.register(updateUserStatusRoute);
+  await app.register(listUsersRoute);
+  await app.register(createUserRoute);
+  await app.register(getUserRoute);
+  await app.register(updateUserRoute);
+  await app.register(assignRoleRoute);
+  await app.register(removeRoleRoute);
+  await app.register(updateUserStatusRoute);
 
   // Register quotes routes
   registerQuoteRoutes(app);
+
+  // Register rate card routes
+  await app.register(rateCardRoutes, { prefix: '/v1' });
+
+  // Register permission routes
+  await app.register(permissionRoutes, { prefix: '/v1' });
+
+  // Register currency routes
+  await app.register(currencyRoutes, { prefix: '/v1' });
 
   // Simple test route
   app.get('/v1/simple-test', {
@@ -675,11 +707,11 @@ if (config.metrics.enabled) {
   app.get('/metrics', async (_request, reply) => {
     try {
       const metrics = await register.metrics();
-      reply.header('Content-Type', register.contentType);
-      return reply.status(200).send(metrics);
+      await reply.header('Content-Type', register.contentType);
+      await reply.status(200).send(metrics);
     } catch (error) {
       logger.error({ err: error }, 'Failed to generate metrics');
-      return reply.status(500).send('Failed to generate metrics');
+      await reply.status(500).send('Failed to generate metrics');
     }
   });
 }
@@ -731,7 +763,7 @@ async function startServer() {
 
     logger.info({}, 'Calling app.listen');
     await app.listen({
-      port: Number(process.env['PORT']) || config.server.port,
+      port: Number(process.env['PORT']) ?? config.server.port,
       host: config.server.host,
     });
     logger.info({}, 'app.listen completed');
@@ -764,7 +796,7 @@ async function startServer() {
           syscall: (err as any)?.syscall,
           address: (err as any)?.address,
           port: (err as any)?.port,
-          cause: err.cause,
+          cause: (err as any)?.cause,
         },
         'Failed to start server',
       );

@@ -15,56 +15,74 @@ interface RateLimitError extends FastifyError {
   };
 }
 
+// Error handling strategies
+const errorStrategies = {
+  zod: (error: ZodError) => ({
+    statusCode: HTTP_STATUS.BAD_REQUEST,
+    message: 'Validation Error',
+    details: error.errors.map(err => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: err.code,
+    }))
+  }),
+  
+  validation: (error: FastifyError) => ({
+    statusCode: HTTP_STATUS.BAD_REQUEST,
+    message: 'Validation Error',
+    details: error.validation
+  }),
+  
+  rateLimit: (error: RateLimitError) => ({
+    statusCode: HTTP_STATUS.BAD_REQUEST,
+    message: 'Too Many Requests',
+    details: {
+      retryAfter: error.headers?.['retry-after'] ?? undefined,
+    }
+  }),
+  
+  clientError: (error: FastifyError) => ({
+    statusCode: error.statusCode ?? HTTP_STATUS.BAD_REQUEST,
+    message: error.message ?? 'Client Error',
+    details: undefined
+  }),
+  
+  serverError: (error: FastifyError) => ({
+    statusCode: error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    message: error.message ?? 'Server Error',
+    details: undefined
+  }),
+  
+  default: () => ({
+    statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    message: 'Internal Server Error',
+    details: undefined
+  })
+};
+
+// Determine error strategy
+function determineErrorStrategy(error: FastifyError) {
+  if (error instanceof ZodError) return errorStrategies.zod(error);
+  if (error.validation) return errorStrategies.validation(error);
+  if (error.statusCode === 429) return errorStrategies.rateLimit(error as RateLimitError);
+  if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) return errorStrategies.clientError(error);
+  if (error.statusCode && error.statusCode >= 500) return errorStrategies.serverError(error);
+  return errorStrategies.default();
+}
+
 export async function errorHandler(
   error: FastifyError,
   request: RequestWithId,
   reply: FastifyReply
 ): Promise<void> {
-  const requestId = request.requestId || 'unknown';
+  const requestId = request.requestId ?? 'unknown';
   const requestLogger = logger.child({ requestId, route: request.url });
   
-  let statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-  let message = 'Internal Server Error';
-  let details: unknown = undefined;
-  
-  // Handle Zod validation errors
-  if (error instanceof ZodError) {
-    statusCode = HTTP_STATUS.BAD_REQUEST;
-    message = 'Validation Error';
-    details = error.errors.map(err => ({
-      field: err.path.join('.'),
-      message: err.message,
-      code: err.code,
-    }));
-  }
-  // Handle Fastify validation errors
-  else if (error.validation) {
-    statusCode = HTTP_STATUS.BAD_REQUEST;
-    message = 'Validation Error';
-    details = error.validation;
-  }
-  // Handle rate limit errors
-  else if (error.statusCode === 429) {
-    statusCode = HTTP_STATUS.BAD_REQUEST;
-    message = 'Too Many Requests';
-    const rateLimitError = error as RateLimitError;
-    details = {
-      retryAfter: rateLimitError.headers?.['retry-after'],
-    };
-  }
-  // Handle other known HTTP errors
-  else if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-    statusCode = error.statusCode;
-    message = error.message || 'Client Error';
-  }
-  // Handle server errors
-  else if (error.statusCode && error.statusCode >= 500) {
-    statusCode = error.statusCode;
-    message = error.message || 'Server Error';
-  }
+  // Determine error response using strategy pattern
+  const { statusCode, message, details } = determineErrorStrategy(error);
   
   // Log the error
-  void requestLogger.error({
+  requestLogger.error({
     message: 'Request error',
     error: {
       name: error.name,
@@ -85,5 +103,5 @@ export async function errorHandler(
     ...(config.isDevelopment && { details }),
   };
   
-  reply.status(statusCode).send(response);
+  await reply.status(statusCode).send(response);
 }

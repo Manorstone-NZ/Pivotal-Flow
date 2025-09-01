@@ -69,7 +69,7 @@ export async function canAccessUser(
 ): Promise<PermissionCheck> {
   try {
     // Check if target user exists in same organization
-    const targetUserResult = await fastify.db
+    const targetUserResult = await (fastify as any).db
       .select()
       .from(users)
       .where(
@@ -123,7 +123,7 @@ export async function canModifyUser(
 ): Promise<PermissionCheck> {
   try {
     // Check if target user exists in same organization
-    const targetUserResult = await fastify.db
+    const targetUserResult = await (fastify as any).db
       .select()
       .from(users)
       .where(

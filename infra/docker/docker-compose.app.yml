@@ -12,8 +12,9 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      REDIS_URL: redis://redis:6379
-      DATABASE_URL: postgresql://pivotal:pivotal@postgres:5432/pivotal
+      REDIS_URL: redis://pivotal-redis:6379
+      REDIS_HOST: pivotal-redis
+      DATABASE_URL: postgresql://pivotal:pivotal@pivotal-postgres:5432/pivotal
     depends_on:
       postgres:
         condition: service_healthy

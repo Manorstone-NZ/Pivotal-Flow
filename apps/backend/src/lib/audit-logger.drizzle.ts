@@ -8,9 +8,9 @@ export interface AuditEvent {
   entityId: string;
   organizationId: string;
   userId?: string | null;
-  oldValues?: Record<string, any> | null;
-  newValues?: Record<string, any> | null;
-  metadata?: Record<string, any> | null;
+  oldValues?: Record<string, unknown> | null;
+  newValues?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export class AuditLogger {
@@ -34,18 +34,18 @@ export class AuditLogger {
         userId: event.userId ?? null,
         ipAddress: request?.ip ?? null,
         userAgent: request?.headers?.['user-agent'] ?? null,
-        sessionId: (request as any)?.user?.jti ?? null,
+        sessionId: (request as { user?: { jti?: string } })?.user?.jti ?? null,
         oldValues: event.oldValues,
         newValues: event.newValues,
         metadata: event.metadata ?? {},
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (this.fastify as any).db
         .insert(auditLogs)
         .values(data);
     } catch (error) {
-      // Log error but don't fail the request
-      // Using console.error as fallback when logger fails
+      // eslint-disable-next-line no-console
       console.error('Failed to log audit event:', error);
     }
   }
@@ -57,7 +57,7 @@ export class AuditLogger {
     action: 'auth.login' | 'auth.login_failed' | 'auth.logout' | 'auth.refresh',
     organizationId: string,
     userId: string | null,
-    metadata: Record<string, any> | null,
+    metadata: Record<string, unknown> | null,
     request: FastifyRequest
   ): Promise<void> {
     await this.logEvent(

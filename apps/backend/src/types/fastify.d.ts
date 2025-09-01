@@ -1,5 +1,4 @@
-import type { FastifyInstance } from 'fastify';
-import type { Redis } from 'ioredis';
+import type { CacheService } from '../lib/cache.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,6 +10,16 @@ declare module 'fastify' {
       revokeRefreshToken: (jti: string) => Promise<void>;
       rotateRefreshToken: (oldJti: string, payload: any) => Promise<string>;
     };
-    redis: Redis;
+    cache: CacheService;
+    jwt: any; // JWT plugin decoration
+    db: any; // Database instance
+  }
+
+  interface FastifyRequest {
+    user?: {
+      userId: string;
+      organizationId: string;
+      roles: string[];
+    };
   }
 }

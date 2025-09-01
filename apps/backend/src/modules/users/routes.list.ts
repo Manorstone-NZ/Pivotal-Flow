@@ -6,7 +6,7 @@ import {
   userListFiltersSchema, 
   userListSortSchema
 } from './schemas.js';
-import { listUsers } from './service.drizzle.js';
+import { listUsers, type UserListSort } from './service.drizzle.js';
 import { canViewUsers, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
 
@@ -23,10 +23,7 @@ interface ListUsersQuery {
 export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get('/v1/users', {
     schema: {
-      tags: ['Users'],
-      summary: 'List users with pagination and filters',
-      description: 'Retrieve a paginated list of users in the current organization with optional filtering and sorting',
-      security: [{ bearerAuth: [] }],
+      
       querystring: {
         type: 'object',
         properties: {
@@ -42,7 +39,7 @@ export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
       },
       response: {
         200: {
-          description: 'Success',
+          
           type: 'object',
           required: ['items', 'page', 'pageSize', 'total', 'totalPages'],
           properties: {
@@ -160,10 +157,15 @@ export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
         ...(request.query.roleId !== undefined && { roleId: request.query.roleId })
       });
 
-      const sort = userListSortSchema.parse({
-        field: request.query.sortField,
-        direction: request.query.sortDirection
+      const parsedSort = userListSortSchema.parse({
+        field: request.query.sortField || 'createdAt',
+        direction: request.query.sortDirection || 'desc'
       });
+      
+      const sort: UserListSort = {
+        field: parsedSort.field || 'createdAt',
+        direction: parsedSort.direction || 'desc'
+      };
 
       // Get users from service
       const result = await listUsers({

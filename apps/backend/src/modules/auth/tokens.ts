@@ -2,7 +2,25 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
 import { config } from '../../lib/config.js';
 import { logger } from '../../lib/logger.js';
-import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types';
+// import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types';
+// Using local types for now to avoid module resolution issues
+interface JWTPayload {
+  sub: string;
+  org: string;
+  roles: string[];
+  jti: string;
+  iat: number;
+  exp: number;
+}
+
+interface RefreshTokenData {
+  userId: string;
+  organizationId: string;
+  roles: string[];
+  jti: string;
+  expiresAt: Date;
+  isRevoked: boolean;
+}
 
 export function createTokenManager(app: FastifyInstance) {
   const alg = 'HS256';
@@ -16,7 +34,7 @@ export function createTokenManager(app: FastifyInstance) {
     logger.debug({ 
       hasFastify: !!app, 
       fastifyType: typeof app,
-      hasJwt: !!(app?.jwt),
+      hasJwt: !!((app as any)?.jwt),
       payloadKeys: Object.keys(payload)
     }, 'signAccessToken called');
     
@@ -27,7 +45,7 @@ export function createTokenManager(app: FastifyInstance) {
       exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.accessTokenTTL),
     };
 
-    return app.jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.accessTokenTTL });
+    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.accessTokenTTL });
   }
 
   /**
@@ -42,16 +60,17 @@ export function createTokenManager(app: FastifyInstance) {
       exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.refreshTokenTTL),
     };
 
-    // Store refresh token in Redis
+    // Store refresh token in cache
     await storeRefreshToken(jti, {
       userId: payload['sub'],
       organizationId: payload['org'],
+      roles: payload['roles'] || [],
       jti,
       expiresAt: new Date((tokenPayload.exp ?? 0) * 1000),
       isRevoked: false,
     });
 
-    return app.jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.refreshTokenTTL });
+    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.refreshTokenTTL });
   }
 
   /**
@@ -59,7 +78,7 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function verifyToken(token: string): Promise<JWTPayload> {
     try {
-      const decoded = await app.jwt.verify(token);
+      const decoded = await (app as any).jwt.verify(token);
       return decoded as JWTPayload;
     } catch (error) {
       logger.warn({ err: error }, 'Token verification failed');
@@ -68,29 +87,29 @@ export function createTokenManager(app: FastifyInstance) {
   }
 
   /**
-   * Store refresh token in Redis
+   * Store refresh token in cache
    */
   async function storeRefreshToken(jti: string, data: RefreshTokenData): Promise<void> {
     const key = `pivotal:refresh_token:${jti}`;
     const ttl = parseTTL(config.auth.refreshTokenTTL);
     
-    await app.redis.setex(key, ttl, JSON.stringify(data));
-    logger.debug({ jti, userId: data.userId }, 'Refresh token stored in Redis');
+    await (app as any).cache.set(key, data, ttl);
+    logger.debug({ jti, userId: data.userId }, 'Refresh token stored in cache');
   }
 
   /**
-   * Validate refresh token from Redis
+   * Validate refresh token from cache
    */
   async function validateRefreshToken(jti: string): Promise<RefreshTokenData | null> {
     const key = `pivotal:refresh_token:${jti}`;
-    const data = await app.redis.get(key);
+    const data = await (app as any).cache.get(key);
     
     if (!data) {
       return null;
     }
 
     try {
-      const tokenData: RefreshTokenData = JSON.parse(data);
+      const tokenData: RefreshTokenData = data as RefreshTokenData;
       
       if (tokenData.isRevoked || new Date() > tokenData.expiresAt) {
         return null;
@@ -108,7 +127,7 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function revokeRefreshToken(jti: string): Promise<void> {
     const key = `pivotal:refresh_token:${jti}`;
-    await app.redis.del(key);
+    await (app as any).cache.delete(key);
     logger.info({ jti }, 'Refresh token revoked');
   }
 

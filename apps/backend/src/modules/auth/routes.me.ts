@@ -94,7 +94,7 @@ export const meRoute: FastifyPluginAsync = async (fastify) => {
         return reply.status(200).send({
           id: userData.id,
           email: userData.email,
-          displayName: userData.displayName || '',
+          displayName: userData.displayName ?? '',
           roles: userData.roles,
           organizationId: userData.organizationId,
         });

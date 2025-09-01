@@ -6,15 +6,15 @@ import { getUserById, updateUser } from "./service.drizzle.js";
 import { canModifyUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
 import { auditLogs } from "../../lib/schema.js";
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 export const updateUserRoute: FastifyPluginAsync = async fastify => {
   fastify.patch("/v1/users/:id", {
     schema: {
-      tags: ['Users'],
-      summary: 'Update user profile fields',
-      description: 'Update display name and active status for a user in the current organization',
-      security: [{ bearerAuth: [] }],
+      
+      
+      
+      
       params: {
         type: 'object',
         required: ['id'],
@@ -33,7 +33,7 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
       },
       response: {
         200: {
-          description: 'User updated successfully',
+          
           type: 'object',
           required: ['id', 'email', 'isActive', 'mfaEnabled', 'createdAt', 'roles'],
           properties: {
@@ -155,12 +155,12 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
       }
 
       // write audits using SQL
-      await fastify.db
+      await (fastify as any).db
         .insert(auditLogs)
         .values({
           id: crypto.randomUUID(),
           organizationId: userContext.organizationId,
-          userId: userContext.userId,
+          actorId: userContext.userId,
           action: 'users.update',
           entityType: 'User',
           entityId: targetUserId,
@@ -175,12 +175,12 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
         });
 
       if (updateData.isActive !== undefined && updateData.isActive !== (currentUser.status === 'active')) {
-        await fastify.db
+        await (fastify as any).db
           .insert(auditLogs)
           .values({
             id: crypto.randomUUID(),
             organizationId: userContext.organizationId,
-            userId: userContext.userId,
+            actorId: userContext.userId,
             action: 'users.status_changed',
             entityType: 'User',
             entityId: targetUserId,

@@ -14,6 +14,7 @@ export interface BaseRepositoryOptions {
 export interface PaginationOptions {
   page: number;
   pageSize: number;
+  search?: string;
 }
 
 /**
@@ -28,14 +29,14 @@ export abstract class BaseRepository {
   /**
    * Enforce organization scoping on all queries
    */
-  protected scopeToOrganization<T extends Record<string, any>>(
+  protected scopeToOrganization<T extends Record<string, unknown>>(
     query: T
   ): T {
     if (query && typeof query === 'object' && 'where' in query) {
       return {
         ...query,
         where: {
-          ...(query['where'] as any),
+          ...(query['where'] as Record<string, unknown>),
           organizationId: this.options.organizationId
         }
       } as T;
@@ -89,21 +90,23 @@ export abstract class BaseRepository {
   /**
    * Handle database errors
    */
-  protected handleDatabaseError(error: any): never {
-    // Log the error
+  protected handleDatabaseError(error: unknown): never {
+    // eslint-disable-next-line no-console
     console.error('Database error:', error);
 
-    // Map common database errors to user-friendly messages
-    if (error.code === '23505') { // Unique constraint violation
-      throw new Error('A record with this identifier already exists');
-    }
+    // Database error code mapping
+    const errorMessages: Record<string, string> = {
+      '23505': 'A record with this identifier already exists',
+      '23503': 'Referenced record does not exist',
+      '23514': 'Data validation failed'
+    };
 
-    if (error.code === '23503') { // Foreign key constraint violation
-      throw new Error('Referenced record does not exist');
-    }
-
-    if (error.code === '23514') { // Check constraint violation
-      throw new Error('Data validation failed');
+    // Check if error has a known code
+    if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
+      const message = errorMessages[error.code];
+      if (message) {
+        throw new Error(message);
+      }
     }
 
     // Default error

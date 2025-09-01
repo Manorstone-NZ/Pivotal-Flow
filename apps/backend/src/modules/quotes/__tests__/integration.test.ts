@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 import { eq, and } from 'drizzle-orm';
 import { quotes, quoteLineItems, organizations, customers, users, auditLogs, serviceCategories } from '../../../lib/schema.js';
 import { QuoteService } from '../service.js';
@@ -9,14 +8,28 @@ import { AuditLogger } from '../../../lib/audit-logger.drizzle.js';
 import { randomUUID } from 'crypto';
 import { Decimal } from 'decimal.js';
 
-// Test database connection
-const testConnectionString = 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
-const testClient = postgres(testConnectionString);
-const testDb = drizzle(testClient) as any;
+// Test database connection - using dynamic import to avoid ESM issues
+let testClient: any;
+let testDb: any;
+
+// Initialize test database connection
+async function initTestDb() {
+  if (!testClient) {
+    const postgresModule = await import('postgres');
+    const postgres = postgresModule as any;
+    testClient = postgres('postgresql://pivotal:pivotal@localhost:5433/pivotal');
+    testDb = drizzle(testClient) as any;
+  }
+  return testDb;
+}
 
 describe('Quote Integration Tests', () => {
   let quoteService: QuoteService;
   let auditLogger: AuditLogger;
+  
+  beforeAll(async () => {
+    await initTestDb();
+  });
   
   // Test data
   const testOrg1 = {
