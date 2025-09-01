@@ -1,4 +1,4 @@
-import { DrizzleDB } from '../../lib/db.js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { quotes } from '../../lib/schema.js';
 import { eq, and, isNull } from 'drizzle-orm';
 import { withTx } from '../../lib/withTx.js';
@@ -17,7 +17,7 @@ import { withTx } from '../../lib/withTx.js';
  * - No gaps in sequence within a single transaction
  */
 export class QuoteNumberGenerator {
-  constructor(private db: DrizzleDB) {}
+  constructor(private db: PostgresJsDatabase<typeof import('../../lib/schema.js')>) {}
 
   /**
    * Generate the next quote number for an organization
@@ -31,29 +31,29 @@ export class QuoteNumberGenerator {
       // Get current year
       const currentYear = new Date().getFullYear();
       
-      // Find the highest sequence number for this organization and year
-      const lastQuote = await tx
+      // Get all quote numbers for this organization
+      const existingQuotes = await tx
         .select({ quoteNumber: quotes.quoteNumber })
         .from(quotes)
         .where(
           and(
             eq(quotes.organizationId, organizationId),
-            eq(quotes.quoteNumber, `${prefix}-${currentYear}-%`),
             isNull(quotes.deletedAt)
           )
-        )
-        .orderBy(quotes.quoteNumber)
-        .limit(1);
+        );
 
       let nextSequence = 1;
       
-      if (lastQuote.length > 0) {
-        // Extract sequence number from existing quote number
-        const lastQuoteNumber = lastQuote[0].quoteNumber;
-        const match = lastQuoteNumber.match(new RegExp(`${prefix}-${currentYear}-(\\d+)`));
-        
-        if (match) {
-          nextSequence = parseInt(match[1], 10) + 1;
+      // Find the highest sequence number for the current year
+      for (const quote of existingQuotes) {
+        if (quote.quoteNumber) {
+          const match = quote.quoteNumber.match(new RegExp(`${prefix}-${currentYear}-(\\d+)`));
+          if (match && match[1]) {
+            const sequence = parseInt(match[1], 10);
+            if (sequence >= nextSequence) {
+              nextSequence = sequence + 1;
+            }
+          }
         }
       }
 
@@ -69,7 +69,7 @@ export class QuoteNumberGenerator {
    * Get organization prefix from settings
    * Defaults to 'Q' if not configured
    */
-  private async getOrganizationPrefix(organizationId: string): Promise<string> {
+  private async getOrganizationPrefix(_organizationId: string): Promise<string> {
     // TODO: Implement organization settings lookup
     // For now, return default prefix
     return 'Q';
@@ -90,7 +90,7 @@ export class QuoteNumberGenerator {
   static parseQuoteNumber(quoteNumber: string): { prefix: string; year: number; sequence: number } | null {
     const match = quoteNumber.match(/^([A-Z]{1,3})-(\d{4})-(\d{4})$/);
     
-    if (!match) {
+    if (!match || !match[1] || !match[2] || !match[3]) {
       return null;
     }
 
@@ -169,7 +169,7 @@ export class QuoteNumberGenerator {
       .limit(1);
 
     let nextSequence = 1;
-    if (lastQuote.length > 0) {
+    if (lastQuote.length > 0 && lastQuote[0]?.quoteNumber) {
       const parsed = QuoteNumberGenerator.parseQuoteNumber(lastQuote[0].quoteNumber);
       if (parsed && parsed.year === currentYear) {
         nextSequence = parsed.sequence + 1;
@@ -179,7 +179,7 @@ export class QuoteNumberGenerator {
     return {
       totalQuotes: totalResult.length,
       currentYearQuotes: yearResult.length,
-      lastQuoteNumber: lastQuote.length > 0 ? lastQuote[0].quoteNumber : null,
+      lastQuoteNumber: lastQuote.length > 0 && lastQuote[0]?.quoteNumber ? lastQuote[0].quoteNumber : null,
       nextSequence
     };
   }

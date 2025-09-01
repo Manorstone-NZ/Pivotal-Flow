@@ -9,6 +9,62 @@ import { OrganizationSettingsRepository } from '../../packages/shared/dist/db/re
 import { MemoryCacheProvider, CacheWrapper } from '../../packages/shared/dist/cache/index.js';
 import { globalMetrics } from '../../packages/shared/dist/metrics/index.js';
 
+// Development logger for performance testing
+class DevLogger {
+  private prefix: string;
+
+  constructor(prefix: string = '') {
+    this.prefix = prefix;
+  }
+
+  info(message: string, data?: Record<string, unknown>): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `${timestamp} [INFO] ${this.prefix}${message}`;
+    console.log(logMessage);
+    if (data) {
+      console.log(JSON.stringify(data, null, 2));
+    }
+  }
+
+  warn(message: string, data?: Record<string, unknown>): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `${timestamp} [WARN] ${this.prefix}${message}`;
+    console.warn(logMessage);
+    if (data) {
+      console.warn(JSON.stringify(data, null, 2));
+    }
+  }
+
+  error(message: string, data?: Record<string, unknown>): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `${timestamp} [ERROR] ${this.prefix}${message}`;
+    console.error(logMessage);
+    if (data) {
+      console.error(JSON.stringify(data, null, 2));
+    }
+  }
+
+  section(title: string): void {
+    console.log('\n' + '='.repeat(50));
+    console.log(`📊 ${title}`);
+    console.log('='.repeat(50));
+  }
+
+  subsection(title: string): void {
+    console.log('\n' + '-'.repeat(40));
+    console.log(`🔍 ${title}`);
+    console.log('-'.repeat(40));
+  }
+
+  metric(label: string, value: string | number): void {
+    console.log(`  ${label}: ${value}`);
+  }
+
+  result(testName: string, result: string): void {
+    console.log(`  ${testName}: ${result}`);
+  }
+}
+
 interface PerformanceTestResult {
   testName: string;
   withCache: {
@@ -36,9 +92,11 @@ class CachePerformanceTester {
   private usersRepo: UsersRepository;
   private orgSettingsRepo: OrganizationSettingsRepository;
   private testResults: PerformanceTestResult[] = [];
+  private logger: DevLogger;
 
   constructor() {
     this.prisma = new PrismaClient();
+    this.logger = new DevLogger('[Cache Performance] ');
     
     // Create cache wrapper with memory provider
     const cacheProvider = new MemoryCacheProvider();
@@ -72,8 +130,7 @@ class CachePerformanceTester {
    * Run all performance tests
    */
   async runAllTests(): Promise<void> {
-    console.log('🧪 Cache Performance Testing Suite');
-    console.log('==================================');
+    this.logger.section('Cache Performance Testing Suite');
 
     // Reset metrics before testing
     globalMetrics.reset();
@@ -98,14 +155,13 @@ class CachePerformanceTester {
    * Test user by ID caching performance
    */
   private async testUserByIdCaching(): Promise<void> {
-    console.log('\n📊 Test 1: User by ID Caching');
-    console.log('-'.repeat(40));
+    this.logger.subsection('User by ID Caching');
 
     const testUserId = 'test-user-id';
     const iterations = 20;
 
     // Test with cache (first call will miss, subsequent calls will hit)
-    console.log('Testing with cache...');
+    this.logger.info('Testing with cache...');
     const withCacheDurations: number[] = [];
     
     for (let i = 0; i < iterations; i++) {
@@ -115,12 +171,12 @@ class CachePerformanceTester {
       withCacheDurations.push(duration);
       
       if (i === 0) {
-        console.log(`  First call (cache miss): ${duration}ms`);
+        this.logger.info(`  First call (cache miss): ${duration}ms`);
       }
     }
 
     // Test without cache
-    console.log('Testing without cache...');
+    this.logger.info('Testing without cache...');
     const withoutCacheDurations: number[] = [];
     
     for (let i = 0; i < iterations; i++) {
@@ -151,13 +207,12 @@ class CachePerformanceTester {
    * Test organization settings caching performance
    */
   private async testOrgSettingsCaching(): Promise<void> {
-    console.log('\n📊 Test 2: Organization Settings Caching');
-    console.log('-'.repeat(40));
+    this.logger.subsection('Organization Settings Caching');
 
     const iterations = 15;
 
     // Test with cache
-    console.log('Testing with cache...');
+    this.logger.info('Testing with cache...');
     const withCacheDurations: number[] = [];
     
     for (let i = 0; i < iterations; i++) {
@@ -167,12 +222,12 @@ class CachePerformanceTester {
       withCacheDurations.push(duration);
       
       if (i === 0) {
-        console.log(`  First call (cache miss): ${duration}ms`);
+        this.logger.info(`  First call (cache miss): ${duration}ms`);
       }
     }
 
     // Test without cache
-    console.log('Testing without cache...');
+    this.logger.info('Testing without cache...');
     const withoutCacheDurations: number[] = [];
     
     for (let i = 0; i < iterations; i++) {
@@ -202,13 +257,12 @@ class CachePerformanceTester {
    * Test cache stampede prevention
    */
   private async testCacheStampedePrevention(): Promise<void> {
-    console.log('\n📊 Test 3: Cache Stampede Prevention');
-    console.log('-'.repeat(40));
+    this.logger.subsection('Cache Stampede Prevention');
 
     const concurrentRequests = 10;
     const testUserId = 'test-user-id';
 
-    console.log(`Testing ${concurrentRequests} concurrent requests...`);
+    this.logger.info(`Testing ${concurrentRequests} concurrent requests...`);
 
     const start = Date.now();
     
@@ -222,47 +276,46 @@ class CachePerformanceTester {
     const totalDuration = Date.now() - start;
     const avgDuration = totalDuration / concurrentRequests;
 
-    console.log(`  Total duration: ${totalDuration}ms`);
-    console.log(`  Average per request: ${avgDuration.toFixed(2)}ms`);
-    console.log(`  Stampede prevention: ${avgDuration < 50 ? '✅ Working' : '❌ Failed'}`);
+    this.logger.info(`  Total duration: ${totalDuration}ms`);
+    this.logger.info(`  Average per request: ${avgDuration.toFixed(2)}ms`);
+    this.logger.result('Stampede prevention', avgDuration < 50 ? '✅ Working' : '❌ Failed');
   }
 
   /**
    * Test cache invalidation
    */
   private async testCacheInvalidation(): Promise<void> {
-    console.log('\n📊 Test 4: Cache Invalidation');
-    console.log('-'.repeat(40));
+    this.logger.subsection('Cache Invalidation');
 
     const testUserId = 'test-user-id';
 
     // First call - should cache
-    console.log('First call (should cache)...');
+    this.logger.info('First call (should cache)...');
     const start1 = Date.now();
     await this.usersRepo.getUserById(testUserId);
     const duration1 = Date.now() - start1;
-    console.log(`  Duration: ${duration1}ms`);
+    this.logger.info(`  Duration: ${duration1}ms`);
 
     // Second call - should hit cache
-    console.log('Second call (should hit cache)...');
+    this.logger.info('Second call (should hit cache)...');
     const start2 = Date.now();
     await this.usersRepo.getUserById(testUserId);
     const duration2 = Date.now() - start2;
-    console.log(`  Duration: ${duration2}ms`);
+    this.logger.info(`  Duration: ${duration2}ms`);
 
     // Simulate cache invalidation
-    console.log('Simulating cache invalidation...');
+    this.logger.info('Simulating cache invalidation...');
     await this.cache.bustUserCache('test-org-id', testUserId);
 
     // Third call - should miss cache (rebuilt)
-    console.log('Third call (after invalidation, should miss cache)...');
+    this.logger.info('Third call (after invalidation, should miss cache)...');
     const start3 = Date.now();
     await this.usersRepo.getUserById(testUserId);
     const duration3 = Date.now() - start3;
-    console.log(`  Duration: ${duration3}ms`);
+    this.logger.info(`  Duration: ${duration3}ms`);
 
-    console.log(`  Cache hit performance: ${duration2 < duration1 ? '✅ Working' : '❌ Failed'}`);
-    console.log(`  Invalidation performance: ${duration3 > duration2 ? '✅ Working' : '❌ Failed'}`);
+    this.logger.result('Cache hit performance', duration2 < duration1 ? '✅ Working' : '❌ Failed');
+    this.logger.result('Invalidation performance', duration3 > duration2 ? '✅ Working' : '❌ Failed');
   }
 
   /**
@@ -324,22 +377,22 @@ class CachePerformanceTester {
    * Print test results
    */
   private printResults(): void {
-    console.log('\n📋 Performance Test Results');
-    console.log('============================');
+    this.logger.section('Performance Test Results');
 
     for (const result of this.testResults) {
-      console.log(`\n${result.testName}:`);
-      console.log(`  With Cache:    ${result.withCache.avgDuration}ms avg, ${result.withCache.p95}ms p95 (${result.withCache.cacheHitRate}% hit rate)`);
-      console.log(`  Without Cache: ${result.withoutCache.avgDuration}ms avg, ${result.withoutCache.p95}ms p95`);
-      console.log(`  Improvement:   ${result.improvement.avgSpeedup.toFixed(2)}x avg, ${result.improvement.p95Speedup.toFixed(2)}x p95`);
+      this.logger.result(result.testName, '');
+      this.logger.metric('With Cache', `${result.withCache.avgDuration}ms avg, ${result.withCache.p95}ms p95 (${result.withCache.cacheHitRate}% hit rate)`);
+      this.logger.metric('Without Cache', `${result.withoutCache.avgDuration}ms avg, ${result.withoutCache.p95}ms p95`);
+      this.logger.metric('Improvement', `${result.improvement.avgSpeedup.toFixed(2)}x avg, ${result.improvement.p95Speedup.toFixed(2)}x p95`);
     }
 
     // Overall metrics
     const overallMetrics = globalMetrics.getPerformanceSummary();
-    console.log(`\n📊 Overall Cache Metrics:`);
-    console.log(`  Hit Rate: ${overallMetrics.cache.hitRate}%`);
-    console.log(`  Total Requests: ${overallMetrics.cache.totalRequests}`);
-    console.log(`  Hits: ${overallMetrics.cache.metrics.hits}, Misses: ${overallMetrics.cache.metrics.misses}`);
+    this.logger.section('Overall Cache Metrics');
+    this.logger.metric('Hit Rate', `${overallMetrics.cache.hitRate}%`);
+    this.logger.metric('Total Requests', overallMetrics.cache.totalRequests);
+    this.logger.metric('Hits', overallMetrics.cache.metrics.hits);
+    this.logger.metric('Misses', overallMetrics.cache.metrics.misses);
   }
 
   /**

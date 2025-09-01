@@ -61,7 +61,7 @@ export function getRedisClient(config?: Partial<RedisConfig>): Redis {
 
     // Handle connection events
     redis.on('connect', () => {
-      console.log('Redis client connected');
+      // Redis client connected
     });
 
     redis.on('error', (error) => {
@@ -69,11 +69,11 @@ export function getRedisClient(config?: Partial<RedisConfig>): Redis {
     });
 
     redis.on('close', () => {
-      console.log('Redis client connection closed');
+      // Redis client connection closed
     });
 
     redis.on('reconnecting', () => {
-      console.log('Redis client reconnecting...');
+      // Redis client reconnecting
     });
   }
   

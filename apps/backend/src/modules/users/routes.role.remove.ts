@@ -4,6 +4,8 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { removeRoleFromUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
+import { auditLogs } from '../../lib/schema.js';
+import crypto from 'crypto';
 
 export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/v1/users/:id/roles/:roleId', {
@@ -114,27 +116,24 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
 
       // Log audit event (simplified for now)
       try {
-        await fastify.db.query(`
-          INSERT INTO audit_logs (
-            id, organization_id, user_id, action, entity_type, entity_id,
-            old_values, metadata, created_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
-          )
-        `, [
-          userContext.organizationId,
-          userContext.userId,
-          'users.role_removed',
-          'User',
-          targetUserId,
-          JSON.stringify({ roleId, action: 'role_removed' }),
-          JSON.stringify({
-            actorUserId: userContext.userId,
-            targetUserId,
+        await fastify.db
+          .insert(auditLogs)
+          .values({
+            id: crypto.randomUUID(),
             organizationId: userContext.organizationId,
-            roleId
-          })
-        ]);
+            userId: userContext.userId,
+            action: 'users.role_removed',
+            entityType: 'User',
+            entityId: targetUserId,
+            oldValues: JSON.stringify({ roleId, action: 'role_removed' }),
+            metadata: JSON.stringify({
+              actorUserId: userContext.userId,
+              targetUserId,
+              organizationId: userContext.organizationId,
+              roleId
+            }),
+            createdAt: new Date()
+          });
       } catch (auditError) {
         logger.warn({ err: auditError }, 'Audit log write failed for role removal');
       }

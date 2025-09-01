@@ -1,4 +1,4 @@
-import { DrizzleDB } from './db.js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 /**
  * Base repository options
@@ -21,7 +21,7 @@ export interface PaginationOptions {
  */
 export abstract class BaseRepository {
   constructor(
-    protected db: DrizzleDB,
+    protected db: PostgresJsDatabase<typeof import('./schema.js')>,
     protected options: BaseRepositoryOptions
   ) {}
 

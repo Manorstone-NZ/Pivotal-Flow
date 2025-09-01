@@ -91,35 +91,14 @@ export class AuditRepository extends BaseRepository {
             action: eventData.action,
             entityType: eventData.entityType,
             entityId: eventData.entityId,
-            oldValues: eventData.oldValues as any || undefined,
-            newValues: eventData.newValues as any || undefined,
-            metadata: eventData.metadata as any || undefined
+            oldValues: eventData.oldValues || undefined,
+            newValues: eventData.newValues || undefined,
+            metadata: eventData.metadata || undefined
           }
         });
       });
     } catch (error) {
-      // If transaction fails, try direct insert as fallback
-      try {
-        await this.prisma.auditLog.create({
-          data: {
-            organizationId: this.options.organizationId,
-            userId: this.options.userId || 'system',
-            action: eventData.action,
-            entityType: eventData.entityType,
-            entityId: eventData.entityId,
-                      oldValues: eventData.oldValues as any || undefined,
-          newValues: eventData.newValues as any || undefined,
-          metadata: eventData.metadata as any || undefined
-          }
-        });
-      } catch (fallbackError) {
-        console.error('Audit event fallback insert also failed:', {
-          originalError: error instanceof Error ? error.message : String(error),
-          fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-          eventData,
-          organizationId: this.options.organizationId
-        });
-      }
+      throw error;
     }
   }
 
@@ -137,9 +116,9 @@ export class AuditRepository extends BaseRepository {
           action: event.action,
           entityType: event.entityType,
           entityId: event.entityId,
-          oldValues: event.oldValues as any || undefined,
-          newValues: event.newValues as any || undefined,
-          metadata: event.metadata as any || undefined
+          oldValues: event.oldValues || undefined,
+          newValues: event.newValues || undefined,
+          metadata: event.metadata || undefined
         }));
 
         await tx.auditLog.createMany({
@@ -158,6 +137,66 @@ export class AuditRepository extends BaseRepository {
         await this.appendEvent(event);
       }
     }
+  }
+
+  /**
+   * Append audit event for entity update
+   */
+  async appendUpdateEvent(
+    entityType: string,
+    entityId: string,
+    updates: Record<string, unknown>,
+    auditData?: Record<string, unknown>
+  ): Promise<void> {
+    const event: AuditEventData = {
+      action: 'UPDATE',
+      entityType,
+      entityId,
+      newValues: updates,
+      metadata: auditData
+    };
+
+    await this.appendEvent(event);
+  }
+
+  /**
+   * Append audit event for entity creation
+   */
+  async appendCreateEvent(
+    entityType: string,
+    entityId: string,
+    data: Record<string, unknown>,
+    auditData?: Record<string, unknown>
+  ): Promise<void> {
+    const event: AuditEventData = {
+      action: 'CREATE',
+      entityType,
+      entityId,
+      newValues: data,
+      metadata: auditData
+    };
+
+    await this.appendEvent(event);
+  }
+
+  /**
+   * Append audit event for entity deletion
+   */
+  async appendDeleteEvent(
+    entityType: string,
+    entityId: string,
+    oldValues: Record<string, unknown>,
+    auditData?: Record<string, unknown>
+  ): Promise<void> {
+    const event: AuditEventData = {
+      action: 'DELETE',
+      entityType,
+      entityId,
+      oldValues,
+      metadata: auditData
+    };
+
+    await this.appendEvent(event);
   }
 
   /**

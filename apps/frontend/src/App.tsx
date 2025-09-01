@@ -1,16 +1,16 @@
 import React, { Suspense, lazy, useState } from 'react';
-import { useAppStore } from './lib/state/store';
-import { Button } from './components/Button';
+import { useAppStore } from './lib/state/store.js';
+import { Button } from './components/Button.js';
 
 // Lazy load the health route component
-const HealthRoute = lazy(() => import('./components/HealthRoute').then(module => ({ default: module.HealthRoute })));
+const HealthRoute = lazy(() => import('./components/HealthRoute.js').then(module => ({ default: module.HealthRoute })));
 
 export const App: React.FC = () => {
   const count = useAppStore(s => s.count);
   const inc = useAppStore(s => s.inc);
   const [currentRoute, setCurrentRoute] = useState<'main' | 'health'>('main');
 
-  const renderRoute = () => {
+  const renderRoute = (): JSX.Element => {
     switch (currentRoute) {
       case 'health':
         return (

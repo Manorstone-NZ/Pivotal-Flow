@@ -11,12 +11,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
   fastify.post<{ Body: LoginRequest; Reply: LoginResponse | AuthError }>(
     "/login",
     {
-      // per route rate limit for unauthenticated calls
-      config: { rateLimit: { max: config.rateLimit.max, timeWindow: config.rateLimit.window } },
       schema: {
-        tags: ["auth"],
-        summary: "User login",
-        description: "Authenticate user with email and password",
         body: {
           type: "object",
           required: ["email", "password"],

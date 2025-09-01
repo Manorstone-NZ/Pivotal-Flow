@@ -1,7 +1,18 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
 import type { LogoutResponse } from './schemas.js';
+
+// Type definitions for authenticated user
+interface AuthenticatedUser {
+  userId: string;
+  organizationId: string;
+  jti: string;
+}
+
+interface AuthenticatedRequest extends FastifyRequest {
+  user: AuthenticatedUser;
+}
 
 export const logoutRoute: FastifyPluginAsync = async (fastify) => {
   const auditLogger = createAuditLogger(fastify);
@@ -19,15 +30,12 @@ export const logoutRoute: FastifyPluginAsync = async (fastify) => {
             required: ['message'],
           },
         },
-        tags: ['auth'],
-        summary: 'User logout',
-        description: 'Logout user and revoke refresh token',
-        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
       try {
-        const user = request.user as any;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const user = authenticatedRequest.user;
         
         if (!user || !user.jti) {
           logger.warn({ event: 'auth.logout_failed', reason: 'no_user_context' }, 'Logout failed: no user context');

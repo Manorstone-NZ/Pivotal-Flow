@@ -212,7 +212,7 @@ export class OrganizationSettingsRepository extends BaseRepository {
           }
         },
         update: {
-          value: value as any,
+          value: value,
           description: description ?? null,
           updatedAt: new Date()
         },
@@ -220,7 +220,7 @@ export class OrganizationSettingsRepository extends BaseRepository {
           organizationId: this.options.organizationId,
           category,
           key,
-          value: value as any,
+          value: value,
           description: description ?? null,
           isSystem: false
         }

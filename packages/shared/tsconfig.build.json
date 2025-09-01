@@ -14,5 +14,5 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["src/db/**/*", "src/prisma.ts"]
+  "exclude": ["src/db/**/*", "src/prisma.ts", "src/**/*.test.ts", "src/**/__tests__/**/*"]
 }

@@ -1,6 +1,8 @@
 // RBAC permission checks for users module
 
 import type { FastifyRequest, FastifyInstance } from 'fastify';
+import { eq, and, isNull } from 'drizzle-orm';
+import { users } from '../../lib/schema.js';
 
 export interface UserContext {
   userId: string;
@@ -67,13 +69,19 @@ export async function canAccessUser(
 ): Promise<PermissionCheck> {
   try {
     // Check if target user exists in same organization
-    const targetUser = await fastify.prisma.user.findFirst({
-      where: {
-        id: targetUserId,
-        organizationId: user.organizationId,
-        deletedAt: null
-      }
-    });
+    const targetUserResult = await fastify.db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.id, targetUserId),
+          eq(users.organizationId, user.organizationId),
+          isNull(users.deletedAt)
+        )
+      )
+      .limit(1);
+
+    const targetUser = targetUserResult[0];
 
     if (!targetUser) {
       return { 
@@ -115,13 +123,19 @@ export async function canModifyUser(
 ): Promise<PermissionCheck> {
   try {
     // Check if target user exists in same organization
-    const targetUser = await fastify.prisma.user.findFirst({
-      where: {
-        id: targetUserId,
-        organizationId: user.organizationId,
-        deletedAt: null
-      }
-    });
+    const targetUserResult = await fastify.db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.id, targetUserId),
+          eq(users.organizationId, user.organizationId),
+          isNull(users.deletedAt)
+        )
+      )
+      .limit(1);
+
+    const targetUser = targetUserResult[0];
 
     if (!targetUser) {
       return { 
@@ -152,7 +166,19 @@ export async function canModifyUser(
  * Extract user context from Fastify request
  */
 export function extractUserContext(request: FastifyRequest): UserContext {
-  const user = request.user as any;
+  // Type definition for authenticated user
+  interface AuthenticatedUser {
+    userId: string;
+    organizationId: string;
+    roles?: string[];
+  }
+
+  interface AuthenticatedRequest extends FastifyRequest {
+    user: AuthenticatedUser;
+  }
+
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const user = authenticatedRequest.user;
   
   if (!user?.userId || !user?.organizationId) {
     throw new Error('User context not available');

@@ -8,8 +8,8 @@ const loggerOptions: pino.LoggerOptions = {
     level: (label) => ({ level: label }),
     log: (object: Record<string, unknown>) => {
       // Ensure timestamp is always present
-      if (!(object as any).time) {
-        (object as any).time = new Date().toISOString();
+      if (!('time' in object)) {
+        object['time'] = new Date().toISOString();
       }
       return object;
     },

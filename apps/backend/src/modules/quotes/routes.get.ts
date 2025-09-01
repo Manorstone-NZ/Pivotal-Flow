@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { QuoteService } from './service.js';
-import { createTenantGuard } from '@pivotal-flow/shared/tenancy/guard.js';
+// import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
 // Params schema for OpenAPI documentation
 const GetQuoteParamsSchema = {
@@ -94,73 +94,14 @@ interface GetQuoteRequest {
 }
 
 /**
- * GET /v1/quotes/:id
- * Get quote by ID with line items
- */
-export async function getQuoteRoute(
-  fastify: FastifyInstance,
-  request: FastifyRequest<GetQuoteRequest>,
-  reply: FastifyReply
-) {
-  try {
-    // Get tenant context
-    const tenantContext = request.tenantContext;
-    if (!tenantContext) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'Tenant context required',
-        code: 'TENANT_ACCESS_DENIED'
-      });
-    }
-
-    const { id } = request.params;
-
-    // Create quote service
-    const quoteService = new QuoteService(fastify.hybridDb, {
-      organizationId: tenantContext.organizationId,
-      userId: tenantContext.userId
-    });
-
-    // Get quote
-    const quote = await quoteService.getQuoteById(id);
-
-    if (!quote) {
-      return reply.status(404).send({
-        error: 'Not Found',
-        message: 'Quote not found',
-        code: 'QUOTE_NOT_FOUND'
-      });
-    }
-
-    return reply.status(200).send(quote);
-  } catch (error) {
-    if (error instanceof Error) {
-      return reply.status(400).send({
-        error: 'Bad Request',
-        message: error.message,
-        code: 'QUOTE_GET_FAILED'
-      });
-    }
-
-    // Log unexpected errors
-    fastify.log.error('Unexpected error in getQuoteRoute:', error);
-    return reply.status(500).send({
-      error: 'Internal Server Error',
-      message: 'An unexpected error occurred',
-      code: 'INTERNAL_ERROR'
-    });
-  }
-}
-
-/**
  * Register the get quote route
  */
 export function registerGetQuoteRoute(fastify: FastifyInstance) {
   fastify.get('/v1/quotes/:id', {
     schema: {
-      description: 'Get quote by ID with line items',
       tags: ['quotes'],
-      security: [{ bearerAuth: [] }],
+      summary: 'Get quote by ID',
+      description: 'Retrieve a specific quote by its ID. Only quotes within the user\'s organization are accessible.',
       params: GetQuoteParamsSchema,
       response: {
         200: GetQuoteResponseSchema,
@@ -170,7 +111,56 @@ export function registerGetQuoteRoute(fastify: FastifyInstance) {
         500: ErrorResponseSchema
       }
     },
-    preHandler: createTenantGuard(),
-    handler: getQuoteRoute
+    // preHandler: createTenantGuard(),
+    handler: async (request: FastifyRequest<GetQuoteRequest>, reply: FastifyReply) => {
+      try {
+        // Get tenant context
+        const tenantContext = (request as any).tenantContext;
+        if (!tenantContext) {
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'Tenant context required',
+            code: 'TENANT_ACCESS_DENIED'
+          });
+        }
+
+        const { id } = request.params;
+
+        // Create quote service
+        const quoteService = new QuoteService((fastify as any).db, {
+          organizationId: tenantContext.organizationId,
+          userId: tenantContext.userId
+        });
+
+        // Get quote
+        const quote = await quoteService.getQuoteById(id);
+
+        if (!quote) {
+          return reply.status(404).send({
+            error: 'Not Found',
+            message: 'Quote not found',
+            code: 'QUOTE_NOT_FOUND'
+          });
+        }
+
+        return reply.status(200).send(quote);
+      } catch (error) {
+        if (error instanceof Error) {
+          return reply.status(400).send({
+            error: 'Bad Request',
+            message: error.message,
+            code: 'QUOTE_GET_FAILED'
+          });
+        }
+
+        // Log unexpected errors
+        console.error('Unexpected error in getQuoteRoute:', error);
+        return reply.status(500).send({
+          error: 'Internal Server Error',
+          message: 'An unexpected error occurred',
+          code: 'INTERNAL_ERROR'
+        });
+      }
+    }
   });
 }

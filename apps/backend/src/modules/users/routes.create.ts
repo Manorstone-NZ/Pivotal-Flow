@@ -2,20 +2,19 @@
 
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { ZodError, type infer as ZodInfer } from "zod";
+import { and, eq, isNull } from "drizzle-orm";
+import { users, auditLogs } from "../../lib/schema.js";
 import { userCreateSchema } from "./schemas.js";
 import { createUser } from "./service.drizzle.js";
 import { canManageUsers, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
+import crypto from "crypto";
 
 type CreateBody = ZodInfer<typeof userCreateSchema>;
 
 export const createUserRoute: FastifyPluginAsync = async fastify => {
   fastify.post<{ Body: CreateBody }>("/v1/users", {
     schema: {
-      tags: ["Users"],
-      summary: "Create a new user",
-      description: "Create a new user in the current organization",
-      security: [{ bearerAuth: [] }],
       body: {
         type: "object",
         required: ["email", "firstName", "lastName"],
@@ -100,10 +99,17 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
       const email = data.email.trim().toLowerCase();
 
       // Check if user already exists
-      const existsResult = await fastify.db.query(
-        `SELECT id FROM users WHERE email = $1 AND "organizationId" = $2 AND "deletedAt" IS NULL LIMIT 1`,
-        [email, userContext.organizationId]
-      );
+      const existsResult = await fastify.db
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            eq(users.email, email),
+            eq(users.organizationId, userContext.organizationId),
+            isNull(users.deletedAt)
+          )
+        )
+        .limit(1);
 
       if (existsResult.length > 0) {
         logger.warn({
@@ -136,20 +142,16 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
       );
 
       // Log audit event
-      await fastify.db.query(
-        `INSERT INTO audit_logs (
-          id, "organizationId", "userId", "action", "entityType", "entityId", 
-          "newValues", "metadata", "createdAt"
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
-        )`,
-        [
-          userContext.organizationId,
-          userContext.userId,
-          'users.create',
-          'User',
-          result.id,
-          JSON.stringify({
+      await fastify.db
+        .insert(auditLogs)
+        .values({
+          id: crypto.randomUUID(),
+          organizationId: userContext.organizationId,
+          userId: userContext.userId,
+          action: 'users.create',
+          entityType: 'User',
+          entityId: result.id,
+          newValues: JSON.stringify({
             email: result.email,
             firstName: data.firstName,
             lastName: data.lastName,
@@ -158,13 +160,13 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
             timezone: data.timezone,
             locale: data.locale
           }),
-          JSON.stringify({
+          metadata: JSON.stringify({
             actorUserId: userContext.userId,
             targetUserId: result.id,
             organizationId: userContext.organizationId
-          })
-        ]
-      );
+          }),
+          createdAt: new Date()
+        });
 
       logger.info({
         userId: userContext.userId,

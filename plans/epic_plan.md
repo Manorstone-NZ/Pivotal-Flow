@@ -1,6 +1,6 @@
 Epic A – Foundations
 
-These must be completed sequentially in order.
+we neeThese must be completed sequentially in order.
 
 A.1 Infrastructure & Schema – Provision Docker stack, PostgreSQL schema, and Prisma migrations.
 

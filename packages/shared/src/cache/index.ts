@@ -329,7 +329,7 @@ export class CacheWrapper {
     // This is a simplified implementation
     // In practice, you'd need to implement pattern-based deletion
     // or use cache provider-specific methods
-    console.log(`Cache bust pattern: ${pattern}`);
+    // Cache bust pattern: ${pattern}
   }
 
   /**

@@ -11,12 +11,23 @@ export interface LogContext {
   ip?: string;
 }
 
+// Type definitions for authenticated user
+interface AuthenticatedUser {
+  id: string;
+  organizationId: string;
+}
+
+// Use type assertion for authenticated requests
+type AuthenticatedRequest = FastifyRequest & {
+  user: AuthenticatedUser;
+};
+
 export class LogEnricher {
   /**
    * Enriches a request logger with authentication context
    */
   static enrichRequestLogger(
-    request: FastifyRequest,
+    request: AuthenticatedRequest,
     logger: RequestLogger,
     context: LogContext = {}
   ): RequestLogger {
@@ -29,8 +40,8 @@ export class LogEnricher {
 
     // Extract user and organization from JWT token if available
     if (request.user && typeof request.user === 'object' && 'id' in request.user) {
-      enrichedContext.userId = (request.user as any).id;
-      enrichedContext.organizationId = (request.user as any).organizationId;
+      enrichedContext.userId = request.user.id;
+      enrichedContext.organizationId = request.user.organizationId;
     }
 
     // Extract from headers if available (for API keys, etc.)

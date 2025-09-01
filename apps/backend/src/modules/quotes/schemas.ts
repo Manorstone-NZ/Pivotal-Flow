@@ -228,7 +228,7 @@ export const STATUS_TRANSITIONS = {
 
 // Validation function for status transitions
 export function isValidStatusTransition(fromStatus: QuoteStatus, toStatus: QuoteStatus): boolean {
-  const allowedTransitions = STATUS_TRANSITIONS[fromStatus];
+  const allowedTransitions = STATUS_TRANSITIONS[fromStatus] as unknown as QuoteStatus[];
   return allowedTransitions.includes(toStatus);
 }
 
@@ -256,7 +256,12 @@ export function validateQuoteData(data: z.infer<typeof CreateQuoteSchema>): { is
       errors.push(`Line item ${lineItem.lineNumber} quantity must be greater than 0`);
     }
 
-    if (lineItem.unitPrice.amount.toNumber() < 0) {
+    // Handle both Decimal objects and string/number values
+    const unitPriceAmount = typeof lineItem.unitPrice.amount === 'object' && lineItem.unitPrice.amount !== null && 'toNumber' in lineItem.unitPrice.amount
+      ? lineItem.unitPrice.amount.toNumber()
+      : parseFloat(lineItem.unitPrice.amount as string);
+    
+    if (unitPriceAmount < 0) {
       errors.push(`Line item ${lineItem.lineNumber} unit price cannot be negative`);
     }
 

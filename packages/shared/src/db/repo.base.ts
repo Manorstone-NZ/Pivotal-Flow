@@ -52,14 +52,15 @@ export abstract class BaseRepository {
   /**
    * Enforce organization scoping on all queries
    */
-  protected scopeToOrganization<T extends Record<string, any>>(
+  protected scopeToOrganization<T extends Record<string, unknown>>(
     query: T
   ): T {
     if (query && typeof query === 'object' && 'where' in query) {
+      const queryWithWhere = query as T & { where: Record<string, unknown> };
       return {
         ...query,
         where: {
-          ...(query['where'] as any),
+          ...queryWithWhere.where,
           organizationId: this.options.organizationId
         }
       } as T;
@@ -74,7 +75,7 @@ export abstract class BaseRepository {
     select: Prisma.SelectSubset<T, T>
   ): Prisma.SelectSubset<T, T> {
     // Remove any fields that might contain sensitive data
-    const { passwordHash, secret, token, ...safeSelect } = select as any;
+    const { passwordHash, secret, token, ...safeSelect } = select as Record<string, unknown>;
     return safeSelect as Prisma.SelectSubset<T, T>;
   }
 

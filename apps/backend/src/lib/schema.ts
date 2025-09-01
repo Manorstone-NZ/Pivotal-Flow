@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Organizations table
@@ -82,12 +82,17 @@ export const userRoles = pgTable('user_roles', {
 export const customers = pgTable('customers', {
   id: text('id').primaryKey(),
   organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }),
-  phone: varchar('phone', { length: 20 }),
-  address: jsonb('address'),
-  contactInfo: jsonb('contactInfo'),
-  metadata: jsonb('metadata').notNull().default('{}'),
+  customerNumber: varchar('customerNumber', { length: 50 }).notNull().unique(),
+  companyName: varchar('companyName', { length: 255 }).notNull(),
+  legalName: varchar('legalName', { length: 255 }),
+  industry: varchar('industry', { length: 100 }),
+  website: text('website'),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  customerType: varchar('customerType', { length: 50 }).notNull().default('business'),
+  source: varchar('source', { length: 50 }),
+  tags: text('tags').array(),
+  rating: integer('rating'),
   createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
@@ -154,7 +159,7 @@ export const rateCardItems = pgTable('rate_card_items', {
 export const quotes = pgTable('quotes', {
   id: text('id').primaryKey(),
   organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  quoteNumber: varchar('quoteNumber', { length: 50 }).notNull().unique(),
+  quoteNumber: varchar('quoteNumber', { length: 50 }).notNull(),
   customerId: text('customerId').notNull().references(() => customers.id, { onDelete: 'cascade' }),
   projectId: text('projectId').references(() => projects.id, { onDelete: 'set null' }),
   title: varchar('title', { length: 255 }).notNull(),
@@ -185,7 +190,9 @@ export const quotes = pgTable('quotes', {
   createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
-});
+}, (table) => ({
+  quoteNumberOrgUnique: uniqueIndex('quotes_quoteNumber_organizationId_unique').on(table.quoteNumber, table.organizationId),
+}));
 
 // Quote line items table
 export const quoteLineItems = pgTable('quote_line_items', {

@@ -4,12 +4,23 @@ import { logger } from './logger.js';
 import { config } from './config.js';
 import { HTTP_STATUS } from '@pivotal-flow/shared';
 
+// Type definitions for request context
+interface RequestWithId extends FastifyRequest {
+  requestId?: string;
+}
+
+interface RateLimitError extends FastifyError {
+  headers?: {
+    'retry-after'?: string;
+  };
+}
+
 export async function errorHandler(
   error: FastifyError,
-  request: FastifyRequest,
+  request: RequestWithId,
   reply: FastifyReply
 ): Promise<void> {
-  const requestId = (request as any).requestId || 'unknown';
+  const requestId = request.requestId || 'unknown';
   const requestLogger = logger.child({ requestId, route: request.url });
   
   let statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR;
@@ -26,35 +37,21 @@ export async function errorHandler(
       code: err.code,
     }));
   }
-      // Handle Prisma errors
-    else if (error.name === 'PrismaClientKnownRequestError') {
-      statusCode = HTTP_STATUS.BAD_REQUEST;
-      message = 'Database Error';
-      details = {
-        code: (error as any).code,
-        meta: (error as any).meta,
-      };
-    }
-  // Handle Prisma validation errors
-  else if (error.name === 'PrismaClientValidationError') {
-    statusCode = HTTP_STATUS.BAD_REQUEST;
-    message = 'Validation Error';
-    details = error.message;
-  }
   // Handle Fastify validation errors
   else if (error.validation) {
     statusCode = HTTP_STATUS.BAD_REQUEST;
     message = 'Validation Error';
     details = error.validation;
   }
-      // Handle rate limit errors
-    else if (error.statusCode === 429) {
-      statusCode = HTTP_STATUS.BAD_REQUEST;
-      message = 'Too Many Requests';
-      details = {
-        retryAfter: (error as any).headers?.['retry-after'],
-      };
-    }
+  // Handle rate limit errors
+  else if (error.statusCode === 429) {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = 'Too Many Requests';
+    const rateLimitError = error as RateLimitError;
+    details = {
+      retryAfter: rateLimitError.headers?.['retry-after'],
+    };
+  }
   // Handle other known HTTP errors
   else if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
     statusCode = error.statusCode;

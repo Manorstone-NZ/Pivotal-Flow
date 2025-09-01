@@ -29,5 +29,4 @@ export interface UserProfile {
 }
 
 // Note: The actual route handlers and authentication logic will be implemented
-// in the main index.ts file to avoid schema conversion issues with Swagger.
-// This file serves as a reference for the types and interfaces used.
+// in the main index.ts file. This file serves as a reference for the types and interfaces used.

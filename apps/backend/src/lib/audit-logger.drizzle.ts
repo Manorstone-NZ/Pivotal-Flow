@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyInstance } from 'fastify';
 import { auditLogs } from './schema.js';
-import crypto from 'crypto';
+import { randomUUID } from 'crypto';
 
 export interface AuditEvent {
   action: string;
@@ -23,24 +23,24 @@ export class AuditLogger {
   /**
    * Log an audit event using Drizzle ORM
    */
-  async logEvent(event: AuditEvent, request: FastifyRequest): Promise<void> {
+  async logEvent(event: AuditEvent, request?: FastifyRequest): Promise<void> {
     try {
       const data = {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         action: event.action,
         entityType: event.entityType,
         entityId: event.entityId,
         organizationId: event.organizationId,
         userId: event.userId ?? null,
-        ipAddress: request.ip,
-        userAgent: request.headers['user-agent'] ?? null,
-        sessionId: (request as any).user?.jti ?? null,
+        ipAddress: request?.ip ?? null,
+        userAgent: request?.headers?.['user-agent'] ?? null,
+        sessionId: (request as any)?.user?.jti ?? null,
         oldValues: event.oldValues,
         newValues: event.newValues,
         metadata: event.metadata ?? {},
       };
 
-      await this.fastify.db
+      await (this.fastify as any).db
         .insert(auditLogs)
         .values(data);
     } catch (error) {

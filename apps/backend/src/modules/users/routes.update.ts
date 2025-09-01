@@ -5,6 +5,8 @@ import { userUpdateSchema } from "./schemas.js";
 import { getUserById, updateUser } from "./service.drizzle.js";
 import { canModifyUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
+import { auditLogs } from "../../lib/schema.js";
+import crypto from "crypto";
 
 export const updateUserRoute: FastifyPluginAsync = async fastify => {
   fastify.patch("/v1/users/:id", {
@@ -153,54 +155,46 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
       }
 
       // write audits using SQL
-      await fastify.db.query(
-        `INSERT INTO audit_logs (
-          id, "organizationId", "userId", "action", "entityType", "entityId", 
-          "oldValues", "newValues", "metadata", "createdAt"
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW()
-        )`,
-        [
-          userContext.organizationId,
-          userContext.userId,
-          'users.update',
-          'User',
-          targetUserId,
-          JSON.stringify(oldValues),
-          JSON.stringify(newValues),
-          JSON.stringify({
+      await fastify.db
+        .insert(auditLogs)
+        .values({
+          id: crypto.randomUUID(),
+          organizationId: userContext.organizationId,
+          userId: userContext.userId,
+          action: 'users.update',
+          entityType: 'User',
+          entityId: targetUserId,
+          oldValues: JSON.stringify(oldValues),
+          newValues: JSON.stringify(newValues),
+          metadata: JSON.stringify({
             actorUserId: userContext.userId,
             targetUserId,
             organizationId: userContext.organizationId
-          })
-        ]
-      );
+          }),
+          createdAt: new Date()
+        });
 
       if (updateData.isActive !== undefined && updateData.isActive !== (currentUser.status === 'active')) {
-        await fastify.db.query(
-          `INSERT INTO audit_logs (
-            id, "organizationId", "userId", "action", "entityType", "entityId", 
-            "oldValues", "newValues", "metadata", "createdAt"
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW()
-          )`,
-          [
-            userContext.organizationId,
-            userContext.userId,
-            'users.status_changed',
-            'User',
-            targetUserId,
-            JSON.stringify({ isActive: currentUser.status === 'active' }),
-            JSON.stringify({ isActive: updateData.isActive }),
-            JSON.stringify({
+        await fastify.db
+          .insert(auditLogs)
+          .values({
+            id: crypto.randomUUID(),
+            organizationId: userContext.organizationId,
+            userId: userContext.userId,
+            action: 'users.status_changed',
+            entityType: 'User',
+            entityId: targetUserId,
+            oldValues: JSON.stringify({ isActive: currentUser.status === 'active' }),
+            newValues: JSON.stringify({ isActive: updateData.isActive }),
+            metadata: JSON.stringify({
               actorUserId: userContext.userId,
               targetUserId,
               organizationId: userContext.organizationId,
               previousStatus: currentUser.status === 'active' ? "active" : "inactive",
               newStatus: updateData.isActive ? "active" : "inactive"
-            })
-          ]
-        );
+            }),
+            createdAt: new Date()
+          });
       }
 
       logger.info({
@@ -226,7 +220,7 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
         error: error instanceof Error ? error.message : "Unknown error",
         stack: error instanceof Error ? error.stack : undefined,
         action: "users.update", 
-        targetUserId: (request.params as any).id,
+        targetUserId: request.params.id,
         message: "Error updating user"
       });
       return reply.status(500).send({

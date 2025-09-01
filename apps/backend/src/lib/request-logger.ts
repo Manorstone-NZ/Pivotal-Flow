@@ -2,15 +2,22 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { generateRequestId } from '@pivotal-flow/shared';
 import { createRequestLogger } from './logger.js';
 
+// Type definitions for request context
+interface RequestWithContext extends FastifyRequest {
+  requestId?: string;
+  startTime?: number;
+  requestLogger?: ReturnType<typeof createRequestLogger>;
+}
+
 export async function requestLogger(
-  request: FastifyRequest,
+  request: RequestWithContext,
   _reply: FastifyReply
 ): Promise<void> {
   const startTime = Date.now();
   const requestId = generateRequestId();
   
   // Add request ID to request object
-  (request as any).requestId = requestId;
+  request.requestId = requestId;
   
   // Create request-specific logger
   const requestLogger = createRequestLogger(requestId, request.url);
@@ -30,6 +37,6 @@ export async function requestLogger(
   });
   
   // Store start time in request for later use
-  (request as any).startTime = startTime;
-  (request as any).requestLogger = requestLogger;
+  request.startTime = startTime;
+  request.requestLogger = requestLogger;
 }

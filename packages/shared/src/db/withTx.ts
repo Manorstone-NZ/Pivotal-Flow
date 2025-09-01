@@ -214,8 +214,8 @@ export const TransactionPatterns = {
           action: 'users.update',
           entityType: 'User',
           entityId: userId,
-          newValues: updates as any,
-          metadata: auditData as any
+          newValues: updates,
+          metadata: auditData
         }
       });
 

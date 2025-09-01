@@ -1,25 +1,24 @@
-import { DrizzleDB } from './db.js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 /**
  * Transaction helper with retry logic and timeout
  * Provides a safe way to execute database operations within transactions
  */
 export async function withTx<T>(
-  db: DrizzleDB,
-  operation: (tx: DrizzleDB) => Promise<T>,
+  db: PostgresJsDatabase<typeof import('./schema.js')>,
+  operation: (tx: PostgresJsDatabase<typeof import('./schema.js')>) => Promise<T>,
   options: {
     maxRetries?: number;
     timeout?: number;
   } = {}
 ): Promise<T> {
-  const { maxRetries = 3, timeout = 30000 } = options;
+  const { maxRetries = 3 } = options;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // For now, we'll use the db directly since Drizzle doesn't have explicit transaction support
-      // In a real implementation, you'd start a transaction here
-      return await operation(db);
+      // Use Drizzle's native transaction support
+      return await db.transaction(async (tx) => operation(tx));
     } catch (error) {
       lastError = error as Error;
       

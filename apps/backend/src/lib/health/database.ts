@@ -9,7 +9,7 @@ export async function checkDatabaseHealth(fastify: FastifyInstance) {
   try {
     dbLogger.debug('Starting database health check');
     
-    // Use the shared Prisma client for health check
+    // Use Drizzle database for health check
     const healthResult = await getDatabaseHealth(fastify);
     
     const latency = Date.now() - startTime;

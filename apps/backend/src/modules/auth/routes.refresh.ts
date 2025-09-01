@@ -1,7 +1,18 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
 import type { RefreshRequest, RefreshResponse, AuthError } from './schemas.js';
+
+// Type definitions for request context
+interface RequestWithCookies extends FastifyRequest {
+  cookies: {
+    refreshToken?: string;
+  };
+}
+
+interface RequestWithBody extends FastifyRequest {
+  body: RefreshRequest;
+}
 
 export const refreshRoute: FastifyPluginAsync = async (fastify) => {
   const auditLogger = createAuditLogger(fastify);
@@ -34,18 +45,18 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
             required: ['error', 'message', 'code'],
           },
         },
-        tags: ['auth'],
-        summary: 'Refresh access token',
-        description: 'Refresh access token using refresh token from cookie or body',
       },
     },
     async (request, reply) => {
       try {
         // Get refresh token from cookie or body
-        let refreshToken = (request.cookies as any).refreshToken;
+        const requestWithCookies = request as RequestWithCookies;
+        const requestWithBody = request as RequestWithBody;
         
-        if (!refreshToken && (request.body as any)?.refreshToken) {
-          refreshToken = (request.body as any).refreshToken;
+        let refreshToken = requestWithCookies.cookies?.refreshToken;
+        
+        if (!refreshToken && requestWithBody.body?.refreshToken) {
+          refreshToken = requestWithBody.body.refreshToken;
         }
 
         if (!refreshToken) {

@@ -1,12 +1,15 @@
 // Update user status route with RBAC and audit logging
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import { eq, and, isNull, count, ne } from 'drizzle-orm';
+import { users, userRoles, roles, auditLogs } from '../../lib/schema.js';
 import { 
   userStatusSchema
 } from './schemas.js';
 import { getUserById, updateUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
+import crypto from 'crypto';
 
 export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/status', {
@@ -152,20 +155,23 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
 
       // Prevent deactivating the last admin user
       if (!isActive && currentUser.roles.some((role: any) => role.name === 'admin' && role.isActive)) {
-        const adminCount = await fastify.prisma.userRole.count({
-          where: {
-            userId: { not: targetUserId },
-            role: {
-              name: 'admin',
-              isActive: true
-            },
-            user: {
-              organizationId: userContext.organizationId,
-              status: 'active',
-              deletedAt: null
-            }
-          }
-        });
+        const adminCountResult = await fastify.db
+          .select({ count: count() })
+          .from(userRoles)
+          .innerJoin(roles, eq(userRoles.roleId, roles.id))
+          .innerJoin(users, eq(userRoles.userId, users.id))
+          .where(
+            and(
+              ne(userRoles.userId, targetUserId),
+              eq(roles.name, 'admin'),
+              eq(roles.isActive, true),
+              eq(users.organizationId, userContext.organizationId),
+              eq(users.status, 'active'),
+              isNull(users.deletedAt)
+            )
+          );
+
+        const adminCount = adminCountResult[0]?.count || 0;
 
         if (adminCount === 0) {
           logger.warn({
@@ -197,29 +203,26 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
 
         // Log audit event for status change (simplified for now)
         try {
-          await fastify.db.query(`
-            INSERT INTO audit_logs (
-              id, organization_id, user_id, action, entity_type, entity_id,
-              old_values, new_values, metadata, created_at
-            ) VALUES (
-              gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW()
-            )
-          `, [
-            userContext.organizationId,
-            userContext.userId,
-            'users.status_changed',
-            'User',
-            targetUserId,
-            JSON.stringify({ isActive: currentUser.status === 'active' }),
-            JSON.stringify({ isActive }),
-            JSON.stringify({
-              actorUserId: userContext.userId,
-              targetUserId,
+          await fastify.db
+            .insert(auditLogs)
+            .values({
+              id: crypto.randomUUID(),
               organizationId: userContext.organizationId,
-              previousStatus: currentUser.status === 'active' ? 'active' : 'inactive',
-              newStatus: isActive ? 'active' : 'inactive'
-            })
-          ]);
+              userId: userContext.userId,
+              action: 'users.status_changed',
+              entityType: 'User',
+              entityId: targetUserId,
+              oldValues: JSON.stringify({ isActive: currentUser.status === 'active' }),
+              newValues: JSON.stringify({ isActive }),
+              metadata: JSON.stringify({
+                actorUserId: userContext.userId,
+                targetUserId,
+                organizationId: userContext.organizationId,
+                previousStatus: currentUser.status === 'active' ? 'active' : 'inactive',
+                newStatus: isActive ? 'active' : 'inactive'
+              }),
+              createdAt: new Date()
+            });
         } catch (auditError) {
           logger.warn({ err: auditError }, 'Audit log write failed for status change');
         }

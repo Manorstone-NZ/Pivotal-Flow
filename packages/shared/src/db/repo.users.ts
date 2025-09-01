@@ -1,6 +1,6 @@
 // Users repository with reads and writes used by users module
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { PrismaClient, Prisma, User, UserRole } from '@prisma/client';
 import { BaseRepository } from './repo.base.js';
 import type { BaseRepositoryOptions, PaginationOptions, PaginationResult } from './repo.base.js';
 import type { FilterBuilderOptions, SortBuilderOptions } from './repo.util.js';
@@ -29,6 +29,19 @@ export interface UserWithRoles {
   status: string;
   mfaEnabled: boolean;
   createdAt: Date;
+  userRoles: Array<{
+    role: {
+      id: string;
+      name: string;
+      description: string | null;
+      isSystem: boolean;
+      isActive: boolean;
+    };
+  }>;
+}
+
+// Type for user with roles from Prisma
+interface UserWithRolesFromDb extends User {
   userRoles: Array<{
     role: {
       id: string;
@@ -84,7 +97,7 @@ export class UsersRepository extends BaseRepository {
       const countQuery = QueryBuilder.buildUserCountQuery(filters);
 
       // Execute queries with userRoles included
-      const baseQuery = this.scopeToOrganization(query) as any;
+      const baseQuery = this.scopeToOrganization(query);
       
       // Remove select if it exists and use include instead
       const { select, ...queryWithoutSelect } = baseQuery;
@@ -100,18 +113,18 @@ export class UsersRepository extends BaseRepository {
             }
           }
         }),
-        this.prisma.user.count(this.scopeToOrganization(countQuery) as any)
+        this.prisma.user.count(this.scopeToOrganization(countQuery))
       ]);
 
       // Transform user roles
-      const usersWithRoles: UserWithRoles[] = users.map((user: any) => ({
+      const usersWithRoles: UserWithRoles[] = users.map((user: UserWithRolesFromDb) => ({
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         status: user.status,
         mfaEnabled: user.mfaEnabled,
         createdAt: user.createdAt,
-        userRoles: user.userRoles?.map((ur: any) => ({
+        userRoles: user.userRoles?.map((ur) => ({
           role: ur.role
         })) || []
       }));

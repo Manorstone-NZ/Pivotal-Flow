@@ -168,7 +168,7 @@ export const listUsersRoute: FastifyPluginAsync = async (fastify) => {
       // Get users from service
       const result = await listUsers({
         organizationId: userContext.organizationId,
-        filters: filters as any, // Type assertion to handle exactOptionalPropertyTypes
+        filters: filters as any,
         sort,
         page: pagination.page,
         pageSize: pagination.pageSize
