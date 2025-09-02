@@ -21,6 +21,8 @@ import type { PaginationOptions } from '../../lib/repo.base.js';
 import { RateCardService } from '../rate-cards/service.js';
 import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
+import { QuoteVersioningService } from '../../lib/quote-versioning.js';
+import { QuoteLockingService } from '../../lib/quote-locking.js';
 
 /**
  * Quote Service
@@ -37,6 +39,8 @@ export class QuoteService extends BaseRepository {
   private auditLogger: AuditLogger;
   private rateCardService: RateCardService;
   private permissionService: PermissionService;
+  private versioningService: QuoteVersioningService;
+  private lockingService: QuoteLockingService;
 
   constructor(
     db: PostgresJsDatabase<typeof import('../../lib/schema.js')>,
@@ -48,6 +52,8 @@ export class QuoteService extends BaseRepository {
     this.auditLogger = auditLogger || new AuditLogger(db as any);
     this.rateCardService = new RateCardService(db, options, auditLogger);
     this.permissionService = new PermissionService(db, options);
+    this.versioningService = new QuoteVersioningService(db);
+    this.lockingService = new QuoteLockingService(db);
   }
 
   /**
@@ -240,12 +246,81 @@ export class QuoteService extends BaseRepository {
       throw new Error('Quote not found');
     }
 
-    // Validate status allows updates
-    if (![QuoteStatus.DRAFT, QuoteStatus.PENDING].includes(existingQuote.status)) {
-      throw new Error('Quote cannot be updated in current status');
+    // Check quote locking and permissions
+    const lockResult = await this.lockingService.checkQuoteLock({
+      quoteId,
+      organizationId: this.options.organizationId,
+      userId: this.options.userId,
+      newData: data
+    });
+
+    if (lockResult.isLocked && !lockResult.canForceEdit) {
+      throw new Error(lockResult.reason || 'Quote is locked and cannot be edited');
     }
 
+    // Check if material changes require versioning
+    const hasMaterialChanges = await this.versioningService.hasMaterialChanges(quoteId, data);
+    const requiresVersioning = lockResult.requiresVersioning || hasMaterialChanges;
+
     return withTx(this.db, async (tx) => {
+      // Create version if required
+      if (requiresVersioning) {
+        const versionData = {
+          quoteId,
+          organizationId: this.options.organizationId,
+          customerId: existingQuote.customerId,
+          projectId: existingQuote.projectId,
+          title: existingQuote.title,
+          description: existingQuote.description,
+          status: existingQuote.status,
+          type: existingQuote.type,
+          validFrom: existingQuote.validFrom,
+          validUntil: existingQuote.validUntil,
+          currency: existingQuote.currency,
+          exchangeRate: existingQuote.exchangeRate,
+          subtotal: existingQuote.subtotal,
+          taxRate: existingQuote.taxRate,
+          taxAmount: existingQuote.taxAmount,
+          discountType: existingQuote.discountType,
+          discountValue: existingQuote.discountValue,
+          discountAmount: existingQuote.discountAmount,
+          totalAmount: existingQuote.totalAmount,
+          termsConditions: existingQuote.termsConditions,
+          notes: existingQuote.notes,
+          internalNotes: existingQuote.internalNotes,
+          createdBy: existingQuote.createdBy,
+          approvedBy: existingQuote.approvedBy,
+          approvedAt: existingQuote.approvedAt,
+          sentAt: existingQuote.sentAt,
+          acceptedAt: existingQuote.acceptedAt,
+          expiresAt: existingQuote.expiresAt,
+          metadata: existingQuote.metadata,
+          lineItems: existingQuote.lineItems.map((item: any) => ({
+            lineNumber: item.lineNumber,
+            type: item.type,
+            sku: item.sku,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            unitCost: item.unitCost,
+            unit: item.unit,
+            taxInclusive: item.taxInclusive,
+            taxRate: item.taxRate,
+            taxAmount: item.taxAmount,
+            discountType: item.discountType,
+            discountValue: item.discountValue,
+            discountAmount: item.discountAmount,
+            subtotal: item.subtotal,
+            totalAmount: item.totalAmount,
+            serviceCategoryId: item.serviceCategoryId,
+            rateCardId: item.rateCardId,
+            metadata: item.metadata
+          }))
+        };
+
+        await this.versioningService.createVersion(versionData);
+      }
+
       const updateData: any = {};
 
       // Update header fields if provided
@@ -579,7 +654,7 @@ export class QuoteService extends BaseRepository {
         const lineItems = await this.db
           .select()
           .from(quoteLineItems)
-          .where(eq(quoteLineItems.quoteId, quote.id))
+          .where(eq(quoteLineItems.quoteId, quote['id']))
           .orderBy(asc(quoteLineItems.lineNumber));
 
         return {
@@ -630,6 +705,20 @@ export class QuoteService extends BaseRepository {
       userId: this.options.userId,
       oldValues: { status: quote.status, title: quote.title }
     }, {} as any);
+  }
+
+  /**
+   * Get all versions of a quote
+   */
+  async getQuoteVersions(quoteId: string): Promise<any[]> {
+    return this.versioningService.getQuoteVersions(quoteId, this.options.organizationId);
+  }
+
+  /**
+   * Get a specific version of a quote with line items
+   */
+  async getQuoteVersion(quoteId: string, versionId: string): Promise<any | null> {
+    return this.versioningService.getQuoteVersion(quoteId, versionId, this.options.organizationId);
   }
 
   /**

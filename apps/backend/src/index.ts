@@ -31,6 +31,7 @@ import { rateCardRoutes } from './modules/rate-cards/index.js';
 import { permissionRoutes } from './modules/permissions/index.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
+import { idempotencyPlugin } from './plugins/idempotency.js';
 
 // Enable default metrics collection (once per process)
 const g = globalThis as any;
@@ -86,6 +87,9 @@ async function registerPlugins() {
 
   // Register payload guard plugin (enforces JSONB rules)
   await app.register(payloadGuardPlugin);
+
+  // Register idempotency plugin (enables safe and repeatable writes)
+  await app.register(idempotencyPlugin);
 
   // Register manual OpenAPI documentation route BEFORE any Swagger plugins
   app.get('/api/quotes-openapi.json', {

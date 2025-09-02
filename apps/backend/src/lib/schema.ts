@@ -6,9 +6,9 @@ export const currencies = pgTable('currencies', {
   code: varchar('code', { length: 3 }).primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   symbol: varchar('symbol', { length: 10 }),
-  isActive: boolean('isActive').notNull().default(true),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Organizations table - normalized address and contact info
@@ -21,7 +21,7 @@ export const organizations = pgTable('organizations', {
   size: varchar('size', { length: 50 }),
   timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
   currency: varchar('currency', { length: 3 }).notNull().default('USD'),
-  taxId: varchar('taxId', { length: 100 }),
+  taxId: varchar('tax_id', { length: 100 }),
   // Normalized address fields
   street: text('street'),
   suburb: text('suburb'),
@@ -36,12 +36,12 @@ export const organizations = pgTable('organizations', {
   // Keep JSONB only for flexible extras
   contactExtras: jsonb('contact_extras'), // Social links, secondary channels
   settings: jsonb('settings').notNull().default('{}'), // Feature-specific payloads
-  subscriptionPlan: varchar('subscriptionPlan', { length: 50 }).notNull().default('basic'),
-  subscriptionStatus: varchar('subscriptionStatus', { length: 20 }).notNull().default('active'),
-  trialEndsAt: timestamp('trialEndsAt', { mode: 'date', precision: 3 }),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+  subscriptionPlan: varchar('subscription_plan', { length: 50 }).notNull().default('basic'),
+  subscriptionStatus: varchar('subscription_status', { length: 20 }).notNull().default('active'),
+  trialEndsAt: timestamp('trial_ends_at', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
 // Organization security policies table
@@ -125,7 +125,7 @@ export const permissions = pgTable('permissions', {
   resource: varchar('resource', { length: 100 }).notNull(),
   description: text('description'),
   category: varchar('category', { length: 100 }).notNull(),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
   actionResourceUnique: uniqueIndex('permissions_action_resource_unique').on(table.action, table.resource),
 }));
@@ -185,15 +185,15 @@ export const userRoles = pgTable('user_roles', {
 // Customers table - normalized address and contact info
 export const customers = pgTable('customers', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  customerNumber: varchar('customerNumber', { length: 50 }).notNull().unique(),
-  companyName: varchar('companyName', { length: 255 }).notNull(),
-  legalName: varchar('legalName', { length: 255 }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  customerNumber: varchar('customer_number', { length: 50 }).notNull().unique(),
+  companyName: varchar('company_name', { length: 255 }).notNull(),
+  legalName: varchar('legal_name', { length: 255 }),
   industry: varchar('industry', { length: 100 }),
   website: text('website'),
   description: text('description'),
   status: varchar('status', { length: 20 }).notNull().default('active'),
-  customerType: varchar('customerType', { length: 50 }).notNull().default('business'),
+  customerType: varchar('customer_type', { length: 50 }).notNull().default('business'),
   source: varchar('source', { length: 50 }),
   tags: text('tags').array(),
   rating: integer('rating'),
@@ -209,9 +209,9 @@ export const customers = pgTable('customers', {
   email: varchar('email', { length: 255 }),
   // Keep JSONB for flexible extras
   contactExtras: jsonb('contact_extras'), // Social links, secondary channels
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
 // Projects table - core fields as columns, metadata in JSONB
@@ -320,6 +320,7 @@ export const quotes = pgTable('quotes', {
   expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Customer specific extra fields
+  // Note: currentVersionId will be managed at the application level to avoid circular references
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
@@ -355,33 +356,114 @@ export const quoteLineItems = pgTable('quote_line_items', {
   updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
+// Idempotency keys table for safe and repeatable writes
+export const idempotencyKeys = pgTable('idempotency_keys', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  route: varchar('route', { length: 255 }).notNull(),
+  requestHash: text('request_hash').notNull(),
+  responseStatus: integer('response_status').notNull(),
+  responseBody: jsonb('response_body').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }).notNull(),
+}, (table) => ({
+  idempotencyUnique: uniqueIndex('idempotency_keys_org_user_route_hash_unique').on(table.organizationId, table.userId, table.route, table.requestHash),
+}));
+
+// Quote versions table for versioning support
+export const quoteVersions = pgTable('quote_versions', {
+  id: text('id').primaryKey(),
+  quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+  versionNumber: integer('version_number').notNull(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(),
+  validFrom: date('valid_from').notNull(),
+  validUntil: date('valid_until').notNull(),
+  currency: varchar('currency', { length: 3 }).notNull(),
+  exchangeRate: decimal('exchange_rate', { precision: 10, scale: 6 }).notNull(),
+  subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
+  taxRate: decimal('tax_rate', { precision: 5, scale: 4 }).notNull(),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull(),
+  discountType: varchar('discount_type', { length: 20 }).notNull(),
+  discountValue: decimal('discount_value', { precision: 10, scale: 4 }).notNull(),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull(),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+  termsConditions: text('terms_conditions'),
+  notes: text('notes'),
+  internalNotes: text('internal_notes'),
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at', { mode: 'date', precision: 3 }),
+  sentAt: timestamp('sent_at', { mode: 'date', precision: 3 }),
+  acceptedAt: timestamp('accepted_at', { mode: 'date', precision: 3 }),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
+  metadata: jsonb('metadata').notNull().default('{}'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  versionUnique: uniqueIndex('quote_versions_quote_version_unique').on(table.quoteId, table.versionNumber),
+}));
+
+// Quote line item versions table
+export const quoteLineItemVersions = pgTable('quote_line_item_versions', {
+  id: text('id').primaryKey(),
+  quoteVersionId: text('quote_version_id').notNull().references(() => quoteVersions.id, { onDelete: 'cascade' }),
+  lineNumber: integer('line_number').notNull(),
+  type: varchar('type', { length: 50 }).notNull(),
+  sku: varchar('sku', { length: 50 }),
+  description: text('description').notNull(),
+  quantity: decimal('quantity', { precision: 10, scale: 4 }).notNull(),
+  unitPrice: decimal('unit_price', { precision: 15, scale: 4 }).notNull(),
+  unitCost: decimal('unit_cost', { precision: 15, scale: 4 }),
+  unit: varchar('unit', { length: 50 }).notNull(),
+  taxInclusive: boolean('tax_inclusive').notNull().default(false),
+  taxRate: decimal('tax_rate', { precision: 5, scale: 4 }).notNull(),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull(),
+  discountType: varchar('discount_type', { length: 20 }).notNull(),
+  discountValue: decimal('discount_value', { precision: 10, scale: 4 }).notNull(),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull(),
+  subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+  serviceCategoryId: text('service_category_id').references(() => serviceCategories.id, { onDelete: 'set null' }),
+  rateCardId: text('rate_card_id').references(() => rateCards.id, { onDelete: 'set null' }),
+  metadata: jsonb('metadata').notNull().default('{}'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  lineNumberUnique: uniqueIndex('quote_line_item_versions_version_line_unique').on(table.quoteVersionId, table.lineNumber),
+}));
+
 // Audit logs table - proper envelope columns plus JSONB for values
 export const auditLogs = pgTable('audit_logs', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  entityType: varchar('entityType', { length: 100 }).notNull(),
-  entityId: text('entityId').notNull(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  entityType: varchar('entity_type', { length: 100 }).notNull(),
+  entityId: text('entity_id').notNull(),
   action: varchar('action', { length: 100 }).notNull(),
-  actorId: text('actorId').references(() => users.id, { onDelete: 'set null' }),
-  requestId: text('requestId'), // For request tracing
-  ipAddress: inet('ipAddress'), // Proper IP address type
-  userAgent: text('userAgent'),
-  sessionId: varchar('sessionId', { length: 255 }),
+  actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  requestId: text('request_id'), // For request tracing
+  ipAddress: inet('ip_address'), // Proper IP address type
+  userAgent: text('user_agent'),
+  sessionId: varchar('session_id', { length: 255 }),
   // Keep JSONB for old/new values
-  oldValues: jsonb('oldValues'),
-  newValues: jsonb('newValues'),
+  oldValues: jsonb('old_values'),
+  newValues: jsonb('new_values'),
   metadata: jsonb('metadata').notNull().default('{}'),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Organization settings key-value table with JSONB value
 export const orgSettings = pgTable('org_settings', {
-  orgId: text('orgId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  orgId: text('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   key: text('key').notNull(),
   value: jsonb('value').notNull(), // Flexible value storage
   description: text('description'),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
   orgKeyUnique: uniqueIndex('org_settings_org_key_unique').on(table.orgId, table.key),
 }));
@@ -571,6 +653,7 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
     references: [users.id],
   }),
   lineItems: many(quoteLineItems),
+  versions: many(quoteVersions),
 }));
 
 export const quoteLineItemsRelations = relations(quoteLineItems, ({ one }) => ({
@@ -584,6 +667,61 @@ export const quoteLineItemsRelations = relations(quoteLineItems, ({ one }) => ({
   }),
   rateCard: one(rateCards, {
     fields: [quoteLineItems.rateCardId],
+    references: [rateCards.id],
+  }),
+}));
+
+// Relations for new API hardening tables
+export const idempotencyKeysRelations = relations(idempotencyKeys, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [idempotencyKeys.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [idempotencyKeys.userId],
+    references: [users.id],
+  }),
+}));
+
+export const quoteVersionsRelations = relations(quoteVersions, ({ one, many }) => ({
+  quote: one(quotes, {
+    fields: [quoteVersions.quoteId],
+    references: [quotes.id],
+  }),
+  organization: one(organizations, {
+    fields: [quoteVersions.organizationId],
+    references: [organizations.id],
+  }),
+  customer: one(customers, {
+    fields: [quoteVersions.customerId],
+    references: [customers.id],
+  }),
+  project: one(projects, {
+    fields: [quoteVersions.projectId],
+    references: [projects.id],
+  }),
+  createdBy: one(users, {
+    fields: [quoteVersions.createdBy],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [quoteVersions.approvedBy],
+    references: [users.id],
+  }),
+  lineItems: many(quoteLineItemVersions),
+}));
+
+export const quoteLineItemVersionsRelations = relations(quoteLineItemVersions, ({ one }) => ({
+  quoteVersion: one(quoteVersions, {
+    fields: [quoteLineItemVersions.quoteVersionId],
+    references: [quoteVersions.id],
+  }),
+  serviceCategory: one(serviceCategories, {
+    fields: [quoteLineItemVersions.serviceCategoryId],
+    references: [serviceCategories.id],
+  }),
+  rateCard: one(rateCards, {
+    fields: [quoteLineItemVersions.rateCardId],
     references: [rateCards.id],
   }),
 }));
@@ -630,6 +768,12 @@ export type Quote = typeof quotes.$inferSelect;
 export type NewQuote = typeof quotes.$inferInsert;
 export type QuoteLineItem = typeof quoteLineItems.$inferSelect;
 export type NewQuoteLineItem = typeof quoteLineItems.$inferInsert;
+export type IdempotencyKey = typeof idempotencyKeys.$inferSelect;
+export type NewIdempotencyKey = typeof idempotencyKeys.$inferInsert;
+export type QuoteVersion = typeof quoteVersions.$inferSelect;
+export type NewQuoteVersion = typeof quoteVersions.$inferInsert;
+export type QuoteLineItemVersion = typeof quoteLineItemVersions.$inferSelect;
+export type NewQuoteLineItemVersion = typeof quoteLineItemVersions.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type OrgSecurityPolicy = typeof orgSecurityPolicies.$inferSelect;
