@@ -93,7 +93,7 @@ export function createTokenManager(app: FastifyInstance) {
     const key = `pivotal:refresh_token:${jti}`;
     const ttl = parseTTL(config.auth.refreshTokenTTL);
     
-    await (app as any).cache.set(key, data, ttl);
+    await app.cache.set(key, data, ttl);
     logger.debug({ jti, userId: data.userId }, 'Refresh token stored in cache');
   }
 
@@ -102,7 +102,7 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function validateRefreshToken(jti: string): Promise<RefreshTokenData | null> {
     const key = `pivotal:refresh_token:${jti}`;
-    const data = await (app as any).cache.get(key);
+    const data = await app.cache.get(key);
     
     if (!data) {
       return null;
@@ -127,7 +127,7 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function revokeRefreshToken(jti: string): Promise<void> {
     const key = `pivotal:refresh_token:${jti}`;
-    await (app as any).cache.delete(key);
+    await app.cache.delete(key);
     logger.info({ jti }, 'Refresh token revoked');
   }
 

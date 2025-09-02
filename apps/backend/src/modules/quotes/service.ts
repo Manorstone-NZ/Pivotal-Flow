@@ -2,8 +2,8 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { z } from 'zod';
 import { quotes, quoteLineItems } from '../../lib/schema.js';
 import { eq, and, isNull, desc, asc, like, or, gte, lte } from 'drizzle-orm';
-import { calculateQuote, calculateQuoteDebug } from '@pivotal-flow/shared/pricing/index.js';
-import { validateMetadataJSONB } from '@pivotal-flow/shared/guards/jsonb.js';
+import { calculateQuote, calculateQuoteDebug } from '@pivotal-flow/shared/pricing';
+import { throwIfMonetaryInMetadata } from '@pivotal-flow/shared/guards/jsonbMonetaryGuard';
 import { Decimal } from 'decimal.js';
 import { QuoteNumberGenerator } from './quote-number.js';
 import { 
@@ -23,6 +23,7 @@ import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
 import { QuoteVersioningService } from '../../lib/quote-versioning.js';
 import { QuoteLockingService } from '../../lib/quote-locking.js';
+import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics.js';
 
 /**
  * Quote Service
@@ -60,18 +61,22 @@ export class QuoteService extends BaseRepository {
    * Create a new quote with line items
    */
   async createQuote(data: z.infer<typeof CreateQuoteSchema>): Promise<any> {
-    // Validate quote data
-    const validation = validateQuoteData(data);
-    if (!validation.isValid) {
-      throw new Error(`Quote validation failed: ${validation.errors.join(', ')}`);
-    }
-
-    // Validate that line item metadata JSONB doesn't contain business values
-    for (const item of data.lineItems) {
-      if (item.metadata) {
-        validateMetadataJSONB(item.metadata, `quote line item ${item.lineNumber} metadata`);
+    const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'create');
+    
+    try {
+      // Validate quote data
+      const validation = validateQuoteData(data);
+      if (!validation.isValid) {
+        quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'validation');
+        throw new Error(`Quote validation failed: ${validation.errors.join(', ')}`);
       }
-    }
+
+      // Validate that line item metadata JSONB doesn't contain business values
+      for (const item of data.lineItems) {
+        if (item.metadata) {
+          throwIfMonetaryInMetadata(item.metadata);
+        }
+      }
 
     return withTx(this.db, async (tx) => {
       // Generate quote number
@@ -234,35 +239,49 @@ export class QuoteService extends BaseRepository {
 
       return this.getQuoteByIdWithTx(tx, quoteData.id);
     });
+    
+    // Record success metrics
+    quoteMetrics.recordQuoteCreated(this.options.organizationId, QuoteStatus.DRAFT);
+    timer();
+    
+  } catch (error) {
+    quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'unknown');
+    timer();
+    throw error;
   }
+}
 
-  /**
-   * Update quote header and/or line items with recalculation
-   */
+/**
+ * Update quote header and/or line items with recalculation
+ */
   async updateQuote(quoteId: string, data: z.infer<typeof UpdateQuoteSchema>): Promise<any> {
-    // Get existing quote
-    const existingQuote = await this.getQuoteById(quoteId);
-    if (!existingQuote) {
-      throw new Error('Quote not found');
-    }
+    const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'update');
+    
+    try {
+      // Get existing quote
+      const existingQuote = await this.getQuoteById(quoteId);
+      if (!existingQuote) {
+        quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'not_found');
+        throw new Error('Quote not found');
+      }
 
-    // Check quote locking and permissions
-    const lockResult = await this.lockingService.checkQuoteLock({
-      quoteId,
-      organizationId: this.options.organizationId,
-      userId: this.options.userId,
-      newData: data
-    });
+      // Check quote locking and permissions
+      const lockResult = await this.lockingService.checkQuoteLock({
+        quoteId,
+        organizationId: this.options.organizationId,
+        userId: this.options.userId,
+        newData: data
+      });
 
-    if (lockResult.isLocked && !lockResult.canForceEdit) {
-      throw new Error(lockResult.reason || 'Quote is locked and cannot be edited');
-    }
+      if (lockResult.isLocked && !lockResult.canForceEdit) {
+        throw new Error(lockResult.reason || 'Quote is locked and cannot be edited');
+      }
 
-    // Check if material changes require versioning
-    const hasMaterialChanges = await this.versioningService.hasMaterialChanges(quoteId, data);
-    const requiresVersioning = lockResult.requiresVersioning || hasMaterialChanges;
+      // Check if material changes require versioning
+      const hasMaterialChanges = await this.versioningService.hasMaterialChanges(quoteId, data);
+      const requiresVersioning = lockResult.requiresVersioning || hasMaterialChanges;
 
-    return withTx(this.db, async (tx) => {
+      return withTx(this.db, async (tx) => {
       // Create version if required
       if (requiresVersioning) {
         const versionData = {
@@ -343,7 +362,7 @@ export class QuoteService extends BaseRepository {
       // Validate that line item metadata JSONB doesn't contain business values
       for (const item of data.lineItems) {
         if (item.metadata) {
-          validateMetadataJSONB(item.metadata, `quote line item ${item.lineNumber} metadata`);
+          throwIfMonetaryInMetadata(item.metadata);
         }
       }
 
@@ -442,7 +461,20 @@ export class QuoteService extends BaseRepository {
 
       return this.getQuoteByIdWithTx(tx, quoteId);
     });
+    
+    // Record success metrics
+    quoteMetrics.recordQuoteUpdated(this.options.organizationId, existingQuote.status);
+    if (data.lineItems) {
+      quoteMetrics.recordQuoteRecalc(this.options.organizationId, 'line_items_update');
+    }
+    timer();
+    
+  } catch (error) {
+    quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'unknown');
+    timer();
+    throw error;
   }
+}
 
   /**
    * Transition quote status with validation
@@ -575,14 +607,19 @@ export class QuoteService extends BaseRepository {
     pagination: PaginationOptions,
     filters: any = {}
   ): Promise<{ quotes: any[]; pagination: any }> {
-    // Guard against JSONB filter misuse
-    const check = guardTypedFilters(filters);
-    if (!check.ok) {
-      const e: any = new Error(check.reason);
-      e.statusCode = 400;
-      e.code = "JSONB_FILTER_FORBIDDEN";
-      throw e;
-    }
+    const filtersCount = Object.keys(filters).filter(key => filters[key] !== undefined).length;
+    const timer = quoteMetrics.startQuoteListTimer(this.options.organizationId, pagination.pageSize, filtersCount);
+    
+    try {
+      // Guard against JSONB filter misuse
+      const check = guardTypedFilters(filters);
+      if (!check.ok) {
+        quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'jsonb_filter');
+        const e: any = new Error(check.reason);
+        e.statusCode = 400;
+        e.code = "JSONB_FILTER_FORBIDDEN";
+        throw e;
+      }
 
     const { page, pageSize } = pagination;
     const offset = (page - 1) * pageSize;
@@ -675,11 +712,22 @@ export class QuoteService extends BaseRepository {
         hasPrev: page > 1
       }
     };
+    
+    // Record success metrics
+    const filtersApplied = Object.keys(filters).filter(key => filters[key] !== undefined).join(',');
+    quoteMetrics.recordQuoteListed(this.options.organizationId, filtersApplied || 'none');
+    timer();
+    
+  } catch (error) {
+    quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'unknown');
+    timer();
+    throw error;
   }
+}
 
-  /**
-   * Delete quote (soft delete)
-   */
+/**
+ * Delete quote (soft delete)
+ */
   async deleteQuote(quoteId: string): Promise<void> {
     const quote = await this.getQuoteById(quoteId);
     if (!quote) {

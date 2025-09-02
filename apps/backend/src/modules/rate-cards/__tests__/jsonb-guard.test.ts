@@ -1,120 +1,95 @@
 import { describe, it, expect } from 'vitest';
+import { throwIfMonetaryInMetadata } from '@pivotal-flow/shared/guards/jsonbMonetaryGuard.js';
 
-// Test the JSONB guard functionality
-describe('JSONB Guard - validateMetadataJSONB', () => {
-  // Import the function from the service
-  const { validateMetadataJSONB } = require('../service.js');
-
+describe('JSONB Guard - throwIfMonetaryInMetadata', () => {
   describe('should allow valid metadata', () => {
-    it('should allow benign metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({ note: "ok", tags: ["x"] }, 'test context');
-      }).not.toThrow();
+    it('allows benign metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ note: "ok", tags: ["x"] })).not.toThrow();
     });
 
-    it('should allow nested valid metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({
-          config: {
-            display: {
-              theme: "dark",
-              layout: "compact"
-            }
-          }
-        }, 'test context');
-      }).not.toThrow();
+    it('allows empty metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({})).not.toThrow();
     });
 
-    it('should allow empty metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({}, 'test context');
-      }).not.toThrow();
+    it('allows null metadata', () => {
+      expect(() => throwIfMonetaryInMetadata(null)).not.toThrow();
     });
   });
 
-  describe('should reject business values in metadata', () => {
-    it('should reject totals in metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({ subtotal: 10 }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+  describe('should reject forbidden fields', () => {
+    it('rejects subtotal in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ subtotal: 10 })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject unitPrice in metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({ unitPrice: 100 }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects unitPrice in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ unitPrice: 100 })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject taxAmount in metadata', () => {
-      expect(() => {
-        validateMetadataJSONB({ taxAmount: 15.50 }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects taxAmount in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ taxAmount: 15.50 })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject nested monetary fields', () => {
-      expect(() => {
-        validateMetadataJSONB({ 
-          config: { 
-            pricing: { unitPrice: 100 } 
-          } 
-        }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects nested forbidden fields', () => {
+      expect(() => throwIfMonetaryInMetadata({
+        config: {
+          pricing: {
+            unitPrice: 100,
+            discount: 10
+          }
+        }
+      })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject array items with monetary fields', () => {
-      expect(() => {
-        validateMetadataJSONB([
-          { metadata: { amount: 50 } },
-          { metadata: { discount: 10 } }
-        ], 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects array items with forbidden fields', () => {
+      expect(() => throwIfMonetaryInMetadata([
+        { metadata: { amount: 50 } },
+        { metadata: { discount: 10 } }
+      ])).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject quantity fields', () => {
-      expect(() => {
-        validateMetadataJSONB({ quantity: 5 }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects quantity in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ quantity: 5 })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject taxRate fields', () => {
-      expect(() => {
-        validateMetadataJSONB({ taxRate: 0.15 }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects taxRate in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ taxRate: 0.15 })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
 
-    it('should reject currency fields', () => {
-      expect(() => {
-        validateMetadataJSONB({ currency: "NZD" }, 'test context');
-      }).toThrow('JSONB metadata cannot contain business values');
+    it('rejects currency in metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({ currency: "NZD" })).toThrow('JSONB_MONETARY_FORBIDDEN');
     });
   });
 
-  describe('should provide clear error messages', () => {
-    it('should include field path in error message', () => {
-      try {
-        validateMetadataJSONB({
-          config: {
-            pricing: {
-              unitPrice: 100
-            }
-          }
-        }, 'rate card metadata');
-        throw new Error('Should have thrown an error');
-      } catch (error) {
-        expect((error as Error).message).toContain('unitPrice');
-        expect((error as Error).message).toContain('config.pricing.unitPrice');
-        expect((error as Error).message).toContain('rate card metadata');
-      }
+  describe('should allow valid metadata structures', () => {
+    it('allows tags and notes', () => {
+      expect(() => throwIfMonetaryInMetadata({
+        tags: ["urgent", "review"],
+        notes: "Customer requested expedited processing"
+      })).not.toThrow();
     });
 
-    it('should include context in error message', () => {
-      try {
-        validateMetadataJSONB({ subtotal: 1000         }, 'quote line item 1 metadata');
-        throw new Error('Should have thrown an error');
-      } catch (error) {
-        expect((error as Error).message).toContain('quote line item 1 metadata');
-        expect((error as Error).message).toContain('Business values must be stored in typed columns');
-      }
+    it('allows custom fields', () => {
+      expect(() => throwIfMonetaryInMetadata({
+        customFields: {
+          priority: "high",
+          department: "sales"
+        }
+      })).not.toThrow();
+    });
+
+    it('allows complex valid metadata', () => {
+      expect(() => throwIfMonetaryInMetadata({
+        tags: ["urgent"],
+        notes: "Customer requested expedited processing",
+        customFields: {
+          priority: "high",
+          department: "sales"
+        },
+        metadata: {
+          source: "web",
+          version: "1.0"
+        }
+      })).not.toThrow();
     });
   });
 });

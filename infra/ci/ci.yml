@@ -5,6 +5,29 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: pivotal
+          POSTGRES_PASSWORD: pivotal
+          POSTGRES_DB: pivotal_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -12,7 +35,114 @@ jobs:
           node-version: 20
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      
+      # Set up environment variables for testing
+      - name: Set up environment
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql://pivotal:pivotal@localhost:5433/pivotal_test" >> $GITHUB_ENV
+          echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
+          echo "JWT_SECRET=test-jwt-secret-key-for-testing-only-32-chars" >> $GITHUB_ENV
+          echo "COOKIE_SECRET=test-cookie-secret-key-for-testing-only-32-chars" >> $GITHUB_ENV
+          echo "LOG_LEVEL=error" >> $GITHUB_ENV
+          echo "DB_TRACE=false" >> $GITHUB_ENV
+          echo "CACHE_TTL_SECS=300" >> $GITHUB_ENV
+      
+      # Wait for services to be ready
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5433 -U pivotal; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+      - name: Wait for Redis
+        run: |
+          until redis-cli -h localhost ping; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+      
+      # Run type checking and build
       - run: pnpm -r typecheck
       - run: pnpm -r build
       - run: pnpm -r lint
-      - run: pnpm -r test
+      
+      # Run tests with proper environment
+      - name: Run shared package tests
+        run: |
+          cd packages/shared
+          pnpm test
+      
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-key-for-testing-only-32-chars
+          COOKIE_SECRET: test-cookie-secret-key-for-testing-only-32-chars
+          LOG_LEVEL: error
+          DB_TRACE: false
+          CACHE_TTL_SECS: 300
+      
+      # Run CI checks
+      - name: Check JSONB usage for core fields
+        run: node scripts/ci/check-jsonb-usage.js
+      
+      # Run performance smoke tests (with backend server)
+      - name: Start backend server for performance tests
+        run: |
+          cd apps/backend
+          nohup pnpm start > server.log 2>&1 &
+          echo $! > server.pid
+          sleep 10  # Wait for server to start
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-key-for-testing-only-32-chars
+          COOKIE_SECRET: test-cookie-secret-key-for-testing-only-32-chars
+          LOG_LEVEL: error
+          DB_TRACE: false
+          CACHE_TTL_SECS: 300
+      
+      - name: Run quote performance smoke tests
+        run: |
+          node scripts/ci/quote-perf-smoke.js http://localhost:3000
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
+      
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -f apps/backend/server.pid ]; then
+            kill $(cat apps/backend/server.pid) || true
+            rm apps/backend/server.pid
+          fi
+      
+      # Run database migrations
+      - name: Run database migrations
+        run: |
+          cd apps/backend
+          pnpm drizzle-kit migrate
+        env:
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+      
+      # Run integration tests
+      - name: Run integration tests
+        run: |
+          cd apps/backend
+          pnpm test --run integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-key-for-testing-only-32-chars
+          COOKIE_SECRET: test-cookie-secret-key-for-testing-only-32-chars
+          LOG_LEVEL: error
+          DB_TRACE: false
+          CACHE_TTL_SECS: 300
