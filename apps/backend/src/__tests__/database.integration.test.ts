@@ -32,18 +32,18 @@ describe('Database Integration Tests', () => {
   
   describe('User Service Integration', () => {
     it('should create users in database', async () => {
+      // Create organization first
+      const org = await testUtils.createTestOrganization();
+      
       const userData = {
         email: 'test@example.com',
         displayName: 'Test User',
-        organizationId: crypto.randomUUID(),
+        organizationId: org.id,
         passwordHash: 'test-hash'
       };
       
-      // Create user directly in database
-      await testDb`
-        INSERT INTO users (id, email, password_hash, display_name, organization_id, status, created_at, updated_at)
-        VALUES (${crypto.randomUUID()}, ${userData.email}, ${userData.passwordHash}, ${userData.displayName}, ${userData.organizationId}, 'active', NOW(), NOW())
-      `;
+      // Create user using test utilities
+      const user = await testUtils.createTestUser(userData);
       
       // Verify user exists
       const result = await testDb`
@@ -57,18 +57,12 @@ describe('Database Integration Tests', () => {
     it('should handle user role assignments', async () => {
       const org = await testUtils.createTestOrganization();
       const user = await testUtils.createTestUser({ organizationId: org.id });
-      
-      // Create a role
-      const roleId = crypto.randomUUID();
-      await testDb`
-        INSERT INTO roles (id, name, description, is_system, is_active, created_at, updated_at)
-        VALUES (${roleId}, 'test-role', 'Test role', false, true, NOW(), NOW())
-      `;
+      const role = await testUtils.createTestRole();
       
       // Assign role to user
       await testDb`
-        INSERT INTO user_roles (user_id, role_id, organization_id, is_active, created_at, updated_at)
-        VALUES (${user.id}, ${roleId}, ${org.id}, true, NOW(), NOW())
+        INSERT INTO user_roles (user_id, org_id, role_id, is_active, created_at, updated_at)
+        VALUES (${user.id}, ${org.id}, ${role.id}, true, NOW(), NOW())
       `;
       
       // Verify role assignment
@@ -80,7 +74,7 @@ describe('Database Integration Tests', () => {
       `;
       
       expect(result.length).toBe(1);
-      expect(result[0].role_name).toBe('test-role');
+      expect(result[0].role_name).toBe(role.name);
     });
   });
   
@@ -91,16 +85,24 @@ describe('Database Integration Tests', () => {
       
       // Create quote
       const quoteId = crypto.randomUUID();
+      const now = new Date();
+      const validFrom = now;
+      const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      
       await testDb`
-        INSERT INTO quotes (id, quote_number, customer_id, organization_id, title, description, status, type, currency, created_at, updated_at)
-        VALUES (${quoteId}, 'Q-2025-001', ${customer.id}, ${org.id}, 'Test Quote', 'Test description', 'draft', 'project', 'NZD', NOW(), NOW())
+        INSERT INTO quotes (id, quote_number, customer_id, organization_id, title, description, status, type, currency, valid_from, valid_until, created_at, updated_at)
+        VALUES (${quoteId}, 'Q-2025-001', ${customer.id}, ${org.id}, 'Test Quote', 'Test description', 'draft', 'project', 'NZD', ${validFrom}, ${validUntil}, NOW(), NOW())
       `;
       
       // Create line items
       const lineItemId = crypto.randomUUID();
+      const quantity = 10;
+      const unitPrice = 100.00;
+      const totalAmount = quantity * unitPrice;
+      
       await testDb`
-        INSERT INTO quote_line_items (id, quote_id, line_number, description, quantity, unit_price, type, created_at, updated_at)
-        VALUES (${lineItemId}, ${quoteId}, 1, 'Test service', 10, 100.00, 'service', NOW(), NOW())
+        INSERT INTO quote_line_items (id, quote_id, line_number, description, quantity, unit_price, type, total_amount, created_at, updated_at)
+        VALUES (${lineItemId}, ${quoteId}, 1, 'Test service', ${quantity}, ${unitPrice}, 'service', ${totalAmount}, NOW(), NOW())
       `;
       
       // Verify quote and line items
@@ -124,9 +126,13 @@ describe('Database Integration Tests', () => {
       
       // Create quote
       const quoteId = crypto.randomUUID();
+      const now = new Date();
+      const validFrom = now;
+      const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      
       await testDb`
-        INSERT INTO quotes (id, quote_number, customer_id, organization_id, title, description, status, type, currency, created_at, updated_at)
-        VALUES (${quoteId}, 'Q-2025-002', ${customer.id}, ${org.id}, 'Test Quote', 'Test description', 'draft', 'project', 'NZD', NOW(), NOW())
+        INSERT INTO quotes (id, quote_number, customer_id, organization_id, title, description, status, type, currency, valid_from, valid_until, created_at, updated_at)
+        VALUES (${quoteId}, 'Q-2025-002', ${customer.id}, ${org.id}, 'Test Quote', 'Test description', 'draft', 'project', 'NZD', ${validFrom}, ${validUntil}, NOW(), NOW())
       `;
       
       // Transition to pending
@@ -162,11 +168,21 @@ describe('Database Integration Tests', () => {
     it('should handle cache expiration', async () => {
       const cacheKey = 'test-expiration';
       
-      // Set cache with short expiration
-      await testRedis.set(cacheKey, 'test-value', 'EX', 1);
+      // Set cache with short expiration using separate expire command
+      await testRedis.set(cacheKey, 'test-value');
+      await testRedis.expire(cacheKey, 2);
       
-      // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Verify value exists initially
+      const initialValue = await testRedis.get(cacheKey);
+      expect(initialValue).toBe('test-value');
+      
+      // Check TTL is set correctly
+      const initialTtl = await testRedis.ttl(cacheKey);
+      expect(initialTtl).toBeGreaterThan(0);
+      expect(initialTtl).toBeLessThanOrEqual(2);
+      
+      // Wait for expiration (3 seconds to be safe)
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Check if expired
       const value = await testRedis.get(cacheKey);
@@ -206,19 +222,19 @@ describe('Database Integration Tests', () => {
     
     it('should enforce unique constraints', async () => {
       const email = 'unique@example.com';
-      const orgId = crypto.randomUUID();
+      const org = await testUtils.createTestOrganization();
       
       // Create first user
       await testDb`
         INSERT INTO users (id, email, password_hash, display_name, organization_id, status, created_at, updated_at)
-        VALUES (${crypto.randomUUID()}, ${email}, 'hash1', 'User 1', ${orgId}, 'active', NOW(), NOW())
+        VALUES (${crypto.randomUUID()}, ${email}, 'hash1', 'User 1', ${org.id}, 'active', NOW(), NOW())
       `;
       
       // Try to create second user with same email
       try {
         await testDb`
           INSERT INTO users (id, email, password_hash, display_name, organization_id, status, created_at, updated_at)
-          VALUES (${crypto.randomUUID()}, ${email}, 'hash2', 'User 2', ${orgId}, 'active', NOW(), NOW())
+          VALUES (${crypto.randomUUID()}, ${email}, 'hash2', 'User 2', ${org.id}, 'active', NOW(), NOW())
         `;
         throw new Error('Should have failed');
       } catch (error: any) {
@@ -277,7 +293,7 @@ describe('Database Integration Tests', () => {
         SELECT COUNT(*) as count FROM users WHERE organization_id = ${org.id}
       `;
       
-      expect(count[0].count).toBe(100);
+      expect(Number(count[0].count)).toBe(100);
     });
     
     it('should handle concurrent operations', async () => {
@@ -308,7 +324,7 @@ describe('Database Integration Tests', () => {
         SELECT COUNT(*) as count FROM users WHERE organization_id = ${org.id}
       `;
       
-      expect(count[0].count).toBe(10);
+      expect(Number(count[0].count)).toBe(10);
     });
   });
 });

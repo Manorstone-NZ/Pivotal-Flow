@@ -1,0 +1,9 @@
+-- Add missing columns to existing tables
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT false;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'project';
+

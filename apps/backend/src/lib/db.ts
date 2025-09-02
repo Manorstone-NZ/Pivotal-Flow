@@ -20,8 +20,8 @@ export async function initializeDatabase(): Promise<void> {
   try {
     // Dynamic import of postgres
     const postgresModule = await import('postgres');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const postgres = postgresModule as any;
+    // Handle different module formats
+    const postgres = postgresModule.default || postgresModule;
     
     // Create postgres client
     client = postgres(connectionString, {
