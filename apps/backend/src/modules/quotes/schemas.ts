@@ -67,9 +67,13 @@ export const QuoteLineItemSchema = z.object({
   quantity: z.number().positive(),
   unitPrice: MoneyAmountSchema,
   unitCost: MoneyAmountSchema.optional(),
+  unit: z.string().max(50).default('hour'), // New field
+  taxInclusive: z.boolean().default(false), // New field
   taxRate: z.number().min(0).max(1).default(0.15),
   discountType: z.enum(Object.values(DiscountType) as [string, ...string[]]).optional(),
   discountValue: z.number().min(0).optional(),
+  percentageDiscount: z.number().min(0).max(100).optional(), // New field
+  fixedDiscount: MoneyAmountSchema.optional(), // New field
   serviceCategoryId: z.string().uuid().optional(),
   rateCardId: z.string().uuid().optional(),
   metadata: z.record(z.any()).default({})

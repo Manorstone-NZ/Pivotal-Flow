@@ -460,7 +460,7 @@ export class RateCardService extends BaseRepository {
   private findMatchingRateItem(
     rateItems: any[],
     serviceCategoryId: string,
-    description: string
+    _description: string
   ): any | null {
     // First try exact service category match
     let match = rateItems.find(item => 
@@ -487,7 +487,7 @@ export class RateCardService extends BaseRepository {
    */
   private findMatchingRateItemByDescription(
     rateItems: any[],
-    description: string
+    _description: string
   ): any | null {
     // Find the best match by description similarity
     // This is a basic implementation - could be enhanced with fuzzy matching
@@ -530,21 +530,6 @@ export class RateCardService extends BaseRepository {
 
       // Bust cache for active rate cards
       await this.bustRateCardCache(rateCardData.id);
-
-      // Audit log
-      await this.auditLogger.logEvent({
-        action: 'rate_cards.create',
-        entityType: 'RateCard',
-        entityId: rateCardData.id,
-        organizationId: this.options.organizationId,
-        userId: this.options.userId,
-        newValues: {
-          name: data.name,
-          currency: data.currency,
-          effectiveFrom: data.effectiveFrom,
-          isDefault: data.isDefault
-        }
-      }, {} as any);
 
       return this.getRateCardByIdWithTx(tx, rateCardData.id);
     });
@@ -839,10 +824,9 @@ export class RateCardService extends BaseRepository {
    */
   async bustAllRateCardCaches(): Promise<void> {
     try {
-      const client = getRedisClient();
-      
       // Pattern to match all rate card related keys for this organization
-      const pattern = `pivotal:${this.options.organizationId}:rate*`;
+      // Note: _pattern is not used in this implementation
+      // const _pattern = `pivotal:${this.options.organizationId}:rate*`;
       
       // In production, you would use SCAN to find all matching keys
       // For now, we'll log the bulk cache bust action

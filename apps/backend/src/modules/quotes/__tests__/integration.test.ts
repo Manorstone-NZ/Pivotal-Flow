@@ -16,7 +16,7 @@ let testDb: any;
 async function initTestDb() {
   if (!testClient) {
     const postgresModule = await import('postgres');
-    const postgres = postgresModule as any;
+    const postgres = postgresModule.default;
     testClient = postgres('postgresql://pivotal:pivotal@localhost:5433/pivotal');
     testDb = drizzle(testClient) as any;
   }
@@ -209,6 +209,8 @@ describe('Quote Integration Tests', () => {
                 quantity: 10,
                 unitPrice: { amount: new Decimal(100), currency: 'NZD' },
                 unitCost: { amount: new Decimal(50), currency: 'NZD' },
+                unit: 'hour',
+                taxInclusive: false,
                 taxRate: 0.15,
                 discountType: 'percentage' as const,
                 discountValue: 0,
@@ -249,6 +251,8 @@ describe('Quote Integration Tests', () => {
             quantity: 5,
             unitPrice: { amount: new Decimal(200), currency: 'USD' },
             unitCost: { amount: new Decimal(100), currency: 'USD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.10,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -308,6 +312,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -357,6 +363,8 @@ describe('Quote Integration Tests', () => {
             quantity: 40,
             unitPrice: { amount: new Decimal(150), currency: 'NZD' },
             unitCost: { amount: new Decimal(75), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -370,6 +378,8 @@ describe('Quote Integration Tests', () => {
             quantity: 20,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -429,6 +439,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -483,6 +495,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -534,6 +548,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -557,6 +573,8 @@ describe('Quote Integration Tests', () => {
             quantity: 20, // Changed from 10 to 20
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -600,6 +618,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,
@@ -686,6 +706,8 @@ describe('Quote Integration Tests', () => {
             quantity: 10,
             unitPrice: { amount: new Decimal(100), currency: 'NZD' },
             unitCost: { amount: new Decimal(50), currency: 'NZD' },
+            unit: 'hour',
+            taxInclusive: false,
             taxRate: 0.15,
             discountType: 'percentage' as const,
             discountValue: 0,

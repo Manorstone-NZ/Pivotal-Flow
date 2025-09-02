@@ -9,6 +9,10 @@ interface CreateQuoteRequest {
   Body: z.infer<typeof CreateQuoteSchema>;
 }
 
+interface DebugQuoteRequest {
+  Body: z.infer<typeof CreateQuoteSchema>;
+}
+
 /**
  * Register the create quote route
  */
@@ -18,20 +22,20 @@ export function registerCreateQuoteRoute(fastify: FastifyInstance) {
       // Validate request body
       const validatedData = CreateQuoteSchema.parse(request.body);
 
-      // Get tenant context
-      const tenantContext = (request as any).tenantContext;
-      if (!tenantContext) {
+      // Get user context
+      const user = (request as any).user;
+      if (!user) {
         return reply.status(403).send({
           error: 'Forbidden',
-          message: 'Tenant context required',
+          message: 'Authentication required',
           code: 'TENANT_ACCESS_DENIED'
         });
       }
 
       // Create quote service
       const quoteService = new QuoteService((fastify as any).db, {
-        organizationId: tenantContext.organizationId,
-        userId: tenantContext.userId
+        organizationId: user.organizationId,
+        userId: user.userId
       });
 
       // Create quote
@@ -58,6 +62,60 @@ export function registerCreateQuoteRoute(fastify: FastifyInstance) {
 
       // Log unexpected errors
       logger.error('Unexpected error in createQuoteRoute:', error);
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  });
+
+  // Debug route for quote calculation
+  fastify.post('/v1/quotes/debug', async (request: FastifyRequest<DebugQuoteRequest>, reply: FastifyReply) => {
+    try {
+      // Validate request body
+      const validatedData = CreateQuoteSchema.parse(request.body);
+
+      // Get user context
+      const user = (request as any).user;
+      if (!user) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Authentication required',
+          code: 'TENANT_ACCESS_DENIED'
+        });
+      }
+
+      // Create quote service
+      const quoteService = new QuoteService((fastify as any).db, {
+        organizationId: user.organizationId,
+        userId: user.userId
+      });
+
+      // Calculate quote with debug information
+      const debugResult = await quoteService.calculateQuoteDebug(validatedData);
+
+      return reply.status(200).send(debugResult);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: error.errors
+        });
+      }
+
+      if (error instanceof Error) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: error.message,
+          code: 'QUOTE_DEBUG_FAILED'
+        });
+      }
+
+      // Log unexpected errors
+      logger.error('Unexpected error in debugQuoteRoute:', error);
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'An unexpected error occurred',

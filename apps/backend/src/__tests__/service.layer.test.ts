@@ -84,8 +84,9 @@ describe('Service Layer Tests', () => {
     });
     
     it('should handle role-based permissions', async () => {
-      const roles = ['admin', 'manager', 'user'];
-      const permissions = ['quotes.create', 'quotes.read', 'users.manage'] as const;
+      // Note: roles and permissions are not used in this test
+      // const roles = ['admin', 'manager', 'user'];
+      // const permissions = ['quotes.create', 'quotes.read', 'users.manage'] as const;
       
       // Test different role-permission combinations
       const testCases = [
@@ -213,7 +214,7 @@ describe('Service Layer Tests', () => {
         database: 'A database error occurred. Please try again later'
       };
       
-      for (const [type, message] of Object.entries(errorMessages)) {
+      for (const [_type, message] of Object.entries(errorMessages)) {
         expect(message).toBeTruthy();
         expect(typeof message).toBe('string');
       }

@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema.js';
 
 // Create postgres connection
-const connectionString = process.env['DATABASE_URL'] ?? 'postgresql://pivotal:pivotal@localhost:5432/pivotal';
+const connectionString = process.env['DATABASE_URL'] ?? 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
 
 // Database client and instance variables
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,7 +77,10 @@ export const hybridDb = {
     return getDatabase().delete.bind(getDatabase());
   },
   get execute(): unknown {
-    return getDatabase().execute.bind(getDatabase());
+    // Drizzle doesn't have an execute method, use the client directly
+    return async (sql: string, params?: any[]) => {
+      return await getClient().unsafe(sql, params);
+    };
   },
   get transaction(): unknown {
     return getDatabase().transaction.bind(getDatabase());

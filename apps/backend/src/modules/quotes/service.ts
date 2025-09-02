@@ -2,43 +2,8 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { z } from 'zod';
 import { quotes, quoteLineItems } from '../../lib/schema.js';
 import { eq, and, isNull, desc, asc, like, or, gte, lte } from 'drizzle-orm';
-// Temporary mock for calculateQuote until import issue is resolved
-function calculateQuote(input: any) {
-  // Mock implementation - will be replaced with real import
-  const lineItems = input.lineItems || [];
-  
-  const lineCalculations = lineItems.map((item: any) => {
-    const quantity = new Decimal(item.quantity || 1);
-    const unitPrice = new Decimal(item.unitPrice?.amount || 0);
-    const subtotal = quantity.mul(unitPrice);
-    const taxRate = new Decimal(item.taxRate || 0);
-    const taxAmount = subtotal.mul(taxRate);
-    const discountAmount = new Decimal(0);
-    const totalAmount = subtotal.add(taxAmount).sub(discountAmount);
-    
-    return {
-      subtotal: { amount: subtotal },
-      taxAmount: { amount: taxAmount },
-      discountAmount: { amount: discountAmount },
-      totalAmount: { amount: totalAmount }
-    };
-  });
-  
-  const subtotal = lineCalculations.reduce((sum: any, calc: any) => sum.add(calc.subtotal.amount), new Decimal(0));
-  const taxAmount = lineCalculations.reduce((sum: any, calc: any) => sum.add(calc.taxAmount.amount), new Decimal(0));
-  const discountAmount = new Decimal(0);
-  const grandTotal = subtotal.add(taxAmount).sub(discountAmount);
-  
-  return {
-    lineCalculations,
-    totals: {
-      subtotal: { amount: subtotal },
-      taxAmount: { amount: taxAmount },
-      discountAmount: { amount: discountAmount },
-      grandTotal: { amount: grandTotal }
-    }
-  };
-}
+import { calculateQuote, calculateQuoteDebug } from '@pivotal-flow/shared/pricing/index.js';
+import { validateMetadataJSONB } from '@pivotal-flow/shared/guards/jsonb.js';
 import { Decimal } from 'decimal.js';
 import { QuoteNumberGenerator } from './quote-number.js';
 import { 
@@ -56,38 +21,6 @@ import type { PaginationOptions } from '../../lib/repo.base.js';
 import { RateCardService } from '../rate-cards/service.js';
 import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
-
-/**
- * JSONB Guard - Prevents business values from being stored in metadata
- * This enforces the rule that JSONB may only hold optional metadata or rare exceptions
- */
-function validateMetadataJSONB(data: any, context: string): void {
-  const forbiddenFields = [
-    'unitPrice', 'price', 'amount', 'total', 'subtotal', 'taxAmount', 'discountAmount',
-    'quantity', 'qty', 'unit', 'taxRate', 'taxClass', 'currency', 'exchangeRate'
-  ];
-
-  const checkObject = (obj: any, path: string = '') => {
-    if (obj && typeof obj === 'object') {
-      for (const [key, value] of Object.entries(obj)) {
-        const currentPath = path ? `${path}.${key}` : key;
-        
-        if (forbiddenFields.includes(key)) {
-          throw new Error(
-            `JSONB metadata cannot contain business values. Field '${key}' at path '${currentPath}' in ${context} is forbidden. ` +
-            `Business values must be stored in typed columns, not in metadata JSONB.`
-          );
-        }
-        
-        if (value && typeof value === 'object') {
-          checkObject(value, currentPath);
-        }
-      }
-    }
-  };
-
-  checkObject(data);
-}
 
 /**
  * Quote Service
@@ -186,14 +119,20 @@ export class QuoteService extends BaseRepository {
             description: item.description,
             quantity: item.quantity,
             unitPrice: { 
-              amount: resolvedPricing.unitPrice.toNumber(), 
+              amount: new Decimal(resolvedPricing.unitPrice.toNumber()), 
               currency: data.currency 
             },
             unit: resolvedPricing.unit, // Use resolved unit from rate card
             serviceType: item.type,
+            taxInclusive: item.taxInclusive ?? false, // New field
             taxRate: resolvedPricing.taxRate.toNumber(),
             discountType: item.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
             discountValue: item.discountValue,
+            percentageDiscount: item.percentageDiscount, // New field
+            fixedDiscount: item.fixedDiscount ? { 
+              amount: new Decimal(item.fixedDiscount.amount), 
+              currency: data.currency 
+            } : undefined, // New field
             isTaxExempt: resolvedPricing.taxRate.toNumber() === 0
           };
         }),
@@ -254,13 +193,15 @@ export class QuoteService extends BaseRepository {
           quantity: item.quantity.toString(),
           unitPrice: resolvedPricing.unitPrice.toString(),
           unitCost: item.unitCost?.amount.toString(),
+          unit: resolvedPricing.unit, // New field
+          taxInclusive: item.taxInclusive ?? false, // New field
           taxRate: resolvedPricing.taxRate.toString(),
-          taxAmount: calculation.lineCalculations[index].taxAmount.amount.toString(),
+          taxAmount: calculation.lineCalculations[index]?.taxAmount.amount.toString() ?? '0',
           discountType: item.discountType,
           discountValue: item.discountValue ? item.discountValue.toString() : '0',
-          discountAmount: calculation.lineCalculations[index].discountAmount.amount.toString(),
-          subtotal: calculation.lineCalculations[index].subtotal.amount.toString(),
-          totalAmount: calculation.lineCalculations[index].totalAmount.amount.toString(),
+          discountAmount: calculation.lineCalculations[index]?.discountAmount.amount.toString() ?? '0',
+          subtotal: calculation.lineCalculations[index]?.subtotal.amount.toString() ?? '0',
+          totalAmount: calculation.lineCalculations[index]?.totalAmount.amount.toString() ?? '0',
           serviceCategoryId: resolvedPricing.serviceCategoryId || item.serviceCategoryId,
           rateCardId: resolvedPricing.rateCardId || item.rateCardId,
           metadata: item.metadata
@@ -397,10 +338,10 @@ export class QuoteService extends BaseRepository {
         
         await tx.update(quoteLineItems)
           .set({
-            taxAmount: calc.taxAmount.amount.toString(),
-            discountAmount: calc.discountAmount.amount.toString(),
-            subtotal: calc.subtotal.amount.toString(),
-            totalAmount: calc.totalAmount.amount.toString(),
+            taxAmount: calc?.taxAmount.amount.toString() ?? '0',
+            discountAmount: calc?.discountAmount.amount.toString() ?? '0',
+            subtotal: calc?.subtotal.amount.toString() ?? '0',
+            totalAmount: calc?.totalAmount.amount.toString() ?? '0',
             updatedAt: new Date()
           })
           .where(eq(quoteLineItems.id, lineItem.id));
@@ -689,5 +630,91 @@ export class QuoteService extends BaseRepository {
       userId: this.options.userId,
       oldValues: { status: quote.status, title: quote.title }
     }, {} as any);
+  }
+
+  /**
+   * Calculate quote with debug information
+   */
+  async calculateQuoteDebug(input: z.infer<typeof CreateQuoteSchema>): Promise<any> {
+    // Validate quote data
+    const validation = validateQuoteData(input);
+    if (!validation.isValid) {
+      throw new Error(`Quote validation failed: ${validation.errors.join(', ')}`);
+    }
+
+    // Resolve pricing from rate cards
+    const permissionCheck = await this.permissionService.hasPermission(this.options.userId, 'quotes.override_price');
+    const pricingResolution = await this.rateCardService.resolvePricing(
+      input.lineItems.map(item => ({
+        lineNumber: item.lineNumber,
+        description: item.description,
+        ...(item.unitPrice && {
+          unitPrice: {
+            amount: item.unitPrice.amount.toNumber(),
+            currency: item.unitPrice.currency
+          }
+        }),
+        ...(item.serviceCategoryId && { serviceCategoryId: item.serviceCategoryId }),
+        ...(item.rateCardId && { rateCardId: item.rateCardId }),
+        ...(item.taxRate && { taxRate: item.taxRate }),
+        ...(item.sku && { itemCode: item.sku }),
+        ...(item.unit && { unit: item.unit })
+      })),
+      permissionCheck.hasPermission,
+      new Date(input.validFrom)
+    );
+
+    if (!pricingResolution.success || !pricingResolution.results) {
+      const errorDetails = pricingResolution.errors?.map(e => `Line ${e.lineNumber}: ${e.reason}`).join('; ');
+      throw new Error(`Pricing resolution failed: ${errorDetails}`);
+    }
+
+    // At this point, we know results exists and is an array
+    const results = pricingResolution.results;
+
+    // Calculate totals using the pricing library with resolved prices
+    const calculationInput = {
+      lineItems: input.lineItems.map((item, index) => {
+        const resolvedPricing = results[index];
+        if (!resolvedPricing) {
+          throw new Error(`No pricing resolved for line item ${index + 1}`);
+        }
+                            return {
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: { 
+              amount: new Decimal(resolvedPricing.unitPrice.toNumber()), 
+              currency: input.currency 
+            },
+            unit: resolvedPricing.unit, // Use resolved unit from rate card
+            serviceType: item.type,
+            taxInclusive: item.taxInclusive ?? false, // New field
+            taxRate: resolvedPricing.taxRate.toNumber(),
+            discountType: item.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
+            discountValue: item.discountValue,
+            percentageDiscount: item.percentageDiscount, // New field
+            fixedDiscount: item.fixedDiscount ? { 
+              amount: new Decimal(item.fixedDiscount.amount), 
+              currency: input.currency 
+            } : undefined, // New field
+            isTaxExempt: resolvedPricing.taxRate.toNumber() === 0
+          };
+      }),
+      currency: input.currency,
+      quoteDiscount: input.discountType && input.discountValue ? {
+        type: input.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
+        value: input.discountValue,
+        description: 'Quote-level discount'
+      } : undefined
+    };
+
+    const debugCalculation = calculateQuoteDebug(calculationInput);
+    const calculation = calculateQuote(calculationInput);
+
+    return {
+      success: true,
+      debug: debugCalculation,
+      calculation
+    };
   }
 }

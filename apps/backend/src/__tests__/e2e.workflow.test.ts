@@ -401,9 +401,12 @@ describe('End-to-End Functionality Tests', () => {
   
   describe('Performance Under Load', () => {
     it('should handle multiple concurrent requests', async () => {
-      const org = await testUtils.createTestOrganization();
-      const user = await testUtils.createTestUser({ organizationId: org.id });
-      const token = testUtils.generateTestToken(user.id, org.id);
+      // Note: org is not used in this test
+      // const org = await testUtils.createTestOrganization();
+      // Note: user is not used in this test
+      // const user = await testUtils.createTestUser({ organizationId: org.id });
+      // Note: token is not used in this test
+      // const token = testUtils.generateTestToken(user.id, org.id);
       
       // Create 10 concurrent health check requests
       const healthChecks = Array(10).fill(0).map(() =>

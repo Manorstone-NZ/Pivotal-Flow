@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Decimal } from 'decimal.js';
 import { RateCardService } from '../service.js';
 import { QuoteService } from '../../quotes/service.js';
 import { PermissionService } from '../../permissions/service.js';
@@ -83,57 +84,59 @@ describe('Rate Card Resolution Integration', () => {
     });
 
     it('should create quote with resolved pricing from rate cards', async () => {
-      const quoteData = {
-        customerId: 'customer-123',
-        title: 'Test Quote',
-        description: 'Test quote with rate card pricing',
-        validFrom: '2025-01-01',
-        validUntil: '2025-12-31',
-        currency: 'NZD',
-        lineItems: [
-          {
-            lineNumber: 1,
-            description: 'Development work',
-            itemCode: 'DEV-HOURLY',
-            quantity: 10,
-            type: 'service',
-            discountType: 'percentage',
-            discountValue: 0,
-            metadata: {}
-          }
-        ]
-      };
+      // Note: quoteData is not used in this test
+      // const quoteData = {
+      //   customerId: 'customer-123',
+      //   title: 'Test Quote',
+      //   description: 'Test quote with rate card pricing',
+      //   validFrom: '2025-01-01',
+      //   validUntil: '2025-12-31',
+      //   currency: 'NZD',
+      //   lineItems: [
+      //     {
+      //       lineNumber: 1,
+      //       description: 'Development work',
+      //       itemCode: 'DEV-HOURLY',
+      //       quantity: 10,
+      //       type: 'service',
+      //       discountType: 'percentage',
+      //       discountValue: 0,
+      //       metadata: {}
+      //     }
+      //   ]
+      // };
 
       // Mock the quote creation process
       vi.spyOn(quoteService as any, 'quoteNumberGenerator').mockResolvedValue('Q-2025-001');
       
       // Mock the pricing calculation
-      const mockCalculation = {
-        lineCalculations: [
-          {
-            subtotal: { amount: 1500, currency: 'NZD' },
-            taxAmount: { amount: 225, currency: 'NZD' },
-            discountAmount: { amount: 0, currency: 'NZD' },
-            totalAmount: { amount: 1725, currency: 'NZD' }
-          }
-        ],
-        totals: {
-          subtotal: { amount: 1500, currency: 'NZD' },
-          taxAmount: { amount: 225, currency: 'NZD' },
-          discountAmount: { amount: 0, currency: 'NZD' },
-          grandTotal: { amount: 1725, currency: 'NZD' }
-        }
-      };
+      // Note: mockCalculation is not used in this test
+      // const mockCalculation = {
+      //   lineCalculations: [
+      //     {
+      //       subtotal: { amount: 1500, currency: 'NZD' },
+      //       taxAmount: { amount: 225, currency: 'NZD' },
+      //       discountAmount: { amount: 0, currency: 'NZD' },
+      //       totalAmount: { amount: 1725, currency: 'NZD' }
+      //     }
+      //   ],
+      //   totals: {
+      //     subtotal: { amount: 1500, currency: 'NZD' },
+      //     taxAmount: { amount: 225, currency: 'NZD' },
+      //     discountAmount: { amount: 0, currency: 'NZD' },
+      //     grandTotal: { amount: 1725, currency: 'NZD' }
+      //   }
+      // };
 
       // Mock the pricing resolution
       const mockPricingResolution = {
         success: true,
         results: [
           {
-            unitPrice: 150,
-            taxRate: 0.15,
+            unitPrice: new Decimal(150),
+            taxRate: new Decimal(0.15),
             unit: 'hour',
-            source: 'rate_card',
+            source: 'rate_card' as const,
             rateCardId: 'rate-card-123',
             rateCardItemId: 'item-123',
             serviceCategoryId: 'service-123',
@@ -162,26 +165,27 @@ describe('Rate Card Resolution Integration', () => {
     });
 
     it('should reject quote creation when pricing resolution fails', async () => {
-      const quoteData = {
-        customerId: 'customer-123',
-        title: 'Test Quote',
-        description: 'Test quote with invalid pricing',
-        validFrom: '2025-01-01',
-        validUntil: '2025-12-31',
-        currency: 'NZD',
-        lineItems: [
-          {
-            lineNumber: 1,
-            description: 'Unknown service',
-            itemCode: 'UNKNOWN-CODE',
-            quantity: 10,
-            type: 'service',
-            discountType: 'percentage',
-            discountValue: 0,
-            metadata: {}
-          }
-        ]
-      };
+      // Note: quoteData is not used in this test
+      // const quoteData = {
+      //   customerId: 'customer-123',
+      //   title: 'Test Quote',
+      //   description: 'Test quote with invalid pricing',
+      //   validFrom: '2025-01-01',
+      //   validUntil: '2025-12-31',
+      //   currency: 'NZD',
+      //   lineItems: [
+      //     {
+      //       lineNumber: 1,
+      //       description: 'Unknown service',
+      //       itemCode: 'UNKNOWN-CODE',
+      //       quantity: 10,
+      //       type: 'service',
+      //       discountType: 'percentage',
+      //       discountValue: 0,
+      //       metadata: {}
+      //     }
+      //   ]
+      // };
 
       // Mock failed pricing resolution
       const mockFailedResolution = {
@@ -282,8 +286,8 @@ describe('Rate Card Resolution Integration', () => {
       const result = await rateCardService.resolvePricing(lineItems, true);
 
       expect(result.success).toBe(true);
-      expect(result.results![0].source).toBe('explicit');
-      expect(result.results![0].unitPrice).toEqual(200);
+      expect(result.results?.[0]?.source).toBe('explicit');
+      expect(result.results?.[0]?.unitPrice).toEqual(200);
     });
 
     it('should reject price override when user lacks permission', async () => {
@@ -324,8 +328,8 @@ describe('Rate Card Resolution Integration', () => {
       const result = await rateCardService.resolvePricing(lineItems, false);
 
       expect(result.success).toBe(true);
-      expect(result.results![0].source).toBe('rate_card');
-      expect(result.results![0].unitPrice).toEqual(150); // Uses rate card price, not override
+      expect(result.results?.[0]?.source).toBe('rate_card');
+      expect(result.results?.[0]?.unitPrice).toEqual(150); // Uses rate card price, not override
     });
   });
 });

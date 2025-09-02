@@ -21,12 +21,12 @@ export function registerStatusTransitionRoute(fastify: FastifyInstance) {
       // Validate request body
       const validatedData = QuoteStatusTransitionSchema.parse(request.body);
 
-      // Get tenant context
-      const tenantContext = (request as any).tenantContext;
-      if (!tenantContext) {
+      // Get user context
+      const user = (request as any).user;
+      if (!user) {
         return reply.status(403).send({
           error: 'Forbidden',
-          message: 'Tenant context required',
+          message: 'Authentication required',
           code: 'TENANT_ACCESS_DENIED'
         });
       }
@@ -35,8 +35,8 @@ export function registerStatusTransitionRoute(fastify: FastifyInstance) {
 
       // Create quote service
       const quoteService = new QuoteService((fastify as any).db, {
-        organizationId: tenantContext.organizationId,
-        userId: tenantContext.userId
+        organizationId: user.organizationId,
+        userId: user.userId
       });
 
       // Transition status

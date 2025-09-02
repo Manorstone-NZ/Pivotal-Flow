@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Test the JSONB guard functionality
 describe('JSONB Guard - validateMetadataJSONB', () => {
@@ -99,21 +99,21 @@ describe('JSONB Guard - validateMetadataJSONB', () => {
             }
           }
         }, 'rate card metadata');
-        fail('Should have thrown an error');
+        throw new Error('Should have thrown an error');
       } catch (error) {
-        expect(error.message).toContain('unitPrice');
-        expect(error.message).toContain('config.pricing.unitPrice');
-        expect(error.message).toContain('rate card metadata');
+        expect((error as Error).message).toContain('unitPrice');
+        expect((error as Error).message).toContain('config.pricing.unitPrice');
+        expect((error as Error).message).toContain('rate card metadata');
       }
     });
 
     it('should include context in error message', () => {
       try {
-        validateMetadataJSONB({ subtotal: 1000 }, 'quote line item 1 metadata');
-        fail('Should have thrown an error');
+        validateMetadataJSONB({ subtotal: 1000         }, 'quote line item 1 metadata');
+        throw new Error('Should have thrown an error');
       } catch (error) {
-        expect(error.message).toContain('quote line item 1 metadata');
-        expect(error.message).toContain('Business values must be stored in typed columns');
+        expect((error as Error).message).toContain('quote line item 1 metadata');
+        expect((error as Error).message).toContain('Business values must be stored in typed columns');
       }
     });
   });

@@ -34,7 +34,7 @@ export const organizations = pgTable('organizations', {
   email: varchar('email', { length: 255 }),
   website: text('website'),
   // Keep JSONB only for flexible extras
-  contactExtras: jsonb('contactExtras'), // Social links, secondary channels
+  contactExtras: jsonb('contact_extras'), // Social links, secondary channels
   settings: jsonb('settings').notNull().default('{}'), // Feature-specific payloads
   subscriptionPlan: varchar('subscriptionPlan', { length: 50 }).notNull().default('basic'),
   subscriptionStatus: varchar('subscriptionStatus', { length: 20 }).notNull().default('active'),
@@ -47,75 +47,75 @@ export const organizations = pgTable('organizations', {
 // Organization security policies table
 export const orgSecurityPolicies = pgTable('org_security_policies', {
   id: text('id').primaryKey(),
-  orgId: text('orgId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  minPasswordLength: integer('minPasswordLength').notNull().default(12),
-  mfaRequired: boolean('mfaRequired').notNull().default(true),
-  sessionTimeoutMinutes: integer('sessionTimeoutMinutes').notNull().default(60),
-  maxLoginAttempts: integer('maxLoginAttempts').notNull().default(5),
-  passwordExpiryDays: integer('passwordExpiryDays'),
+  orgId: text('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  minPasswordLength: integer('min_password_length').notNull().default(12),
+  mfaRequired: boolean('mfa_required').notNull().default(true),
+  sessionTimeoutMinutes: integer('session_timeout_minutes').notNull().default(60),
+  maxLoginAttempts: integer('max_login_attempts').notNull().default(5),
+  passwordExpiryDays: integer('password_expiry_days'),
   extras: jsonb('extras'), // Flexible additional security settings
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
   orgUnique: uniqueIndex('org_security_policies_org_unique').on(table.orgId),
 }));
 
 // Organization feature flags table
 export const orgFeatureFlags = pgTable('org_feature_flags', {
-  orgId: text('orgId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  flagKey: text('flagKey').notNull(),
-  isEnabled: boolean('isEnabled').notNull().default(false),
+  orgId: text('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  flagKey: text('flag_key').notNull(),
+  isEnabled: boolean('is_enabled').notNull().default(false),
   payload: jsonb('payload'), // Feature-specific configuration
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
-  orgFlagUnique: uniqueIndex('org_feature_flags_org_flag_unique').on(table.orgId, table.flagKey),
+  orgFlagUnique: uniqueIndex('org_feature_flags_pkey').on(table.orgId, table.flagKey),
 }));
 
 // Organization notification preferences table
 export const orgNotificationPrefs = pgTable('org_notification_prefs', {
-  orgId: text('orgId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  orgId: text('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   channel: varchar('channel', { length: 20 }).notNull(), // email, sms, push
-  isEnabled: boolean('isEnabled').notNull().default(true),
+  isEnabled: boolean('is_enabled').notNull().default(true),
   settings: jsonb('settings'), // Channel-specific notification settings
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
-  orgChannelUnique: uniqueIndex('org_notification_prefs_org_channel_unique').on(table.orgId, table.channel),
+  orgChannelUnique: uniqueIndex('org_notification_prefs_pkey').on(table.orgId, table.channel),
 }));
 
 // Users table - normalized preferences, keep metadata in JSONB
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   email: varchar('email', { length: 255 }).notNull(),
   username: varchar('username', { length: 100 }).unique(),
-  firstName: varchar('firstName', { length: 100 }).notNull(),
-  lastName: varchar('lastName', { length: 100 }).notNull(),
-  displayName: varchar('displayName', { length: 200 }),
-  avatarUrl: text('avatarUrl'),
+  firstName: varchar('first_name', { length: 100 }).notNull(),
+  lastName: varchar('last_name', { length: 100 }).notNull(),
+  displayName: varchar('display_name', { length: 200 }),
+  avatarUrl: text('avatar_url'),
   phone: varchar('phone', { length: 20 }),
   // Normalized preference fields
   timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
-  locale: varchar('locale', { length: 10 }).notNull().default('en-NZ'),
-  dateFormat: varchar('dateFormat', { length: 20 }).notNull().default('DD MMM YYYY'),
-  timeFormat: varchar('timeFormat', { length: 10 }).notNull().default('24h'),
+  locale: varchar('locale', { length: 10 }).notNull().default('en-US'),
+  dateFormat: varchar('date_format', { length: 20 }).notNull().default('DD MMM YYYY'),
+  timeFormat: varchar('time_format', { length: 10 }).notNull().default('24h'),
   // Keep JSONB for flexible preferences
   preferences: jsonb('preferences').notNull().default('{}'), // Dashboard layout, UI tweaks
   metadata: jsonb('metadata').notNull().default('{}'), // Custom fields per customer
   status: varchar('status', { length: 20 }).notNull().default('active'),
-  emailVerified: boolean('emailVerified').notNull().default(false),
-  emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', precision: 3 }),
-  lastLoginAt: timestamp('lastLoginAt', { mode: 'date', precision: 3 }),
-  loginCount: integer('loginCount').notNull().default(0),
-  failedLoginAttempts: integer('failedLoginAttempts').notNull().default(0),
-  lockedUntil: timestamp('lockedUntil', { mode: 'date', precision: 3 }),
-  passwordHash: varchar('passwordHash', { length: 255 }),
-  mfaEnabled: boolean('mfaEnabled').notNull().default(false),
-  mfaSecret: varchar('mfaSecret', { length: 255 }),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  emailVerifiedAt: timestamp('email_verified_at', { mode: 'date', precision: 3 }),
+  lastLoginAt: timestamp('last_login_at', { mode: 'date', precision: 3 }),
+  loginCount: integer('login_count').notNull().default(0),
+  failedLoginAttempts: integer('failed_login_attempts').notNull().default(0),
+  lockedUntil: timestamp('locked_until', { mode: 'date', precision: 3 }),
+  passwordHash: varchar('password_hash', { length: 255 }),
+  mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  mfaSecret: varchar('mfa_secret', { length: 255 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
 // Permissions table
@@ -133,25 +133,25 @@ export const permissions = pgTable('permissions', {
 // Roles table
 export const roles = pgTable('roles', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  isSystem: boolean('isSystem').notNull().default(false),
-  isActive: boolean('isActive').notNull().default(true),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  isSystem: boolean('is_system').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
-  orgNameUnique: uniqueIndex('roles_organization_name_unique').on(table.organizationId, table.name),
+  orgNameUnique: uniqueIndex('roles_organization_id_name_key').on(table.organizationId, table.name),
 }));
 
 // Role permissions junction table
 export const rolePermissions = pgTable('role_permissions', {
   id: text('id').primaryKey(),
-  roleId: text('roleId').notNull().references(() => roles.id, { onDelete: 'cascade' }),
-  permissionId: text('permissionId').notNull().references(() => permissions.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  permissionId: text('permission_id').notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
-  rolePermissionUnique: uniqueIndex('role_permissions_role_permission_unique').on(table.roleId, table.permissionId),
+  rolePermissionUnique: uniqueIndex('role_permissions_role_id_permission_id_key').on(table.roleId, table.permissionId),
 }));
 
 // Policy overrides table - proper scope columns plus JSONB policy
@@ -173,13 +173,13 @@ export const policyOverrides = pgTable('policy_overrides', {
 // User roles junction table
 export const userRoles = pgTable('user_roles', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  roleId: text('roleId').notNull().references(() => roles.id, { onDelete: 'cascade' }),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  assignedBy: text('assignedBy').references(() => users.id, { onDelete: 'set null' }),
-  assignedAt: timestamp('assignedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  expiresAt: timestamp('expiresAt', { mode: 'date', precision: 3 }),
-  isActive: boolean('isActive').notNull().default(true),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  assignedBy: text('assigned_by').references(() => users.id, { onDelete: 'set null' }),
+  assignedAt: timestamp('assigned_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
+  isActive: boolean('is_active').notNull().default(true),
 });
 
 // Customers table - normalized address and contact info
@@ -208,10 +208,7 @@ export const customers = pgTable('customers', {
   phone: varchar('phone', { length: 20 }),
   email: varchar('email', { length: 255 }),
   // Keep JSONB for flexible extras
-  contactExtras: jsonb('contactExtras'), // Social links, secondary channels
-  billingInfo: jsonb('billingInfo'), // Flexible billing configuration
-  preferences: jsonb('preferences').notNull().default('{}'),
-  metadata: jsonb('metadata').notNull().default('{}'),
+  contactExtras: jsonb('contact_extras'), // Social links, secondary channels
   createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
@@ -220,140 +217,142 @@ export const customers = pgTable('customers', {
 // Projects table - core fields as columns, metadata in JSONB
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 50 }), // Project code
   description: text('description'),
   status: varchar('status', { length: 50 }).notNull().default('active'),
-  ownerId: text('ownerId').references(() => users.id, { onDelete: 'set null' }),
-  startDate: date('startDate'),
-  endDate: date('endDate'),
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Labels, custom forms, per customer extras
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
 // Service categories table - core fields as columns, metadata in JSONB
 export const serviceCategories = pgTable('service_categories', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 50 }), // Category code
   description: text('description'),
   ordering: integer('ordering').notNull().default(0), // Display order
-  isVisible: boolean('isVisible').notNull().default(true),
-  isActive: boolean('isActive').notNull().default(true),
+  isVisible: boolean('is_visible').notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Per customer fields only
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Rate cards table - core fields as columns, metadata in JSONB
 export const rateCards = pgTable('rate_cards', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   version: varchar('version', { length: 20 }).notNull().default('1.0'),
   description: text('description'),
   currency: varchar('currency', { length: 3 }).notNull().default('NZD'),
-  effectiveFrom: date('effectiveFrom').notNull(),
-  effectiveUntil: date('effectiveUntil'),
-  isDefault: boolean('isDefault').notNull().default(false),
-  isActive: boolean('isActive').notNull().default(true),
+  effectiveFrom: date('effective_from').notNull(),
+  effectiveUntil: date('effective_until'),
+  isDefault: boolean('is_default').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Display settings or partner specific notes
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Rate card items table - core fields as columns, metadata in JSONB
 export const rateCardItems = pgTable('rate_card_items', {
   id: text('id').primaryKey(),
-  rateCardId: text('rateCardId').notNull().references(() => rateCards.id, { onDelete: 'cascade' }),
-  serviceCategoryId: text('serviceCategoryId').notNull().references(() => serviceCategories.id, { onDelete: 'cascade' }),
-  roleId: text('roleId').references(() => roles.id, { onDelete: 'set null' }),
-  itemCode: varchar('itemCode', { length: 50 }), // Item code/SKU
+  rateCardId: text('rate_card_id').notNull().references(() => rateCards.id, { onDelete: 'cascade' }),
+  serviceCategoryId: text('service_category_id').notNull().references(() => serviceCategories.id, { onDelete: 'cascade' }),
+  roleId: text('role_id').references(() => roles.id, { onDelete: 'set null' }),
+  itemCode: varchar('item_code', { length: 50 }), // Item code/SKU
   unit: varchar('unit', { length: 20 }).notNull().default('hour'), // hour, day, item, etc.
-  baseRate: decimal('baseRate', { precision: 15, scale: 4 }).notNull(),
+  baseRate: decimal('base_rate', { precision: 15, scale: 4 }).notNull(),
   currency: varchar('currency', { length: 3 }).notNull().default('NZD'),
-  taxClass: varchar('taxClass', { length: 20 }).notNull().default('standard'), // Tax classification
-  tieringModelId: text('tieringModelId'), // Reference to tiering model
-  effectiveFrom: date('effectiveFrom').notNull(),
-  effectiveUntil: date('effectiveUntil'),
-  isActive: boolean('isActive').notNull().default(true),
+  taxClass: varchar('tax_class', { length: 20 }).notNull().default('standard'), // Tax classification
+  tieringModelId: text('tiering_model_id'), // Reference to tiering model
+  effectiveFrom: date('effective_from').notNull(),
+  effectiveUntil: date('effective_until'),
+  isActive: boolean('is_active').notNull().default(true),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Rare exceptions or display hints
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Quotes table - core fields as columns, metadata in JSONB
 export const quotes = pgTable('quotes', {
   id: text('id').primaryKey(),
-  organizationId: text('organizationId').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  quoteNumber: varchar('quoteNumber', { length: 50 }).notNull(),
-  customerId: text('customerId').notNull().references(() => customers.id, { onDelete: 'cascade' }),
-  projectId: text('projectId').references(() => projects.id, { onDelete: 'set null' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  quoteNumber: varchar('quote_number', { length: 50 }).notNull(),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   status: varchar('status', { length: 50 }).notNull().default('draft'),
   type: varchar('type', { length: 50 }).notNull().default('project'),
-  validFrom: date('validFrom').notNull(),
-  validUntil: date('validUntil').notNull(),
+  validFrom: date('valid_from').notNull(),
+  validUntil: date('valid_until').notNull(),
   currency: varchar('currency', { length: 3 }).notNull().default('NZD'),
-  exchangeRate: decimal('exchangeRate', { precision: 10, scale: 6 }).notNull().default('1.000000'),
+  exchangeRate: decimal('exchange_rate', { precision: 10, scale: 6 }).notNull().default('1.000000'),
   subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull().default('0.00'),
-  taxRate: decimal('taxRate', { precision: 5, scale: 4 }).notNull().default('0.1500'),
-  taxAmount: decimal('taxAmount', { precision: 15, scale: 2 }).notNull().default('0.00'),
-  discountType: varchar('discountType', { length: 20 }).notNull().default('percentage'),
-  discountValue: decimal('discountValue', { precision: 10, scale: 4 }).notNull().default('0.0000'),
-  discountAmount: decimal('discountAmount', { precision: 15, scale: 2 }).notNull().default('0.00'),
-  totalAmount: decimal('totalAmount', { precision: 15, scale: 2 }).notNull().default('0.00'),
-  termsConditions: text('termsConditions'),
+  taxRate: decimal('tax_rate', { precision: 5, scale: 4 }).notNull().default('0.1500'),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  discountType: varchar('discount_type', { length: 20 }).notNull().default('percentage'),
+  discountValue: decimal('discount_value', { precision: 10, scale: 4 }).notNull().default('0.0000'),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  termsConditions: text('terms_conditions'),
   notes: text('notes'),
-  internalNotes: text('internalNotes'),
-  createdBy: text('createdBy').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  approvedBy: text('approvedBy').references(() => users.id, { onDelete: 'set null' }),
-  approvedAt: timestamp('approvedAt', { mode: 'date', precision: 3 }),
-  sentAt: timestamp('sentAt', { mode: 'date', precision: 3 }),
-  acceptedAt: timestamp('acceptedAt', { mode: 'date', precision: 3 }),
-  expiresAt: timestamp('expiresAt', { mode: 'date', precision: 3 }),
+  internalNotes: text('internal_notes'),
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at', { mode: 'date', precision: 3 }),
+  sentAt: timestamp('sent_at', { mode: 'date', precision: 3 }),
+  acceptedAt: timestamp('accepted_at', { mode: 'date', precision: 3 }),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Customer specific extra fields
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 }, (table) => ({
-  quoteNumberOrgUnique: uniqueIndex('quotes_quoteNumber_organizationId_unique').on(table.quoteNumber, table.organizationId),
+  quoteNumberOrgUnique: uniqueIndex('quotes_quote_number_organization_id_unique').on(table.quoteNumber, table.organizationId),
 }));
 
 // Quote line items table - core fields as columns, metadata in JSONB
 export const quoteLineItems = pgTable('quote_line_items', {
   id: text('id').primaryKey(),
-  quoteId: text('quoteId').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
-  lineNumber: integer('lineNumber').notNull(),
+  quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+  lineNumber: integer('line_number').notNull(),
   type: varchar('type', { length: 50 }).notNull().default('service'),
   sku: varchar('sku', { length: 50 }), // SKU/code
   description: text('description').notNull(),
   quantity: decimal('quantity', { precision: 10, scale: 4 }).notNull().default('1.0000'),
-  unitPrice: decimal('unitPrice', { precision: 15, scale: 4 }).notNull(),
-  unitCost: decimal('unitCost', { precision: 15, scale: 4 }),
-  taxRate: decimal('taxRate', { precision: 5, scale: 4 }).notNull().default('0.1500'),
-  taxAmount: decimal('taxAmount', { precision: 15, scale: 2 }).notNull().default('0.00'),
-  discountType: varchar('discountType', { length: 20 }).notNull().default('percentage'),
-  discountValue: decimal('discountValue', { precision: 10, scale: 4 }).notNull().default('0.0000'),
-  discountAmount: decimal('discountAmount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  unitPrice: decimal('unit_price', { precision: 15, scale: 4 }).notNull(),
+  unitCost: decimal('unit_cost', { precision: 15, scale: 4 }),
+  unit: varchar('unit', { length: 50 }).notNull().default('hour'), // New field
+  taxInclusive: boolean('tax_inclusive').notNull().default(false), // New field
+  taxRate: decimal('tax_rate', { precision: 5, scale: 4 }).notNull().default('0.1500'),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  discountType: varchar('discount_type', { length: 20 }).notNull().default('percentage'),
+  discountValue: decimal('discount_value', { precision: 10, scale: 4 }).notNull().default('0.0000'),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
   subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
-  totalAmount: decimal('totalAmount', { precision: 15, scale: 2 }).notNull(),
-  serviceCategoryId: text('serviceCategoryId').references(() => serviceCategories.id, { onDelete: 'set null' }),
-  rateCardId: text('rateCardId').references(() => rateCards.id, { onDelete: 'set null' }),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+  serviceCategoryId: text('service_category_id').references(() => serviceCategories.id, { onDelete: 'set null' }),
+  rateCardId: text('rate_card_id').references(() => rateCards.id, { onDelete: 'set null' }),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Rare extras only
-  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
 // Audit logs table - proper envelope columns plus JSONB for values
