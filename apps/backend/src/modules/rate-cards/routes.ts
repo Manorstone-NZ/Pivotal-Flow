@@ -483,11 +483,11 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Resolve pricing for line items
+  // Resolve pricing for line items using rate cards
   fastify.post('/rate-cards/resolve-pricing', {
     schema: {
-      
-      
+      summary: 'Resolve pricing for quote line items',
+      description: 'Resolve unit prices and tax rates for line items using rate cards with proper priority logic',
       body: {
         type: 'object',
         required: ['lineItems'],
@@ -500,21 +500,23 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
               properties: {
                 lineNumber: { type: 'integer', minimum: 1 },
                 description: { type: 'string', minLength: 1 },
-                rateCardId: { type: 'string', format: 'uuid' },
-                serviceCategoryId: { type: 'string', format: 'uuid' },
-                taxRate: { type: 'number', minimum: 0 },
                 unitPrice: {
                   type: 'object',
                   properties: {
                     amount: { type: 'number', minimum: 0 },
                     currency: { type: 'string', minLength: 3, maxLength: 3 }
                   }
-                }
+                },
+                serviceCategoryId: { type: 'string', format: 'uuid' },
+                rateCardId: { type: 'string', format: 'uuid' },
+                taxRate: { type: 'number', minimum: 0, maximum: 1 },
+                itemCode: { type: 'string' },
+                unit: { type: 'string' }
               }
             }
           },
           effectiveDate: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-          userHasOverridePermission: { type: 'boolean' }
+          userHasOverridePermission: { type: 'boolean', default: false }
         }
       },
       response: {
@@ -527,12 +529,14 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
               items: {
                 type: 'object',
                 properties: {
-                  lineNumber: { type: 'integer' },
                   unitPrice: { type: 'string' },
                   taxRate: { type: 'string' },
-                  source: { type: 'string' },
+                  unit: { type: 'string' },
+                  source: { type: 'string', enum: ['explicit', 'rate_card', 'default'] },
+                  rateCardId: { type: 'string' },
+                  rateCardItemId: { type: 'string' },
                   serviceCategoryId: { type: 'string' },
-                  rateCardId: { type: 'string' }
+                  itemCode: { type: 'string' }
                 }
               }
             },
@@ -542,7 +546,26 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   lineNumber: { type: 'integer' },
-                  error: { type: 'string' }
+                  description: { type: 'string' },
+                  reason: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
+        422: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            details: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  lineNumber: { type: 'integer' },
+                  description: { type: 'string' },
+                  reason: { type: 'string' }
                 }
               }
             }
@@ -562,9 +585,17 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       
       const result = await rateCardService.resolvePricing(
         body.lineItems,
-        body.userHasOverridePermission,
+        body.userHasOverridePermission || false,
         body.effectiveDate ? new Date(body.effectiveDate) : new Date()
       );
+      
+      if (!result.success && result.errors) {
+        return reply.status(422).send({
+          error: 'Pricing resolution failed',
+          message: 'Some line items could not be priced',
+          details: result.errors
+        });
+      }
       
       reply.send(result);
     } catch (error) {

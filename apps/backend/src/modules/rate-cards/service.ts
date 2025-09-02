@@ -18,6 +18,8 @@ import { withTx } from '../../lib/withTx.js';
 import { BaseRepository } from '../../lib/repo.base.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
 import { logger } from '../../lib/logger.js';
+import { getRedisClient } from '@pivotal-flow/shared/redis.js';
+
 // Cache TTL constants as per requirements
 const RATE_CARD_CACHE_TTL = 60; // 60 seconds for active rate card
 const RATE_ITEM_CACHE_TTL = 300; // 300 seconds for rate item lookups
@@ -33,14 +35,15 @@ function buildCacheKey(organizationId: string, resource: string, action?: string
   return parts.join(':');
 }
 
-
 export interface PricingResolutionResult {
   unitPrice: Decimal;
   taxRate: Decimal;
+  unit: string;
   source: 'explicit' | 'rate_card' | 'default';
   rateCardId?: string;
   rateCardItemId?: string;
   serviceCategoryId?: string;
+  itemCode?: string;
 }
 
 export interface PricingResolutionError {
@@ -93,7 +96,7 @@ function validateMetadataJSONB(data: any, context: string): void {
  * Handles all rate card business logic including:
  * - Rate card CRUD operations
  * - Rate card item management
- * - Pricing resolution for quotes
+ * - Pricing resolution for quotes with proper priority logic
  * - Cache management with TTL and bust
  * - Audit logging for all operations
  */
@@ -126,10 +129,9 @@ export class RateCardService extends BaseRepository {
 
     // Try to get from cache first
     try {
-      // Note: In a real implementation, you would use the Redis client here
-      // For now, we'll implement the cache logic structure
       const cachedResult = await this.getFromCache<any>(cacheKey);
       if (cachedResult) {
+        logger.debug(`Cache hit for active rate card: ${cacheKey}`);
         return cachedResult;
       }
     } catch (error) {
@@ -161,6 +163,7 @@ export class RateCardService extends BaseRepository {
     if (rateCard) {
       try {
         await this.setCache(cacheKey, rateCard, RATE_CARD_CACHE_TTL);
+        logger.debug(`Cached active rate card: ${cacheKey} (TTL: ${RATE_CARD_CACHE_TTL}s)`);
       } catch (error) {
         logger.warn('Failed to cache active rate card:', error);
       }
@@ -187,6 +190,7 @@ export class RateCardService extends BaseRepository {
     try {
       const cachedResult = await this.getFromCache<any[]>(cacheKey);
       if (cachedResult) {
+        logger.debug(`Cache hit for rate card items: ${cacheKey}`);
         return cachedResult;
       }
     } catch (error) {
@@ -208,8 +212,9 @@ export class RateCardService extends BaseRepository {
     // Cache the result
     try {
       await this.setCache(cacheKey, result, RATE_ITEM_CACHE_TTL);
+      logger.debug(`Cached rate card items: ${cacheKey} (TTL: ${RATE_ITEM_CACHE_TTL}s)`);
     } catch (error) {
-              logger.warn('Failed to cache rate card items:', error);
+      logger.warn('Failed to cache rate card items:', error);
     }
 
     return result;
@@ -233,6 +238,7 @@ export class RateCardService extends BaseRepository {
     try {
       const cachedResult = await this.getFromCache<any>(cacheKey);
       if (cachedResult) {
+        logger.debug(`Cache hit for rate card item by code: ${cacheKey}`);
         return cachedResult;
       }
     } catch (error) {
@@ -240,26 +246,31 @@ export class RateCardService extends BaseRepository {
       logger.warn('Cache miss for rate card item by code:', error);
     }
 
-    // Database query
+    // Database query - search across all active rate cards for the organization
     const result = await this.db
       .select()
       .from(rateCardItems)
+      .innerJoin(rateCards, eq(rateCardItems.rateCardId, rateCards.id))
       .where(
         and(
           eq(rateCardItems.itemCode, itemCode),
-          eq(rateCardItems.isActive, true)
+          eq(rateCardItems.isActive, true),
+          eq(rateCards.organizationId, this.options.organizationId),
+          eq(rateCards.isActive, true)
         )
       )
+      .orderBy(desc(rateCards.isDefault), desc(rateCards.effectiveFrom))
       .limit(1);
 
-    const item = result[0] || null;
+    const item = result[0]?.rate_card_items || null;
 
     // Cache the result
     if (item) {
       try {
         await this.setCache(cacheKey, item, RATE_ITEM_CACHE_TTL);
+        logger.debug(`Cached rate card item by code: ${cacheKey} (TTL: ${RATE_ITEM_CACHE_TTL}s)`);
       } catch (error) {
-        console.warn('Failed to cache rate card item by code:', error);
+        logger.warn('Failed to cache rate card item by code:', error);
       }
     }
 
@@ -267,8 +278,10 @@ export class RateCardService extends BaseRepository {
   }
 
   /**
-   * Resolve pricing for quote line items
-   * Priority: explicit unit price > rate card match by code > description fallback
+   * Resolve pricing for quote line items with proper priority logic
+   * Priority 1: Explicit unit price if user has quotes.override_price permission
+   * Priority 2: Match by itemCode (SKU) then description
+   * Priority 3: Apply RateItem defaults for unit and tax class when not provided
    */
   async resolvePricing(
     lineItems: Array<{
@@ -278,7 +291,8 @@ export class RateCardService extends BaseRepository {
       serviceCategoryId?: string;
       rateCardId?: string;
       taxRate?: number;
-      itemCode?: string; // Added itemCode for priority 2 lookup
+      itemCode?: string;
+      unit?: string;
     }>,
     userHasOverridePermission: boolean = false,
     effectiveDate: Date = new Date()
@@ -312,8 +326,10 @@ export class RateCardService extends BaseRepository {
           result = {
             unitPrice: new Decimal(item.unitPrice.amount),
             taxRate: new Decimal(item.taxRate || 0.15), // Default tax rate
+            unit: item.unit || 'hour', // Default unit
             source: 'explicit',
-            ...(item.serviceCategoryId && { serviceCategoryId: item.serviceCategoryId })
+            ...(item.serviceCategoryId && { serviceCategoryId: item.serviceCategoryId }),
+            ...(item.itemCode && { itemCode: item.itemCode })
           };
         }
         // Priority 2: Match by itemCode (SKU) then description
@@ -324,10 +340,12 @@ export class RateCardService extends BaseRepository {
             result = {
               unitPrice: new Decimal(rateItem.baseRate),
               taxRate: new Decimal(rateItem.taxClass === 'exempt' ? 0 : 0.15), // Use taxClass from rate item
+              unit: rateItem.unit || 'hour', // Use unit from rate item
               source: 'rate_card',
               rateCardId: activeRateCard.id,
               rateCardItemId: rateItem.id,
-              serviceCategoryId: rateItem.serviceCategoryId
+              serviceCategoryId: rateItem.serviceCategoryId,
+              itemCode: item.itemCode
             };
           } else {
             // Fallback to description matching
@@ -340,10 +358,12 @@ export class RateCardService extends BaseRepository {
               result = {
                 unitPrice: new Decimal(rateItem.baseRate),
                 taxRate: new Decimal(rateItem.taxClass === 'exempt' ? 0 : 0.15),
+                unit: rateItem.unit || 'hour',
                 source: 'rate_card',
                 rateCardId: activeRateCard.id,
                 rateCardItemId: rateItem.id,
-                serviceCategoryId: rateItem.serviceCategoryId
+                serviceCategoryId: rateItem.serviceCategoryId,
+                itemCode: item.itemCode
               };
             } else {
               errors.push({
@@ -367,6 +387,7 @@ export class RateCardService extends BaseRepository {
             result = {
               unitPrice: new Decimal(rateItem.baseRate),
               taxRate: new Decimal(rateItem.taxClass === 'exempt' ? 0 : 0.15),
+              unit: rateItem.unit || 'hour',
               source: 'rate_card',
               rateCardId: activeRateCard.id,
               rateCardItemId: rateItem.id,
@@ -392,6 +413,7 @@ export class RateCardService extends BaseRepository {
             result = {
               unitPrice: new Decimal(rateItem.baseRate),
               taxRate: new Decimal(rateItem.taxClass === 'exempt' ? 0 : 0.15),
+              unit: rateItem.unit || 'hour',
               source: 'rate_card',
               rateCardId: activeRateCard.id,
               rateCardItemId: rateItem.id,
@@ -438,7 +460,7 @@ export class RateCardService extends BaseRepository {
   private findMatchingRateItem(
     rateItems: any[],
     serviceCategoryId: string,
-    _description: string
+    description: string
   ): any | null {
     // First try exact service category match
     let match = rateItems.find(item => 
@@ -465,7 +487,7 @@ export class RateCardService extends BaseRepository {
    */
   private findMatchingRateItemByDescription(
     rateItems: any[],
-    _description: string
+    description: string
   ): any | null {
     // Find the best match by description similarity
     // This is a basic implementation - could be enhanced with fuzzy matching
@@ -803,43 +825,70 @@ export class RateCardService extends BaseRepository {
       await this.deleteFromCache(rateCardItemsKey);
 
       // Bust all rate item code caches for this organization
-      // Note: In a production system, you might want to use Redis SCAN to find all keys
+      // In production, you would use Redis SCAN to find all keys with pattern
       // For now, we'll log the cache bust action
-      console.log(`Cache busted for rate card: ${rateCardId}`);
+      logger.info(`Cache busted for rate card: ${rateCardId}`);
     } catch (error) {
-      console.warn('Failed to bust rate card cache:', error);
+      logger.warn('Failed to bust rate card cache:', error);
     }
   }
 
-  // Cache helper methods
-  private async getFromCache<T>(_key: string): Promise<T | null> {
+  /**
+   * Bust all rate card caches for the organization
+   * Used when organization settings change or bulk operations
+   */
+  async bustAllRateCardCaches(): Promise<void> {
     try {
-      // In a real implementation, you would use the Redis client here
-      // For now, return null to simulate cache miss
-      return null;
+      const client = getRedisClient();
+      
+      // Pattern to match all rate card related keys for this organization
+      const pattern = `pivotal:${this.options.organizationId}:rate*`;
+      
+      // In production, you would use SCAN to find all matching keys
+      // For now, we'll log the bulk cache bust action
+      logger.info(`Bulk cache bust for organization: ${this.options.organizationId}`);
+      
+      // Note: In a real implementation, you would use Redis SCAN to find all keys
+      // and delete them in batches to avoid blocking the Redis server
     } catch (error) {
-      console.warn('Cache get error:', error);
+      logger.warn('Failed to bust all rate card caches:', error);
+    }
+  }
+
+  // Cache helper methods with proper Redis integration
+  private async getFromCache<T>(key: string): Promise<T | null> {
+    try {
+      const client = getRedisClient();
+      const value = await client.get(key);
+      
+      if (value === null) {
+        return null;
+      }
+
+      return JSON.parse(value) as T;
+    } catch (error) {
+      logger.warn('Cache get error:', error);
       return null;
     }
   }
 
-  private async setCache<T>(key: string, _value: T, ttl: number): Promise<void> {
+  private async setCache<T>(key: string, value: T, ttl: number): Promise<void> {
     try {
-      // In a real implementation, you would use the Redis client here
-      // For now, just log the cache set action
-      console.log(`Cache set: ${key} (TTL: ${ttl}s)`);
+      const client = getRedisClient();
+      const serializedValue = JSON.stringify(value);
+      await client.setex(key, ttl, serializedValue);
     } catch (error) {
-      console.warn('Cache set error:', error);
+      logger.warn('Cache set error:', error);
     }
   }
 
   private async deleteFromCache(key: string): Promise<void> {
     try {
-      // In a real implementation, you would use the Redis client here
-      // For now, just log the cache delete action
-      console.log(`Cache delete: ${key}`);
+      const client = getRedisClient();
+      await client.del(key);
+      logger.debug(`Cache deleted: ${key}`);
     } catch (error) {
-      console.warn('Cache delete error:', error);
+      logger.warn('Cache delete error:', error);
     }
   }
 }

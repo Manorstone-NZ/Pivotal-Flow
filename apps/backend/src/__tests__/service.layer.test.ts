@@ -182,8 +182,8 @@ describe('Service Layer Tests', () => {
       const nzdFromUsd = usdAmount / exchangeRates.USD;
       const nzdFromEur = eurAmount / exchangeRates.EUR;
       
-      expect(nzdFromUsd).toBe(amount);
-      expect(nzdFromEur).toBe(amount);
+      expect(nzdFromUsd).toBeCloseTo(amount, 10);
+      expect(nzdFromEur).toBeCloseTo(amount, 10);
     });
   });
   

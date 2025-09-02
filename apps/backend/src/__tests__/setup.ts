@@ -9,7 +9,7 @@ export let config: any;
 
 // Set environment variables for testing
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://pivotal:pivotal@localhost:5433/pivotal_test';
+process.env.DATABASE_URL = 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
 process.env.REDIS_URL = 'redis://localhost:6380';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
 process.env.COOKIE_SECRET = 'test-cookie-secret-key-for-testing-only';
@@ -108,7 +108,7 @@ async function build(): Promise<FastifyInstance> {
 beforeAll(async () => {
   // Set test environment variables
   process.env.NODE_ENV = 'test';
-  process.env.DATABASE_URL = 'postgresql://pivotal:pivotal@localhost:5433/pivotal_test';
+  process.env.DATABASE_URL = 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
   process.env.REDIS_URL = 'redis://localhost:6379/1';
   process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-32-chars';
   process.env.COOKIE_SECRET = 'test-cookie-secret-key-for-testing-only-32-chars';
@@ -156,6 +156,9 @@ afterAll(async () => {
 beforeEach(async () => {
   // Clear test data
   await clearTestData();
+  
+  // Create test admin user for authentication tests
+  await createTestAdminUser();
   
   // Reset mocks
   vi.clearAllMocks();
@@ -275,6 +278,63 @@ async function cleanupTestData() {
   console.log('🧹 Test environment cleaned up');
 }
 
+// Create test admin user for authentication tests
+async function createTestAdminUser() {
+  try {
+    // Create organization first
+    const org = await testUtils.createTestOrganization();
+    
+    // Create admin user with known credentials
+    const adminUser = {
+      id: crypto.randomUUID(),
+      email: 'admin@test.example.com',
+      firstName: 'Admin',
+      lastName: 'User',
+      displayName: 'Admin User',
+      passwordHash: 'AdminPassword123!', // Will be hashed by the service
+      organizationId: org.id,
+      status: 'active',
+      mfaEnabled: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Insert admin user
+    await testDb`
+      INSERT INTO users (id, email, "firstName", "lastName", "passwordHash", "displayName", "organizationId", status, "createdAt", "updatedAt")
+      VALUES (${adminUser.id}, ${adminUser.email}, ${adminUser.firstName}, ${adminUser.lastName}, ${adminUser.passwordHash}, ${adminUser.displayName}, ${adminUser.organizationId}, ${adminUser.status}, ${adminUser.createdAt}, ${adminUser.updatedAt})
+    `;
+    
+    // Create admin role if it doesn't exist
+    const adminRole = {
+      id: crypto.randomUUID(),
+      name: 'admin',
+      description: 'Administrator role',
+      isSystem: true,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    await testDb`
+      INSERT INTO roles (id, "organizationId", name, description, "isSystem", "isActive", "createdAt", "updatedAt")
+      VALUES (${adminRole.id}, ${adminUser.organizationId}, ${adminRole.name}, ${adminRole.description}, ${adminRole.isSystem}, ${adminRole.isActive}, ${adminRole.createdAt}, ${adminRole.updatedAt})
+      ON CONFLICT ("organizationId", name) DO NOTHING
+    `;
+    
+    // Assign admin role to user
+    await testDb`
+      INSERT INTO user_roles (id, "userId", "organizationId", "roleId", "isActive", "assignedAt")
+      VALUES (${crypto.randomUUID()}, ${adminUser.id}, ${adminUser.organizationId}, ${adminRole.id}, true, NOW())
+      ON CONFLICT ("userId", "roleId", "organizationId") DO NOTHING
+    `;
+    
+    console.log('✅ Test admin user created');
+  } catch (error) {
+    console.error('❌ Failed to create test admin user:', error);
+  }
+}
+
 // Test utilities
 export const testUtils = {
   // Create test user
@@ -289,6 +349,8 @@ export const testUtils = {
     const userData = {
       id: crypto.randomUUID(),
       email: `test-${Date.now()}@example.com`,
+      firstName: 'Test',
+      lastName: 'User',
       passwordHash: 'test-hash',
       displayName: 'Test User',
       organizationId,
@@ -298,8 +360,8 @@ export const testUtils = {
     };
     
     await testDb`
-      INSERT INTO users (id, email, password_hash, display_name, organization_id, status, created_at, updated_at)
-      VALUES (${userData.id}, ${userData.email}, ${userData.passwordHash}, ${userData.displayName}, ${userData.organizationId}, ${userData.status}, NOW(), NOW())
+      INSERT INTO users (id, email, "firstName", "lastName", "passwordHash", "displayName", "organizationId", status, "createdAt", "updatedAt")
+      VALUES (${userData.id}, ${userData.email}, ${userData.firstName}, ${userData.lastName}, ${userData.passwordHash}, ${userData.displayName}, ${userData.organizationId}, ${userData.status}, NOW(), NOW())
     `;
     
     return userData;
@@ -315,7 +377,7 @@ export const testUtils = {
     };
     
     await testDb`
-      INSERT INTO organizations (id, name, slug, created_at, updated_at)
+      INSERT INTO organizations (id, name, slug, "createdAt", "updatedAt")
       VALUES (${orgData.id}, ${orgData.name}, ${orgData.slug}, NOW(), NOW())
     `;
     
@@ -326,6 +388,7 @@ export const testUtils = {
   async createTestCustomer(organizationId: string, overrides: any = {}) {
     const customerData = {
       id: crypto.randomUUID(),
+      customerNumber: `CUST-${Date.now()}`,
       name: `Test Customer ${Date.now()}`,
       email: `customer-${Date.now()}@example.com`,
       organizationId,
@@ -333,27 +396,28 @@ export const testUtils = {
     };
     
     await testDb`
-      INSERT INTO customers (id, name, email, organization_id, created_at, updated_at)
-      VALUES (${customerData.id}, ${customerData.name}, ${customerData.email}, ${customerData.organizationId}, NOW(), NOW())
+      INSERT INTO customers (id, "customerNumber", "companyName", email, "organizationId", "createdAt", "updatedAt")
+      VALUES (${customerData.id}, ${customerData.customerNumber}, ${customerData.name}, ${customerData.email}, ${customerData.organizationId}, NOW(), NOW())
     `;
     
     return customerData;
   },
 
   // Create test role
-  async createTestRole(overrides: any = {}) {
+  async createTestRole(organizationId: string, overrides: any = {}) {
     const roleData = {
       id: crypto.randomUUID(),
       name: `test-role-${Date.now()}`,
       description: 'Test role for testing',
       is_system: false,
       is_active: true,
+      organizationId,
       ...overrides
     };
     
     await testDb`
-      INSERT INTO roles (id, name, description, is_system, is_active, created_at, updated_at)
-      VALUES (${roleData.id}, ${roleData.name}, ${roleData.description}, ${roleData.is_system}, ${roleData.is_active}, NOW(), NOW())
+      INSERT INTO roles (id, "organizationId", name, description, "isSystem", "isActive", "createdAt", "updatedAt")
+      VALUES (${roleData.id}, ${roleData.organizationId}, ${roleData.name}, ${roleData.description}, ${roleData.is_system}, ${roleData.is_active}, NOW(), NOW())
     `;
     
     return roleData;

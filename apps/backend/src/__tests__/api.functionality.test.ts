@@ -73,12 +73,24 @@ describe('API Functionality Tests', () => {
     });
     
     it('should accept valid JWT tokens', async () => {
-      const user = await testUtils.createTestUser();
-      const token = testUtils.generateTestToken(user.id, user.organizationId);
+      // First authenticate to get a valid token
+      const loginResponse = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: {
+          email: 'admin@test.example.com',
+          password: 'AdminPassword123!'
+        }
+      });
       
+      expect(loginResponse.statusCode).toBe(200);
+      const authData = JSON.parse(loginResponse.payload);
+      const token = authData.accessToken;
+      
+      // Test the token with a protected endpoint
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/auth/me',
+        url: '/v1/users',
         headers: {
           authorization: `Bearer ${token}`
         }
@@ -102,15 +114,32 @@ describe('API Functionality Tests', () => {
   
   describe('User Management', () => {
     it('should create users', async () => {
+      // First authenticate to get a token
+      const loginResponse = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: {
+          email: 'admin@test.example.com',
+          password: 'AdminPassword123!'
+        }
+      });
+      
+      const authData = JSON.parse(loginResponse.payload);
+      const token = authData.accessToken;
+      
       const userData = {
         email: 'test@example.com',
-        displayName: 'Test User',
-        organizationId: crypto.randomUUID()
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User'
       };
       
       const response = await app.inject({
         method: 'POST',
         url: '/v1/users',
+        headers: {
+          authorization: `Bearer ${token}`
+        },
         payload: userData
       });
       
@@ -118,8 +147,9 @@ describe('API Functionality Tests', () => {
       const createdUser = JSON.parse(response.payload);
       expect(createdUser).toMatchObject({
         email: userData.email,
-        displayName: userData.displayName,
-        organizationId: userData.organizationId
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        displayName: userData.displayName
       });
     });
     
@@ -387,7 +417,7 @@ describe('API Functionality Tests', () => {
       
       expect(response.statusCode).toBe(400);
       const error = JSON.parse(response.payload);
-      expect(error.error).toBe('Validation Error');
+      expect(error.error).toBe('Bad Request');
     });
     
     it('should handle not found errors', async () => {

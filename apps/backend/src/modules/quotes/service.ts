@@ -150,7 +150,8 @@ export class QuoteService extends BaseRepository {
             serviceCategoryId: item.serviceCategoryId,
             rateCardId: item.rateCardId,
             taxRate: item.taxRate,
-            itemCode: item.sku // Pass SKU as itemCode for priority 2 lookup
+            itemCode: item.sku, // Pass SKU as itemCode for priority 2 lookup
+            unit: item.unit // Pass unit for rate item defaults
           };
           
           if (item.unitPrice) {
@@ -167,7 +168,8 @@ export class QuoteService extends BaseRepository {
       );
 
       if (!pricingResolution.success || !pricingResolution.results) {
-        throw new Error(`Pricing resolution failed: ${pricingResolution.errors?.map(e => `Line ${e.lineNumber}: ${e.reason}`).join('; ')}`);
+        const errorDetails = pricingResolution.errors?.map(e => `Line ${e.lineNumber}: ${e.reason}`).join('; ');
+        throw new Error(`Pricing resolution failed: ${errorDetails}`);
       }
 
       // At this point, we know results exists and is an array
@@ -187,7 +189,7 @@ export class QuoteService extends BaseRepository {
               amount: resolvedPricing.unitPrice.toNumber(), 
               currency: data.currency 
             },
-            unit: 'hours', // Default unit
+            unit: resolvedPricing.unit, // Use resolved unit from rate card
             serviceType: item.type,
             taxRate: resolvedPricing.taxRate.toNumber(),
             discountType: item.discountType as 'percentage' | 'fixed_amount' | 'per_unit',
@@ -247,6 +249,7 @@ export class QuoteService extends BaseRepository {
           quoteId: quoteData.id,
           lineNumber: item.lineNumber,
           type: item.type,
+          sku: resolvedPricing.itemCode || item.sku, // Use resolved itemCode or original SKU
           description: item.description,
           quantity: item.quantity.toString(),
           unitPrice: resolvedPricing.unitPrice.toString(),
