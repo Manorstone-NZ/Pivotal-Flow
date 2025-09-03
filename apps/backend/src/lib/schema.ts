@@ -963,7 +963,7 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 }));
 
 // Approval requests relations
-export const approvalRequestsRelations = relations(approvalRequests, ({ one, many }) => ({
+export const approvalRequestsRelations = relations(approvalRequests, ({ one }) => ({
   organization: one(organizations, {
     fields: [approvalRequests.organizationId],
     references: [organizations.id],

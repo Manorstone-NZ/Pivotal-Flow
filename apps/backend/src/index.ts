@@ -8,8 +8,14 @@ import rateLimit from '@fastify/rate-limit';
 import { logger } from './lib/logger.js';
 import { config } from './lib/config.js';
 
-import { errorHandler } from './lib/error-handler.js';
-import { requestLogger } from './lib/request-logger.js';
+// C0 Backend Readiness imports
+import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
+import { accessControlMiddleware, tenancyMiddleware, requestContextMiddleware } from './lib/access-control.js';
+import { getCorsConfig, securityHeadersMiddleware } from './lib/cors-rate-limit.js';
+import { createIdempotencyMiddleware } from './lib/idempotency.js';
+import { requestLoggingMiddleware as observabilityRequestLogging, metricsEndpointMiddleware, healthCheckMiddleware } from './lib/observability.js';
+import { openApiSchema } from './lib/openapi-schema.js';
+
 import { register, collectDefaultMetrics } from 'prom-client';
 import { metricsRoutes } from './routes/metrics.js';
 import { performanceRoutes } from './routes/perf.js';
@@ -51,24 +57,66 @@ if (!g.__metricsInit) {
 }
 
 const app = Fastify({
-  logger: false,
+  logger: {
+    level: 'info',
+    serializers: {
+      req: (req) => ({
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        userAgent: req.headers['user-agent'],
+        ip: req.ip
+      }),
+      res: (res) => ({
+        statusCode: res.statusCode
+      })
+    }
+  },
   trustProxy: true,
+  genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 });
 
 async function registerPlugins() {
-  // Core plugins
-  await app.register(cors as any, {
-    origin: config.cors.origin,
-    credentials: true,
-  });
+  // C0 Backend Readiness - Global error handler
+  app.setErrorHandler(globalErrorHandler);
 
+  // C0 Backend Readiness - Request ID and logging middleware
+  app.addHook('preHandler', requestIdMiddleware);
+  app.addHook('preHandler', requestLoggingMiddleware);
+  app.addHook('preHandler', observabilityRequestLogging);
+
+  // C0 Backend Readiness - CORS configuration
+  const corsConfig = getCorsConfig();
+  await app.register(cors as any, corsConfig);
+
+  // C0 Backend Readiness - Security headers
   await app.register(helmet as any, {
     contentSecurityPolicy: false, // ok for development
   });
 
+  // C0 Backend Readiness - Rate limiting with per-route configuration
   await app.register(rateLimit as any, {
-    max: config.rateLimit.max,
-    timeWindow: config.rateLimit.window, // number or string eg '1 minute'
+    max: 1000,
+    timeWindow: '1 minute',
+    allowList: ['127.0.0.1', '::1'],
+    keyGenerator: (request: any) => (request as any).user?.sub || request.ip,
+    errorResponseBuilder: (request: any, context: any) => ({
+      error: {
+        code: 'RATE_LIMIT_ERROR',
+        message: 'Rate limit exceeded',
+        details: {
+          limit: context.max,
+          remaining: context.remaining,
+          reset: context.resetTime
+        },
+        timestamp: new Date().toISOString(),
+        request_id: request.id
+      },
+      meta: {
+        api_version: '1.0.0',
+        documentation_url: 'https://api.pivotalflow.com/docs'
+      }
+    })
   });
 
   // Database plugin (register early for database access)
@@ -90,178 +138,52 @@ async function registerPlugins() {
   
   await app.register(cachePlugin, cacheOptions);
 
+  // C0 Backend Readiness - Access control middleware
+  app.addHook('preHandler', accessControlMiddleware);
+  app.addHook('preHandler', tenancyMiddleware);
+  app.addHook('preHandler', requestContextMiddleware);
+
+  // C0 Backend Readiness - Security headers middleware
+  app.addHook('onRequest', securityHeadersMiddleware);
+
+  // C0 Backend Readiness - Idempotency middleware
+  const idempotencyMiddleware = createIdempotencyMiddleware();
+  app.addHook('preHandler', idempotencyMiddleware);
+
   // Register payload guard plugin (enforces JSONB rules)
   await app.register(payloadGuardPlugin);
 
   // Register idempotency plugin (enables safe and repeatable writes)
   await app.register(idempotencyPlugin);
 
-  // Register manual OpenAPI documentation route BEFORE any Swagger plugins
-  app.get('/api/quotes-openapi.json', {
+  // C0 Backend Readiness - OpenAPI documentation
+  app.get('/api/openapi.json', {
     preHandler: [],
     config: {
+      // @ts-ignore - skipAuth is a custom property
       skipAuth: true
     }
   }, async () => {
-    // Return a complete manual OpenAPI specification with quote routes
-    return {
-      openapi: '3.0.0',
-      info: {
-        title: 'Pivotal Flow API',
-        description: 'Business Management Platform API',
-        version: '0.1.0',
-      },
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-          },
-        },
-        schemas: {
-          Quote: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', format: 'uuid' },
-              quoteNumber: { type: 'string' },
-              customerId: { type: 'string', format: 'uuid' },
-              title: { type: 'string' },
-              description: { type: 'string' },
-              status: { 
-                type: 'string', 
-                enum: ['draft', 'pending', 'approved', 'sent', 'accepted', 'rejected', 'cancelled'] 
-              },
-              validFrom: { type: 'string', format: 'date-time' },
-              validUntil: { type: 'string', format: 'date-time' },
-              totalAmount: { type: 'number' },
-              createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' }
-            }
-          },
-          CreateQuoteRequest: {
-            type: 'object',
-            required: ['customerId', 'title', 'validFrom', 'validUntil'],
-            properties: {
-              customerId: { type: 'string', format: 'uuid' },
-              title: { type: 'string' },
-              description: { type: 'string' },
-              validFrom: { type: 'string', format: 'date-time' },
-              validUntil: { type: 'string', format: 'date-time' }
-            }
-          }
-        }
-      },
-      paths: {
-        '/v1/quotes': {
-          get: {
-            tags: ['quotes'],
-            summary: 'List quotes',
-            description: 'Retrieve a paginated list of quotes with optional filtering and sorting.',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-              {
-                name: 'page',
-                in: 'query',
-                schema: { type: 'integer', minimum: 1, default: 1 },
-                description: 'Page number'
-              },
-              {
-                name: 'pageSize',
-                in: 'query',
-                schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
-                description: 'Page size'
-              },
-              {
-                name: 'status',
-                in: 'query',
-                schema: { 
-                  type: 'string', 
-                  enum: ['draft', 'pending', 'approved', 'sent', 'accepted', 'rejected', 'cancelled'] 
-                },
-                description: 'Filter by status'
-              }
-            ],
-            responses: {
-              200: {
-                description: 'List of quotes',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        quotes: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/Quote' }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          post: {
-            tags: ['quotes'],
-            summary: 'Create a new quote',
-            description: 'Create a new quote with status "draft"',
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/CreateQuoteRequest' }
-                }
-              }
-            },
-            responses: {
-              201: {
-                description: 'Quote created successfully',
-                content: {
-                  'application/json': {
-                    schema: { $ref: '#/components/schemas/Quote' }
-                  }
-                }
-              }
-            }
-          }
-        },
-        '/v1/quotes/{id}': {
-          get: {
-            tags: ['quotes'],
-            summary: 'Get quote by ID',
-            description: 'Retrieve a specific quote by its ID',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-              {
-                name: 'id',
-                in: 'path',
-                required: true,
-                description: 'Quote ID',
-                schema: { type: 'string', format: 'uuid' }
-              }
-            ],
-            responses: {
-              200: {
-                description: 'Quote details',
-                content: {
-                  'application/json': {
-                    schema: { $ref: '#/components/schemas/Quote' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      tags: [
-        { name: 'quotes', description: 'Quote management endpoints' },
-        { name: 'auth', description: 'Authentication endpoints' },
-        { name: 'health', description: 'Health and monitoring endpoints' },
-        { name: 'Users', description: 'User management endpoints' }
-      ]
-    };
+    return openApiSchema;
   });
+
+  // C0 Backend Readiness - Health check endpoint
+  app.get('/health', {
+    preHandler: [],
+    config: {
+      // @ts-ignore - skipAuth is a custom property
+      skipAuth: true
+    }
+  }, healthCheckMiddleware);
+
+  // C0 Backend Readiness - Metrics endpoint
+  app.get('/metrics', {
+    preHandler: [],
+    config: {
+      // @ts-ignore - skipAuth is a custom property
+      skipAuth: true
+    }
+  }, metricsEndpointMiddleware);
 
   // Override the Swagger UI to serve our manual OpenAPI documentation
   app.get('/api/docs', {
@@ -1450,10 +1372,6 @@ async function registerPlugins() {
   await app.register(meRoute, { prefix: '/v1/auth' });
   
   // Test routes removed - no longer needed
-
-  // Hooks before routes
-  app.addHook('onRequest', requestLogger);
-  app.setErrorHandler(errorHandler);
 
   // Register users routes
   await app.register(listUsersRoute);
