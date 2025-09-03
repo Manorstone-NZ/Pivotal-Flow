@@ -58,6 +58,40 @@ export REDIS_URL="redis://localhost:6379"
 cd apps/backend && pnpm test
 ```
 
+### Portal API Testing
+```bash
+# Test portal endpoints (requires external customer user token)
+export PORTAL_TOKEN="your-external-customer-jwt-token"
+
+# List customer quotes
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/quotes"
+
+# Get quote detail
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/quotes/{quote-id}"
+
+# List customer invoices
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/invoices"
+
+# Get invoice detail
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/invoices/{invoice-id}"
+
+# List approved time entries
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/time"
+
+# Portal health check
+curl -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/health"
+
+# Rate limit testing (check headers)
+curl -v -H "Authorization: Bearer $PORTAL_TOKEN" \
+  "http://localhost:3000/v1/portal/quotes" 2>&1 | grep -i ratelimit
+```
+
 ## 🚫 Never Do
 - Install PostgreSQL/Redis locally
 - Connect to external databases

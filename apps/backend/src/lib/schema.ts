@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date, uniqueIndex, inet } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date, uniqueIndex, index, inet } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Currencies table - ISO 4217 currency codes for validation
@@ -104,6 +104,7 @@ export const orgNotificationPrefs = pgTable('org_notification_prefs', {
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  customerId: text('customer_id').references(() => customers.id, { onDelete: 'cascade' }), // For external customer users
   email: varchar('email', { length: 255 }).notNull(),
   username: varchar('username', { length: 100 }).unique(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -111,6 +112,7 @@ export const users = pgTable('users', {
   displayName: varchar('display_name', { length: 200 }),
   avatarUrl: text('avatar_url'),
   phone: varchar('phone', { length: 20 }),
+  userType: varchar('user_type', { length: 20 }).notNull().default('internal'), // 'internal' or 'external_customer'
   // Normalized preference fields
   timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
   locale: varchar('locale', { length: 10 }).notNull().default('en-US'),
@@ -132,7 +134,10 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
-});
+}, (table) => ({
+  customerIdIdx: index('users_customer_id_idx').on(table.customerId),
+  externalCustomerLookup: index('users_external_customer_lookup').on(table.organizationId, table.customerId, table.userType),
+}));
 
 // Permissions table
 export const permissions = pgTable('permissions', {
@@ -683,6 +688,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.organizationId],
     references: [organizations.id],
   }),
+  customer: one(customers, {
+    fields: [users.customerId],
+    references: [customers.id],
+  }),
   userRoles: many(userRoles),
   assignedRoles: many(userRoles, { relationName: 'assignedBy' }),
   createdQuotes: many(quotes, { relationName: 'createdBy' }),
@@ -756,6 +765,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     references: [organizations.id],
   }),
   quotes: many(quotes),
+  portalUsers: many(users), // External customer users for portal access
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({

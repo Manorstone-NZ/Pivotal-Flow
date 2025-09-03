@@ -1,23 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { testUtils, testDb } from '../../../__tests__/setup.js';
 import { ApprovalService } from '../service.js';
-import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES } from '../constants.js';
 
 describe('Approval Service Integration', () => {
   let approvalService: ApprovalService;
   let testOrg: any;
   let testUser: any;
-  let testApprover: any;
   let testFastify: any;
 
   beforeEach(async () => {
     // Create test data
     testOrg = await testUtils.createTestOrganization();
     testUser = await testUtils.createTestUser({ organizationId: testOrg.id });
-    testApprover = await testUtils.createTestUser({ 
-      organizationId: testOrg.id,
-      email: 'approver@example.com'
-    });
 
     testFastify = {
       db: testDb,

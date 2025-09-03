@@ -58,4 +58,7 @@ export type PermissionName =
   | 'allocations.read'
   | 'allocations.update'
   | 'allocations.delete'
-  | 'allocations.view_capacity';
+  | 'allocations.view_capacity'
+  | 'portal.view_own_quotes'
+  | 'portal.view_own_invoices'
+  | 'portal.view_own_time_entries';

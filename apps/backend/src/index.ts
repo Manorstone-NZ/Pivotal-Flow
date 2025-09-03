@@ -33,6 +33,7 @@ import { currencyRoutes } from './modules/currencies/routes.js';
 import { paymentRoutes } from './modules/payments/routes.js';
 import { approvalModule } from './modules/approvals/index.js';
 import { allocationModule } from './modules/allocations/index.js';
+import { portalModule } from './modules/portal/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1482,6 +1483,7 @@ async function registerPlugins() {
 
   // Register allocation routes
   await app.register(allocationModule);
+  await app.register(portalModule);
 
   // Simple test route
   app.get('/v1/simple-test', {
@@ -1578,6 +1580,14 @@ app.get('/', async () => {
           'PATCH /v1/allocations/{id}': 'Update a resource allocation',
           'DELETE /v1/allocations/{id}': 'Delete a resource allocation',
           'GET /v1/projects/{id}/capacity': 'Get project capacity summary (planned vs actual)'
+        },
+        'Customer Portal': {
+          'GET /v1/portal/quotes': 'List customer quotes with filtering (external customer users only)',
+          'GET /v1/portal/quotes/{id}': 'Get quote detail with line items (customer ownership verified)',
+          'GET /v1/portal/invoices': 'List customer invoices with filtering (external customer users only)',
+          'GET /v1/portal/invoices/{id}': 'Get invoice detail with line items (customer ownership verified)',
+          'GET /v1/portal/time': 'List approved time entries summary by project and month',
+          'GET /v1/portal/health': 'Portal service health check and user context verification'
         },
         'Authentication': {
           'POST /v1/auth/login': 'Authenticate user and get access token',

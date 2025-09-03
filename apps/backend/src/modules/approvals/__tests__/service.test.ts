@@ -1,13 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ApprovalService } from '../service.js';
-import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES } from '../constants.js';
 import { testUtils, testDb } from '../../../__tests__/setup.js';
 
 describe('ApprovalService', () => {
   let approvalService: ApprovalService;
   let testOrg: any;
   let testUser: any;
-  let testApprover: any;
   let testFastify: any;
 
   beforeEach(async () => {
@@ -22,10 +20,6 @@ describe('ApprovalService', () => {
     // Create test organization and users
     testOrg = await testUtils.createTestOrganization();
     testUser = await testUtils.createTestUser({ organizationId: testOrg.id });
-    testApprover = await testUtils.createTestUser({ 
-      organizationId: testOrg.id,
-      email: 'approver@example.com'
-    });
 
     approvalService = new ApprovalService(testDb, {
       organizationId: testOrg.id,

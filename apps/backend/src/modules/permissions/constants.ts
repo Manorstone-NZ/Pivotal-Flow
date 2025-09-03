@@ -58,6 +58,13 @@ export const PERMISSIONS = {
     UPDATE: 'allocations.update',
     DELETE: 'allocations.delete',
     VIEW_CAPACITY: 'allocations.view_capacity'
+  },
+  
+  // Portal permissions (for external customer users)
+  PORTAL: {
+    VIEW_OWN_QUOTES: 'portal.view_own_quotes',
+    VIEW_OWN_INVOICES: 'portal.view_own_invoices',
+    VIEW_OWN_TIME_ENTRIES: 'portal.view_own_time_entries'
   }
 } as const;
 
@@ -74,5 +81,6 @@ export const PERMISSION_CATEGORIES = {
   CUSTOMERS: 'customers',
   PROJECTS: 'projects',
   APPROVALS: 'approvals',
-  ALLOCATIONS: 'allocations'
+  ALLOCATIONS: 'allocations',
+  PORTAL: 'portal'
 } as const;
