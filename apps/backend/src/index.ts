@@ -31,6 +31,7 @@ import { rateCardRoutes } from './modules/rate-cards/index.js';
 import { permissionRoutes } from './modules/permissions/index.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
 import { paymentRoutes } from './modules/payments/routes.js';
+import { approvalModule } from './modules/approvals/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1079,40 +1080,260 @@ async function registerPlugins() {
         .path { font-family: monospace; background: #f8f9fa; padding: 5px; }
         .description { color: #666; margin: 10px 0; }
         .tag { background: #e9ecef; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+        .section { margin: 30px 0; }
+        .section h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
     </style>
 </head>
 <body>
     <h1>Pivotal Flow API Documentation</h1>
     <p>Version: ${openApiSpec.info.version}</p>
     
-    <h2>Quote Management Endpoints</h2>
-    
-    <div class="endpoint">
-        <div class="method">GET</div>
-        <div class="path">/v1/quotes</div>
-        <div class="description">List quotes with pagination and filtering</div>
-        <div class="tag">quotes</div>
+    <div class="section">
+        <h2>Quote Management Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/quotes</div>
+            <div class="description">List quotes with pagination and filtering</div>
+            <div class="tag">quotes</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/quotes</div>
+            <div class="description">Create a new quote with status "draft"</div>
+            <div class="tag">quotes</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/quotes/{id}</div>
+            <div class="description">Get specific quote by ID</div>
+            <div class="tag">quotes</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">PATCH</div>
+            <div class="path">/v1/quotes/{id}</div>
+            <div class="description">Update quote (draft status only)</div>
+            <div class="tag">quotes</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/quotes/{id}/status</div>
+            <div class="description">Transition quote status (draft→pending→approved→sent→accepted)</div>
+            <div class="tag">quotes</div>
+        </div>
     </div>
     
-    <div class="endpoint">
-        <div class="method">POST</div>
-        <div class="path">/v1/quotes</div>
-        <div class="description">Create a new quote with status "draft"</div>
-        <div class="tag">quotes</div>
+    <div class="section">
+        <h2>User Management Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/users</div>
+            <div class="description">List users with pagination and filtering</div>
+            <div class="tag">users</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/users</div>
+            <div class="description">Create a new user</div>
+            <div class="tag">users</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/users/{id}</div>
+            <div class="description">Get user by ID</div>
+            <div class="tag">users</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">PATCH</div>
+            <div class="path">/v1/users/{id}</div>
+            <div class="description">Update user information</div>
+            <div class="tag">users</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/users/{id}/roles</div>
+            <div class="description">Assign role to user</div>
+            <div class="tag">users</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">DELETE</div>
+            <div class="path">/v1/users/{id}/roles</div>
+            <div class="description">Remove role from user</div>
+            <div class="tag">users</div>
+        </div>
     </div>
     
-    <div class="endpoint">
-        <div class="method">GET</div>
-        <div class="path">/v1/quotes/{id}</div>
-        <div class="description">Get specific quote by ID</div>
-        <div class="tag">quotes</div>
+    <div class="section">
+        <h2>Rate Card Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/rate-cards</div>
+            <div class="description">List rate cards for organization</div>
+            <div class="tag">rate-cards</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/rate-cards</div>
+            <div class="description">Create a new rate card</div>
+            <div class="tag">rate-cards</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/rate-cards/{id}</div>
+            <div class="description">Get rate card by ID</div>
+            <div class="tag">rate-cards</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">PATCH</div>
+            <div class="path">/v1/rate-cards/{id}</div>
+            <div class="description">Update rate card information</div>
+            <div class="tag">rate-cards</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Currency Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/currencies</div>
+            <div class="description">Get all active ISO 4217 currency codes</div>
+            <div class="tag">currencies</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/currencies/popular</div>
+            <div class="description">Get commonly used currencies</div>
+            <div class="tag">currencies</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/currencies/region/{region}</div>
+            <div class="description">Get currencies by geographic region</div>
+            <div class="tag">currencies</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Payment Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/payments</div>
+            <div class="description">Create a new payment record</div>
+            <div class="tag">payments</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/payments/{id}/void</div>
+            <div class="description">Void a payment</div>
+            <div class="tag">payments</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Permission Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/permissions/check</div>
+            <div class="description">Check if user has specific permission</div>
+            <div class="tag">permissions</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/permissions/can-override-quote-price</div>
+            <div class="description">Check quote price override permission</div>
+            <div class="tag">permissions</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Authentication Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/auth/login</div>
+            <div class="description">Authenticate user and get access token</div>
+            <div class="tag">auth</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/auth/refresh</div>
+            <div class="description">Refresh access token</div>
+            <div class="tag">auth</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">POST</div>
+            <div class="path">/v1/auth/logout</div>
+            <div class="description">Logout user and invalidate tokens</div>
+            <div class="tag">auth</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/v1/auth/me</div>
+            <div class="description">Get current authenticated user information</div>
+            <div class="tag">auth</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Health & Monitoring Endpoints</h2>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/health</div>
+            <div class="description">Check API health status</div>
+            <div class="tag">health</div>
+        </div>
+        
+        <div class="endpoint">
+            <div class="method">GET</div>
+            <div class="path">/metrics</div>
+            <div class="description">Get Prometheus metrics</div>
+            <div class="tag">health</div>
+        </div>
     </div>
     
     <h3>Authentication</h3>
-    <p>All endpoints require Bearer JWT authentication.</p>
+    <p>All endpoints require Bearer JWT authentication except for login, refresh, health, and metrics endpoints.</p>
     
     <h3>OpenAPI Specification</h3>
-    <p><a href="/api/quotes-openapi.json">Download OpenAPI JSON</a></p>
+    <p><a href="/api/openapi.json">Download OpenAPI JSON</a></p>
+    
+    <h3>API Overview</h3>
+    <p>This API provides comprehensive business management capabilities including:</p>
+    <ul>
+        <li><strong>Quote Management:</strong> Create, update, and manage quotes with status transitions</li>
+        <li><strong>User Management:</strong> User CRUD operations and role assignments</li>
+        <li><strong>Rate Cards:</strong> Manage pricing structures and rate cards</li>
+        <li><strong>Currencies:</strong> Support for multiple currencies and regions</li>
+        <li><strong>Payments:</strong> Payment processing and management</li>
+        <li><strong>Permissions:</strong> Fine-grained permission checking</li>
+        <li><strong>Authentication:</strong> JWT-based authentication system</li>
+        <li><strong>Monitoring:</strong> Health checks and metrics</li>
+    </ul>
 </body>
 </html>`;
 
@@ -1255,6 +1476,9 @@ async function registerPlugins() {
   // Register payment routes
   await app.register(paymentRoutes, { prefix: '/v1' });
 
+  // Register approval routes
+  await app.register(approvalModule);
+
   // Simple test route
   app.get('/v1/simple-test', {
     schema: {
@@ -1334,6 +1558,15 @@ app.get('/', async () => {
         'Permissions': {
           'POST /v1/permissions/check': 'Check if user has specific permission',
           'GET /v1/permissions/can-override-quote-price': 'Check quote price override permission'
+        },
+        'Approvals': {
+          'POST /v1/approvals': 'Create a new approval request',
+          'POST /v1/approvals/{id}/approve': 'Approve an approval request',
+          'POST /v1/approvals/{id}/reject': 'Reject an approval request',
+          'POST /v1/approvals/{id}/cancel': 'Cancel an approval request',
+          'GET /v1/approvals': 'List approval requests with filters',
+          'GET /v1/approvals/{id}': 'Get approval request by ID',
+          'GET /v1/approvals/policy': 'Get organization approval policy'
         },
         'Authentication': {
           'POST /v1/auth/login': 'Authenticate user and get access token',

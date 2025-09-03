@@ -50,4 +50,7 @@ export type PermissionName =
   | 'projects.view'
   | 'projects.create'
   | 'projects.update'
-  | 'projects.delete';
+  | 'projects.delete'
+  | 'approvals.view'
+  | 'approvals.request'
+  | 'approvals.decide';

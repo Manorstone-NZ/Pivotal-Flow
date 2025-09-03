@@ -42,6 +42,13 @@ export const PERMISSIONS = {
     CREATE: 'projects.create',
     UPDATE: 'projects.update',
     DELETE: 'projects.delete'
+  },
+  
+  // Approval permissions
+  APPROVALS: {
+    VIEW: 'approvals.view',
+    REQUEST: 'approvals.request',
+    DECIDE: 'approvals.decide'
   }
 } as const;
 

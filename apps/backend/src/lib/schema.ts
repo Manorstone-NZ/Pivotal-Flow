@@ -473,6 +473,28 @@ export const auditLogs = pgTable('audit_logs', {
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
+// Approval requests table - typed columns for all state, JSONB only for optional notes
+export const approvalRequests = pgTable('approval_requests', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'quote', 'invoice', 'project'
+  entityId: text('entity_id').notNull(),
+  requestedBy: text('requested_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  approverId: text('approver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'approved', 'rejected', 'cancelled'
+  requestedAt: timestamp('requested_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  decidedAt: timestamp('decided_at', { mode: 'date', precision: 3 }),
+  reason: text('reason'), // Optional reason for approval/rejection
+  // JSONB only for optional notes
+  notes: jsonb('notes').notNull().default('{}'), // Optional notes, never state
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  entityUnique: uniqueIndex('approval_requests_entity_unique').on(table.entityType, table.entityId),
+  approverStatusIndex: uniqueIndex('idx_approval_requests_approver_status').on(table.approverId, table.status),
+  organizationStatusIndex: uniqueIndex('idx_approval_requests_org_status').on(table.organizationId, table.status),
+}));
+
 // Invoices table - typed columns for all monetary values
 export const invoices = pgTable('invoices', {
   id: text('id').primaryKey(),
@@ -610,6 +632,7 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   rateCards: many(rateCards),
   quotes: many(quotes),
   auditLogs: many(auditLogs),
+  approvalRequests: many(approvalRequests),
   policyOverrides: many(policyOverrides),
   securityPolicies: many(orgSecurityPolicies),
   featureFlags: many(orgFeatureFlags),
@@ -628,6 +651,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   approvedQuotes: many(quotes, { relationName: 'approvedBy' }),
   ownedProjects: many(projects, { relationName: 'owner' }),
   auditLogs: many(auditLogs, { relationName: 'actor' }),
+  requestedApprovals: many(approvalRequests, { relationName: 'requestedBy' }),
+  approverApprovals: many(approvalRequests, { relationName: 'approver' }),
 }));
 
 export const rolesRelations = relations(roles, ({ one, many }) => ({
@@ -857,6 +882,22 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+// Approval requests relations
+export const approvalRequestsRelations = relations(approvalRequests, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [approvalRequests.organizationId],
+    references: [organizations.id],
+  }),
+  requestedBy: one(users, {
+    fields: [approvalRequests.requestedBy],
+    references: [users.id],
+  }),
+  approver: one(users, {
+    fields: [approvalRequests.approverId],
+    references: [users.id],
+  }),
+}));
+
 // Invoice relations
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   organization: one(organizations, {
@@ -1008,3 +1049,5 @@ export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
 export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+export type ApprovalRequest = typeof approvalRequests.$inferSelect;
+export type NewApprovalRequest = typeof approvalRequests.$inferInsert;
