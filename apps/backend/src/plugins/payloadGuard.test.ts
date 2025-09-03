@@ -1,48 +1,28 @@
-// TODO: Re-enable when shared guards module is available
-// import { describe, it, expect } from 'vitest';
-// import { assertNoMonetaryInMetadata } from "@pivotal-flow/shared/guards/jsonbMonetaryGuard";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { FastifyInstance } from 'fastify';
+import { payloadGuardPlugin } from './payloadGuard.js';
 
-// describe("payload guard plugin unit helper", () => {
-//   it("finds line level violations", () => {
-//     const md = { lines: [{ metadata: { unitPrice: 1 } }] };
-//     const v = assertNoMonetaryInMetadata(md.lines[0].metadata);
-//     expect(v.length).toBe(1);
-//     expect(v[0].key).toBe("unitPrice");
-//   });
+describe('Payload Guard Plugin', () => {
+  let app: FastifyInstance;
 
-//   it("finds quote level violations", () => {
-//     const md = { metadata: { subtotal: 1000, taxTotal: 150 } };
-//     const v = assertNoMonetaryInMetadata(md.metadata);
-//     expect(v.length).toBe(2);
-//     expect(v[0].key).toBe("subtotal");
-//     expect(v[1].key).toBe("taxTotal");
-//   });
+  beforeEach(async () => {
+    app = {
+      addHook: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      put: vi.fn()
+    } as any;
+  });
 
-//   it("allows valid metadata", () => {
-//     const md = { 
-//       metadata: { 
-//         tags: ["urgent"],
-//         notes: "Customer requested expedited processing"
-//       }
-//     };
-//     const v = assertNoMonetaryInMetadata(md.metadata);
-//     expect(v).toHaveLength(0);
-//   });
+  it('should register the plugin without errors', async () => {
+    const done = vi.fn();
+    await payloadGuardPlugin(app, {}, done);
+    expect(done).toHaveBeenCalled();
+  });
 
-//   it("handles nested violations", () => {
-//     const md = {
-//       metadata: {
-//         config: {
-//           pricing: {
-//             unitPrice: 100,
-//             discount: 10
-//           }
-//         }
-//       }
-//     };
-//     const v = assertNoMonetaryInMetadata(md.metadata);
-//     expect(v.length).toBe(2);
-//     expect(v.some(v => v.key === "unitPrice")).toBe(true);
-//     expect(v.some(v => v.key === "discount")).toBe(true);
-//   });
-// });
+  it('should add preHandler hook', async () => {
+    const done = vi.fn();
+    await payloadGuardPlugin(app, {}, done);
+    expect(app.addHook).toHaveBeenCalledWith('preHandler', expect.any(Function));
+  });
+});

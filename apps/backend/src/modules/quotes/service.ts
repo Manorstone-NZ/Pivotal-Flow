@@ -23,7 +23,7 @@ import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
 import { QuoteVersioningService } from '../../lib/quote-versioning.js';
 import { QuoteLockingService } from '../../lib/quote-locking.js';
-import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics.js';
+import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics';
 
 /**
  * Quote Service
