@@ -35,7 +35,24 @@ const CORE_FIELDS = [
   'customer_id',
   'project_id',
   'created_by',
-  'approved_by'
+  'approved_by',
+  // Payment system fields
+  'amount',
+  'paid_amount',
+  'balance_amount',
+  'paid_at',
+  'voided_at',
+  'void_reason',
+  'payment_method',
+  'payment_reference',
+  'idempotency_key',
+  'invoice_id',
+  'voided_by',
+  'invoice_number',
+  'due_at',
+  'overdue_at',
+  'written_off_at',
+  'issued_at'
 ];
 
 // Patterns that indicate JSONB filtering on core fields

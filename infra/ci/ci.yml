@@ -91,6 +91,9 @@ jobs:
       - name: Check JSONB usage for core fields
         run: node scripts/ci/check-jsonb-usage.js
       
+      - name: Check payment system implementation
+        run: node scripts/ci/check-payment-system.js
+      
       # Run performance smoke tests (with backend server)
       - name: Start backend server for performance tests
         run: |
@@ -107,6 +110,14 @@ jobs:
           LOG_LEVEL: error
           DB_TRACE: false
           CACHE_TTL_SECS: 300
+      
+      - name: Run payment performance smoke tests
+        run: |
+          node scripts/ci/payment-perf-smoke.js http://localhost:3000
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
       
       - name: Run quote performance smoke tests
         run: |
@@ -137,6 +148,21 @@ jobs:
         run: |
           cd apps/backend
           pnpm test --run integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-key-for-testing-only-32-chars
+          COOKIE_SECRET: test-cookie-secret-key-for-testing-only-32-chars
+          LOG_LEVEL: error
+          DB_TRACE: false
+          CACHE_TTL_SECS: 300
+      
+      # Run payment system tests
+      - name: Run payment system tests
+        run: |
+          cd apps/backend
+          DATABASE_URL=postgresql://pivotal:pivotal@localhost:5433/pivotal_test REDIS_URL=redis://localhost:6379 npx tsx test-payment-creation.ts
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://pivotal:pivotal@localhost:5433/pivotal_test
