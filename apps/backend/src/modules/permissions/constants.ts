@@ -65,6 +65,13 @@ export const PERMISSIONS = {
     VIEW_OWN_QUOTES: 'portal.view_own_quotes',
     VIEW_OWN_INVOICES: 'portal.view_own_invoices',
     VIEW_OWN_TIME_ENTRIES: 'portal.view_own_time_entries'
+  },
+  
+  // Reports permissions
+  REPORTS: {
+    VIEW_REPORTS: 'reports.view_reports',
+    EXPORT_REPORTS: 'reports.export_reports',
+    VIEW_COMPLIANCE: 'reports.view_compliance'
   }
 } as const;
 
@@ -82,5 +89,6 @@ export const PERMISSION_CATEGORIES = {
   PROJECTS: 'projects',
   APPROVALS: 'approvals',
   ALLOCATIONS: 'allocations',
-  PORTAL: 'portal'
+  PORTAL: 'portal',
+  REPORTS: 'reports'
 } as const;

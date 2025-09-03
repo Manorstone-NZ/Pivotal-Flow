@@ -58,7 +58,100 @@ export REDIS_URL="redis://localhost:6379"
 cd apps/backend && pnpm test
 ```
 
-### Portal API Testing
+### Reports & Exports API Testing
+
+### Create Export Job
+```bash
+# Create a quote cycle time export job
+curl -X POST http://localhost:3000/v1/reports/export \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reportType": "quote_cycle_time",
+    "format": "csv",
+    "filters": {
+      "organizationId": "org1",
+      "fromDate": "2024-01-01T00:00:00Z",
+      "toDate": "2024-12-31T23:59:59Z"
+    },
+    "fileName": "quote_cycle_time_2024.csv"
+  }'
+
+# Create an invoice settlement time export job
+curl -X POST http://localhost:3000/v1/reports/export \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reportType": "invoice_settlement_time",
+    "format": "json",
+    "filters": {
+      "organizationId": "org1",
+      "overdueOnly": true
+    }
+  }'
+```
+
+### Check Export Job Status
+```bash
+# Get job status and progress
+curl http://localhost:3000/v1/reports/export/job_1234567890 \
+  -H "Authorization: Bearer <your-token>"
+
+# List user's export jobs
+curl "http://localhost:3000/v1/reports/export?page=1&limit=25" \
+  -H "Authorization: Bearer <your-token>"
+```
+
+### Download Export File
+```bash
+# Download completed export file
+curl http://localhost:3000/v1/reports/export/job_1234567890/download \
+  -H "Authorization: Bearer <your-token>" \
+  -o export_file.csv
+```
+
+### Get Report Summaries
+```bash
+# Quote cycle time summary
+curl "http://localhost:3000/v1/reports/summary/quote-cycle-time?organizationId=org1&fromDate=2024-01-01T00:00:00Z" \
+  -H "Authorization: Bearer <your-token>"
+
+# Invoice settlement time summary
+curl "http://localhost:3000/v1/reports/summary/invoice-settlement-time?organizationId=org1&overdueOnly=true" \
+  -H "Authorization: Bearer <your-token>"
+
+# Payments received summary
+curl "http://localhost:3000/v1/reports/summary/payments-received?organizationId=org1&fromDate=2024-01-01T00:00:00Z" \
+  -H "Authorization: Bearer <your-token>"
+
+# Time approvals summary (placeholder)
+curl "http://localhost:3000/v1/reports/summary/time-approvals?organizationId=org1" \
+  -H "Authorization: Bearer <your-token>"
+```
+
+### Check Reporting Metrics
+```bash
+# View Prometheus metrics for reporting
+curl http://localhost:3000/metrics | grep pivotal_export
+
+# Check export job metrics
+curl http://localhost:3000/metrics | grep -E "(pivotal_export|pivotal_report)"
+```
+
+### Test Data Isolation
+```bash
+# Test cross-organization isolation (should return 404)
+curl "http://localhost:3000/v1/reports/summary/quote-cycle-time?organizationId=org2" \
+  -H "Authorization: Bearer <org1-token>"
+
+# Test permission checks (should return 403)
+curl "http://localhost:3000/v1/reports/export" \
+  -H "Authorization: Bearer <no-permission-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"reportType": "quote_cycle_time", "format": "csv", "filters": {"organizationId": "org1"}}'
+```
+
+## Portal API Testing
 ```bash
 # Test portal endpoints (requires external customer user token)
 export PORTAL_TOKEN="your-external-customer-jwt-token"
@@ -90,6 +183,51 @@ curl -H "Authorization: Bearer $PORTAL_TOKEN" \
 # Rate limit testing (check headers)
 curl -v -H "Authorization: Bearer $PORTAL_TOKEN" \
   "http://localhost:3000/v1/portal/quotes" 2>&1 | grep -i ratelimit
+```
+
+### Reports & Exports API Testing
+```bash
+# Test reports endpoints (requires internal user token)
+export INTERNAL_TOKEN="your-internal-user-jwt-token"
+
+# Create export job for quote cycle time
+curl -X POST -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reportType": "quote_cycle_time",
+    "format": "csv",
+    "filters": {
+      "organizationId": "your-org-id",
+      "fromDate": "2024-01-01T00:00:00Z",
+      "toDate": "2024-12-31T23:59:59Z"
+    }
+  }' \
+  "http://localhost:3000/v1/reports/export"
+
+# Get export job status
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/export/{job-id}"
+
+# Download completed export file
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/export/{job-id}/download" \
+  -o export.csv
+
+# Get quote cycle time summary
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/summary/quote-cycle-time?organizationId=your-org-id&fromDate=2024-01-01T00:00:00Z&toDate=2024-12-31T23:59:59Z"
+
+# Get invoice settlement time summary
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/summary/invoice-settlement-time?organizationId=your-org-id&overdueOnly=true"
+
+# Get payments received summary
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/summary/payments-received?organizationId=your-org-id&method=bank_transfer"
+
+# Get time approvals summary (placeholder - time entries not implemented)
+curl -H "Authorization: Bearer $INTERNAL_TOKEN" \
+  "http://localhost:3000/v1/reports/summary/time-approvals?organizationId=your-org-id"
 ```
 
 ## 🚫 Never Do

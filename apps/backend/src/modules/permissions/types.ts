@@ -61,4 +61,7 @@ export type PermissionName =
   | 'allocations.view_capacity'
   | 'portal.view_own_quotes'
   | 'portal.view_own_invoices'
-  | 'portal.view_own_time_entries';
+  | 'portal.view_own_time_entries'
+  | 'reports.view_reports'
+  | 'reports.export_reports'
+  | 'reports.view_compliance';

@@ -648,6 +648,34 @@ export const resourceAllocations = pgTable('resource_allocations', {
   ),
 }));
 
+// Export jobs table - async export job metadata and status
+export const exportJobs = pgTable('export_jobs', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reportType: varchar('report_type', { length: 50 }).notNull(),
+  format: varchar('format', { length: 10 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  filters: jsonb('filters').notNull().default('{}'),
+  fileName: text('file_name').notNull(),
+  totalRows: integer('total_rows'),
+  processedRows: integer('processed_rows').notNull().default(0),
+  downloadUrl: text('download_url'),
+  errorMessage: text('error_message'),
+  startedAt: timestamp('started_at', { mode: 'date', precision: 3 }),
+  completedAt: timestamp('completed_at', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  organizationIdIdx: index('export_jobs_organization_id_idx').on(table.organizationId),
+  userIdIdx: index('export_jobs_user_id_idx').on(table.userId),
+  statusIdx: index('export_jobs_status_idx').on(table.status),
+  reportTypeIdx: index('export_jobs_report_type_idx').on(table.reportType),
+  createdAtIdx: index('export_jobs_created_at_idx').on(table.createdAt),
+  userStatusIdx: index('export_jobs_user_status_idx').on(table.userId, table.status),
+  orgStatusIdx: index('export_jobs_org_status_idx').on(table.organizationId, table.status),
+}));
+
 // Relations
 export const currenciesRelations = relations(currencies, ({ many }) => ({
   organizations: many(organizations),
@@ -681,6 +709,7 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   notificationPrefs: many(orgNotificationPrefs),
   settings: many(orgSettings),
   resourceAllocations: many(resourceAllocations),
+  exportJobs: many(exportJobs),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -701,6 +730,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   requestedApprovals: many(approvalRequests, { relationName: 'requestedBy' }),
   approverApprovals: many(approvalRequests, { relationName: 'approver' }),
   resourceAllocations: many(resourceAllocations),
+  exportJobs: many(exportJobs),
 }));
 
 export const rolesRelations = relations(roles, ({ one, many }) => ({
@@ -1060,6 +1090,18 @@ export const resourceAllocationsRelations = relations(resourceAllocations, ({ on
   }),
 }));
 
+// Export jobs relations
+export const exportJobsRelations = relations(exportJobs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [exportJobs.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [exportJobs.userId],
+    references: [users.id],
+  }),
+}));
+
 // Types for TypeScript
 export type Currency = typeof currencies.$inferSelect;
 export type NewCurrency = typeof currencies.$inferInsert;
@@ -1119,3 +1161,5 @@ export type ApprovalRequest = typeof approvalRequests.$inferSelect;
 export type NewApprovalRequest = typeof approvalRequests.$inferInsert;
 export type ResourceAllocation = typeof resourceAllocations.$inferSelect;
 export type NewResourceAllocation = typeof resourceAllocations.$inferInsert;
+export type ExportJob = typeof exportJobs.$inferSelect;
+export type NewExportJob = typeof exportJobs.$inferInsert;
