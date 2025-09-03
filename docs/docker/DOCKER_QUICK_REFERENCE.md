@@ -58,7 +58,67 @@ export REDIS_URL="redis://localhost:6379"
 cd apps/backend && pnpm test
 ```
 
-### Reports & Exports API Testing
+### SDK Development
+
+```bash
+# Navigate to SDK package
+cd packages/sdk
+
+# Install dependencies
+npm install
+
+# Build the SDK
+npm run build
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Development mode with watch
+npm run dev
+
+# Type checking
+npm run type-check
+
+# Publish dry run
+npm run publish:dry-run
+
+# Version bump (patch/minor/major)
+npm version patch
+npm version minor
+npm version major
+```
+
+### SDK Usage Examples
+
+```typescript
+// Basic SDK usage
+import { PivotalFlowClient } from '@pivotal-flow/sdk';
+
+const client = new PivotalFlowClient({
+  baseURL: 'http://localhost:3000/api/v1',
+  getAccessToken: () => localStorage.getItem('accessToken')
+});
+
+// Get quotes
+const quotes = await client.quotes.list({
+  page: 1,
+  pageSize: 10,
+  status: 'approved'
+});
+
+// React Query integration
+import { useQuotes } from '@pivotal-flow/sdk/react-query';
+
+function QuotesList() {
+  const { data: quotes, isLoading } = useQuotes(client, {
+    page: 1,
+    pageSize: 10
+  });
+}
+```
 
 ### Create Export Job
 ```bash
