@@ -13,6 +13,14 @@ export interface FxMetrics {
   misses: number;
   conversions: number;
   errors: number;
+  conversionDuration: number[];
+}
+
+export interface PaymentMetrics {
+  created: number;
+  applied: number;
+  errors: number;
+  applyDuration: number[];
 }
 
 export interface RepositoryMetrics {
@@ -33,6 +41,13 @@ export interface PerformanceSummary {
     hitRate: number; // percentage
     totalLookups: number;
     metrics: FxMetrics;
+  };
+  payments: {
+    totalCreated: number;
+    totalApplied: number;
+    totalErrors: number;
+    avgApplyDuration: number;
+    metrics: PaymentMetrics;
   };
   repositories: {
     topOperations: Array<{
@@ -64,7 +79,15 @@ export class MetricsCollector {
     lookups: 0,
     misses: 0,
     conversions: 0,
-    errors: 0
+    errors: 0,
+    conversionDuration: []
+  };
+
+  private paymentMetrics: PaymentMetrics = {
+    created: 0,
+    applied: 0,
+    errors: 0,
+    applyDuration: []
   };
 
   private repositoryMetrics: RepositoryMetrics[] = [];
@@ -134,6 +157,33 @@ export class MetricsCollector {
   }
 
   /**
+   * Record payment created
+   */
+  recordPaymentCreated(): void {
+    this.paymentMetrics.created++;
+  }
+
+  /**
+   * Record payment applied
+   */
+  recordPaymentApply(duration: number): void {
+    this.paymentMetrics.applied++;
+    this.paymentMetrics.applyDuration.push(duration);
+    
+    // Keep only the last 1000 durations
+    if (this.paymentMetrics.applyDuration.length > 1000) {
+      this.paymentMetrics.applyDuration = this.paymentMetrics.applyDuration.slice(-1000);
+    }
+  }
+
+  /**
+   * Record payment error
+   */
+  recordPaymentError(): void {
+    this.paymentMetrics.errors++;
+  }
+
+  /**
    * Record repository operation
    */
   recordRepositoryOperation(operation: string, duration: number, success: boolean, error?: string): void {
@@ -183,6 +233,22 @@ export class MetricsCollector {
     const total = this.fxMetrics.lookups + this.fxMetrics.misses;
     if (total === 0) return 0;
     return Math.round((this.fxMetrics.lookups / total) * 100);
+  }
+
+  /**
+   * Get current payment metrics
+   */
+  getPaymentMetrics(): PaymentMetrics {
+    return { ...this.paymentMetrics };
+  }
+
+  /**
+   * Get average payment apply duration
+   */
+  getAveragePaymentApplyDuration(): number {
+    if (this.paymentMetrics.applyDuration.length === 0) return 0;
+    const sum = this.paymentMetrics.applyDuration.reduce((a, b) => a + b, 0);
+    return Math.round(sum / this.paymentMetrics.applyDuration.length);
   }
 
   /**
@@ -257,6 +323,13 @@ export class MetricsCollector {
         totalLookups: this.fxMetrics.lookups + this.fxMetrics.misses,
         metrics: this.getFxMetrics()
       },
+      payments: {
+        totalCreated: this.paymentMetrics.created,
+        totalApplied: this.paymentMetrics.applied,
+        totalErrors: this.paymentMetrics.errors,
+        avgApplyDuration: this.getAveragePaymentApplyDuration(),
+        metrics: this.getPaymentMetrics()
+      },
       repositories: {
         topOperations,
         totalOperations: this.repositoryMetrics.length
@@ -275,6 +348,19 @@ export class MetricsCollector {
       sets: 0,
       busts: 0,
       errors: 0
+    };
+    this.fxMetrics = {
+      lookups: 0,
+      misses: 0,
+      conversions: 0,
+      errors: 0,
+      conversionDuration: []
+    };
+    this.paymentMetrics = {
+      created: 0,
+      applied: 0,
+      errors: 0,
+      applyDuration: []
     };
     this.repositoryMetrics = [];
   }

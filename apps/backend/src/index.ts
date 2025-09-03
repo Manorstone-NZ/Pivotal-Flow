@@ -30,6 +30,7 @@ import { registerQuoteRoutes } from './modules/quotes/index.js';
 import { rateCardRoutes } from './modules/rate-cards/index.js';
 import { permissionRoutes } from './modules/permissions/index.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
+import { paymentRoutes } from './modules/payments/routes.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -269,7 +270,7 @@ async function registerPlugins() {
       openapi: '3.0.0',
       info: {
         title: 'Pivotal Flow API',
-        description: 'Business Management Platform API',
+        description: 'Business Management Platform API - Complete endpoint documentation',
         version: '0.1.0',
       },
       components: {
@@ -310,10 +311,56 @@ async function registerPlugins() {
               validFrom: { type: 'string', format: 'date-time' },
               validUntil: { type: 'string', format: 'date-time' }
             }
+          },
+          User: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              email: { type: 'string', format: 'email' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              status: { type: 'string', enum: ['active', 'inactive', 'suspended'] },
+              createdAt: { type: 'string', format: 'date-time' }
+            }
+          },
+          RateCard: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              name: { type: 'string' },
+              description: { type: 'string' },
+              currency: { type: 'string', minLength: 3, maxLength: 3 },
+              effectiveFrom: { type: 'string', format: 'date' },
+              effectiveUntil: { type: 'string', format: 'date' },
+              isDefault: { type: 'boolean' },
+              isActive: { type: 'boolean' }
+            }
+          },
+          Currency: {
+            type: 'object',
+            properties: {
+              code: { type: 'string', minLength: 3, maxLength: 3 },
+              name: { type: 'string' },
+              symbol: { type: 'string' },
+              isActive: { type: 'boolean' }
+            }
+          },
+          Payment: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              invoiceId: { type: 'string' },
+              amount: { type: 'number' },
+              currency: { type: 'string', minLength: 3, maxLength: 3 },
+              method: { type: 'string' },
+              status: { type: 'string', enum: ['pending', 'completed', 'failed', 'voided'] },
+              createdAt: { type: 'string', format: 'date-time' }
+            }
           }
         }
       },
       paths: {
+        // Quote Management
         '/v1/quotes': {
           get: {
             tags: ['quotes'],
@@ -412,14 +459,608 @@ async function registerPlugins() {
                 }
               }
             }
+          },
+          patch: {
+            tags: ['quotes'],
+            summary: 'Update quote',
+            description: 'Update a quote (draft status only)',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Quote ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Quote updated successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/Quote' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/quotes/{id}/status': {
+          post: {
+            tags: ['quotes'],
+            summary: 'Transition quote status',
+            description: 'Transition quote status (draft→pending→approved→sent→accepted)',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Quote ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Quote status updated successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/Quote' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // User Management
+        '/v1/users': {
+          get: {
+            tags: ['users'],
+            summary: 'List users',
+            description: 'Retrieve a paginated list of users',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'page',
+                in: 'query',
+                schema: { type: 'integer', minimum: 1, default: 1 },
+                description: 'Page number'
+              },
+              {
+                name: 'pageSize',
+                in: 'query',
+                schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+                description: 'Page size'
+              },
+              {
+                name: 'status',
+                in: 'query',
+                schema: { type: 'string', enum: ['active', 'inactive', 'suspended'] },
+                description: 'Filter by status'
+              }
+            ],
+            responses: {
+              200: {
+                description: 'List of users',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        users: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/User' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          post: {
+            tags: ['users'],
+            summary: 'Create user',
+            description: 'Create a new user',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              201: {
+                description: 'User created successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/User' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/users/{id}': {
+          get: {
+            tags: ['users'],
+            summary: 'Get user by ID',
+            description: 'Retrieve a specific user by ID',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'User ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'User details',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/User' }
+                  }
+                }
+              }
+            }
+          },
+          patch: {
+            tags: ['users'],
+            summary: 'Update user',
+            description: 'Update user information',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'User ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'User updated successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/User' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/users/{id}/roles': {
+          post: {
+            tags: ['users'],
+            summary: 'Assign role to user',
+            description: 'Assign a role to a user',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'User ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Role assigned successfully'
+              }
+            }
+          },
+          delete: {
+            tags: ['users'],
+            summary: 'Remove role from user',
+            description: 'Remove a role from a user',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'User ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Role removed successfully'
+              }
+            }
+          }
+        },
+        // Rate Cards
+        '/v1/rate-cards': {
+          get: {
+            tags: ['rate-cards'],
+            summary: 'List rate cards',
+            description: 'Retrieve rate cards for the organization',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'List of rate cards',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/RateCard' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          post: {
+            tags: ['rate-cards'],
+            summary: 'Create rate card',
+            description: 'Create a new rate card',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              201: {
+                description: 'Rate card created successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/RateCard' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/rate-cards/{id}': {
+          get: {
+            tags: ['rate-cards'],
+            summary: 'Get rate card by ID',
+            description: 'Retrieve a specific rate card',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Rate card ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Rate card details',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/RateCard' }
+                  }
+                }
+              }
+            }
+          },
+          patch: {
+            tags: ['rate-cards'],
+            summary: 'Update rate card',
+            description: 'Update rate card information',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Rate card ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Rate card updated successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/RateCard' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Currencies
+        '/v1/currencies': {
+          get: {
+            tags: ['currencies'],
+            summary: 'List currencies',
+            description: 'Get all active ISO 4217 currency codes',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'List of currencies',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Currency' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/currencies/popular': {
+          get: {
+            tags: ['currencies'],
+            summary: 'Get popular currencies',
+            description: 'Get commonly used currencies',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'List of popular currencies',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Currency' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/currencies/region/{region}': {
+          get: {
+            tags: ['currencies'],
+            summary: 'Get currencies by region',
+            description: 'Get currencies by geographic region',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'region',
+                in: 'path',
+                required: true,
+                description: 'Geographic region',
+                schema: { 
+                  type: 'string', 
+                  enum: ['europe', 'asia', 'americas', 'africa', 'middle-east', 'oceania']
+                }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'List of currencies for region',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Currency' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Payments
+        '/v1/payments': {
+          post: {
+            tags: ['payments'],
+            summary: 'Create payment',
+            description: 'Create a new payment record',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'Payment created successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/Payment' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/payments/{id}/void': {
+          post: {
+            tags: ['payments'],
+            summary: 'Void payment',
+            description: 'Void a payment',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Payment ID',
+                schema: { type: 'string', format: 'uuid' }
+              }
+            ],
+            responses: {
+              200: {
+                description: 'Payment voided successfully',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/Payment' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Permissions
+        '/v1/permissions/check': {
+          post: {
+            tags: ['permissions'],
+            summary: 'Check permission',
+            description: 'Check if user has a specific permission',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'Permission check result',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        hasPermission: { type: 'boolean' },
+                        reason: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/permissions/can-override-quote-price': {
+          get: {
+            tags: ['permissions'],
+            summary: 'Check quote price override permission',
+            description: 'Check if current user can override quote prices',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'Permission check result',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        hasPermission: { type: 'boolean' },
+                        reason: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Authentication
+        '/v1/auth/login': {
+          post: {
+            tags: ['auth'],
+            summary: 'User login',
+            description: 'Authenticate user and get access token',
+            responses: {
+              200: {
+                description: 'Login successful',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        accessToken: { type: 'string' },
+                        refreshToken: { type: 'string' },
+                        user: { $ref: '#/components/schemas/User' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/auth/refresh': {
+          post: {
+            tags: ['auth'],
+            summary: 'Refresh token',
+            description: 'Refresh access token using refresh token',
+            responses: {
+              200: {
+                description: 'Token refreshed successfully',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        accessToken: { type: 'string' },
+                        refreshToken: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/v1/auth/logout': {
+          post: {
+            tags: ['auth'],
+            summary: 'User logout',
+            description: 'Logout user and invalidate tokens',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'Logout successful'
+              }
+            }
+          }
+        },
+        '/v1/auth/me': {
+          get: {
+            tags: ['auth'],
+            summary: 'Get current user',
+            description: 'Get current authenticated user information',
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: 'Current user information',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/User' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Health and Monitoring
+        '/health': {
+          get: {
+            tags: ['health'],
+            summary: 'Health check',
+            description: 'Check API health status',
+            responses: {
+              200: {
+                description: 'API is healthy',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        status: { type: 'string' },
+                        timestamp: { type: 'string', format: 'date-time' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/metrics': {
+          get: {
+            tags: ['health'],
+            summary: 'Metrics',
+            description: 'Get Prometheus metrics',
+            responses: {
+              200: {
+                description: 'Metrics in Prometheus format',
+                content: {
+                  'text/plain': {
+                    schema: { type: 'string' }
+                  }
+                }
+              }
+            }
           }
         }
       },
       tags: [
         { name: 'quotes', description: 'Quote management endpoints' },
+        { name: 'users', description: 'User management endpoints' },
+        { name: 'rate-cards', description: 'Rate card management endpoints' },
+        { name: 'currencies', description: 'Currency management endpoints' },
+        { name: 'payments', description: 'Payment processing endpoints' },
+        { name: 'permissions', description: 'Permission and authorization endpoints' },
         { name: 'auth', description: 'Authentication endpoints' },
-        { name: 'health', description: 'Health and monitoring endpoints' },
-        { name: 'Users', description: 'User management endpoints' }
+        { name: 'health', description: 'Health and monitoring endpoints' }
       ]
     };
 
@@ -611,6 +1252,9 @@ async function registerPlugins() {
   // Register currency routes
   await app.register(currencyRoutes, { prefix: '/v1' });
 
+  // Register payment routes
+  await app.register(paymentRoutes, { prefix: '/v1' });
+
   // Simple test route
   app.get('/v1/simple-test', {
     schema: {
@@ -656,12 +1300,51 @@ app.get('/', async () => {
     openapi: {
       title: 'Pivotal Flow API',
       version: '0.1.0',
-      quote_endpoints: {
-        'GET /v1/quotes': 'List all quotes with pagination and filtering',
-        'POST /v1/quotes': 'Create a new quote with status "draft"',
-        'GET /v1/quotes/{id}': 'Get specific quote by ID',
-        'PATCH /v1/quotes/{id}': 'Update quote (draft status only)',
-        'POST /v1/quotes/{id}/status': 'Transition quote status (draft→pending→approved→sent→accepted)'
+      available_endpoints: {
+        'Quote Management': {
+          'GET /v1/quotes': 'List all quotes with pagination and filtering',
+          'POST /v1/quotes': 'Create a new quote with status "draft"',
+          'GET /v1/quotes/{id}': 'Get specific quote by ID',
+          'PATCH /v1/quotes/{id}': 'Update quote (draft status only)',
+          'POST /v1/quotes/{id}/status': 'Transition quote status (draft→pending→approved→sent→accepted)'
+        },
+        'User Management': {
+          'GET /v1/users': 'List users with pagination and filtering',
+          'POST /v1/users': 'Create a new user',
+          'GET /v1/users/{id}': 'Get user by ID',
+          'PATCH /v1/users/{id}': 'Update user information',
+          'POST /v1/users/{id}/roles': 'Assign role to user',
+          'DELETE /v1/users/{id}/roles': 'Remove role from user'
+        },
+        'Rate Cards': {
+          'GET /v1/rate-cards': 'List rate cards for organization',
+          'POST /v1/rate-cards': 'Create a new rate card',
+          'GET /v1/rate-cards/{id}': 'Get rate card by ID',
+          'PATCH /v1/rate-cards/{id}': 'Update rate card information'
+        },
+        'Currencies': {
+          'GET /v1/currencies': 'Get all active ISO 4217 currency codes',
+          'GET /v1/currencies/popular': 'Get commonly used currencies',
+          'GET /v1/currencies/region/{region}': 'Get currencies by geographic region'
+        },
+        'Payments': {
+          'POST /v1/payments': 'Create a new payment record',
+          'POST /v1/payments/{id}/void': 'Void a payment'
+        },
+        'Permissions': {
+          'POST /v1/permissions/check': 'Check if user has specific permission',
+          'GET /v1/permissions/can-override-quote-price': 'Check quote price override permission'
+        },
+        'Authentication': {
+          'POST /v1/auth/login': 'Authenticate user and get access token',
+          'POST /v1/auth/refresh': 'Refresh access token',
+          'POST /v1/auth/logout': 'Logout user and invalidate tokens',
+          'GET /v1/auth/me': 'Get current authenticated user information'
+        },
+        'Health & Monitoring': {
+          'GET /health': 'Check API health status',
+          'GET /metrics': 'Get Prometheus metrics'
+        }
       },
       schemas: {
         Quote: {
@@ -676,12 +1359,51 @@ app.get('/', async () => {
           totalAmount: 'number (calculated)',
           createdAt: 'ISO datetime',
           updatedAt: 'ISO datetime'
+        },
+        User: {
+          id: 'UUID',
+          email: 'string (email format)',
+          firstName: 'string',
+          lastName: 'string',
+          status: 'active|inactive|suspended',
+          createdAt: 'ISO datetime'
+        },
+        RateCard: {
+          id: 'UUID',
+          name: 'string',
+          description: 'string',
+          currency: 'string (3 chars)',
+          effectiveFrom: 'date',
+          effectiveUntil: 'date',
+          isDefault: 'boolean',
+          isActive: 'boolean'
+        },
+        Currency: {
+          code: 'string (3 chars)',
+          name: 'string',
+          symbol: 'string',
+          isActive: 'boolean'
+        },
+        Payment: {
+          id: 'UUID',
+          invoiceId: 'string',
+          amount: 'number',
+          currency: 'string (3 chars)',
+          method: 'string',
+          status: 'pending|completed|failed|voided',
+          createdAt: 'ISO datetime'
         }
       },
       authentication: {
         type: 'Bearer JWT',
-        header: 'Authorization: Bearer <token>',
-        login: 'POST /v1/auth/login'
+        required: 'Most endpoints require authentication',
+        public_endpoints: [
+          '/health',
+          '/metrics',
+          '/api/docs',
+          '/v1/auth/login',
+          '/v1/auth/refresh'
+        ]
       }
     }
   };

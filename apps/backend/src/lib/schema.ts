@@ -11,6 +11,22 @@ export const currencies = pgTable('currencies', {
   updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
+// FX Rates table - exchange rates with effective dates
+export const fxRates = pgTable('fx_rates', {
+  id: text('id').primaryKey(),
+  baseCurrency: varchar('base_currency', { length: 3 }).notNull().references(() => currencies.code, { onDelete: 'cascade' }),
+  quoteCurrency: varchar('quote_currency', { length: 3 }).notNull().references(() => currencies.code, { onDelete: 'cascade' }),
+  rate: decimal('rate', { precision: 15, scale: 6 }).notNull(),
+  effectiveFrom: date('effective_from').notNull(),
+  source: varchar('source', { length: 50 }).notNull(),
+  verified: boolean('verified').notNull().default(false),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  currencyPairDateUnique: uniqueIndex('fx_rates_currency_pair_date_unique').on(table.baseCurrency, table.quoteCurrency, table.effectiveFrom),
+  rateLookup: uniqueIndex('fx_rates_lookup').on(table.baseCurrency, table.quoteCurrency, table.effectiveFrom),
+}));
+
 // Organizations table - normalized address and contact info
 export const organizations = pgTable('organizations', {
   id: text('id').primaryKey(),
@@ -457,6 +473,105 @@ export const auditLogs = pgTable('audit_logs', {
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
 
+// Invoices table - typed columns for all monetary values
+export const invoices = pgTable('invoices', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+  quoteId: text('quote_id').references(() => quotes.id, { onDelete: 'set null' }),
+  // Typed monetary columns - no totals in JSONB
+  currency: varchar('currency', { length: 3 }).notNull().default('NZD').references(() => currencies.code),
+  subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  paidAmount: decimal('paid_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  balanceAmount: decimal('balance_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  // Status and dates
+  status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, sent, part_paid, paid, overdue, written_off
+  issuedAt: timestamp('issued_at', { mode: 'date', precision: 3 }),
+  dueAt: timestamp('due_at', { mode: 'date', precision: 3 }),
+  paidAt: timestamp('paid_at', { mode: 'date', precision: 3 }),
+  overdueAt: timestamp('overdue_at', { mode: 'date', precision: 3 }),
+  writtenOffAt: timestamp('written_off_at', { mode: 'date', precision: 3 }),
+  // FX rate snapshot for display conversions
+  fxRateId: text('fx_rate_id').references(() => fxRates.id, { onDelete: 'set null' }),
+  // Normalized fields
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  termsConditions: text('terms_conditions'),
+  notes: text('notes'),
+  internalNotes: text('internal_notes'),
+  // JSONB only for optional metadata
+  metadata: jsonb('metadata').notNull().default('{}'), // Optional display notes, never totals
+  // Audit fields
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
+}, (table) => ({
+  invoiceNumberUnique: uniqueIndex('invoices_invoice_number_organization_unique').on(table.invoiceNumber, table.organizationId),
+  statusIndex: uniqueIndex('idx_invoices_status').on(table.status),
+  currencyIndex: uniqueIndex('idx_invoices_currency').on(table.currency),
+}));
+
+// Invoice line items table
+export const invoiceLineItems = pgTable('invoice_line_items', {
+  id: text('id').primaryKey(),
+  invoiceId: text('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  // Typed monetary columns
+  quantity: decimal('quantity', { precision: 10, scale: 4 }).notNull().default('1.0000'),
+  unitPrice: decimal('unit_price', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  taxAmount: decimal('tax_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  // Normalized fields
+  description: text('description').notNull(),
+  unit: varchar('unit', { length: 20 }).notNull().default('hour'),
+  serviceCategoryId: text('service_category_id').references(() => serviceCategories.id, { onDelete: 'set null' }),
+  rateCardId: text('rate_card_id').references(() => rateCards.id, { onDelete: 'set null' }),
+  // JSONB only for optional metadata
+  metadata: jsonb('metadata').notNull().default('{}'), // Optional display notes, never totals
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
+
+// Payments table - typed columns for all monetary values
+export const payments = pgTable('payments', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  invoiceId: text('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  // Typed monetary columns
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 3 }).notNull().references(() => currencies.code),
+  // Payment details
+  method: varchar('method', { length: 50 }).notNull(), // bank_transfer, credit_card, cash, etc.
+  reference: varchar('reference', { length: 100 }), // Bank reference, transaction ID, etc.
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, completed, void, failed
+  // Dates
+  paidAt: timestamp('paid_at', { mode: 'date', precision: 3 }).notNull(),
+  voidedAt: timestamp('voided_at', { mode: 'date', precision: 3 }),
+  // Idempotency
+  idempotencyKey: text('idempotency_key').references(() => idempotencyKeys.id, { onDelete: 'set null' }),
+  // JSONB only for optional gateway payloads
+  gatewayPayload: jsonb('gateway_payload'), // Optional opaque gateway response data
+  // Audit fields
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  voidedBy: text('voided_by').references(() => users.id, { onDelete: 'set null' }),
+  voidReason: text('void_reason'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  invoiceIdIndex: uniqueIndex('idx_payments_invoice_id').on(table.invoiceId),
+  idempotencyKeyIndex: uniqueIndex('idx_payments_idempotency_key').on(table.idempotencyKey),
+  statusIndex: uniqueIndex('idx_payments_status').on(table.status),
+}));
+
 // Organization settings key-value table with JSONB value
 export const orgSettings = pgTable('org_settings', {
   orgId: text('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
@@ -475,6 +590,10 @@ export const currenciesRelations = relations(currencies, ({ many }) => ({
   rateCards: many(rateCards),
   rateCardItems: many(rateCardItems),
   quotes: many(quotes),
+  invoices: many(invoices),
+  payments: many(payments),
+  baseFxRates: many(fxRates, { relationName: 'baseCurrency' }),
+  quoteFxRates: many(fxRates, { relationName: 'quoteCurrency' }),
 }));
 
 export const organizationsRelations = relations(organizations, ({ one, many }) => ({
@@ -738,9 +857,107 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+// Invoice relations
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [invoices.organizationId],
+    references: [organizations.id],
+  }),
+  customer: one(customers, {
+    fields: [invoices.customerId],
+    references: [customers.id],
+  }),
+  project: one(projects, {
+    fields: [invoices.projectId],
+    references: [projects.id],
+  }),
+  quote: one(quotes, {
+    fields: [invoices.quoteId],
+    references: [quotes.id],
+  }),
+  currency: one(currencies, {
+    fields: [invoices.currency],
+    references: [currencies.code],
+  }),
+  fxRate: one(fxRates, {
+    fields: [invoices.fxRateId],
+    references: [fxRates.id],
+  }),
+  createdBy: one(users, {
+    fields: [invoices.createdBy],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [invoices.approvedBy],
+    references: [users.id],
+  }),
+  lineItems: many(invoiceLineItems),
+  payments: many(payments),
+}));
+
+// Invoice line items relations
+export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLineItems.invoiceId],
+    references: [invoices.id],
+  }),
+  serviceCategory: one(serviceCategories, {
+    fields: [invoiceLineItems.serviceCategoryId],
+    references: [serviceCategories.id],
+  }),
+  rateCard: one(rateCards, {
+    fields: [invoiceLineItems.rateCardId],
+    references: [rateCards.id],
+  }),
+}));
+
+// Payment relations
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [payments.organizationId],
+    references: [organizations.id],
+  }),
+  invoice: one(invoices, {
+    fields: [payments.invoiceId],
+    references: [invoices.id],
+  }),
+  currency: one(currencies, {
+    fields: [payments.currency],
+    references: [currencies.code],
+  }),
+  idempotencyKey: one(idempotencyKeys, {
+    fields: [payments.idempotencyKey],
+    references: [idempotencyKeys.id],
+  }),
+  createdBy: one(users, {
+    fields: [payments.createdBy],
+    references: [users.id],
+  }),
+  voidedBy: one(users, {
+    fields: [payments.voidedBy],
+    references: [users.id],
+  }),
+}));
+
+// FX Rates relations
+export const fxRatesRelations = relations(fxRates, ({ one }) => ({
+  baseCurrency: one(currencies, {
+    fields: [fxRates.baseCurrency],
+    references: [currencies.code],
+    relationName: 'baseCurrency',
+  }),
+  quoteCurrency: one(currencies, {
+    fields: [fxRates.quoteCurrency],
+    references: [currencies.code],
+    relationName: 'quoteCurrency',
+  }),
+}));
+
 // Types for TypeScript
 export type Currency = typeof currencies.$inferSelect;
 export type NewCurrency = typeof currencies.$inferInsert;
+export type FxRate = typeof fxRates.$inferSelect;
+export type NewFxRate = typeof fxRates.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Organization = typeof organizations.$inferSelect;
@@ -785,3 +1002,9 @@ export type OrgNotificationPref = typeof orgNotificationPrefs.$inferSelect;
 export type NewOrgNotificationPref = typeof orgNotificationPrefs.$inferInsert;
 export type OrgSetting = typeof orgSettings.$inferSelect;
 export type NewOrgSetting = typeof orgSettings.$inferInsert;
+export type Invoice = typeof invoices.$inferSelect;
+export type NewInvoice = typeof invoices.$inferInsert;
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type NewPayment = typeof payments.$inferInsert;

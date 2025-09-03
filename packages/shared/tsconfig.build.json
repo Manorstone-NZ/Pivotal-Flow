@@ -13,6 +13,22 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/db/**/*", "src/prisma.ts", "src/**/*.test.ts", "src/**/__tests__/**/*"]
+  "include": [
+    "src/index.ts",
+    "src/db/repo.payments.ts", 
+    "src/db/repo.base.ts", 
+    "src/schema.ts", 
+    "src/metrics/index.ts",
+    "src/pricing/**/*"
+  ],
+  "exclude": [
+    "src/db/repo.audit.ts",
+    "src/db/repo.users.ts", 
+    "src/db/repo.org-settings.ts",
+    "src/db/repo.util.ts",
+    "src/db/withTx.ts",
+    "src/prisma.ts", 
+    "src/**/*.test.ts", 
+    "src/**/__tests__/**/*"
+  ]
 }

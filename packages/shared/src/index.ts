@@ -14,8 +14,14 @@ export * from './types/user.js';
 
 // Export cache and metrics
 export * from './cache/index.js';
-export { prometheusMetrics, globalMetrics, recordMetrics } from './metrics/index.js';
+export { prometheusMetrics, globalMetrics, recordMetrics, MetricsCollector } from './metrics/index.js';
 
 // Export guards and database utilities
 export * from './guards/jsonbMonetaryGuard.js';
 export * from './db/filterGuard.js';
+
+// Export Drizzle-based components
+export * from './db/repo.base.js';
+export * from './db/repo.payments.js';
+export * from './schema.js';
+export * from './pricing/index.js';
