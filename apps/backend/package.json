@@ -24,11 +24,12 @@
     "test:e2e": "tsx scripts/test-runner.ts e2e",
     "test:all": "tsx scripts/test-runner.ts all",
     "test:ci": "vitest run --coverage --reporter=json",
+    "test:coverage": "vitest run --coverage",
     "test:simple": "tsx scripts/simple-test-runner.ts",
     "drizzle:generate": "drizzle-kit generate",
-    "drizzle:migrate": "drizzle-kit migrate",
+    "drizzle:migrate": "bash ../../scripts/db/guard_migrations.sh drizzle-kit migrate",
     "drizzle:studio": "drizzle-kit studio",
-    "drizzle:push": "drizzle-kit push"
+    "drizzle:push": "bash ../../scripts/db/guard_migrations.sh drizzle-kit push"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",
@@ -58,6 +59,7 @@
     "@types/pg": "^8.15.5",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "^1.0.0",
     "drizzle-kit": "^0.31.4",
     "eslint": "^8.55.0",
     "tsx": "^4.6.0",

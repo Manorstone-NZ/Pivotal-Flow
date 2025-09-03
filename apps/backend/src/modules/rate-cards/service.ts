@@ -18,7 +18,7 @@ import { withTx } from '../../lib/withTx.js';
 import { BaseRepository } from '../../lib/repo.base.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
 import { logger } from '../../lib/logger.js';
-import { getRedisClient } from '@pivotal-flow/shared/redis.js';
+import { getRedisClient } from '@pivotal-flow/shared/redis';
 
 // Cache TTL constants as per requirements
 const RATE_CARD_CACHE_TTL = 60; // 60 seconds for active rate card

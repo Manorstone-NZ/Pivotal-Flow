@@ -104,7 +104,7 @@ run_migrations() {
     cd "$PROJECT_ROOT/infra/docker"
     
     # Run migrations using the migrate service
-    docker compose -f docker-compose.yml -f docker-compose.app.yml up migrate
+    ALLOW_LOCAL_DB_CREATION=yes docker compose -f docker-compose.yml -f docker-compose.app.yml --profile local_db up migrate
     
     # Check migration status
     if [ $? -eq 0 ]; then
@@ -122,10 +122,10 @@ start_services() {
     cd "$PROJECT_ROOT/infra/docker"
     
     # Start backend and frontend
-    docker compose -f docker-compose.yml -f docker-compose.app.yml up -d backend
+    ALLOW_LOCAL_DB_CREATION=yes docker compose -f docker-compose.yml -f docker-compose.app.yml --profile local_db up -d backend
     
     if [ "$BUILD_FRONTEND" = "true" ]; then
-        docker compose -f docker-compose.yml -f docker-compose.app.yml up -d frontend
+        ALLOW_LOCAL_DB_CREATION=yes docker compose -f docker-compose.yml -f docker-compose.app.yml --profile local_db up -d frontend
     fi
     
     print_success "Services started"
@@ -193,7 +193,7 @@ show_status() {
     print_status "Service status:"
     
     cd "$PROJECT_ROOT/infra/docker"
-    docker compose -f docker-compose.yml -f docker-compose.app.yml ps
+    ALLOW_LOCAL_DB_CREATION=yes docker compose -f docker-compose.yml -f docker-compose.app.yml --profile local_db ps
     
     echo ""
     print_status "Service URLs:"

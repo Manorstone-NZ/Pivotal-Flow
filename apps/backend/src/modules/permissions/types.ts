@@ -53,4 +53,9 @@ export type PermissionName =
   | 'projects.delete'
   | 'approvals.view'
   | 'approvals.request'
-  | 'approvals.decide';
+  | 'approvals.decide'
+  | 'allocations.create'
+  | 'allocations.read'
+  | 'allocations.update'
+  | 'allocations.delete'
+  | 'allocations.view_capacity';

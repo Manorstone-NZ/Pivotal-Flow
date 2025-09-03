@@ -87,12 +87,22 @@ jobs:
           DB_TRACE: false
           CACHE_TTL_SECS: 300
       
-      # Run CI checks
+      # Run comprehensive test suite
+      - name: Run comprehensive test suite
+        run: node scripts/ci/comprehensive-test-runner.js
+      
+      # Run comprehensive CI checks
       - name: Check JSONB usage for core fields
         run: node scripts/ci/check-jsonb-usage.js
       
       - name: Check payment system implementation
         run: node scripts/ci/check-payment-system.js
+      
+      - name: Run comprehensive coverage report
+        run: node scripts/ci/ci-coverage-report.js
+      
+      - name: Run security and quality checks
+        run: node scripts/ci/security-quality-check.js
       
       # Run performance smoke tests (with backend server)
       - name: Start backend server for performance tests

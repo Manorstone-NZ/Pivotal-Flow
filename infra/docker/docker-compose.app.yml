@@ -25,6 +25,8 @@ services:
     networks:
       - devnet
     # Healthcheck is now built into the Dockerfile
+    profiles:
+      - local_db
 
   frontend:
     build:
@@ -36,6 +38,8 @@ services:
       - "8080:8080"
     networks:
       - devnet
+    profiles:
+      - local_db
 
   migrate:
     image: node:20-alpine
@@ -53,6 +57,8 @@ services:
     networks:
       - devnet
     restart: "no"
+    profiles:
+      - local_db
 
 networks:
   devnet:

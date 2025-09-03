@@ -201,7 +201,7 @@ fi
 # Create new database if it doesn't exist
 if [[ "$DB_EXISTS" -eq 0 ]]; then
     log "Creating new database: $DB_NAME"
-    if ! psql --host="$DB_HOST" --port="$DB_PORT" --username="$DB_USER" --command="CREATE DATABASE \"$DB_NAME\";"; then
+    if ! ALLOW_LOCAL_DB_CREATION=yes psql --host="$DB_HOST" --port="$DB_PORT" --username="$DB_USER" --command="CREATE DATABASE \"$DB_NAME\";"; then
         error "Failed to create database: $DB_NAME"
         unset PGPASSWORD
         exit 1

@@ -606,6 +606,43 @@ export const orgSettings = pgTable('org_settings', {
   orgKeyUnique: uniqueIndex('org_settings_org_key_unique').on(table.orgId, table.key),
 }));
 
+// Resource allocations table - core planning fields as typed columns, notes in JSONB
+export const resourceAllocations = pgTable('resource_allocations', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 100 }).notNull(), // Developer, Designer, Project Manager, etc.
+  allocationPercent: decimal('allocation_percent', { precision: 5, scale: 2 }).notNull(), // 0.00 to 100.00
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date').notNull(),
+  isBillable: boolean('is_billable').notNull().default(true),
+  // Keep JSONB only for optional notes and metadata
+  notes: jsonb('notes').notNull().default('{}'), // Optional notes about the allocation
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
+}, (table) => ({
+  // Ensure no overlapping allocations for the same user
+  userDateOverlap: uniqueIndex('resource_allocations_user_date_overlap').on(
+    table.userId, 
+    table.startDate, 
+    table.endDate
+  ),
+  // Index for efficient project queries
+  projectUser: uniqueIndex('resource_allocations_project_user').on(
+    table.projectId, 
+    table.userId, 
+    table.startDate
+  ),
+  // Index for capacity calculations
+  userDateRange: uniqueIndex('resource_allocations_user_date_range').on(
+    table.userId, 
+    table.startDate, 
+    table.endDate
+  ),
+}));
+
 // Relations
 export const currenciesRelations = relations(currencies, ({ many }) => ({
   organizations: many(organizations),
@@ -638,6 +675,7 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   featureFlags: many(orgFeatureFlags),
   notificationPrefs: many(orgNotificationPrefs),
   settings: many(orgSettings),
+  resourceAllocations: many(resourceAllocations),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -653,6 +691,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   auditLogs: many(auditLogs, { relationName: 'actor' }),
   requestedApprovals: many(approvalRequests, { relationName: 'requestedBy' }),
   approverApprovals: many(approvalRequests, { relationName: 'approver' }),
+  resourceAllocations: many(resourceAllocations),
 }));
 
 export const rolesRelations = relations(roles, ({ one, many }) => ({
@@ -729,6 +768,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [users.id],
   }),
   quotes: many(quotes),
+  resourceAllocations: many(resourceAllocations),
 }));
 
 export const serviceCategoriesRelations = relations(serviceCategories, ({ one, many }) => ({
@@ -994,6 +1034,22 @@ export const fxRatesRelations = relations(fxRates, ({ one }) => ({
   }),
 }));
 
+// Resource allocations relations
+export const resourceAllocationsRelations = relations(resourceAllocations, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [resourceAllocations.organizationId],
+    references: [organizations.id],
+  }),
+  project: one(projects, {
+    fields: [resourceAllocations.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [resourceAllocations.userId],
+    references: [users.id],
+  }),
+}));
+
 // Types for TypeScript
 export type Currency = typeof currencies.$inferSelect;
 export type NewCurrency = typeof currencies.$inferInsert;
@@ -1051,3 +1107,5 @@ export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
 export type ApprovalRequest = typeof approvalRequests.$inferSelect;
 export type NewApprovalRequest = typeof approvalRequests.$inferInsert;
+export type ResourceAllocation = typeof resourceAllocations.$inferSelect;
+export type NewResourceAllocation = typeof resourceAllocations.$inferInsert;

@@ -223,3 +223,8 @@ sudo docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U 
 - [Redis Docker Image](https://hub.docker.com/_/redis)
 - [Prometheus Docker Image](https://hub.docker.com/r/prom/prometheus)
 - [Grafana Docker Image](https://hub.docker.com/r/grafana/grafana)
+
+## 📖 Development Instructions
+
+- [Docker Development Instructions](../../docs/docker/DOCKER_DEVELOPMENT_INSTRUCTIONS.md) - Comprehensive guide for Docker-first development
+- [Docker Quick Reference](../../docs/docker/DOCKER_QUICK_REFERENCE.md) - Essential commands and reminders

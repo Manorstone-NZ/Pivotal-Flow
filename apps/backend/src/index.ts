@@ -32,6 +32,7 @@ import { permissionRoutes } from './modules/permissions/index.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
 import { paymentRoutes } from './modules/payments/routes.js';
 import { approvalModule } from './modules/approvals/index.js';
+import { allocationModule } from './modules/allocations/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1479,6 +1480,9 @@ async function registerPlugins() {
   // Register approval routes
   await app.register(approvalModule);
 
+  // Register allocation routes
+  await app.register(allocationModule);
+
   // Simple test route
   app.get('/v1/simple-test', {
     schema: {
@@ -1567,6 +1571,13 @@ app.get('/', async () => {
           'GET /v1/approvals': 'List approval requests with filters',
           'GET /v1/approvals/{id}': 'Get approval request by ID',
           'GET /v1/approvals/policy': 'Get organization approval policy'
+        },
+        'Resource Allocations': {
+          'POST /v1/projects/{id}/allocations': 'Create a new resource allocation',
+          'GET /v1/projects/{id}/allocations': 'Get allocations for a project',
+          'PATCH /v1/allocations/{id}': 'Update a resource allocation',
+          'DELETE /v1/allocations/{id}': 'Delete a resource allocation',
+          'GET /v1/projects/{id}/capacity': 'Get project capacity summary (planned vs actual)'
         },
         'Authentication': {
           'POST /v1/auth/login': 'Authenticate user and get access token',

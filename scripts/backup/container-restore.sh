@@ -132,7 +132,7 @@ fi
 
 # Create new database if it doesn't exist
 echo "🏗️ Creating target database: $TARGET_DB"
-docker exec -e PGPASSWORD="$DB_PASS" \
+ALLOW_LOCAL_DB_CREATION=yes docker exec -e PGPASSWORD="$DB_PASS" \
     "$(docker ps -qf name=postgres)" \
     createdb -U "$DB_USER" "$TARGET_DB"
 

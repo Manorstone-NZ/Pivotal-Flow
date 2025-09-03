@@ -84,20 +84,36 @@ export const cachePlugin: FastifyPluginCallback<CachePluginOptions> = async (
   } catch (error) {
     logger.error('Failed to initialize cache plugin:', error);
     
-    // Create a fallback cache service that logs warnings
-    const fallbackCache = new Proxy({} as CacheService, {
-      get(_target, prop) {
-        if (prop === 'connect' || prop === 'disconnect') {
-          return async () => {};
-        }
-        
-        // Return a function that logs warnings for all cache operations
-        return async () => {
-          logger.warn(`Cache operation '${String(prop)}' called but Redis is not available`);
-          return null;
+    // Create a proper fallback cache service that handles all operations
+    const fallbackCache = {
+      async connect() {
+        logger.warn('Cache connect called but Redis is not available');
+      },
+      async disconnect() {
+        logger.warn('Cache disconnect called but Redis is not available');
+      },
+      async set(key: string, _data: any, _ttl?: number) {
+        logger.warn(`Cache set operation called but Redis is not available: ${key}`);
+      },
+      async get(key: string) {
+        logger.warn(`Cache get operation called but Redis is not available: ${key}`);
+        return null;
+      },
+      async delete(key: string) {
+        logger.warn(`Cache delete operation called but Redis is not available: ${key}`);
+      },
+      async getStats() {
+        return {
+          connected: false,
+          keyCount: 0,
+          memoryUsage: '0B',
+          hitRate: 0
         };
+      },
+      async clear() {
+        logger.warn('Cache clear operation called but Redis is not available');
       }
-    });
+    } as CacheService;
     
     fastify.decorate('cache', fallbackCache);
     

@@ -4,6 +4,8 @@ services:
   postgres:
     image: postgres:16
     container_name: pivotal-postgres
+    profiles:
+      - local_db
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     environment:

@@ -23,7 +23,7 @@ import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
 import { QuoteVersioningService } from '../../lib/quote-versioning.js';
 import { QuoteLockingService } from '../../lib/quote-locking.js';
-import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics';
+// import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics';
 
 /**
  * Quote Service
@@ -61,13 +61,13 @@ export class QuoteService extends BaseRepository {
    * Create a new quote with line items
    */
   async createQuote(data: z.infer<typeof CreateQuoteSchema>): Promise<any> {
-    const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'create');
+    // const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'create');
     
     try {
       // Validate quote data
       const validation = validateQuoteData(data);
       if (!validation.isValid) {
-        quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'validation');
+        // quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'validation');
         throw new Error(`Quote validation failed: ${validation.errors.join(', ')}`);
       }
 
@@ -241,11 +241,11 @@ export class QuoteService extends BaseRepository {
     });
     
     // Record success metrics
-    quoteMetrics.recordQuoteCreated(this.options.organizationId, QuoteStatus.DRAFT);
+            // quoteMetrics.recordQuoteCreated(this.options.organizationId, QuoteStatus.DRAFT);
     timer();
     
   } catch (error) {
-    quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'unknown');
+            // quoteMetrics.recordQuoteError(this.options.organizationId, 'create', 'unknown');
     timer();
     throw error;
   }
@@ -255,13 +255,13 @@ export class QuoteService extends BaseRepository {
  * Update quote header and/or line items with recalculation
  */
   async updateQuote(quoteId: string, data: z.infer<typeof UpdateQuoteSchema>): Promise<any> {
-    const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'update');
+    // const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'update');
     
     try {
       // Get existing quote
       const existingQuote = await this.getQuoteById(quoteId);
       if (!existingQuote) {
-        quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'not_found');
+        // quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'not_found');
         throw new Error('Quote not found');
       }
 
@@ -463,14 +463,14 @@ export class QuoteService extends BaseRepository {
     });
     
     // Record success metrics
-    quoteMetrics.recordQuoteUpdated(this.options.organizationId, existingQuote.status);
+            // quoteMetrics.recordQuoteUpdated(this.options.organizationId, existingQuote.status);
     if (data.lineItems) {
-      quoteMetrics.recordQuoteRecalc(this.options.organizationId, 'line_items_update');
+              // quoteMetrics.recordQuoteRecalc(this.options.organizationId, 'line_items_update');
     }
     timer();
     
   } catch (error) {
-    quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'unknown');
+            // quoteMetrics.recordQuoteError(this.options.organizationId, 'update', 'unknown');
     timer();
     throw error;
   }
@@ -608,13 +608,13 @@ export class QuoteService extends BaseRepository {
     filters: any = {}
   ): Promise<{ quotes: any[]; pagination: any }> {
     const filtersCount = Object.keys(filters).filter(key => filters[key] !== undefined).length;
-    const timer = quoteMetrics.startQuoteListTimer(this.options.organizationId, pagination.pageSize, filtersCount);
+    // const timer = quoteMetrics.startQuoteListTimer(this.options.organizationId, pagination.pageSize, filtersCount);
     
     try {
       // Guard against JSONB filter misuse
       const check = guardTypedFilters(filters);
       if (!check.ok) {
-        quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'jsonb_filter');
+        // quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'jsonb_filter');
         const e: any = new Error(check.reason);
         e.statusCode = 400;
         e.code = "JSONB_FILTER_FORBIDDEN";
@@ -715,11 +715,11 @@ export class QuoteService extends BaseRepository {
     
     // Record success metrics
     const filtersApplied = Object.keys(filters).filter(key => filters[key] !== undefined).join(',');
-    quoteMetrics.recordQuoteListed(this.options.organizationId, filtersApplied || 'none');
+            // quoteMetrics.recordQuoteListed(this.options.organizationId, filtersApplied || 'none');
     timer();
     
   } catch (error) {
-    quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'unknown');
+            // quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'unknown');
     timer();
     throw error;
   }

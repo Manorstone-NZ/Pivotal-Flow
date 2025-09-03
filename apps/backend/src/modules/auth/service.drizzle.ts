@@ -1,12 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { users, roles as rolesTable, userRoles as userRolesTable } from '../../lib/schema.js';
-// import { verifyPassword } from '@pivotal-flow/shared/security/password';
-// Using local implementation for now to avoid module resolution issues
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // Placeholder implementation - replace with actual password verification
-  return password === hash; // This is NOT secure - just for compilation
-}
+import { verifyPassword } from '@pivotal-flow/shared/security/password';
 
 export interface UserWithRoles {
   id: string;

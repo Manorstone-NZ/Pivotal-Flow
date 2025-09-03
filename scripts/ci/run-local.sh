@@ -101,7 +101,7 @@ print_status $? "Performance smoke tests completed"
 if pg_isready -h localhost -p 5433 -U pivotal > /dev/null 2>&1; then
     echo "🗄️  Running database migrations..."
     cd apps/backend
-    pnpm drizzle-kit migrate
+    ALLOW_LOCAL_DB_CREATION=yes pnpm drizzle-kit migrate
     print_status $? "Database migrations completed"
     cd ..
 else

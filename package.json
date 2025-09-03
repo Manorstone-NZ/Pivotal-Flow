@@ -7,14 +7,22 @@
     "dev": "pnpm --filter backend dev",
     "build": "pnpm --recursive build",
     "test": "pnpm --recursive test",
+    "test:coverage": "pnpm --recursive test:coverage",
+    "test:ci": "pnpm --recursive test:ci",
     "lint": "pnpm --recursive lint",
     "type-check": "pnpm --recursive type-check",
     "format": "pnpm --recursive format",
     "format:check": "pnpm --recursive format:check",
     "clean": "pnpm --recursive clean",
+    "ci:coverage": "node scripts/ci/ci-coverage-report.js",
+    "ci:security": "node scripts/ci/security-quality-check.js",
+    "ci:full": "pnpm test:ci && pnpm ci:coverage && pnpm ci:security",
+    "ci:comprehensive": "node scripts/ci/comprehensive-test-runner.js",
     "docker:up": "./scripts/docker/up.sh",
     "docker:down": "./scripts/docker/down.sh",
-    "docker:logs": "./scripts/docker/logs.sh"
+    "docker:logs": "./scripts/docker/logs.sh",
+    "db:drop:nonprod:dry": "DB_DRY_RUN=yes REQUIRE_EXPLICIT_CONFIRM=YES bash scripts/db/drop_non_prod_dbs.sh",
+    "db:drop:nonprod": "DB_DRY_RUN=no REQUIRE_EXPLICIT_CONFIRM=YES bash scripts/db/drop_non_prod_dbs.sh"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

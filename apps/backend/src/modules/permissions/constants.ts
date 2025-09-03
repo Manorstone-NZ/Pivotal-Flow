@@ -49,6 +49,15 @@ export const PERMISSIONS = {
     VIEW: 'approvals.view',
     REQUEST: 'approvals.request',
     DECIDE: 'approvals.decide'
+  },
+  
+  // Allocation permissions
+  ALLOCATIONS: {
+    CREATE: 'allocations.create',
+    READ: 'allocations.read',
+    UPDATE: 'allocations.update',
+    DELETE: 'allocations.delete',
+    VIEW_CAPACITY: 'allocations.view_capacity'
   }
 } as const;
 
@@ -63,5 +72,7 @@ export const PERMISSION_CATEGORIES = {
   RATE_CARDS: 'rate_cards',
   USERS: 'users',
   CUSTOMERS: 'customers',
-  PROJECTS: 'projects'
+  PROJECTS: 'projects',
+  APPROVALS: 'approvals',
+  ALLOCATIONS: 'allocations'
 } as const;

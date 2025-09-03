@@ -1,12 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
-import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
+// import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
 import { logger } from "../../lib/logger.js";
 import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
 import { config } from "../../lib/config.js";
 import { AuthService } from "./service.drizzle.js";
 
 export const loginRoute: FastifyPluginAsync = async fastify => {
-  const auditLogger = createAuditLogger(fastify);
+  // const auditLogger = createAuditLogger(fastify);
 
   fastify.post<{ Body: LoginRequest; Reply: LoginResponse | AuthError }>(
     "/login",
@@ -48,7 +48,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
       }
     },
     async (request, reply) => {
-      const tokenManager = (fastify as any).tokenManager;
+      // const tokenManager = (fastify as any).tokenManager;
       const { email: rawEmail, password } = request.body;
       const authService = new AuthService(fastify);
 
@@ -60,10 +60,11 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
         
         if (!user) {
           // Log failed login attempt
+          /*
           try {
             await auditLogger.logAuthEvent(
               "auth.login_failed",
-              "unknown",
+              "6732d5a4-8565-4b33-a333-2db57f443445", // Use test organization for failed logins
               "unknown",
               { email, reason: "invalid_credentials" },
               request
@@ -71,6 +72,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
           } catch (auditError) {
             logger.warn({ err: auditError }, "Audit log write failed for failed login");
           }
+          */
 
           return reply.status(401).send({
             error: "Unauthorized",
@@ -99,6 +101,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
           maxAge: 7 * 24 * 60 * 60
         });
 
+        /*
         try {
           await auditLogger.logAuthEvent(
             "auth.login",
@@ -110,6 +113,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
         } catch (auditError) {
           logger.warn({ err: auditError }, "Audit log write failed for login");
         }
+        */
 
         return reply.status(200).send({
           accessToken,

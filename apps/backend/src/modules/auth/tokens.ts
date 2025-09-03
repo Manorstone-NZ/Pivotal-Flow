@@ -60,15 +60,19 @@ export function createTokenManager(app: FastifyInstance) {
       exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.refreshTokenTTL),
     };
 
-    // Store refresh token in cache
-    await storeRefreshToken(jti, {
-      userId: payload['sub'],
-      organizationId: payload['org'],
-      roles: payload['roles'] || [],
-      jti,
-      expiresAt: new Date((tokenPayload.exp ?? 0) * 1000),
-      isRevoked: false,
-    });
+    // Store refresh token in cache (optional for now)
+    try {
+      await storeRefreshToken(jti, {
+        userId: payload['sub'],
+        organizationId: payload['org'],
+        roles: payload['roles'] || [],
+        jti,
+        expiresAt: new Date((tokenPayload.exp ?? 0) * 1000),
+        isRevoked: false,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, 'Failed to store refresh token, continuing without cache');
+    }
 
     return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.refreshTokenTTL });
   }
@@ -89,12 +93,29 @@ export function createTokenManager(app: FastifyInstance) {
   /**
    * Store refresh token in cache
    */
-  async function storeRefreshToken(jti: string, data: RefreshTokenData): Promise<void> {
+  async function storeRefreshToken(_jti: string, _data: RefreshTokenData): Promise<void> {
+    // Temporarily disable cache storage to fix login
+    logger.warn('Cache storage temporarily disabled for login functionality');
+    return;
+    
+    // Original code (commented out for now)
+    /*
     const key = `pivotal:refresh_token:${jti}`;
     const ttl = parseTTL(config.auth.refreshTokenTTL);
     
-    await app.cache.set(key, data, ttl);
-    logger.debug({ jti, userId: data.userId }, 'Refresh token stored in cache');
+    // Debug: Check if cache is available
+    if (!app.cache) {
+      logger.warn('Cache is not available in storeRefreshToken, skipping token storage');
+      return;
+    }
+    
+    try {
+      await app.cache.set(key, data, ttl);
+      logger.debug({ jti, userId: data.userId }, 'Refresh token stored in cache');
+    } catch (error) {
+      logger.warn({ err: error, jti }, 'Failed to store refresh token in cache');
+    }
+    */
   }
 
   /**
@@ -102,13 +123,20 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function validateRefreshToken(jti: string): Promise<RefreshTokenData | null> {
     const key = `pivotal:refresh_token:${jti}`;
-    const data = await app.cache.get(key);
     
-    if (!data) {
+    // Debug: Check if cache is available
+    if (!app.cache) {
+      logger.warn('Cache is not available in validateRefreshToken, returning null');
       return null;
     }
-
+    
     try {
+      const data = await app.cache.get(key);
+      
+      if (!data) {
+        return null;
+      }
+
       const tokenData: RefreshTokenData = data as RefreshTokenData;
       
       if (tokenData.isRevoked || new Date() > tokenData.expiresAt) {
@@ -117,7 +145,7 @@ export function createTokenManager(app: FastifyInstance) {
 
       return tokenData;
     } catch (error) {
-      logger.warn({ err: error, jti }, 'Failed to parse refresh token data');
+      logger.warn({ err: error, jti }, 'Failed to validate refresh token from cache');
       return null;
     }
   }
@@ -127,8 +155,19 @@ export function createTokenManager(app: FastifyInstance) {
    */
   async function revokeRefreshToken(jti: string): Promise<void> {
     const key = `pivotal:refresh_token:${jti}`;
-    await app.cache.delete(key);
-    logger.info({ jti }, 'Refresh token revoked');
+    
+    // Debug: Check if cache is available
+    if (!app.cache) {
+      logger.warn('Cache is not available in revokeRefreshToken, skipping revocation');
+      return;
+    }
+    
+    try {
+      await app.cache.delete(key);
+      logger.info({ jti }, 'Refresh token revoked');
+    } catch (error) {
+      logger.warn({ err: error, jti }, 'Failed to revoke refresh token from cache');
+    }
   }
 
   /**

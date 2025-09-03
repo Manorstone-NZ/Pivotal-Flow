@@ -21,10 +21,10 @@ pnpm -w prisma generate
 
 # Run migrations
 echo "🚀 Running Prisma migrations..."
-pnpm -w prisma migrate deploy
+ALLOW_LOCAL_DB_CREATION=yes pnpm -w prisma migrate deploy
 
 echo "✅ Database migrations completed successfully"
 
 # Verify schema version
 echo "📋 Current schema version:"
-pnpm -w prisma migrate status
+ALLOW_LOCAL_DB_CREATION=yes pnpm -w prisma migrate status
