@@ -21,7 +21,7 @@ export const organizations = pgTable('organizations', {
   size: varchar('size', { length: 50 }),
   timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
   currency: varchar('currency', { length: 3 }).notNull().default('USD'),
-  taxId: varchar('tax_id', { length: 100 }),
+  taxId: varchar('taxId', { length: 100 }),
   // Normalized address fields
   street: text('street'),
   suburb: text('suburb'),
@@ -36,12 +36,12 @@ export const organizations = pgTable('organizations', {
   // Keep JSONB only for flexible extras
   contactExtras: jsonb('contact_extras'), // Social links, secondary channels
   settings: jsonb('settings').notNull().default('{}'), // Feature-specific payloads
-  subscriptionPlan: varchar('subscription_plan', { length: 50 }).notNull().default('basic'),
-  subscriptionStatus: varchar('subscription_status', { length: 20 }).notNull().default('active'),
-  trialEndsAt: timestamp('trial_ends_at', { mode: 'date', precision: 3 }),
-  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
+  subscriptionPlan: varchar('subscriptionPlan', { length: 50 }).notNull().default('basic'),
+  subscriptionStatus: varchar('subscriptionStatus', { length: 20 }).notNull().default('active'),
+  trialEndsAt: timestamp('trialEndsAt', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).notNull(),
+  deletedAt: timestamp('deletedAt', { mode: 'date', precision: 3 }),
 });
 
 // Organization security policies table
@@ -121,11 +121,12 @@ export const users = pgTable('users', {
 // Permissions table
 export const permissions = pgTable('permissions', {
   id: text('id').primaryKey(),
-  action: varchar('action', { length: 100 }).notNull(),
-  resource: varchar('resource', { length: 100 }).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
   category: varchar('category', { length: 100 }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  resource: varchar('resource', { length: 100 }).notNull(),
+  action: varchar('action', { length: 100 }).notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 }, (table) => ({
   actionResourceUnique: uniqueIndex('permissions_action_resource_unique').on(table.action, table.resource),
 }));
@@ -444,7 +445,7 @@ export const auditLogs = pgTable('audit_logs', {
   entityType: varchar('entity_type', { length: 100 }).notNull(),
   entityId: text('entity_id').notNull(),
   action: varchar('action', { length: 100 }).notNull(),
-  actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  actorId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
   requestId: text('request_id'), // For request tracing
   ipAddress: inet('ip_address'), // Proper IP address type
   userAgent: text('user_agent'),

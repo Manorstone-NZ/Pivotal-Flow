@@ -35,6 +35,14 @@
       "import": "./dist/metrics/index.js",
       "types": "./dist/metrics/index.d.ts"
     },
+    "./redis": {
+      "import": "./dist/redis.js",
+      "types": "./dist/redis.d.ts"
+    },
+    "./metrics/quote-metrics": {
+      "import": "./dist/metrics/quote-metrics.js",
+      "types": "./dist/metrics/quote-metrics.d.ts"
+    },
     "./guards/jsonbMonetaryGuard": {
       "import": "./dist/guards/jsonbMonetaryGuard.js",
       "types": "./dist/guards/jsonbMonetaryGuard.d.ts"
@@ -56,7 +64,9 @@
   "dependencies": {
     "argon2": "^0.40.0",
     "decimal.js": "^10.4.3",
+    "drizzle-orm": "^0.44.5",
     "ioredis": "^5.3.2",
+    "postgres": "^3.4.7",
     "prom-client": "^15.1.0",
     "uuid": "^9.0.1",
     "zod": "^3.22.4"

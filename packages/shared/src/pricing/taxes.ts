@@ -1,5 +1,6 @@
 import { Decimal } from 'decimal.js';
-import { MoneyAmount, createDecimal, roundToCurrency, calculatePercentage } from './money.js';
+import type { MoneyAmount } from './money.js';
+import { createDecimal, roundToCurrency, calculatePercentage } from './money.js';
 
 /**
  * Tax calculation functions for GST and future tax rates
@@ -17,6 +18,13 @@ export interface TaxCalculation {
   taxRate: number;
   taxAmount: MoneyAmount;
   totalAmount: MoneyAmount;
+}
+
+export interface TaxBreakdown {
+  rate: number;
+  taxableAmount: MoneyAmount;
+  taxAmount: MoneyAmount;
+  description: string;
 }
 
 /**
@@ -71,17 +79,17 @@ export function calculateTax(
 }
 
 /**
- * Calculate tax amount for multiple line items with different tax rates
+ * Calculate tax breakdown for multiple line items with different tax rates
  */
-export function calculateTaxForLineItems(
+export function calculateTaxBreakdown(
   lineItems: Array<{
     amount: MoneyAmount;
     taxRate: number;
     isTaxExempt?: boolean;
   }>
-): TaxCalculation {
+): TaxBreakdown[] {
   if (lineItems.length === 0) {
-    throw new Error('Cannot calculate tax for empty line items array');
+    return [];
   }
   
   const currency = lineItems[0].amount.currency;
@@ -93,59 +101,72 @@ export function calculateTaxForLineItems(
     }
   }
   
-  // Separate taxable and non-taxable amounts
-  const taxableItems = lineItems.filter(item => !item.isTaxExempt);
-  const nonTaxableItems = lineItems.filter(item => item.isTaxExempt);
+  // Group by tax rate
+  const taxRateGroups = new Map<number, MoneyAmount>();
   
-  // Calculate total taxable amount
-  const taxableAmount = taxableItems.length > 0 
-    ? taxableItems.reduce((sum, item) => ({
-        amount: sum.amount.plus(item.amount.amount),
-        currency: sum.currency
-      }), { amount: new Decimal(0), currency })
-    : { amount: new Decimal(0), currency };
-  
-  // Calculate weighted average tax rate for taxable items
-  let totalTaxableValue = new Decimal(0);
-  let weightedTaxRate = new Decimal(0);
-  
-  for (const item of taxableItems) {
-    totalTaxableValue = totalTaxableValue.plus(item.amount.amount);
-    weightedTaxRate = weightedTaxRate.plus(
-      item.amount.amount.times(createDecimal(item.taxRate))
-    );
+  for (const item of lineItems) {
+    if (item.isTaxExempt) {
+      // Handle tax exempt items
+      const exemptRate = 0;
+      const currentAmount = taxRateGroups.get(exemptRate) || { amount: new Decimal(0), currency };
+      taxRateGroups.set(exemptRate, {
+        amount: currentAmount.amount.plus(item.amount.amount),
+        currency
+      });
+    } else {
+      // Handle taxable items
+      const currentAmount = taxRateGroups.get(item.taxRate) || { amount: new Decimal(0), currency };
+      taxRateGroups.set(item.taxRate, {
+        amount: currentAmount.amount.plus(item.amount.amount),
+        currency
+      });
+    }
   }
   
-  const averageTaxRate = totalTaxableValue.isZero() 
-    ? 0 
-    : weightedTaxRate.dividedBy(totalTaxableValue).toNumber();
+  // Calculate tax for each rate group
+  const breakdown: TaxBreakdown[] = [];
   
-  // Calculate tax amount
-  const taxAmount = calculatePercentage(taxableAmount, averageTaxRate);
+  for (const [rate, amount] of taxRateGroups) {
+    if (amount.amount.greaterThan(0)) {
+      const taxCalculation = calculateTax(amount, rate);
+      breakdown.push({
+        rate,
+        taxableAmount: amount,
+        taxAmount: taxCalculation.taxAmount,
+        description: rate === 0 ? 'Exempt (0%)' : rate === 15 ? 'GST (15%)' : `Tax (${rate}%)`
+      });
+    }
+  }
   
-  // Calculate total amount (taxable + non-taxable + tax)
-  const nonTaxableAmount = nonTaxableItems.length > 0
-    ? nonTaxableItems.reduce((sum, item) => ({
-        amount: sum.amount.plus(item.amount.amount),
-        currency: sum.currency
-      }), { amount: new Decimal(0), currency })
-    : { amount: new Decimal(0), currency };
+  // Sort by rate (exempt first, then ascending)
+  breakdown.sort((a, b) => {
+    if (a.rate === 0) return -1;
+    if (b.rate === 0) return 1;
+    return a.rate - b.rate;
+  });
   
-  const totalAmount = {
-    amount: roundToCurrency(
-      taxableAmount.amount.plus(nonTaxableAmount.amount).plus(taxAmount.amount)
-    ),
-    currency
-  };
+  return breakdown;
+}
+
+/**
+ * Calculate total tax amount from tax breakdown
+ */
+export function calculateTotalTaxFromBreakdown(breakdown: TaxBreakdown[]): MoneyAmount {
+  if (breakdown.length === 0) {
+    return { amount: new Decimal(0), currency: 'NZD' };
+  }
+  
+  const currency = breakdown[0].taxAmount.currency;
+  const totalTax = breakdown.reduce((sum, item) => {
+    if (item.taxAmount.currency !== currency) {
+      throw new Error(`Cannot sum tax amounts with different currencies: ${currency} and ${item.taxAmount.currency}`);
+    }
+    return sum.add(item.taxAmount.amount);
+  }, new Decimal(0));
   
   return {
-    taxableAmount: {
-      amount: roundToCurrency(taxableAmount.amount),
-      currency
-    },
-    taxRate: averageTaxRate,
-    taxAmount,
-    totalAmount
+    amount: roundToCurrency(totalTax),
+    currency
   };
 }
 

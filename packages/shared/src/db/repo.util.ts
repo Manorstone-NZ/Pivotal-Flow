@@ -1,6 +1,5 @@
 // Repository utilities for pagination, sorting, and filter builders
 
-import type { Prisma } from '@prisma/client';
 import type { PaginationOptions } from './repo.base.js';
 
 export interface PaginationBuilderOptions {
@@ -59,8 +58,8 @@ export class PaginationBuilder {
 }
 
 export class FilterBuilder {
-  static buildUserFilters(options: FilterBuilderOptions): Prisma.UserWhereInput {
-    const filters: Prisma.UserWhereInput = {
+  static buildUserFilters(options: FilterBuilderOptions): any {
+    const filters: any = {
       deletedAt: null
     };
 

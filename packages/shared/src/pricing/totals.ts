@@ -1,11 +1,14 @@
 import { Decimal } from 'decimal.js';
-import { MoneyAmount, roundToCurrency, sumMoney } from './money.js';
-import { calculateTax, TaxCalculation } from './taxes.js';
-import { calculateDiscount, DiscountType, applyMultipleDiscounts } from './discounts.js';
-import { LineItemCalculation } from './lines.js';
+import type { MoneyAmount } from './money.js';
+import { createDecimal, roundToCurrency, sumMoney } from './money.js';
+import type { DiscountType } from './discounts.js';
+import { calculateDiscount } from './discounts.js';
+import type { LineItemCalculation } from './lines.js';
+import type { TaxBreakdown } from './taxes.js';
+import { calculateTaxBreakdown, calculateTotalTaxFromBreakdown } from './taxes.js';
 
 /**
- * Totals calculation functions for subtotal, tax, and grand total
+ * Quote totals calculation functions
  */
 
 export interface QuoteTotals {
@@ -21,6 +24,10 @@ export interface QuoteDiscount {
   type: DiscountType;
   value: number;
   description?: string;
+}
+
+export interface QuoteCalculationWithBreakdown extends QuoteTotals {
+  taxBreakdown: TaxBreakdown[];
 }
 
 /**
@@ -87,6 +94,31 @@ export function calculateQuoteTotals(
 }
 
 /**
+ * Calculate quote totals with tax breakdown
+ */
+export function calculateQuoteTotalsWithBreakdown(
+  lineCalculations: LineItemCalculation[],
+  quoteDiscount?: QuoteDiscount
+): QuoteCalculationWithBreakdown {
+  // Calculate basic totals
+  const totals = calculateQuoteTotals(lineCalculations, quoteDiscount);
+  
+  // Calculate tax breakdown from line items
+  const taxBreakdown = calculateTaxBreakdown(
+    lineCalculations.map(calc => ({
+      amount: calc.taxableAmount,
+      taxRate: calc.lineItem.taxRate ?? 15,
+      isTaxExempt: calc.lineItem.isTaxExempt
+    }))
+  );
+  
+  return {
+    ...totals,
+    taxBreakdown
+  };
+}
+
+/**
  * Calculate totals with multiple quote-level discounts
  */
 export function calculateQuoteTotalsWithMultipleDiscounts(
@@ -115,17 +147,31 @@ export function calculateQuoteTotalsWithMultipleDiscounts(
   // Calculate total from line items (includes tax)
   const lineTotal = sumMoney(lineCalculations.map(calc => calc.totalAmount));
   
-  // Apply multiple discounts
-  const discounts = quoteDiscounts.map(d => ({
-    type: d.type,
-    value: d.value,
-    description: d.description,
-    isActive: true
-  }));
+  // Apply multiple discounts in order: percentage then fixed
+  let discountAmount: MoneyAmount = { amount: new Decimal(0), currency };
+  let taxableAmount: MoneyAmount = lineTotal;
   
-  const discountCalculation = applyMultipleDiscounts(lineTotal, discounts);
-  const discountAmount = discountCalculation.discountAmount;
-  const taxableAmount = discountCalculation.finalAmount;
+  // Apply percentage discounts first
+  const percentageDiscounts = quoteDiscounts.filter(d => d.type === 'percentage');
+  for (const discount of percentageDiscounts) {
+    const discountCalculation = calculateDiscount(taxableAmount, discount.type, discount.value);
+    discountAmount = {
+      amount: roundToCurrency(discountAmount.amount.plus(discountCalculation.discountAmount.amount)),
+      currency
+    };
+    taxableAmount = discountCalculation.finalAmount;
+  }
+  
+  // Apply fixed amount discounts after percentage discounts
+  const fixedDiscounts = quoteDiscounts.filter(d => d.type === 'fixed_amount');
+  for (const discount of fixedDiscounts) {
+    const discountCalculation = calculateDiscount(taxableAmount, discount.type, discount.value);
+    discountAmount = {
+      amount: roundToCurrency(discountAmount.amount.plus(discountCalculation.discountAmount.amount)),
+      currency
+    };
+    taxableAmount = discountCalculation.finalAmount;
+  }
   
   // Calculate grand total
   const grandTotal = {

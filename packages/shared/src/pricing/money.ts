@@ -28,6 +28,36 @@ export function roundToCurrency(decimal: Decimal): Decimal {
 }
 
 /**
+ * Round a Decimal to specific decimal places for a currency
+ * @param decimal - The decimal to round
+ * @param decimals - Number of decimal places (e.g., 2 for USD, 0 for JPY)
+ */
+export function roundToCurrencyDecimals(decimal: Decimal, decimals: number): Decimal {
+  return decimal.toDecimalPlaces(decimals, Decimal.ROUND_HALF_UP);
+}
+
+/**
+ * Convert money from one currency to another using exchange rate
+ * @param money - Original money amount
+ * @param targetCurrency - Target currency code
+ * @param exchangeRate - Exchange rate (base -> target)
+ * @param targetDecimals - Decimal places for target currency
+ */
+export function convertMoney(
+  money: MoneyAmount, 
+  targetCurrency: string, 
+  exchangeRate: number | Decimal,
+  targetDecimals: number = 2
+): MoneyAmount {
+  const rate = createDecimal(exchangeRate);
+  
+  return {
+    amount: roundToCurrencyDecimals(money.amount.times(rate), targetDecimals),
+    currency: targetCurrency
+  };
+}
+
+/**
  * Add two monetary amounts (must be same currency)
  */
 export function addMoney(a: MoneyAmount, b: MoneyAmount): MoneyAmount {

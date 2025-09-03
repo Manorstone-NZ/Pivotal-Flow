@@ -8,6 +8,13 @@ export interface CacheMetrics {
   errors: number;
 }
 
+export interface FxMetrics {
+  lookups: number;
+  misses: number;
+  conversions: number;
+  errors: number;
+}
+
 export interface RepositoryMetrics {
   operation: string;
   duration: number;
@@ -21,6 +28,11 @@ export interface PerformanceSummary {
     hitRate: number; // percentage
     totalRequests: number;
     metrics: CacheMetrics;
+  };
+  fx: {
+    hitRate: number; // percentage
+    totalLookups: number;
+    metrics: FxMetrics;
   };
   repositories: {
     topOperations: Array<{
@@ -45,6 +57,13 @@ export class MetricsCollector {
     misses: 0,
     sets: 0,
     busts: 0,
+    errors: 0
+  };
+
+  private fxMetrics: FxMetrics = {
+    lookups: 0,
+    misses: 0,
+    conversions: 0,
     errors: 0
   };
 
@@ -87,6 +106,34 @@ export class MetricsCollector {
   }
 
   /**
+   * Record FX lookup
+   */
+  recordFxLookup(): void {
+    this.fxMetrics.lookups++;
+  }
+
+  /**
+   * Record FX miss
+   */
+  recordFxMiss(): void {
+    this.fxMetrics.misses++;
+  }
+
+  /**
+   * Record FX conversion
+   */
+  recordFxConversion(): void {
+    this.fxMetrics.conversions++;
+  }
+
+  /**
+   * Record FX error
+   */
+  recordFxError(): void {
+    this.fxMetrics.errors++;
+  }
+
+  /**
    * Record repository operation
    */
   recordRepositoryOperation(operation: string, duration: number, success: boolean, error?: string): void {
@@ -120,6 +167,22 @@ export class MetricsCollector {
     const total = this.cacheMetrics.hits + this.cacheMetrics.misses;
     if (total === 0) return 0;
     return Math.round((this.cacheMetrics.hits / total) * 100);
+  }
+
+  /**
+   * Get current FX metrics
+   */
+  getFxMetrics(): FxMetrics {
+    return { ...this.fxMetrics };
+  }
+
+  /**
+   * Get FX hit rate as percentage
+   */
+  getFxHitRate(): number {
+    const total = this.fxMetrics.lookups + this.fxMetrics.misses;
+    if (total === 0) return 0;
+    return Math.round((this.fxMetrics.lookups / total) * 100);
   }
 
   /**
@@ -188,6 +251,11 @@ export class MetricsCollector {
         hitRate: this.getCacheHitRate(),
         totalRequests: this.cacheMetrics.hits + this.cacheMetrics.misses,
         metrics: this.getCacheMetrics()
+      },
+      fx: {
+        hitRate: this.getFxHitRate(),
+        totalLookups: this.fxMetrics.lookups + this.fxMetrics.misses,
+        metrics: this.getFxMetrics()
       },
       repositories: {
         topOperations,

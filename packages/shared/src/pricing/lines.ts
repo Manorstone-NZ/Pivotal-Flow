@@ -1,7 +1,10 @@
 import { Decimal } from 'decimal.js';
-import { MoneyAmount, createDecimal, roundToCurrency, multiplyMoney } from './money.js';
+import type { MoneyAmount } from './money.js';
+import { createDecimal, roundToCurrency, roundToCurrencyDecimals, multiplyMoney } from './money.js';
+import type { DiscountType } from './discounts.js';
+import { calculateDiscount } from './discounts.js';
+import type { TaxRule } from './taxes.js';
 import { calculateTax, isTaxExempt } from './taxes.js';
-import { calculateDiscount, DiscountType } from './discounts.js';
 
 /**
  * Line item calculation functions with rounding at line level
@@ -14,9 +17,13 @@ export interface LineItem {
   unit: string;
   serviceType?: string;
   isTaxExempt?: boolean;
+  taxInclusive?: boolean; // New field: indicates if unit price includes tax
   taxRate?: number;
   discountType?: DiscountType;
   discountValue?: number;
+  // Support for multiple discounts: percentage then fixed
+  percentageDiscount?: number;
+  fixedDiscount?: MoneyAmount;
 }
 
 export interface LineItemCalculation {
@@ -33,7 +40,7 @@ export interface LineItemCalculation {
 /**
  * Calculate line item total with all components
  */
-export function calculateLineItem(lineItem: LineItem): LineItemCalculation {
+export function calculateLineItem(lineItem: LineItem, currencyDecimals: number = 2): LineItemCalculation {
   // Validate inputs
   if (lineItem.quantity <= 0) {
     throw new Error(`Quantity must be positive: ${lineItem.quantity}`);
@@ -43,24 +50,73 @@ export function calculateLineItem(lineItem: LineItem): LineItemCalculation {
     throw new Error(`Unit price cannot be negative: ${lineItem.unitPrice.amount}`);
   }
   
+  // Handle tax inclusive pricing
+  let workingUnitPrice: MoneyAmount;
+  let extractedTaxAmount: MoneyAmount = { amount: new Decimal(0), currency: lineItem.unitPrice.currency };
+  
+  if (lineItem.taxInclusive) {
+    const taxRate = lineItem.taxRate ?? 15; // Default GST rate
+    const taxRateDecimal = createDecimal(taxRate).dividedBy(100);
+    
+    // Convert tax inclusive to exclusive
+    workingUnitPrice = {
+      amount: roundToCurrencyDecimals(lineItem.unitPrice.amount.dividedBy(createDecimal(1).plus(taxRateDecimal)), currencyDecimals),
+      currency: lineItem.unitPrice.currency
+    };
+    
+    // Calculate extracted tax amount
+    extractedTaxAmount = {
+      amount: roundToCurrencyDecimals(lineItem.unitPrice.amount.minus(workingUnitPrice.amount), currencyDecimals),
+      currency: lineItem.unitPrice.currency
+    };
+  } else {
+    workingUnitPrice = lineItem.unitPrice;
+  }
+  
   // Calculate subtotal (quantity × unit price)
-  const subtotal = multiplyMoney(lineItem.unitPrice, lineItem.quantity);
+  const subtotal = multiplyMoney(workingUnitPrice, lineItem.quantity);
   
-  // Apply line-level discount if present
-  let discountAmount: MoneyAmount;
-  let taxableAmount: MoneyAmount;
+  // Apply line-level discounts in order: percentage then fixed
+  let discountAmount: MoneyAmount = { amount: new Decimal(0), currency: subtotal.currency };
+  let taxableAmount: MoneyAmount = subtotal;
   
+  // Apply percentage discount first (if specified)
+  if (lineItem.percentageDiscount !== undefined && lineItem.percentageDiscount > 0) {
+    const percentageDiscountCalculation = calculateDiscount(
+      taxableAmount,
+      'percentage',
+      lineItem.percentageDiscount
+    );
+    discountAmount = percentageDiscountCalculation.discountAmount;
+    taxableAmount = percentageDiscountCalculation.finalAmount;
+  }
+  
+  // Apply fixed discount after percentage discount
+  if (lineItem.fixedDiscount && lineItem.fixedDiscount.amount.greaterThan(0)) {
+    const fixedDiscountCalculation = calculateDiscount(
+      taxableAmount,
+      'fixed_amount',
+      lineItem.fixedDiscount.amount.toNumber()
+    );
+    discountAmount = {
+      amount: roundToCurrency(discountAmount.amount.plus(fixedDiscountCalculation.discountAmount.amount)),
+      currency: subtotal.currency
+    };
+    taxableAmount = fixedDiscountCalculation.finalAmount;
+  }
+  
+  // Apply legacy discountType/discountValue if present (for backward compatibility)
   if (lineItem.discountType && lineItem.discountValue !== undefined) {
-    const discountCalculation = calculateDiscount(
-      subtotal,
+    const legacyDiscountCalculation = calculateDiscount(
+      taxableAmount,
       lineItem.discountType,
       lineItem.discountValue
     );
-    discountAmount = discountCalculation.discountAmount;
-    taxableAmount = discountCalculation.finalAmount;
-  } else {
-    discountAmount = { amount: new Decimal(0), currency: subtotal.currency };
-    taxableAmount = subtotal;
+    discountAmount = {
+      amount: roundToCurrency(discountAmount.amount.plus(legacyDiscountCalculation.discountAmount.amount)),
+      currency: subtotal.currency
+    };
+    taxableAmount = legacyDiscountCalculation.finalAmount;
   }
   
   // Determine tax rate
@@ -73,7 +129,12 @@ export function calculateLineItem(lineItem: LineItem): LineItemCalculation {
   let taxAmount: MoneyAmount;
   if (isExempt || taxRate === 0) {
     taxAmount = { amount: new Decimal(0), currency: subtotal.currency };
+  } else if (lineItem.taxInclusive && !lineItem.percentageDiscount && !lineItem.fixedDiscount && !lineItem.discountType) {
+    // For tax inclusive items without discounts, use the extracted tax amount
+    const totalExtractedTax = multiplyMoney(extractedTaxAmount, lineItem.quantity);
+    taxAmount = totalExtractedTax;
   } else {
+    // For tax exclusive items or tax inclusive items with discounts, calculate tax on taxable amount
     const taxCalculation = calculateTax(taxableAmount, taxRate);
     taxAmount = taxCalculation.taxAmount;
   }
@@ -87,7 +148,7 @@ export function calculateLineItem(lineItem: LineItem): LineItemCalculation {
   return {
     lineItem,
     quantity: lineItem.quantity,
-    unitPrice: lineItem.unitPrice,
+    unitPrice: lineItem.unitPrice, // Return original unit price for display
     subtotal,
     discountAmount,
     taxableAmount,
@@ -99,7 +160,7 @@ export function calculateLineItem(lineItem: LineItem): LineItemCalculation {
 /**
  * Calculate multiple line items and return summary
  */
-export function calculateLineItems(lineItems: LineItem[]): {
+export function calculateLineItems(lineItems: LineItem[], currencyDecimals: number = 2): {
   calculations: LineItemCalculation[];
   summary: {
     totalQuantity: number;
@@ -124,42 +185,47 @@ export function calculateLineItems(lineItems: LineItem[]): {
   }
   
   // Calculate each line item
-  const calculations = lineItems.map(calculateLineItem);
+  const calculations = lineItems.map(item => calculateLineItem(item, currencyDecimals));
   
   // Calculate summary totals
   const totalQuantity = calculations.reduce((sum, calc) => sum + calc.quantity, 0);
   
   const subtotal = {
-    amount: roundToCurrency(
-      calculations.reduce((sum, calc) => sum.plus(calc.subtotal.amount), new Decimal(0))
+    amount: roundToCurrencyDecimals(
+      calculations.reduce((sum, calc) => sum.plus(calc.subtotal.amount), new Decimal(0)),
+      currencyDecimals
     ),
     currency
   };
   
   const totalDiscount = {
-    amount: roundToCurrency(
-      calculations.reduce((sum, calc) => sum.plus(calc.discountAmount.amount), new Decimal(0))
+    amount: roundToCurrencyDecimals(
+      calculations.reduce((sum, calc) => sum.plus(calc.discountAmount.amount), new Decimal(0)),
+      currencyDecimals
     ),
     currency
   };
   
   const totalTaxable = {
-    amount: roundToCurrency(
-      calculations.reduce((sum, calc) => sum.plus(calc.taxableAmount.amount), new Decimal(0))
+    amount: roundToCurrencyDecimals(
+      calculations.reduce((sum, calc) => sum.plus(calc.taxableAmount.amount), new Decimal(0)),
+      currencyDecimals
     ),
     currency
   };
   
   const totalTax = {
-    amount: roundToCurrency(
-      calculations.reduce((sum, calc) => sum.plus(calc.taxAmount.amount), new Decimal(0))
+    amount: roundToCurrencyDecimals(
+      calculations.reduce((sum, calc) => sum.plus(calc.taxAmount.amount), new Decimal(0)),
+      currencyDecimals
     ),
     currency
   };
   
   const totalAmount = {
-    amount: roundToCurrency(
-      calculations.reduce((sum, calc) => sum.plus(calc.totalAmount.amount), new Decimal(0))
+    amount: roundToCurrencyDecimals(
+      calculations.reduce((sum, calc) => sum.plus(calc.totalAmount.amount), new Decimal(0)),
+      currencyDecimals
     ),
     currency
   };

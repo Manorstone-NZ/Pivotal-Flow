@@ -1,6 +1,7 @@
 // Base repository with common helpers for tenant scoping, safe select, explicit DTO shapes, and error mapping
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq, and, or, gte, lte, desc, asc, ilike } from 'drizzle-orm';
 
 export interface BaseRepositoryOptions {
   organizationId: string;
@@ -45,9 +46,16 @@ export class RepositoryError extends Error {
 
 export abstract class BaseRepository {
   constructor(
-    protected readonly prisma: PrismaClient,
+    protected readonly db: NodePgDatabase,
     protected readonly options: BaseRepositoryOptions
   ) {}
+
+  /**
+   * Generate a unique ID for new records
+   */
+  protected generateId(): string {
+    return crypto.randomUUID();
+  }
 
   /**
    * Enforce organization scoping on all queries
@@ -72,11 +80,11 @@ export abstract class BaseRepository {
    * Safe select that never includes sensitive fields
    */
   protected safeSelect<T extends Record<string, unknown>>(
-    select: Prisma.SelectSubset<T, T>
-  ): Prisma.SelectSubset<T, T> {
+    select: T
+  ): T {
     // Remove any fields that might contain sensitive data
     const { passwordHash, secret, token, ...safeSelect } = select as Record<string, unknown>;
-    return safeSelect as Prisma.SelectSubset<T, T>;
+    return safeSelect as T;
   }
 
   /**
@@ -100,42 +108,37 @@ export abstract class BaseRepository {
   }
 
   /**
-   * Build search filter for text fields
+   * Build search filter for text fields using Drizzle
    */
   protected buildSearchFilter(fields: string[], query?: string): any {
     if (!query) return undefined;
 
-    return {
-      OR: fields.map(field => ({
-        [field]: {
-          contains: query,
-          mode: 'insensitive'
-        }
-      }))
-    };
+    return or(
+      ...fields.map(field => ilike(field as any, `%${query}%`))
+    );
   }
 
   /**
-   * Build date range filter
+   * Build date range filter using Drizzle
    */
   protected buildDateRangeFilter(
     field: string,
     from?: Date,
     to?: Date
-  ): Record<string, unknown> | undefined {
+  ): any {
     if (!from && !to) return undefined;
 
-    const filter: Record<string, unknown> = {};
+    const conditions = [];
     
     if (from) {
-      filter[`${field}_gte`] = from;
+      conditions.push(gte(field as any, from));
     }
     
     if (to) {
-      filter[`${field}_lte`] = to;
+      conditions.push(lte(field as any, to));
     }
 
-    return filter;
+    return conditions.length > 0 ? and(...conditions) : undefined;
   }
 
   /**
@@ -161,42 +164,50 @@ export abstract class BaseRepository {
   }
 
   /**
-   * Build order by clause for Prisma
+   * Build order by clause for Drizzle
    */
   protected buildOrderBy(sort: SortOptions): any {
+    const direction = sort.direction === 'desc' ? desc : asc;
+    
     if (sort.field === 'email') {
-      return { email: sort.direction };
+      return direction('email' as any);
     }
-    return { createdAt: sort.direction };
+    return direction('createdAt' as any);
   }
 
   /**
-   * Handle Prisma errors and map to repository errors
+   * Handle database errors and map to repository errors
    */
-  protected handlePrismaError(error: unknown, operation: string): never {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      switch (error.code) {
-        case 'P2002':
+  protected handleDatabaseError(error: unknown, operation: string): never {
+    // Handle PostgreSQL specific errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const dbError = error as { code: string; message: string };
+      
+      switch (dbError.code) {
+        case '23505': // unique_violation
           throw new RepositoryError('DUPLICATE_ENTRY', 'Duplicate entry found', error);
-        case 'P2025':
-          throw new RepositoryError('RECORD_NOT_FOUND', 'Record not found', error);
-        case 'P2003':
+        case '23503': // foreign_key_violation
           throw new RepositoryError('FOREIGN_KEY_CONSTRAINT', 'Foreign key constraint violation', error);
-        case 'P2004':
+        case '23514': // check_violation
           throw new RepositoryError('DATABASE_CONSTRAINT', 'Database constraint violation', error);
+        case '42P01': // undefined_table
+          throw new RepositoryError('TABLE_NOT_FOUND', 'Table not found', error);
+        case '42P02': // undefined_column
+          throw new RepositoryError('COLUMN_NOT_FOUND', 'Column not found', error);
         default:
-          throw new RepositoryError('DATABASE_ERROR', `Database error: ${error.code}`, error);
+          throw new RepositoryError('DATABASE_ERROR', `Database error: ${dbError.code}`, error);
       }
     }
 
-    if (error instanceof Prisma.PrismaClientValidationError) {
-      throw new RepositoryError('VALIDATION_ERROR', 'Validation error', error);
-    }
-
-    if (error instanceof Prisma.PrismaClientInitializationError) {
-      throw new RepositoryError('DATABASE_CONNECTION', 'Database connection error', error);
+    // Handle connection errors
+    if (error && typeof error === 'object' && 'message' in error) {
+      const connError = error as { message: string };
+      if (connError.message.includes('connection') || connError.message.includes('timeout')) {
+        throw new RepositoryError('DATABASE_CONNECTION', 'Database connection error', error);
+      }
     }
 
     throw new RepositoryError('UNKNOWN_ERROR', `Unknown error in ${operation}`, error);
   }
 }
+
