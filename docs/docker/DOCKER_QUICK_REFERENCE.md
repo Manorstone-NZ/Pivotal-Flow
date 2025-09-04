@@ -143,6 +143,52 @@ curl -X POST http://localhost:3000/v1/jobs/{jobId}/cancel \
 curl -X POST http://localhost:3000/v1/jobs/{jobId}/retry \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
+
+### File Storage
+
+```bash
+# Generate a file
+curl -X POST http://localhost:3000/v1/files/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "fileType": "exports",
+    "mimeType": "text/csv",
+    "content": "id,name,amount\n1,Item 1,100.00\n2,Item 2,200.00",
+    "description": "sample_export"
+  }'
+
+# Get signed URL for file access
+curl -X POST http://localhost:3000/v1/files/signed-url \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "fileId": "550e8400-e29b-41d4-a716-446655440000",
+    "fileType": "exports"
+  }'
+
+# Download file using signed URL
+curl -X GET "http://localhost:3000/v1/files/550e8400-e29b-41d4-a716-446655440000/download?token=YOUR_SIGNED_TOKEN" \
+  -o downloaded_file.csv
+
+# Get file information
+curl -X GET http://localhost:3000/v1/files/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Delete a file
+curl -X DELETE http://localhost:3000/v1/files/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Clean up expired files
+curl -X POST http://localhost:3000/v1/files/cleanup \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# View temp files directory
+ls -la /tmp/pivotal-flow-files/
+
+# Clean temp files manually
+rm -rf /tmp/pivotal-flow-files/*
+```
 ./scripts/dev/fixtures.sh
 
 # Run both scripts and perform smoke tests

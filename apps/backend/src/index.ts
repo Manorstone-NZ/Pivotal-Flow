@@ -42,6 +42,7 @@ import { allocationModule } from './modules/allocations/index.js';
 import { portalModule } from './modules/portal/index.js';
 import { reportsModule } from './modules/reports/index.js';
 import { jobsModule } from './modules/jobs/index.js';
+import { filesModule } from './files/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1406,6 +1407,7 @@ async function registerPlugins() {
   await app.register(portalModule);
   await app.register(reportsModule);
   await app.register(jobsModule);
+  await app.register(filesModule);
 
   // Simple test route
   app.get('/v1/simple-test', {

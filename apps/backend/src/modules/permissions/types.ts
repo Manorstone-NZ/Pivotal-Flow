@@ -68,4 +68,9 @@ export type PermissionName =
   | 'jobs.create_jobs'
   | 'jobs.view_jobs'
   | 'jobs.cancel_jobs'
-  | 'jobs.retry_jobs';
+  | 'jobs.retry_jobs'
+  | 'files.generate_files'
+  | 'files.access_files'
+  | 'files.view_files'
+  | 'files.delete_files'
+  | 'files.cleanup_files';

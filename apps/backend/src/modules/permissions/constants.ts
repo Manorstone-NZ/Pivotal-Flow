@@ -80,6 +80,15 @@ export const PERMISSIONS = {
     VIEW_JOBS: 'jobs.view_jobs',
     CANCEL_JOBS: 'jobs.cancel_jobs',
     RETRY_JOBS: 'jobs.retry_jobs'
+  },
+  
+  // Files permissions
+  FILES: {
+    GENERATE_FILES: 'files.generate_files',
+    ACCESS_FILES: 'files.access_files',
+    VIEW_FILES: 'files.view_files',
+    DELETE_FILES: 'files.delete_files',
+    CLEANUP_FILES: 'files.cleanup_files'
   }
 } as const;
 
@@ -99,5 +108,6 @@ export const PERMISSION_CATEGORIES = {
   ALLOCATIONS: 'allocations',
   PORTAL: 'portal',
   REPORTS: 'reports',
-  JOBS: 'jobs'
+  JOBS: 'jobs',
+  FILES: 'files'
 } as const;
