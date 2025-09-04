@@ -64,4 +64,8 @@ export type PermissionName =
   | 'portal.view_own_time_entries'
   | 'reports.view_reports'
   | 'reports.export_reports'
-  | 'reports.view_compliance';
+  | 'reports.view_compliance'
+  | 'jobs.create_jobs'
+  | 'jobs.view_jobs'
+  | 'jobs.cancel_jobs'
+  | 'jobs.retry_jobs';

@@ -676,6 +676,39 @@ export const exportJobs = pgTable('export_jobs', {
   orgStatusIdx: index('export_jobs_org_status_idx').on(table.organizationId, table.status),
 }));
 
+// Jobs table - generic background job processing
+export const jobs = pgTable('jobs', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  jobType: varchar('job_type', { length: 50 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('queued'),
+  priority: integer('priority').notNull().default(0),
+  retryCount: integer('retry_count').notNull().default(0),
+  maxRetries: integer('max_retries').notNull().default(3),
+  payload: jsonb('payload').notNull().default('{}'),
+  result: jsonb('result'),
+  errorMessage: text('error_message'),
+  progress: integer('progress').notNull().default(0),
+  totalSteps: integer('total_steps'),
+  currentStep: integer('current_step').notNull().default(0),
+  startedAt: timestamp('started_at', { mode: 'date', precision: 3 }),
+  completedAt: timestamp('completed_at', { mode: 'date', precision: 3 }),
+  scheduledAt: timestamp('scheduled_at', { mode: 'date', precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  organizationIdIdx: index('idx_jobs_organization_id').on(table.organizationId),
+  userIdIdx: index('idx_jobs_user_id').on(table.userId),
+  statusIdx: index('idx_jobs_status').on(table.status),
+  jobTypeIdx: index('idx_jobs_job_type').on(table.jobType),
+  createdAtIdx: index('idx_jobs_created_at').on(table.createdAt),
+  scheduledAtIdx: index('idx_jobs_scheduled_at').on(table.scheduledAt),
+  userStatusIdx: index('idx_jobs_user_status').on(table.userId, table.status),
+  orgStatusIdx: index('idx_jobs_org_status').on(table.organizationId, table.status),
+  priorityStatusIdx: index('idx_jobs_priority_status').on(table.priority, table.status),
+}));
+
 // Relations
 export const currenciesRelations = relations(currencies, ({ many }) => ({
   organizations: many(organizations),
@@ -710,6 +743,7 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   settings: many(orgSettings),
   resourceAllocations: many(resourceAllocations),
   exportJobs: many(exportJobs),
+  jobs: many(jobs),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -1090,6 +1124,18 @@ export const resourceAllocationsRelations = relations(resourceAllocations, ({ on
   }),
 }));
 
+// Jobs relations
+export const jobsRelations = relations(jobs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [jobs.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [jobs.userId],
+    references: [users.id],
+  }),
+}));
+
 // Export jobs relations
 export const exportJobsRelations = relations(exportJobs, ({ one }) => ({
   organization: one(organizations, {
@@ -1163,3 +1209,6 @@ export type ResourceAllocation = typeof resourceAllocations.$inferSelect;
 export type NewResourceAllocation = typeof resourceAllocations.$inferInsert;
 export type ExportJob = typeof exportJobs.$inferSelect;
 export type NewExportJob = typeof exportJobs.$inferInsert;
+
+export type Job = typeof jobs.$inferSelect;
+export type NewJob = typeof jobs.$inferInsert;

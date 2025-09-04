@@ -107,6 +107,51 @@ npm version major
 ./scripts/dev/seed.sh && ./scripts/dev/fixtures.sh
 ```
 
+### Background Jobs
+
+```bash
+# Create an export job
+curl -X POST http://localhost:3000/v1/jobs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "jobType": "export_report",
+    "payload": {
+      "reportType": "quotes",
+      "format": "csv",
+      "filters": {
+        "dateFrom": "2024-01-01",
+        "dateTo": "2024-12-31"
+      }
+    },
+    "priority": 5
+  }'
+
+# Get job status
+curl -X GET http://localhost:3000/v1/jobs/{jobId}/status \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# List user jobs
+curl -X GET "http://localhost:3000/v1/jobs?page=1&pageSize=25&status=running" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Cancel a job
+curl -X POST http://localhost:3000/v1/jobs/{jobId}/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Retry a failed job
+curl -X POST http://localhost:3000/v1/jobs/{jobId}/retry \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+./scripts/dev/fixtures.sh
+
+# Run both scripts and perform smoke tests
+./scripts/dev/smoke-test.sh
+
+# Run seed and fixtures in sequence
+./scripts/dev/seed.sh && ./scripts/dev/fixtures.sh
+```
+
 ### SDK Usage Examples
 
 ```typescript
