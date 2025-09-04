@@ -91,6 +91,22 @@ npm version minor
 npm version major
 ```
 
+### Seed and Fixtures
+
+```bash
+# Run seed script (creates orgs, users, roles, customers, projects, rate cards)
+./scripts/dev/seed.sh
+
+# Run fixtures script (creates quotes, invoices, payments, time entries)
+./scripts/dev/fixtures.sh
+
+# Run both scripts and perform smoke tests
+./scripts/dev/smoke-test.sh
+
+# Run seed and fixtures in sequence
+./scripts/dev/seed.sh && ./scripts/dev/fixtures.sh
+```
+
 ### SDK Usage Examples
 
 ```typescript
