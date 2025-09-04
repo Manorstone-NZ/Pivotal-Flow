@@ -43,6 +43,7 @@ import { portalModule } from './modules/portal/index.js';
 import { reportsModule } from './modules/reports/index.js';
 import { jobsModule } from './modules/jobs/index.js';
 import { filesModule } from './files/index.js';
+import { referenceDataModule } from './modules/reference-data/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1408,6 +1409,7 @@ async function registerPlugins() {
   await app.register(reportsModule);
   await app.register(jobsModule);
   await app.register(filesModule);
+  await app.register(referenceDataModule);
 
   // Simple test route
   app.get('/v1/simple-test', {

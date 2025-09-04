@@ -189,6 +189,40 @@ ls -la /tmp/pivotal-flow-files/
 # Clean temp files manually
 rm -rf /tmp/pivotal-flow-files/*
 ```
+
+### Reference Data
+
+```bash
+# Get currencies reference data
+curl -X GET http://localhost:3000/v1/reference/currencies
+
+# Get tax classes reference data
+curl -X GET http://localhost:3000/v1/reference/tax-classes
+
+# Get roles reference data (requires auth)
+curl -X GET http://localhost:3000/v1/reference/roles \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get permissions reference data (requires auth)
+curl -X GET http://localhost:3000/v1/reference/permissions \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get service categories reference data
+curl -X GET http://localhost:3000/v1/reference/service-categories
+
+# Get rate cards reference data (requires auth)
+curl -X GET http://localhost:3000/v1/reference/rate-cards \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Bust cache for a specific reference type
+curl -X POST http://localhost:3000/v1/reference/cache/bust \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "referenceType": "currencies"
+  }'
+```
+```
 ./scripts/dev/fixtures.sh
 
 # Run both scripts and perform smoke tests
