@@ -222,6 +222,46 @@ curl -X POST http://localhost:3000/v1/reference/cache/bust \
     "referenceType": "currencies"
   }'
 ```
+
+### Xero Integration
+
+```bash
+# Check Xero integration health status
+curl -X GET http://localhost:3000/v1/integrations/xero/health \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Push invoice to Xero (no-op mode)
+curl -X POST http://localhost:3000/v1/integrations/xero/push/invoice \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "invoiceId": "inv_001",
+    "operation": "create"
+  }'
+
+# Xero OAuth callback (disabled when feature off)
+curl -X GET "http://localhost:3000/v1/integrations/xero/callback?code=mock_code&state=mock_state"
+
+# Xero webhook endpoint (disabled when feature off)
+curl -X POST http://localhost:3000/v1/integrations/xero/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-Xero-Signature: mock_signature" \
+  -d '{
+    "events": [
+      {
+        "resourceId": "invoice_001",
+        "resourceUri": "/api.xro/2.0/Invoices/invoice_001",
+        "resourceType": "Invoice",
+        "eventDateUtc": "2024-01-30T10:30:00.000Z",
+        "eventType": "CREATE",
+        "sequence": 1
+      }
+    ],
+    "firstEventSequence": 1,
+    "lastEventSequence": 1,
+    "entropy": "mock_entropy"
+  }'
+```
 ```
 ./scripts/dev/fixtures.sh
 

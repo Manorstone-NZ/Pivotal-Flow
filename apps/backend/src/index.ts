@@ -44,6 +44,7 @@ import { reportsModule } from './modules/reports/index.js';
 import { jobsModule } from './modules/jobs/index.js';
 import { filesModule } from './files/index.js';
 import { referenceDataModule } from './modules/reference-data/index.js';
+import { xeroIntegrationModule } from './modules/integrations/xero/index.js';
 import { payloadGuardPlugin } from './plugins/payloadGuard.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 
@@ -1410,6 +1411,7 @@ async function registerPlugins() {
   await app.register(jobsModule);
   await app.register(filesModule);
   await app.register(referenceDataModule);
+  await app.register(xeroIntegrationModule);
 
   // Simple test route
   app.get('/v1/simple-test', {
