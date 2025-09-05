@@ -5,8 +5,8 @@ import { userUpdateSchema } from "./schemas.js";
 import { getUserById, updateUser } from "./service.drizzle.js";
 import { canModifyUser, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
+import { generateId } from '@pivotal-flow/shared';
 import { auditLogs } from "../../lib/schema.js";
-import * as crypto from "crypto";
 
 export const updateUserRoute: FastifyPluginAsync = async fastify => {
   fastify.patch("/v1/users/:id", {
@@ -158,7 +158,7 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
       await (fastify as any).db
         .insert(auditLogs)
         .values({
-          id: crypto.randomUUID(),
+          id: generateId(),
           organizationId: userContext.organizationId,
           actorId: userContext.userId,
           action: 'users.update',
@@ -178,7 +178,7 @@ export const updateUserRoute: FastifyPluginAsync = async fastify => {
         await (fastify as any).db
           .insert(auditLogs)
           .values({
-            id: crypto.randomUUID(),
+            id: generateId(),
             organizationId: userContext.organizationId,
             actorId: userContext.userId,
             action: 'users.status_changed',

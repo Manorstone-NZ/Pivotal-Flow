@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { build } from '../../../app.js';
 import type { FastifyInstance } from 'fastify';
 import { testDb, createTestUser, createTestCustomer, createTestOrganization, cleanup } from '../../../__tests__/setup.js';

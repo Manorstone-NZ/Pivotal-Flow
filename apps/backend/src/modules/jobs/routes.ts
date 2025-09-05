@@ -3,11 +3,12 @@
  * API endpoints for job management and status polling
  */
 
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+import { getDatabase } from '../../lib/db.js';
 import { JobsService } from './service.js';
 import { ExportJobProcessor } from './processors/export-job.processor.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import {
   CreateJobRequestSchema,
   JobStatusResponseSchema,
@@ -22,9 +23,6 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   // Create job
   fastify.post<{ Body: any }>('/v1/jobs', {
     schema: {
-      tags: ['Jobs'],
-      summary: 'Create a new background job',
-      description: 'Creates a new background job and returns the job ID for polling',
       body: CreateJobRequestSchema,
       response: {
         200: {
@@ -36,11 +34,11 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
         },
       },
     },
-    preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
+    const db = getDatabase();
+    const permissionService = new PermissionService(db, { organizationId, userId });
+    const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
     
@@ -58,9 +56,6 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   // Get job status
   fastify.get<{ Params: { jobId: string } }>('/v1/jobs/:jobId/status', {
     schema: {
-      tags: ['Jobs'],
-      summary: 'Get job status',
-      description: 'Returns the current status and progress of a job',
       params: {
         type: 'object',
         properties: {
@@ -72,12 +67,12 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
         200: JobStatusResponseSchema,
       },
     },
-    preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const permissionService = new PermissionService(organizationId);
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
+    const db = getDatabase();
+    const permissionService = new PermissionService(db, { organizationId, userId });
+    const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
     const result = await jobsService.getJobStatus(jobId);
@@ -88,20 +83,17 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   // List jobs
   fastify.get<{ Querystring: any }>('/v1/jobs', {
     schema: {
-      tags: ['Jobs'],
-      summary: 'List user jobs',
-      description: 'Returns a paginated list of jobs for the current user',
       querystring: JobQuerySchema,
       response: {
         200: JobListResponseSchema,
       },
     },
-    preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request) => {
     const { organizationId, userId } = request.user as any;
-    const { page, pageSize, status, jobType } = request.query;
-    const permissionService = new PermissionService(organizationId);
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
+    const { page, pageSize, status, jobType } = request.query as any;
+    const db = getDatabase();
+    const permissionService = new PermissionService(db, { organizationId, userId });
+    const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
     const result = await jobsService.listJobs(page, pageSize, status, jobType);
@@ -112,9 +104,6 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   // Cancel job
   fastify.post<{ Params: { jobId: string } }>('/v1/jobs/:jobId/cancel', {
     schema: {
-      tags: ['Jobs'],
-      summary: 'Cancel a job',
-      description: 'Cancels a queued or running job',
       params: {
         type: 'object',
         properties: {
@@ -131,12 +120,12 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
         },
       },
     },
-    preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const permissionService = new PermissionService(organizationId);
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
+    const db = getDatabase();
+    const permissionService = new PermissionService(db, { organizationId, userId });
+    const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
     await jobsService.cancelJob(jobId);
@@ -149,9 +138,6 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   // Retry job
   fastify.post<{ Params: { jobId: string } }>('/v1/jobs/:jobId/retry', {
     schema: {
-      tags: ['Jobs'],
-      summary: 'Retry a failed job',
-      description: 'Retries a failed job if it has not exceeded maximum retry attempts',
       params: {
         type: 'object',
         properties: {
@@ -168,12 +154,12 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
         },
       },
     },
-    preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const permissionService = new PermissionService(organizationId);
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
+    const db = getDatabase();
+    const permissionService = new PermissionService(db, { organizationId, userId });
+    const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
     await jobsService.retryJob(jobId);

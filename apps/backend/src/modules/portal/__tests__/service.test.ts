@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { eq, and } from 'drizzle-orm';
 import { PortalService } from '../service.js';
-import { users, customers, quotes, invoices } from '../../../lib/schema.js';
+import { quotes, invoices } from '../../../lib/schema.js';
 import type { PortalUserContext } from '../types.js';
 import { testDb, createTestUser, createTestCustomer, createTestOrganization, cleanup } from '../../../__tests__/setup.js';
 

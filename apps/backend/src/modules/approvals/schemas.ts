@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PagingResponseSchema, createPagingResponse } from '@pivotal-flow/shared';
 import { APPROVAL_ENTITY_TYPES, APPROVAL_STATUS } from './constants.js';
 
 // Create approval request schema
@@ -28,12 +29,14 @@ export const CancelRequestSchema = z.object({
   notes: z.record(z.any()).optional()
 });
 
-// Approval filters schema
+// Approval filters schema with paging
 export const ApprovalFiltersSchema = z.object({
   entityType: z.enum(Object.values(APPROVAL_ENTITY_TYPES) as [string, ...string[]]).optional(),
   status: z.enum(Object.values(APPROVAL_STATUS) as [string, ...string[]]).optional(),
   approverId: z.string().uuid('Approver ID must be a valid UUID').optional(),
-  requestedBy: z.string().uuid('Requested by ID must be a valid UUID').optional()
+  requestedBy: z.string().uuid('Requested by ID must be a valid UUID').optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20)
 });
 
 // Approval request response schema
@@ -60,10 +63,17 @@ export const ApprovalPolicyResponseSchema = z.object({
   projectCloseRequiresApproval: z.boolean()
 });
 
-// List approvals response schema
-export const ListApprovalsResponseSchema = z.object({
-  approvals: z.array(ApprovalRequestResponseSchema),
-  total: z.number(),
-  page: z.number(),
-  limit: z.number()
+// List approvals response schema using shared paging
+export const ListApprovalsResponseSchema = PagingResponseSchema.extend({
+  items: z.array(ApprovalRequestResponseSchema)
 });
+
+// Helper function to create paging response
+export const createApprovalsPagingResponse = (
+  approvals: z.infer<typeof ApprovalRequestResponseSchema>[],
+  page: number,
+  pageSize: number,
+  total: number
+) => {
+  return createPagingResponse(approvals, page, pageSize, total);
+};

@@ -6,7 +6,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getDatabase } from '../../lib/db.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
+import { AuditLogger } from '../../lib/audit/logger.js';
 import { ExportJobService } from './export-job.service.js';
 import { ReportingService } from './service.js';
 import {
@@ -28,8 +28,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /v1/reports/export - Create export job
   fastify.post('/export', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Create export job',
       description: 'Start an async export job for reports',
       security: [{ bearerAuth: [] }],
       body: ExportJobRequestSchema,
@@ -39,14 +37,14 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger);
 
       const jobId = await exportJobService.createExportJob(request.body as any);
@@ -57,7 +55,7 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Export job created successfully',
       });
     } catch (error) {
-      fastify.log.error(error, 'Error creating export job');
+      (fastify.log as any).error(error, 'Error creating export job');
       
       if (error instanceof Error && error.message.includes('Permission denied')) {
         return reply.status(403).send({
@@ -78,8 +76,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/export/:jobId - Get export job status
   fastify.get('/export/:jobId', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Get export job status',
       description: 'Get the status and progress of an export job',
       security: [{ bearerAuth: [] }],
       params: {
@@ -94,22 +90,22 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         404: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const { jobId } = request.params as { jobId: string };
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger);
 
       const result = await exportJobService.getExportJobStatus(jobId);
 
       return reply.status(200).send(result);
     } catch (error) {
-      fastify.log.error(error, 'Error getting export job status');
+      (fastify.log as any).error(error, 'Error getting export job status');
       
       if (error instanceof Error && error.message.includes('not found')) {
         return reply.status(404).send({
@@ -130,8 +126,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/export/:jobId/download - Download export file
   fastify.get('/export/:jobId/download', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Download export file',
       description: 'Download the completed export file',
       security: [{ bearerAuth: [] }],
       params: {
@@ -152,15 +146,15 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         404: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const { jobId } = request.params as { jobId: string };
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger);
 
       const jobStatus = await exportJobService.getExportJobStatus(jobId);
@@ -181,7 +175,7 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
       
       return reply.status(200).send('Export data placeholder');
     } catch (error) {
-      fastify.log.error(error, 'Error downloading export file');
+      (fastify.log as any).error(error, 'Error downloading export file');
       
       if (error instanceof Error && error.message.includes('not found')) {
         return reply.status(404).send({
@@ -202,8 +196,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/summary/quote-cycle-time - Quote cycle time summary
   fastify.get('/summary/quote-cycle-time', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Quote cycle time summary',
       description: 'Get summary statistics for quote cycle times',
       security: [{ bearerAuth: [] }],
       querystring: QuoteCycleTimeFiltersSchema,
@@ -212,26 +204,22 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const reportingService = new ReportingService(organizationId, userId, permissionService, auditLogger);
 
-      const summary = await reportingService.generateQuoteCycleTimeSummary(request.query as any);
+      const filters = request.query as any;
+      const summary = await reportingService.generateQuoteCycleTimeSummary(filters);
 
-      return reply.status(200).send({
-        reportType: 'quote_cycle_time',
-        filters: request.query,
-        summary,
-        generatedAt: new Date().toISOString(),
-      });
+      return reply.status(200).send(summary);
     } catch (error) {
-      fastify.log.error(error, 'Error generating quote cycle time summary');
+      (fastify.log as any).error(error, 'Error generating quote cycle time summary');
       
       if (error instanceof Error && error.message.includes('Permission denied')) {
         return reply.status(403).send({
@@ -252,8 +240,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/summary/invoice-settlement-time - Invoice settlement time summary
   fastify.get('/summary/invoice-settlement-time', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Invoice settlement time summary',
       description: 'Get summary statistics for invoice settlement times',
       security: [{ bearerAuth: [] }],
       querystring: InvoiceSettlementTimeFiltersSchema,
@@ -262,26 +248,22 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const reportingService = new ReportingService(organizationId, userId, permissionService, auditLogger);
 
-      const summary = await reportingService.generateInvoiceSettlementTimeSummary(request.query as any);
+      const filters = request.query as any;
+      const summary = await reportingService.generateInvoiceSettlementTimeSummary(filters);
 
-      return reply.status(200).send({
-        reportType: 'invoice_settlement_time',
-        filters: request.query,
-        summary,
-        generatedAt: new Date().toISOString(),
-      });
+      return reply.status(200).send(summary);
     } catch (error) {
-      fastify.log.error(error, 'Error generating invoice settlement time summary');
+      (fastify.log as any).error(error, 'Error generating invoice settlement time summary');
       
       if (error instanceof Error && error.message.includes('Permission denied')) {
         return reply.status(403).send({
@@ -302,8 +284,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/summary/time-approvals - Time approvals summary
   fastify.get('/summary/time-approvals', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Time approvals summary',
       description: 'Get summary statistics for time entry approvals',
       security: [{ bearerAuth: [] }],
       querystring: TimeApprovalsFiltersSchema,
@@ -312,26 +292,22 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const reportingService = new ReportingService(organizationId, userId, permissionService, auditLogger);
 
-      const summary = await reportingService.generateTimeApprovalsSummary(request.query as any);
+      const filters = request.query as any;
+      const summary = await reportingService.generateTimeApprovalsSummary(filters);
 
-      return reply.status(200).send({
-        reportType: 'time_approvals',
-        filters: request.query,
-        summary,
-        generatedAt: new Date().toISOString(),
-      });
+      return reply.status(200).send(summary);
     } catch (error) {
-      fastify.log.error(error, 'Error generating time approvals summary');
+      (fastify.log as any).error(error, 'Error generating time approvals summary');
       
       if (error instanceof Error && error.message.includes('Permission denied')) {
         return reply.status(403).send({
@@ -352,8 +328,6 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/reports/summary/payments-received - Payments received summary
   fastify.get('/summary/payments-received', {
     schema: {
-      tags: ['Reports'],
-      summary: 'Payments received summary',
       description: 'Get summary statistics for payments received',
       security: [{ bearerAuth: [] }],
       querystring: PaymentsReceivedFiltersSchema,
@@ -362,26 +336,22 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
       },
-    },
+    } as any,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { organizationId, userId } = (request as any).user;
       const db = getDatabase();
       
-      const permissionService = new PermissionService(db, { organizationId });
-      const auditLogger = new AuditLogger(db, { organizationId, userId });
+      const permissionService = new PermissionService(db, { organizationId, userId });
+      const auditLogger = new AuditLogger(fastify, { organizationId, userId });
       const reportingService = new ReportingService(organizationId, userId, permissionService, auditLogger);
 
-      const summary = await reportingService.generatePaymentsReceivedSummary(request.query as any);
+      const filters = request.query as any;
+      const summary = await reportingService.generatePaymentsReceivedSummary(filters);
 
-      return reply.status(200).send({
-        reportType: 'payments_received',
-        filters: request.query,
-        summary,
-        generatedAt: new Date().toISOString(),
-      });
+      return reply.status(200).send(summary);
     } catch (error) {
-      fastify.log.error(error, 'Error generating payments received summary');
+      (fastify.log as any).error(error, 'Error generating payments received summary');
       
       if (error instanceof Error && error.message.includes('Permission denied')) {
         return reply.status(403).send({

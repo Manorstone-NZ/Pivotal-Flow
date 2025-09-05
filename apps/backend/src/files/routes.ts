@@ -62,7 +62,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -92,7 +92,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId, fileType } = request.body;
     const permissionService = new PermissionService(organizationId);
@@ -197,7 +197,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
     const permissionService = new PermissionService(organizationId);
@@ -241,7 +241,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
     const permissionService = new PermissionService(organizationId);
@@ -273,7 +273,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);

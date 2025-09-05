@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, desc, and } from 'drizzle-orm';
 import { quoteVersions, quoteLineItemVersions, quotes, quoteLineItems } from './schema.js';
@@ -76,7 +76,7 @@ export class QuoteVersioningService {
         .limit(1);
 
       const versionNumber = latestVersion.length > 0 && latestVersion[0] ? latestVersion[0].versionNumber + 1 : 1;
-      const versionId = randomUUID();
+      const versionId = generateId();
 
       // Create quote version
       await tx.insert(quoteVersions).values({
@@ -116,7 +116,7 @@ export class QuoteVersioningService {
       // Create line item versions
       for (const item of data.lineItems) {
         await tx.insert(quoteLineItemVersions).values({
-          id: randomUUID(),
+          id: generateId(),
           quoteVersionId: versionId,
           lineNumber: item.lineNumber,
           type: item.type,

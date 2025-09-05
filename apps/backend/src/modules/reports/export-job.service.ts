@@ -4,15 +4,14 @@
  */
 
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
 import { getDatabase } from '../../lib/db.js';
 import { exportJobs } from '../../lib/schema.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
+import { AuditLogger } from '../../lib/audit/logger.js';
 import { ReportingMetrics } from './metrics.js';
 import { 
   EXPORT_JOB_STATUS, 
-  EXPORT_CONFIG,
   REPORT_TYPES 
 } from './constants.js';
 import type { 
@@ -49,7 +48,7 @@ export class ExportJobService {
       throw new Error('Permission denied: cannot export reports');
     }
 
-    const jobId = randomUUID();
+    const jobId = generateId();
     const fileName = request.fileName || `${request.reportType}_${Date.now()}.${request.format}`;
 
     // Create export job record
@@ -75,9 +74,9 @@ export class ExportJobService {
       organizationId: this.organizationId,
       userId: this.userId,
       action: 'export_job_created',
-      resource: 'export_jobs',
-      resourceId: jobId,
-      details: {
+      entityType: 'export_jobs',
+      entityId: jobId,
+      metadata: {
         reportType: request.reportType,
         format: request.format,
         filters: request.filters,
@@ -185,8 +184,8 @@ export class ExportJobService {
       organizationId: this.organizationId,
       userId: this.userId,
       action: 'export_job_cancelled',
-      resource: 'export_jobs',
-      resourceId: jobId,
+      entityType: 'export_jobs',
+      entityId: jobId,
     });
   }
 
@@ -254,9 +253,9 @@ export class ExportJobService {
         organizationId: this.organizationId,
         userId: this.userId,
         action: 'export_job_completed',
-        resource: 'export_jobs',
-        resourceId: jobId,
-        details: {
+        entityType: 'export_jobs',
+        entityId: jobId,
+        metadata: {
           totalRows: exportData.length,
           durationMs,
         },
@@ -289,9 +288,9 @@ export class ExportJobService {
         organizationId: this.organizationId,
         userId: this.userId,
         action: 'export_job_failed',
-        resource: 'export_jobs',
-        resourceId: jobId,
-        details: {
+        entityType: 'export_jobs',
+        entityId: jobId,
+        metadata: {
           error: error instanceof Error ? error.message : 'Unknown error',
           durationMs,
         },
@@ -326,7 +325,7 @@ export class ExportJobService {
   /**
    * Generate quote cycle time data
    */
-  private async generateQuoteCycleTimeData(filters: any): Promise<any[]> {
+  private async generateQuoteCycleTimeData(_filters: any): Promise<any[]> {
     // Placeholder implementation
     // In production, this would query quotes table with proper filters
     return [
@@ -349,7 +348,7 @@ export class ExportJobService {
   /**
    * Generate invoice settlement time data
    */
-  private async generateInvoiceSettlementTimeData(filters: any): Promise<any[]> {
+  private async generateInvoiceSettlementTimeData(_filters: any): Promise<any[]> {
     // Placeholder implementation
     return [
       {
@@ -373,7 +372,7 @@ export class ExportJobService {
   /**
    * Generate time approvals data
    */
-  private async generateTimeApprovalsData(filters: any): Promise<any[]> {
+  private async generateTimeApprovalsData(_filters: any): Promise<any[]> {
     // Placeholder implementation
     // Note: Time entries table doesn't exist yet
     return [
@@ -395,7 +394,7 @@ export class ExportJobService {
   /**
    * Generate payments received data
    */
-  private async generatePaymentsReceivedData(filters: any): Promise<any[]> {
+  private async generatePaymentsReceivedData(_filters: any): Promise<any[]> {
     // Placeholder implementation
     return [
       {

@@ -1,11 +1,13 @@
 import type { FastifyInstance, FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
 import { IdempotencyService } from '../lib/idempotency.js';
+import { generateHash, startTimer } from '@pivotal-flow/shared';
 
 export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _opts, done) => {
-  const idempotencyService = new IdempotencyService((app as any).db);
+  const idempotencyService = new IdempotencyService();
 
   // Add preHandler hook to check idempotency
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    const timer = startTimer('idempotency_check');
     const idempotencyKey = request.headers['idempotency-key'] as string;
     
     // Only process idempotency for POST and PATCH requests
@@ -24,20 +26,26 @@ export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _
     }
 
     // Generate request hash
-    const requestHash = idempotencyService.generateRequestHash(
-      request.body,
-      request.headers as Record<string, string>
+    const requestHash = generateHash(
+      JSON.stringify({
+        body: request.body,
+        headers: request.headers,
+        url: request.url,
+        method: request.method
+      })
     );
 
     // Check if this is a duplicate request
-    const context = {
-      organizationId: user.organizationId,
-      userId: user.userId,
-      route: request.url,
-      requestHash
-    };
-
-    const result = await idempotencyService.checkIdempotency(context);
+    const result = await idempotencyService.checkIdempotency(
+      idempotencyKey,
+      user.organizationId,
+      user.userId,
+      request.method,
+      request.url,
+      request.body,
+      request.query,
+      request.params
+    );
 
     if (result.isDuplicate) {
       // Return cached response
@@ -47,7 +55,14 @@ export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _
     }
 
     // Store context for postHandler
-    (request as any).idempotencyContext = context;
+    (request as any).idempotencyContext = {
+      organizationId: user.organizationId,
+      userId: user.userId,
+      route: request.url,
+      requestHash
+    };
+
+    timer.end();
   });
 
   // Add onResponse hook to store successful responses
@@ -68,7 +83,7 @@ export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _
         );
       } catch (error) {
         // Log error but don't fail the request
-        app.log.error('Failed to store idempotency response:', error as any);
+        (app.log as any).error('Failed to store idempotency response:', error as any);
       }
     }
   });

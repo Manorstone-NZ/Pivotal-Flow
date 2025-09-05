@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyInstance } from 'fastify';
 import { auditLogs } from './schema.js';
-import { randomUUID } from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
 
 export interface AuditEvent {
   action: string;
@@ -26,7 +26,7 @@ export class AuditLogger {
   async logEvent(event: AuditEvent, request?: FastifyRequest): Promise<void> {
     try {
       const data = {
-        id: randomUUID(),
+        id: generateId(),
         action: event.action,
         entityType: event.entityType,
         entityId: event.entityId,

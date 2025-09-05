@@ -1,6 +1,7 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { BaseRepository } from './repo.base.js';
 import { currencies, fxRates } from '../schema.js';
+import crypto from 'crypto';
 
 /**
  * Currency Repository
@@ -183,7 +184,7 @@ export class CurrencyRepository extends BaseRepository {
         const result = await this.db
           .insert(fxRates)
           .values({
-            id: this.generateId(),
+            id: crypto.randomUUID(),
             baseCurrency: data.baseCurrency,
             quoteCurrency: data.quoteCurrency,
             rate: data.rate.toString(),

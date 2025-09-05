@@ -2,6 +2,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import { eq, and, like, desc, asc, isNull, count } from 'drizzle-orm';
+import { generateId } from '@pivotal-flow/shared';
 import { users, roles, userRoles } from '../../lib/schema.js';
 // Local type definitions to avoid shared module dependencies
 export interface UserPublic {
@@ -49,16 +50,6 @@ async function hashPassword(password: string): Promise<string> {
   // Simple hash for now - replace with proper bcrypt in production
   return Buffer.from(password).toString('base64');
 }
-
-// Local crypto functions
-const crypto = {
-  randomBytes: (size: number) => Buffer.alloc(size).fill(Math.random().toString(36).substring(2)),
-  randomUUID: () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  })
-};
 
 export interface UserListOptions {
   organizationId: string;
@@ -308,7 +299,7 @@ export async function createUser(userData: UserCreateRequest, organizationId: st
   const [userResult] = await (fastify as any).db
     .insert(users)
     .values({
-      id: crypto.randomUUID(),
+      id: generateId(),
       email,
       displayName,
       passwordHash: hashedPassword,
@@ -338,7 +329,7 @@ export async function createUser(userData: UserCreateRequest, organizationId: st
       await (fastify as any).db
         .insert(userRoles)
         .values({
-          id: crypto.randomUUID(),
+          id: generateId(),
           userId,
           roleId,
           organizationId,
@@ -466,7 +457,7 @@ export async function addRoleToUser(
     await (fastify as any).db
       .insert(userRoles)
       .values({
-        id: crypto.randomUUID(),
+        id: generateId(),
         userId,
         roleId,
         organizationId,

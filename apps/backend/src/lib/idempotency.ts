@@ -80,9 +80,9 @@ export class IdempotencyService {
     body: any,
     query: any = {},
     params: any = {}
-  ): Promise<{ exists: boolean; response?: any; statusCode?: number }> {
+  ): Promise<{ exists: boolean; isDuplicate: boolean; response?: any; statusCode?: number; responseStatus?: number; responseBody?: any }> {
     if (!this.config.enabled) {
-      return { exists: false };
+      return { exists: false, isDuplicate: false };
     }
 
     // Validate idempotency key
@@ -102,16 +102,19 @@ export class IdempotencyService {
         // Return cached response
         return {
           exists: true,
+          isDuplicate: true,
           response: existingRecord.responseData,
-          statusCode: existingRecord.statusCode
+          statusCode: existingRecord.statusCode,
+          responseStatus: existingRecord.statusCode,
+          responseBody: existingRecord.responseData
         };
       }
 
-      return { exists: false };
+      return { exists: false, isDuplicate: false };
     } catch (error) {
       // If cache error, log and continue
       console.warn('Idempotency check failed:', error);
-      return { exists: false };
+      return { exists: false, isDuplicate: false };
     }
   }
 
@@ -161,6 +164,43 @@ export class IdempotencyService {
   }
 
   /**
+   * Store response for idempotency (simplified interface)
+   */
+  async storeResponse(
+    context: { organizationId: string; userId: string; route: string; requestHash: string },
+    statusCode: number,
+    responseBody: any
+  ): Promise<void> {
+    if (!this.config.enabled) {
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + this.config.ttlHours * 60 * 60 * 1000);
+
+    try {
+      // Store idempotency record in cache
+      const cacheKey = `${context.requestHash}_${context.organizationId}`;
+      const record: IdempotencyRecord = {
+        id: cacheKey,
+        organizationId: context.organizationId,
+        userId: context.userId,
+        route: context.route,
+        method: 'POST', // Default method
+        requestHash: context.requestHash,
+        responseData: responseBody,
+        statusCode,
+        createdAt: new Date(),
+        expiresAt
+      };
+      
+      this.cache.set(cacheKey, record);
+    } catch (error) {
+      // If cache error, log and continue
+      console.warn('Idempotency storage failed:', error);
+    }
+  }
+
+  /**
    * Clean up expired idempotency records
    */
   async cleanupExpiredRecords(): Promise<number> {
@@ -172,7 +212,7 @@ export class IdempotencyService {
       const now = new Date();
       let deletedCount = 0;
       
-      for (const [key, record] of this.cache.entries()) {
+      for (const [key, record] of Array.from(this.cache.entries())) {
         if (record.expiresAt < now) {
           this.cache.delete(key);
           deletedCount++;
@@ -203,7 +243,7 @@ export class IdempotencyService {
       let totalRecords = 0;
       let expiredRecords = 0;
       
-      for (const record of this.cache.values()) {
+      for (const record of Array.from(this.cache.values())) {
         totalRecords++;
         if (record.expiresAt < now) {
           expiredRecords++;

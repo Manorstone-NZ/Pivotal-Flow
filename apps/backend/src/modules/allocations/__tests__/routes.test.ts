@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { testUtils, testDb } from '../../../__tests__/setup.js';
 import { AllocationService } from '../service.js';
 import { ALLOCATION_ROLES } from '../constants.js';
-import { resourceAllocations, projects, users } from '../../../lib/schema.js';
+import { resourceAllocations, projects } from '../../../lib/schema.js';
 
 describe('Allocation Service Integration', () => {
   let allocationService: AllocationService;

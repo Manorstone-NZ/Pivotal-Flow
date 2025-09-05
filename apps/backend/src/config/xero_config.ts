@@ -25,17 +25,17 @@ export interface XeroEnvironmentConfig {
  */
 export function getXeroConfig(): XeroConfig {
   const config: XeroConfig = {
-    clientId: process.env.XERO_CLIENT_ID || '',
-    clientSecret: process.env.XERO_CLIENT_SECRET || '',
-    redirectUri: process.env.XERO_REDIRECT_URI || '',
-    tenantId: process.env.XERO_TENANT_ID,
+    clientId: process.env['XERO_CLIENT_ID'] || '',
+    clientSecret: process.env['XERO_CLIENT_SECRET'] || '',
+    redirectUri: process.env['XERO_REDIRECT_URI'] || '',
+    tenantId: process.env['XERO_TENANT_ID'] || '',
     scopes: [
       'offline_access',
       'accounting.transactions',
       'accounting.contacts',
       'accounting.settings',
     ],
-    webhookKey: process.env.XERO_WEBHOOK_KEY,
+    webhookKey: process.env['XERO_WEBHOOK_KEY'] || '',
   };
 
   return config;
@@ -113,6 +113,6 @@ export function getXeroWebhookConfig(): { enabled: boolean; key?: string } {
   
   return {
     enabled: !!config.webhookKey,
-    key: config.webhookKey,
+    key: config.webhookKey || undefined,
   };
 }

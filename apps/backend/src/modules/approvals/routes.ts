@@ -1,15 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { ApprovalService } from './service.js';
+import { getDatabase } from '../../lib/db.js';
 import { 
   CreateApprovalRequestSchema,
   ApproveRequestSchema,
   RejectRequestSchema,
   CancelRequestSchema,
   ApprovalFiltersSchema,
-  ApprovalRequestResponseSchema,
-  ApprovalPolicyResponseSchema,
-  ListApprovalsResponseSchema
+  ListApprovalsResponseSchema,
+  createApprovalsPagingResponse
 } from './schemas.js';
 
 // Type definition for authenticated user
@@ -65,14 +65,14 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Body: z.infer<typeof CreateApprovalRequestSchema> }>, reply: FastifyReply) => {
     try {
-      const { body } = CreateApprovalRequestSchema.parse(request);
+      const body = CreateApprovalRequestSchema.parse(request.body);
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -80,7 +80,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         fastify
       );
 
-      const approvalRequest = await approvalService.createApprovalRequest(body);
+      const approvalRequest = await approvalService.createApprovalRequest(body as any);
       
       reply.send({
         success: true,
@@ -139,15 +139,15 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof ApproveRequestSchema> }>, reply: FastifyReply) => {
     try {
-      const { body } = ApproveRequestSchema.parse(request);
+      const body = ApproveRequestSchema.parse(request.body);
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -155,7 +155,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         fastify
       );
 
-      const approvalRequest = await approvalService.approveRequest(id, body);
+      const approvalRequest = await approvalService.approveRequest(id, body as any);
       
       reply.send({
         success: true,
@@ -215,15 +215,15 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof RejectRequestSchema> }>, reply: FastifyReply) => {
     try {
-      const { body } = RejectRequestSchema.parse(request);
+      const body = RejectRequestSchema.parse(request.body);
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -231,7 +231,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         fastify
       );
 
-      const approvalRequest = await approvalService.rejectRequest(id, body);
+      const approvalRequest = await approvalService.rejectRequest(id, body as any);
       
       reply.send({
         success: true,
@@ -290,15 +290,15 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof CancelRequestSchema> }>, reply: FastifyReply) => {
     try {
-      const { body } = CancelRequestSchema.parse(request);
+      const body = CancelRequestSchema.parse(request.body);
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -306,7 +306,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         fastify
       );
 
-      const approvalRequest = await approvalService.cancelRequest(id, body);
+      const approvalRequest = await approvalService.cancelRequest(id, body as any);
       
       reply.send({
         success: true,
@@ -324,63 +324,26 @@ export async function approvalRoutes(fastify: FastifyInstance) {
   // List approval requests
   fastify.get('/v1/approvals', {
     schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          entityType: { type: 'string', enum: ['quote', 'invoice', 'project'] },
-          status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'cancelled'] },
-          approverId: { type: 'string', format: 'uuid' },
-          requestedBy: { type: 'string', format: 'uuid' },
-          page: { type: 'number', minimum: 1, default: 1 },
-          limit: { type: 'number', minimum: 1, maximum: 100, default: 20 }
-        }
-      },
+      querystring: ApprovalFiltersSchema,
       response: {
-        200: {
+        200: ListApprovalsResponseSchema,
+        400: {
           type: 'object',
           properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                approvals: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'string' },
-                      organizationId: { type: 'string' },
-                      entityType: { type: 'string' },
-                      entityId: { type: 'string' },
-                      requestedBy: { type: 'string' },
-                      approverId: { type: 'string' },
-                      status: { type: 'string' },
-                      requestedAt: { type: 'string', format: 'date-time' },
-                      decidedAt: { type: 'string', format: 'date-time' },
-                      reason: { type: 'string' },
-                      notes: { type: 'object' },
-                      createdAt: { type: 'string', format: 'date-time' },
-                      updatedAt: { type: 'string', format: 'date-time' }
-                    }
-                  }
-                },
-                total: { type: 'number' },
-                page: { type: 'number' },
-                limit: { type: 'number' }
-              }
-            }
+            error: { type: 'string' },
+            message: { type: 'string' }
           }
         }
       }
     }
-  }, async (request: FastifyRequest<{ Querystring: any }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Querystring: z.infer<typeof ApprovalFiltersSchema> }>, reply: FastifyReply) => {
     try {
       const query = ApprovalFiltersSchema.parse(request.query);
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -388,17 +351,16 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         fastify
       );
 
-      const approvals = await approvalService.getApprovalRequests(query);
+      const approvals = await approvalService.getApprovalRequests(query as any);
       
-      reply.send({
-        success: true,
-        data: {
-          approvals,
-          total: approvals.length,
-          page: query.page || 1,
-          limit: query.limit || 20
-        }
-      });
+      const pagingResponse = createApprovalsPagingResponse(
+        approvals as any,
+        query.page || 1,
+        query.pageSize || 20,
+        approvals.length // In a real implementation, this would be the total count
+      );
+      
+      reply.send(pagingResponse);
     } catch (error) {
       (fastify.log as any).error(error as Error, 'Error listing approval requests');
       reply.status(500).send({ 
@@ -452,7 +414,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 
@@ -508,7 +470,7 @@ export async function approvalRoutes(fastify: FastifyInstance) {
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const approvalService = new ApprovalService(
-        fastify.db,
+        getDatabase(),
         { 
           organizationId: authenticatedRequest.user.organizationId, 
           userId: authenticatedRequest.user.userId 

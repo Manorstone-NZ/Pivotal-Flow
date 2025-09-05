@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { randomUUID } from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
 import { config } from '../../lib/config.js';
 import { logger } from '../../lib/logger.js';
 // import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types';
@@ -206,7 +206,7 @@ export function createTokenManager(app: FastifyInstance) {
    * Generate a new JWT ID for refresh tokens
    */
   function generateJTI(): string {
-    return randomUUID();
+    return generateId();
   }
 
   return {

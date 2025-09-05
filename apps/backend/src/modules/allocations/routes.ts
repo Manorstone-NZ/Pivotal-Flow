@@ -1,14 +1,29 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AllocationService } from './service.js';
 import { 
-  CreateAllocationRequestSchema, 
+  CreateAllocationRequestSchema,
+  CreateAllocationBodySchema,
   UpdateAllocationRequestSchema,
   AllocationFiltersSchema,
   ResourceAllocationResponseSchema,
   ListAllocationsResponseSchema,
-  WeeklyCapacitySummarySchema
+  WeeklyCapacitySummarySchema,
+  createAllocationsPagingResponse
 } from './schemas.js';
-import type { AuthenticatedRequest } from '../../types/auth.js';
+
+// Type definition for authenticated user
+interface AuthenticatedUser {
+  userId: string;
+  organizationId: string;
+  roles: string[];
+}
+
+// Use type assertion for authenticated requests
+type AuthenticatedRequest = FastifyRequest & {
+  user: AuthenticatedUser;
+  organizationId: string;
+  userId: string;
+};
 
 export async function allocationRoutes(fastify: FastifyInstance) {
   // Create allocation
@@ -23,7 +38,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         },
         required: ['projectId']
       },
-      body: CreateAllocationRequestSchema.omit({ projectId: true }),
+      body: CreateAllocationBodySchema,
       response: {
         201: ResourceAllocationResponseSchema,
         400: {
@@ -49,29 +64,26 @@ export async function allocationRoutes(fastify: FastifyInstance) {
           }
         }
       }
-    }
+    } as any,
   }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
       const allocationData = CreateAllocationRequestSchema.parse({
-        ...request.body,
+        ...(request.body as any),
         projectId
       });
 
       const allocationService = new AllocationService(
-        fastify.db,
-        {
-          organizationId: request.organizationId,
-          userId: request.userId
-        },
+        request.organizationId,
+        request.userId,
         fastify
       );
 
-      const allocation = await allocationService.createAllocation(allocationData);
+      const allocation = await allocationService.createAllocation(allocationData as any);
 
       reply.status(201).send(allocation);
     } catch (error: any) {
-      fastify.log.error('Error creating allocation:', error);
+      (fastify.log as any).error('Error creating allocation:', error);
       
       if (error.message.includes('conflicts detected')) {
         reply.status(409).send({
@@ -105,18 +117,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         },
         required: ['projectId']
       },
-      querystring: {
-        type: 'object',
-        properties: {
-          userId: { type: 'string' },
-          role: { type: 'string' },
-          startDate: { type: 'string', format: 'date' },
-          endDate: { type: 'string', format: 'date' },
-          isBillable: { type: 'boolean' },
-          page: { type: 'integer', minimum: 1, default: 1 },
-          limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
-        }
-      },
+      querystring: AllocationFiltersSchema,
       response: {
         200: ListAllocationsResponseSchema,
         403: {
@@ -127,39 +128,37 @@ export async function allocationRoutes(fastify: FastifyInstance) {
           }
         }
       }
-    }
+    } as any,
   }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
-      const query = request.query as any;
-
-      const filters = AllocationFiltersSchema.parse({
+      const query = AllocationFiltersSchema.parse({
         projectId,
-        ...query
+        ...(request.query as any)
       });
 
       const allocationService = new AllocationService(
-        fastify.db,
-        {
-          organizationId: request.organizationId,
-          userId: request.userId
-        },
+        request.organizationId,
+        request.userId,
         fastify
       );
 
       const result = await allocationService.getAllocations(
-        filters,
+        query as any,
         query.page || 1,
-        query.limit || 20
+        query.pageSize || 20
       );
 
-      reply.send({
-        ...result,
-        page: query.page || 1,
-        limit: query.limit || 20
-      });
+      const pagingResponse = createAllocationsPagingResponse(
+        result.allocations,
+        query.page || 1,
+        query.pageSize || 20,
+        result.total
+      );
+
+      reply.send(pagingResponse);
     } catch (error: any) {
-      fastify.log.error('Error getting allocations:', error);
+      (fastify.log as any).error('Error getting allocations:', error);
       
       if (error.message.includes('permission')) {
         reply.status(403).send({
@@ -220,26 +219,23 @@ export async function allocationRoutes(fastify: FastifyInstance) {
           }
         }
       }
-    }
+    } as any,
   }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
       const updateData = UpdateAllocationRequestSchema.parse(request.body);
 
       const allocationService = new AllocationService(
-        fastify.db,
-        {
-          organizationId: request.organizationId,
-          userId: request.userId
-        },
+        request.organizationId,
+        request.userId,
         fastify
       );
 
-      const allocation = await allocationService.updateAllocation(id, updateData);
+      const allocation = await allocationService.updateAllocation(id, updateData as any);
 
       reply.send(allocation);
     } catch (error: any) {
-      fastify.log.error('Error updating allocation:', error);
+      (fastify.log as any).error('Error updating allocation:', error);
       
       if (error.message.includes('conflicts detected')) {
         reply.status(409).send({
@@ -295,17 +291,14 @@ export async function allocationRoutes(fastify: FastifyInstance) {
           }
         }
       }
-    }
+    } as any,
   }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
 
       const allocationService = new AllocationService(
-        fastify.db,
-        {
-          organizationId: request.organizationId,
-          userId: request.userId
-        },
+        request.organizationId,
+        request.userId,
         fastify
       );
 
@@ -313,7 +306,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
 
       reply.status(204).send();
     } catch (error: any) {
-      fastify.log.error('Error deleting allocation:', error);
+      (fastify.log as any).error('Error deleting allocation:', error);
       
       if (error.message.includes('not found')) {
         reply.status(404).send({
@@ -369,18 +362,15 @@ export async function allocationRoutes(fastify: FastifyInstance) {
           }
         }
       }
-    }
+    } as any,
   }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
       const { weeks = 8 } = request.query as { weeks?: number };
 
       const allocationService = new AllocationService(
-        fastify.db,
-        {
-          organizationId: request.organizationId,
-          userId: request.userId
-        },
+        request.organizationId,
+        request.userId,
         fastify
       );
 
@@ -388,7 +378,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
 
       reply.send(capacity);
     } catch (error: any) {
-      fastify.log.error('Error getting project capacity:', error);
+      (fastify.log as any).error('Error getting project capacity:', error);
       
       if (error.message.includes('not found')) {
         reply.status(404).send({

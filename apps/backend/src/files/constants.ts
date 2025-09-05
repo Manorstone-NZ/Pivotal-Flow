@@ -66,7 +66,7 @@ export const STORAGE_CONFIG = {
   LOCAL_MAX_SIZE: 10 * 1024 * 1024 * 1024, // 10 GB
   
   // Token configuration
-  TOKEN_SECRET: process.env.FILE_TOKEN_SECRET || 'pivotal-flow-file-secret-dev',
+  TOKEN_SECRET: process.env['FILE_TOKEN_SECRET'] || 'pivotal-flow-file-secret-dev',
   TOKEN_ALGORITHM: 'HS256',
   
   // Cleanup configuration

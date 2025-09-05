@@ -3,20 +3,16 @@
  * Core business logic for generating reports and summaries
  */
 
-import { eq, and, gte, lte, sql, desc, asc } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
 import { getDatabase } from '../../lib/db.js';
 import { 
   quotes, 
-  quoteLineItems, 
   invoices, 
-  invoiceLineItems, 
   payments,
   customers,
-  projects,
-  users
+  projects
 } from '../../lib/schema.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
 import { ReportingMetrics } from './metrics.js';
 import { REPORT_TYPES } from './constants.js';
 import type {
@@ -29,9 +25,6 @@ import type {
   TimeApprovalsSummary,
   PaymentsReceivedSummary,
   QuoteCycleTimeRow,
-  InvoiceSettlementTimeRow,
-  TimeApprovalsRow,
-  PaymentsReceivedRow,
   PaginatedResponse
 } from './types.js';
 
@@ -45,8 +38,7 @@ export class ReportingService {
   constructor(
     private organizationId: string,
     private userId: string,
-    private permissionService: PermissionService,
-    private auditLogger: AuditLogger
+    private permissionService: PermissionService
   ) {}
 
   /**
@@ -93,7 +85,7 @@ export class ReportingService {
         acceptedAt: quotes.acceptedAt,
         totalAmount: quotes.totalAmount,
         currency: quotes.currency,
-        customerName: customers.name,
+        customerName: customers.companyName,
         projectName: projects.name,
       })
       .from(quotes)
@@ -103,28 +95,28 @@ export class ReportingService {
       .orderBy(desc(quotes.createdAt));
 
     // Calculate cycle times
-    const quotesWithCycleTime = quotesData.map(quote => {
+    const quotesWithCycleTime = quotesData.map((quote: any) => {
       const cycleTimeDays = quote.acceptedAt && quote.sentAt 
         ? Math.ceil((new Date(quote.acceptedAt).getTime() - new Date(quote.sentAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
       
       return { ...quote, cycleTimeDays };
-    }).filter(quote => quote.cycleTimeDays > 0 || filters.minCycleTimeDays === undefined);
+    }).filter((quote: any) => quote.cycleTimeDays > 0 || filters.minCycleTimeDays === undefined);
 
     // Apply cycle time filters
     let filteredQuotes = quotesWithCycleTime;
     if (filters.minCycleTimeDays !== undefined) {
-      filteredQuotes = filteredQuotes.filter(quote => quote.cycleTimeDays >= filters.minCycleTimeDays!);
+      filteredQuotes = filteredQuotes.filter((quote: any) => quote.cycleTimeDays >= filters.minCycleTimeDays!);
     }
     if (filters.maxCycleTimeDays !== undefined) {
-      filteredQuotes = filteredQuotes.filter(quote => quote.cycleTimeDays <= filters.maxCycleTimeDays!);
+      filteredQuotes = filteredQuotes.filter((quote: any) => quote.cycleTimeDays <= filters.maxCycleTimeDays!);
     }
 
     // Calculate summary statistics
-    const cycleTimes = filteredQuotes.map(q => q.cycleTimeDays).filter(t => t > 0);
+    const cycleTimes = filteredQuotes.map((q: any) => q.cycleTimeDays).filter((t: any) => t > 0);
     const totalQuotes = filteredQuotes.length;
     const averageCycleTimeDays = cycleTimes.length > 0 
-      ? cycleTimes.reduce((sum, time) => sum + time, 0) / cycleTimes.length 
+      ? cycleTimes.reduce((sum: any, time: any) => sum + time, 0) / cycleTimes.length 
       : 0;
     const medianCycleTimeDays = this.calculateMedian(cycleTimes);
     const minCycleTimeDays = cycleTimes.length > 0 ? Math.min(...cycleTimes) : 0;
@@ -210,7 +202,7 @@ export class ReportingService {
         paidAmount: invoices.paidAmount,
         balanceAmount: invoices.balanceAmount,
         currency: invoices.currency,
-        customerName: customers.name,
+        customerName: customers.companyName,
         projectName: projects.name,
       })
       .from(invoices)
@@ -220,7 +212,7 @@ export class ReportingService {
       .orderBy(desc(invoices.issuedAt));
 
     // Calculate settlement times
-    const invoicesWithSettlementTime = invoicesData.map(invoice => {
+    const invoicesWithSettlementTime = invoicesData.map((invoice: any) => {
       const settlementTimeDays = invoice.paidAt && invoice.issuedAt 
         ? Math.ceil((new Date(invoice.paidAt).getTime() - new Date(invoice.issuedAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
@@ -231,24 +223,24 @@ export class ReportingService {
     // Apply settlement time filters
     let filteredInvoices = invoicesWithSettlementTime;
     if (filters.minSettlementTimeDays !== undefined) {
-      filteredInvoices = filteredInvoices.filter(invoice => invoice.settlementTimeDays >= filters.minSettlementTimeDays!);
+      filteredInvoices = filteredInvoices.filter((invoice: any) => invoice.settlementTimeDays >= filters.minSettlementTimeDays!);
     }
     if (filters.maxSettlementTimeDays !== undefined) {
-      filteredInvoices = filteredInvoices.filter(invoice => invoice.settlementTimeDays <= filters.maxSettlementTimeDays!);
+      filteredInvoices = filteredInvoices.filter((invoice: any) => invoice.settlementTimeDays <= filters.maxSettlementTimeDays!);
     }
 
     // Calculate summary statistics
-    const settlementTimes = filteredInvoices.map(i => i.settlementTimeDays).filter(t => t > 0);
+    const settlementTimes = filteredInvoices.map((i: any) => i.settlementTimeDays).filter((t: any) => t > 0);
     const totalInvoices = filteredInvoices.length;
     const averageSettlementTimeDays = settlementTimes.length > 0 
-      ? settlementTimes.reduce((sum, time) => sum + time, 0) / settlementTimes.length 
+      ? settlementTimes.reduce((sum: any, time: any) => sum + time, 0) / settlementTimes.length 
       : 0;
     const medianSettlementTimeDays = this.calculateMedian(settlementTimes);
     
-    const overdueInvoices = filteredInvoices.filter(i => i.status === 'overdue').length;
+    const overdueInvoices = filteredInvoices.filter((i: any) => i.status === 'overdue').length;
     const overdueAmount = filteredInvoices
-      .filter(i => i.status === 'overdue')
-      .reduce((sum, i) => sum + Number(i.balanceAmount), 0);
+      .filter((i: any) => i.status === 'overdue')
+      .reduce((sum: any, i: any) => sum + Number(i.balanceAmount), 0);
 
     // Group by status and customer
     const invoicesByStatus = this.groupBy(filteredInvoices, 'status');
@@ -284,7 +276,7 @@ export class ReportingService {
   /**
    * Generate time approvals summary
    */
-  async generateTimeApprovalsSummary(filters: TimeApprovalsFilters): Promise<TimeApprovalsSummary> {
+  async generateTimeApprovalsSummary(_filters: TimeApprovalsFilters): Promise<TimeApprovalsSummary> {
     // Check permissions
     const canViewReports = await this.permissionService.hasPermission(
       this.userId,
@@ -353,10 +345,10 @@ export class ReportingService {
       conditions.push(sql`${payments.status} = ANY(${filters.status})`);
     }
     if (filters.minAmount !== undefined) {
-      conditions.push(gte(payments.amount, filters.minAmount));
+      conditions.push(gte(payments.amount, filters.minAmount.toString()));
     }
     if (filters.maxAmount !== undefined) {
-      conditions.push(lte(payments.amount, filters.maxAmount));
+      conditions.push(lte(payments.amount, filters.maxAmount.toString()));
     }
 
     // Get payments with invoice and customer info
@@ -370,7 +362,7 @@ export class ReportingService {
         paidAt: payments.paidAt,
         reference: payments.reference,
         invoiceNumber: invoices.invoiceNumber,
-        customerName: customers.name,
+        customerName: customers.companyName,
       })
       .from(payments)
       .leftJoin(invoices, eq(payments.invoiceId, invoices.id))
@@ -380,19 +372,19 @@ export class ReportingService {
 
     // Calculate summary statistics
     const totalPayments = paymentsData.length;
-    const totalAmount = paymentsData.reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalAmount = paymentsData.reduce((sum: any, p: any) => sum + Number(p.amount), 0);
     const averageAmount = totalPayments > 0 ? totalAmount / totalPayments : 0;
 
     // Group by method, month, and customer
     const paymentsByMethod = this.groupBy(paymentsData, 'method');
     const paymentsByMonth = this.groupBy(
-      paymentsData.map(p => ({ ...p, month: new Date(p.paidAt).toISOString().slice(0, 7) })),
+      paymentsData.map((p: any) => ({ ...p, month: new Date(p.paidAt).toISOString().slice(0, 7) })),
       'month'
     );
     const paymentsByCustomer = this.groupBy(paymentsData, 'customerName');
 
     // Calculate amount distribution
-    const amounts = paymentsData.map(p => Number(p.amount));
+    const amounts = paymentsData.map((p: any) => Number(p.amount));
     const amountDistribution = this.calculateDistribution(amounts, [
       { min: 0, max: 1000, label: '$0-$1,000' },
       { min: 1001, max: 5000, label: '$1,001-$5,000' },
@@ -472,7 +464,7 @@ export class ReportingService {
         acceptedAt: quotes.acceptedAt,
         totalAmount: quotes.totalAmount,
         currency: quotes.currency,
-        customerName: customers.name,
+        customerName: customers.companyName,
         projectName: projects.name,
       })
       .from(quotes)

@@ -1,6 +1,7 @@
 {
   "name": "@pivotal-flow/sdk",
   "version": "1.0.0",
+  "type": "module",
   "description": "TypeScript SDK for Pivotal Flow API",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -26,7 +27,7 @@
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",

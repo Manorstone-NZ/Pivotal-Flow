@@ -25,7 +25,7 @@ export class ExportJobProcessor implements JobProcessor {
         return;
       }
 
-      const { reportType, format, filters, fileName } = payload;
+      const { reportType, format, fileName } = payload;
 
       // Update progress to 10% - starting
       await updateProgress(10, 1);

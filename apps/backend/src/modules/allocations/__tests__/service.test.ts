@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AllocationService } from '../service.js';
 import { ALLOCATION_ROLES } from '../constants.js';
 import { testUtils, testDb } from '../../../__tests__/setup.js';
-import { resourceAllocations, projects, users } from '../../../lib/schema.js';
-import { eq, and, isNull } from 'drizzle-orm';
+import { resourceAllocations, projects } from '../../../lib/schema.js';
+import { eq } from 'drizzle-orm';
 
 describe('AllocationService', () => {
   let allocationService: AllocationService;

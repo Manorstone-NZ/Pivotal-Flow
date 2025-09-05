@@ -30,7 +30,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
         200: CurrenciesResponseSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -51,7 +51,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
         200: TaxClassesResponseSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -73,7 +73,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -95,7 +95,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -116,7 +116,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
         200: ServiceCategoriesResponseSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -138,7 +138,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const permissionService = new PermissionService(organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
@@ -176,7 +176,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
+  }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { referenceType } = request.body;
     const permissionService = new PermissionService(organizationId);

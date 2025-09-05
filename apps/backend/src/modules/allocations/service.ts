@@ -1,8 +1,9 @@
 import { eq, and, or, gte, lte, isNull, sql } from 'drizzle-orm';
-import { BaseRepository } from '../../lib/repo.base.js';
+import { getDatabase } from '../../lib/db.js';
 import { resourceAllocations, projects, users } from '../../lib/schema.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { AuditLogger } from '../../lib/audit/logger.js';
+import { generateId } from '@pivotal-flow/shared';
 import { ALLOCATION_PERMISSIONS } from './constants.js';
 import type { 
   CreateAllocationRequest, 
@@ -13,23 +14,23 @@ import type {
 } from './types.js';
 import type { FastifyInstance } from 'fastify';
 
-export class AllocationService extends BaseRepository {
+export class AllocationService {
+  private db = getDatabase();
   private permissionService: PermissionService;
   private auditLogger: AuditLogger;
 
   constructor(
-    db: any,
-    options: { organizationId: string; userId: string },
+    private organizationId: string,
+    private userId: string,
     fastify: FastifyInstance
   ) {
-    super(db, options);
-    this.permissionService = new PermissionService(db, options);
-    this.auditLogger = new AuditLogger(db, options);
+    this.permissionService = new PermissionService(getDatabase(), { organizationId, userId });
+    this.auditLogger = new AuditLogger(fastify, { organizationId, userId });
   }
 
   async createAllocation(data: CreateAllocationRequest): Promise<any> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.CREATE);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.CREATE);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to create allocations');
     }
@@ -42,8 +43,8 @@ export class AllocationService extends BaseRepository {
 
     // Create allocation
     const allocation = await this.db.insert(resourceAllocations).values({
-      id: this.generateId(),
-      organizationId: this.options.organizationId,
+      id: generateId(),
+      organizationId: this.organizationId,
       projectId: data.projectId,
       userId: data.userId,
       role: data.role,
@@ -59,6 +60,8 @@ export class AllocationService extends BaseRepository {
       action: 'allocations.create',
       entityType: 'ResourceAllocation',
       entityId: allocation[0].id,
+      organizationId: this.organizationId,
+      userId: this.userId,
       oldValues: null,
       newValues: allocation[0]
     });
@@ -68,7 +71,7 @@ export class AllocationService extends BaseRepository {
 
   async updateAllocation(id: string, data: UpdateAllocationRequest): Promise<any> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.UPDATE);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.UPDATE);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to update allocations');
     }
@@ -77,7 +80,7 @@ export class AllocationService extends BaseRepository {
     const existing = await this.db.select().from(resourceAllocations)
       .where(and(
         eq(resourceAllocations.id, id),
-        eq(resourceAllocations.organizationId, this.options.organizationId),
+        eq(resourceAllocations.organizationId, this.organizationId),
         isNull(resourceAllocations.deletedAt)
       )).limit(1);
 
@@ -112,7 +115,7 @@ export class AllocationService extends BaseRepository {
       })
       .where(and(
         eq(resourceAllocations.id, id),
-        eq(resourceAllocations.organizationId, this.options.organizationId)
+        eq(resourceAllocations.organizationId, this.organizationId)
       ))
       .returning();
 
@@ -121,6 +124,8 @@ export class AllocationService extends BaseRepository {
       action: 'allocations.update',
       entityType: 'ResourceAllocation',
       entityId: id,
+      organizationId: this.organizationId,
+      userId: this.userId,
       oldValues: existing[0],
       newValues: updated[0]
     });
@@ -130,7 +135,7 @@ export class AllocationService extends BaseRepository {
 
   async deleteAllocation(id: string): Promise<void> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.DELETE);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.DELETE);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to delete allocations');
     }
@@ -139,7 +144,7 @@ export class AllocationService extends BaseRepository {
     const existing = await this.db.select().from(resourceAllocations)
       .where(and(
         eq(resourceAllocations.id, id),
-        eq(resourceAllocations.organizationId, this.options.organizationId),
+        eq(resourceAllocations.organizationId, this.organizationId),
         isNull(resourceAllocations.deletedAt)
       )).limit(1);
 
@@ -155,7 +160,7 @@ export class AllocationService extends BaseRepository {
       })
       .where(and(
         eq(resourceAllocations.id, id),
-        eq(resourceAllocations.organizationId, this.options.organizationId)
+        eq(resourceAllocations.organizationId, this.organizationId)
       ));
 
     // Log audit event
@@ -163,6 +168,8 @@ export class AllocationService extends BaseRepository {
       action: 'allocations.delete',
       entityType: 'ResourceAllocation',
       entityId: id,
+      organizationId: this.organizationId,
+      userId: this.userId,
       oldValues: existing[0],
       newValues: null
     });
@@ -170,13 +177,13 @@ export class AllocationService extends BaseRepository {
 
   async getAllocations(filters: AllocationFilters = {}, page = 1, limit = 20): Promise<{ allocations: any[]; total: number }> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.READ);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.READ);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to view allocations');
     }
 
     const conditions = [
-      eq(resourceAllocations.organizationId, this.options.organizationId),
+      eq(resourceAllocations.organizationId, this.organizationId),
       isNull(resourceAllocations.deletedAt)
     ];
 
@@ -217,7 +224,7 @@ export class AllocationService extends BaseRepository {
         updatedAt: resourceAllocations.updatedAt,
         deletedAt: resourceAllocations.deletedAt,
         projectName: projects.name,
-        userName: users.name
+        userName: users.displayName
       })
       .from(resourceAllocations)
       .leftJoin(projects, eq(resourceAllocations.projectId, projects.id))
@@ -240,7 +247,7 @@ export class AllocationService extends BaseRepository {
 
   async getAllocation(id: string): Promise<any> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.READ);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.READ);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to view allocations');
     }
@@ -260,14 +267,14 @@ export class AllocationService extends BaseRepository {
       updatedAt: resourceAllocations.updatedAt,
       deletedAt: resourceAllocations.deletedAt,
       projectName: projects.name,
-      userName: users.name
+      userName: users.displayName
     })
     .from(resourceAllocations)
     .leftJoin(projects, eq(resourceAllocations.projectId, projects.id))
     .leftJoin(users, eq(resourceAllocations.userId, users.id))
     .where(and(
       eq(resourceAllocations.id, id),
-      eq(resourceAllocations.organizationId, this.options.organizationId),
+      eq(resourceAllocations.organizationId, this.organizationId),
       isNull(resourceAllocations.deletedAt)
     ))
     .limit(1);
@@ -281,7 +288,7 @@ export class AllocationService extends BaseRepository {
 
   async getProjectCapacity(projectId: string, weeks = 8): Promise<WeeklyCapacitySummary> {
     // Check permissions
-    const hasPermission = await this.permissionService.hasPermission(ALLOCATION_PERMISSIONS.VIEW_CAPACITY);
+    const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.VIEW_CAPACITY);
     if (!hasPermission.hasPermission) {
       throw new Error('User does not have permission to view capacity');
     }
@@ -290,7 +297,7 @@ export class AllocationService extends BaseRepository {
     const project = await this.db.select().from(projects)
       .where(and(
         eq(projects.id, projectId),
-        eq(projects.organizationId, this.options.organizationId)
+        eq(projects.organizationId, this.organizationId)
       ))
       .limit(1);
 
@@ -306,7 +313,7 @@ export class AllocationService extends BaseRepository {
     // Get allocations for the project
     const allocations = await this.db.select({
       userId: resourceAllocations.userId,
-      userName: users.name,
+      userName: users.displayName,
       role: resourceAllocations.role,
       allocationPercent: resourceAllocations.allocationPercent,
       startDate: resourceAllocations.startDate,
@@ -317,16 +324,16 @@ export class AllocationService extends BaseRepository {
     .leftJoin(users, eq(resourceAllocations.userId, users.id))
     .where(and(
       eq(resourceAllocations.projectId, projectId),
-      eq(resourceAllocations.organizationId, this.options.organizationId),
+      eq(resourceAllocations.organizationId, this.organizationId),
       isNull(resourceAllocations.deletedAt),
       or(
         and(
-          gte(resourceAllocations.startDate, startDate.toISOString().split('T')[0]),
-          lte(resourceAllocations.startDate, endDate.toISOString().split('T')[0])
+          sql`${resourceAllocations.startDate} >= ${startDate.toISOString().split('T')[0]}`,
+          sql`${resourceAllocations.startDate} <= ${endDate.toISOString().split('T')[0]}`
         ),
         and(
-          gte(resourceAllocations.endDate, startDate.toISOString().split('T')[0]),
-          lte(resourceAllocations.endDate, endDate.toISOString().split('T')[0])
+          sql`${resourceAllocations.endDate} >= ${startDate.toISOString().split('T')[0]}`,
+          sql`${resourceAllocations.endDate} <= ${endDate.toISOString().split('T')[0]}`
         )
       )
     ));
@@ -336,15 +343,15 @@ export class AllocationService extends BaseRepository {
 
     return {
       projectId,
-      projectName: project[0].name,
-      weekStart: startDate.toISOString().split('T')[0],
-      weekEnd: endDate.toISOString().split('T')[0],
+      projectName: project[0]?.name || '',
+      weekStart: startDate.toISOString().split('T')[0] || '',
+      weekEnd: endDate.toISOString().split('T')[0] || '',
       allocations: weeklyCapacity,
-      totalPlannedHours: weeklyCapacity.reduce((sum, cap) => sum + cap.plannedHours, 0),
-      totalActualHours: weeklyCapacity.reduce((sum, cap) => sum + cap.actualHours, 0),
-      totalPlannedPercent: weeklyCapacity.reduce((sum, cap) => sum + cap.plannedPercent, 0),
-      totalActualPercent: weeklyCapacity.reduce((sum, cap) => sum + cap.actualPercent, 0),
-      totalVariance: weeklyCapacity.reduce((sum, cap) => sum + cap.variance, 0)
+      totalPlannedHours: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.plannedHours, 0),
+      totalActualHours: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.actualHours, 0),
+      totalPlannedPercent: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.plannedPercent, 0),
+      totalActualPercent: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.actualPercent, 0),
+      totalVariance: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.variance, 0)
     };
   }
 
@@ -371,20 +378,20 @@ export class AllocationService extends BaseRepository {
     .leftJoin(projects, eq(resourceAllocations.projectId, projects.id))
     .where(and(
       eq(resourceAllocations.userId, userId),
-      eq(resourceAllocations.organizationId, this.options.organizationId),
+      eq(resourceAllocations.organizationId, this.organizationId),
       isNull(resourceAllocations.deletedAt),
       or(
         and(
-          gte(resourceAllocations.startDate, startDate),
-          lte(resourceAllocations.startDate, endDate)
+          sql`${resourceAllocations.startDate} >= ${startDate}`,
+          sql`${resourceAllocations.startDate} <= ${endDate}`
         ),
         and(
-          gte(resourceAllocations.endDate, startDate),
-          lte(resourceAllocations.endDate, endDate)
+          sql`${resourceAllocations.endDate} >= ${startDate}`,
+          sql`${resourceAllocations.endDate} <= ${endDate}`
         ),
         and(
-          lte(resourceAllocations.startDate, startDate),
-          gte(resourceAllocations.endDate, endDate)
+          sql`${resourceAllocations.startDate} <= ${startDate}`,
+          sql`${resourceAllocations.endDate} >= ${endDate}`
         )
       ),
       ...(excludeId ? [sql`${resourceAllocations.id} != ${excludeId}`] : [])
@@ -394,13 +401,13 @@ export class AllocationService extends BaseRepository {
 
     if (overlapping.length > 0) {
       // Calculate total allocation for overlapping period
-      const totalAllocation = overlapping.reduce((sum, alloc) => sum + Number(alloc.allocationPercent), 0) + allocationPercent;
+      const totalAllocation = overlapping.reduce((sum: number, alloc: any) => sum + Number(alloc.allocationPercent), 0) + allocationPercent;
 
       if (totalAllocation > 100) {
         conflicts.push({
           userId,
           userName: '', // Would need to join with users table
-          conflictingAllocations: overlapping.map(alloc => ({
+          conflictingAllocations: overlapping.map((alloc: any) => ({
             id: alloc.id,
             projectId: alloc.projectId,
             projectName: alloc.projectName || '',

@@ -3,12 +3,12 @@
  * Manages background job processing with queue, status, and retry logic
  */
 
-import { eq, and, desc, sql, gte, lte } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { generateId } from '@pivotal-flow/shared';
 import { getDatabase } from '../../lib/db.js';
 import { jobs } from '../../lib/schema.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { JOB_STATUS, JOB_PRIORITY, DEFAULT_RETRY_CONFIG } from './constants.js';
 import type { 
   CreateJobRequest,
@@ -70,7 +70,7 @@ export class JobsService {
       throw new Error('Invalid job payload');
     }
 
-    const jobId = randomUUID();
+    const jobId = generateId();
 
     // Create job record
     await this.db.insert(jobs).values({
@@ -96,12 +96,12 @@ export class JobsService {
 
     // Log audit event
     await this.auditLogger.logEvent({
+      action: 'job_created',
+      entityType: 'job',
+      entityId: jobId,
       organizationId: this.organizationId,
       userId: this.userId,
-      action: 'job_created',
-      resource: 'jobs',
-      resourceId: jobId,
-      details: {
+      newValues: {
         jobType: request.jobType,
         priority: request.priority,
         payload: request.payload,
@@ -220,11 +220,11 @@ export class JobsService {
 
     // Log audit event
     await this.auditLogger.logEvent({
+      action: 'job_cancelled',
+      entityType: 'job',
+      entityId: jobId,
       organizationId: this.organizationId,
       userId: this.userId,
-      action: 'job_cancelled',
-      resource: 'jobs',
-      resourceId: jobId,
     });
   }
 
@@ -275,12 +275,12 @@ export class JobsService {
 
     // Log audit event
     await this.auditLogger.logEvent({
+      action: 'job_retried',
+      entityType: 'job',
+      entityId: jobId,
       organizationId: this.organizationId,
       userId: this.userId,
-      action: 'job_retried',
-      resource: 'jobs',
-      resourceId: jobId,
-      details: {
+      newValues: {
         retryCount: jobRecord.retryCount + 1,
       },
     });

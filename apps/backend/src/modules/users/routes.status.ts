@@ -9,7 +9,7 @@ import {
 import { getUserById, updateUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
-import * as crypto from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
 
 export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/status', {
@@ -206,7 +206,7 @@ export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
           await (fastify as any).db
             .insert(auditLogs)
             .values({
-              id: crypto.randomUUID(),
+              id: generateId(),
               organizationId: userContext.organizationId,
               actorId: userContext.userId,
               action: 'users.status_changed',

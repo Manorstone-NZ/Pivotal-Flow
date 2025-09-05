@@ -1,6 +1,7 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, and, isNull, desc, or, like, sql, type SQL } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
+import { generateId } from '@pivotal-flow/shared';
 import { 
   rateCards,
   rateCardItems
@@ -512,7 +513,7 @@ export class RateCardService extends BaseRepository {
 
     return withTx(this.db, async (tx) => {
       const rateCardData = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         organizationId: this.options.organizationId,
         name: data.name,
         description: data.description,
@@ -598,7 +599,7 @@ export class RateCardService extends BaseRepository {
 
     return withTx(this.db, async (tx) => {
       const rateCardItemData = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         rateCardId: data.rateCardId,
         serviceCategoryId: data.serviceCategoryId,
         roleId: data.roleId,

@@ -49,8 +49,8 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
         },
       },
     },
-  }, async (request, reply) => {
-    const { organizationId, userId } = request.user as any;
+  }, async (request, _reply) => {
+    const { organizationId } = request.user as any;
     
     // Check if organization has Xero integration enabled
     const organization = await fastify.db.query.organizations.findFirst({
@@ -118,7 +118,7 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
     preHandler: fastify.authenticate,
   }, async (request, reply) => {
     const { organizationId, userId } = request.user as any;
-    const { invoiceId, operation } = request.body;
+    const { invoiceId } = request.body;
 
     // Check if Xero integration is enabled for organization
     const organization = await fastify.db.query.organizations.findFirst({

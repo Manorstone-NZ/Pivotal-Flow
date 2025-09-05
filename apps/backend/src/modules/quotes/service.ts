@@ -21,6 +21,7 @@ import type { PaginationOptions } from '../../lib/repo.base.js';
 import { RateCardService } from '../rate-cards/service.js';
 import { PermissionService } from '../permissions/service.js';
 import { guardTypedFilters } from '@pivotal-flow/shared';
+import { generateId, createTimer } from '@pivotal-flow/shared';
 import { QuoteVersioningService } from '../../lib/quote-versioning.js';
 import { QuoteLockingService } from '../../lib/quote-locking.js';
 // import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics';
@@ -61,7 +62,7 @@ export class QuoteService extends BaseRepository {
    * Create a new quote with line items
    */
   async createQuote(data: z.infer<typeof CreateQuoteSchema>): Promise<any> {
-    // const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'create');
+    const timer = createTimer('QuoteService.createQuote');
     
     try {
       // Validate quote data
@@ -159,7 +160,7 @@ export class QuoteService extends BaseRepository {
 
       // Create quote record
       const quoteData = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         organizationId: this.options.organizationId,
         quoteNumber,
         customerId: data.customerId,
@@ -195,7 +196,7 @@ export class QuoteService extends BaseRepository {
           throw new Error(`No pricing resolved for line item ${index + 1}`);
         }
         return {
-          id: crypto.randomUUID(),
+          id: generateId(),
           quoteId: quoteData.id,
           lineNumber: item.lineNumber,
           type: item.type,
@@ -255,7 +256,7 @@ export class QuoteService extends BaseRepository {
  * Update quote header and/or line items with recalculation
  */
   async updateQuote(quoteId: string, data: z.infer<typeof UpdateQuoteSchema>): Promise<any> {
-    // const timer = quoteMetrics.startQuoteTimer(this.options.organizationId, 'update');
+    const timer = createTimer('QuoteService.updateQuote');
     
     try {
       // Get existing quote
@@ -371,7 +372,7 @@ export class QuoteService extends BaseRepository {
 
       // Create new line items
       const lineItemData = data.lineItems.map(item => ({
-          id: crypto.randomUUID(),
+          id: generateId(),
           quoteId,
           lineNumber: item.lineNumber,
           type: item.type,
@@ -607,8 +608,7 @@ export class QuoteService extends BaseRepository {
     pagination: PaginationOptions,
     filters: any = {}
   ): Promise<{ quotes: any[]; pagination: any }> {
-    const filtersCount = Object.keys(filters).filter(key => filters[key] !== undefined).length;
-    // const timer = quoteMetrics.startQuoteListTimer(this.options.organizationId, pagination.pageSize, filtersCount);
+    const timer = createTimer('QuoteService.listQuotes');
     
     try {
       // Guard against JSONB filter misuse
@@ -712,11 +712,6 @@ export class QuoteService extends BaseRepository {
         hasPrev: page > 1
       }
     };
-    
-    // Record success metrics
-    const filtersApplied = Object.keys(filters).filter(key => filters[key] !== undefined).join(',');
-            // quoteMetrics.recordQuoteListed(this.options.organizationId, filtersApplied || 'none');
-    timer();
     
   } catch (error) {
             // quoteMetrics.recordQuoteError(this.options.organizationId, 'list', 'unknown');

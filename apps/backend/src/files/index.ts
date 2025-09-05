@@ -3,7 +3,7 @@
  * File generation and storage with local adapter and signed URLs
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { registerFileRoutes } from './routes.js';
 
 /**
@@ -12,7 +12,7 @@ import { registerFileRoutes } from './routes.js';
 const filesModule: FastifyPluginAsync = async (fastify) => {
   await registerFileRoutes(fastify);
   
-  fastify.log.info('Files module registered');
+  console.log('Files module registered');
 };
 
 export { filesModule };

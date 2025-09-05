@@ -4,8 +4,8 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { removeRoleFromUser } from './service.drizzle.js';
 import { canModifyUser, extractUserContext } from './rbac.js';
 import { logger } from '../../lib/logger.js';
+import { generateId } from '@pivotal-flow/shared';
 import { auditLogs } from '../../lib/schema.js';
-import * as crypto from 'crypto';
 
 export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/v1/users/:id/roles/:roleId', {
@@ -119,7 +119,7 @@ export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
         await (fastify as any).db
           .insert(auditLogs)
           .values({
-            id: crypto.randomUUID(),
+            id: generateId(),
             organizationId: userContext.organizationId,
             actorId: userContext.userId,
             action: 'users.role_removed',

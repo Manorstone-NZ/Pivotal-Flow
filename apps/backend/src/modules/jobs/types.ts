@@ -3,8 +3,8 @@
  * TypeScript interfaces for job-related data structures
  */
 
-import type { Job, NewJob } from '../../lib/schema.js';
-import type { JobStatus, JobType, JobPriority } from './constants.js';
+import type { Job } from '../../lib/schema.js';
+import type { JobType, JobPriority } from './constants.js';
 
 // Job request for creating new jobs
 export interface CreateJobRequest {

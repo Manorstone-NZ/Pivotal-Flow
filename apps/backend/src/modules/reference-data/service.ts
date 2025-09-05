@@ -22,15 +22,13 @@ import {
   REFERENCE_ERRORS 
 } from './constants.js';
 import type { 
-  ReferenceDataItem,
   CurrencyReference,
   TaxClassReference,
   RoleReference,
   PermissionSummaryReference,
   ServiceCategoryReference,
   RateCardReference,
-  ReferenceDataResponse,
-  ReferenceEndpointConfig
+  ReferenceDataResponse
 } from './types.js';
 
 /**

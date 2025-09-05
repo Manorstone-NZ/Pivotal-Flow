@@ -82,7 +82,6 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply.status(200).send(payment);
     } catch (error) {
-      const duration = Date.now() - startTime;
       metrics.recordPaymentError();
 
       if (error instanceof z.ZodError) {
@@ -229,7 +228,6 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply.status(200).send(payment);
     } catch (error) {
-      const duration = Date.now() - startTime;
       metrics.recordPaymentError();
 
       if (error instanceof z.ZodError) {

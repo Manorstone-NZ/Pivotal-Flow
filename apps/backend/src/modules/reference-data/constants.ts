@@ -3,7 +3,7 @@
  * Configuration and cache settings for reference data endpoints
  */
 
-import type { CacheConfig, ReferenceEndpointConfig } from './types.js';
+import type { ReferenceEndpointConfig } from './types.js';
 
 // Cache TTL values (in seconds)
 export const CACHE_TTL = {

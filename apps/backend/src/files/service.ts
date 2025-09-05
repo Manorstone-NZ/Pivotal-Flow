@@ -9,7 +9,6 @@ import { AuditLogger } from '../modules/audit/logger.js';
 import type { 
   StorageAdapter, 
   GenerateFileOptions, 
-  SignedUrlOptions,
   FileInfo,
   FileType 
 } from './types.js';

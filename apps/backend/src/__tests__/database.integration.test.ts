@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { testDb, testRedis, testUtils } from './setup.js';
-import { users, userRoles, roles, quotes, quoteLineItems } from '../lib/schema.js';
+import { users, userRoles, roles, quotes } from '../lib/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 describe('Database Integration Tests', () => {
@@ -42,7 +42,7 @@ describe('Database Integration Tests', () => {
       };
       
       // Create user using test utilities
-      const user = await testUtils.createTestUser(userData);
+      await testUtils.createTestUser(userData);
       
       // Verify user exists using Drizzle query
       const result = await testDb.select().from(users).where(eq(users.email, userData.email));

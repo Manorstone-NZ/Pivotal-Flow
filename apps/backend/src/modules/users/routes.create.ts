@@ -3,12 +3,12 @@
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { ZodError, type infer as ZodInfer } from "zod";
 import { and, eq, isNull } from "drizzle-orm";
+import { generateId } from '@pivotal-flow/shared';
 import { users, auditLogs } from "../../lib/schema.js";
 import { userCreateSchema } from "./schemas.js";
 import { createUser } from "./service.drizzle.js";
 import { canManageUsers, extractUserContext } from "./rbac.js";
 import { logger } from "../../lib/logger.js";
-import * as crypto from "crypto";
 
 type CreateBody = ZodInfer<typeof userCreateSchema>;
 
@@ -141,7 +141,7 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
       await (fastify as any).db
         .insert(auditLogs)
         .values({
-          id: crypto.randomUUID(),
+          id: generateId(),
           organizationId: userContext.organizationId,
           actorId: userContext.userId,
           action: 'users.create',

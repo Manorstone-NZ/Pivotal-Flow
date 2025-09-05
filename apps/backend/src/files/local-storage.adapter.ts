@@ -3,25 +3,23 @@
  * File storage implementation using local file system
  */
 
-import { randomUUID } from 'crypto';
-import { createHash, createHmac } from 'crypto';
+import { generateId } from '@pivotal-flow/shared';
+import { createHmac } from 'crypto';
 import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { 
+import * as path from 'path';
+import type { 
   StorageAdapter, 
   GenerateFileOptions, 
   SignedUrlOptions, 
   FileInfo,
-  FileType,
   MimeType 
 } from './types.js';
 import { 
   ALLOWED_MIME_TYPES, 
   FILE_SIZE_LIMITS, 
-  DEFAULT_EXPIRATION_TIMES,
   STORAGE_CONFIG,
-  FILE_ERRORS 
+  FILE_ERRORS,
+  FILE_RETENTION_PERIODS
 } from './constants.js';
 
 /**
@@ -60,7 +58,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     }
 
     // Generate file ID and path
-    const fileId = randomUUID();
+    const fileId = generateId();
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -226,7 +224,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
 
       // Verify signature
-      const expectedSignature = this.generateSignature(fileId, expiresTimestamp);
+      const expectedSignature = this.generateSignature(fileId, parseInt(expiresTimestamp));
       return signature === expectedSignature;
 
     } catch {

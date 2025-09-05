@@ -58,6 +58,35 @@ export REDIS_URL="redis://localhost:6379"
 cd apps/backend && pnpm test
 ```
 
+### Code Quality & Linting
+```bash
+# Navigate to backend
+cd apps/backend
+
+# Run TypeScript type checking
+pnpm type-check
+
+# Run ESLint (check for issues)
+pnpm lint
+
+# Run ESLint with auto-fix
+pnpm lint:fix
+
+# Check for unused variables and imports specifically
+npx tsc --noEmit --skipLibCheck 2>&1 | grep -E "(TS6133|TS6196|TS6138)"
+
+# Run full lint check across workspace
+cd ../.. && pnpm lint
+
+# Check specific files for linting issues
+pnpm lint src/modules/reports/service.ts
+pnpm lint src/modules/allocations/service.ts
+pnpm lint src/modules/approvals/service.ts
+
+# Fix linting issues automatically where possible
+pnpm lint:fix src/modules/reports/service.ts
+```
+
 ### SDK Development
 
 ```bash

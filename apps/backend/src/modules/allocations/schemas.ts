@@ -1,8 +1,31 @@
 import { z } from 'zod';
+import { PagingResponseSchema, createPagingResponse } from '@pivotal-flow/shared';
 import { ALLOCATION_ROLES } from './constants.js';
 
 export const CreateAllocationRequestSchema = z.object({
   projectId: z.string().min(1, 'Project ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  role: z.enum(Object.values(ALLOCATION_ROLES) as [string, ...string[]], {
+    errorMap: () => ({ message: 'Invalid role' })
+  }),
+  allocationPercent: z.number()
+    .min(0.01, 'Allocation percent must be at least 0.01')
+    .max(100, 'Allocation percent cannot exceed 100'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
+  isBillable: z.boolean().optional().default(true),
+  notes: z.record(z.any()).optional().default({})
+}).refine((data) => {
+  const startDate = new Date(data.startDate);
+  const endDate = new Date(data.endDate);
+  return endDate >= startDate;
+}, {
+  message: 'End date must be after or equal to start date',
+  path: ['endDate']
+});
+
+// Schema for creating allocation without projectId (from URL params)
+export const CreateAllocationBodySchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   role: z.enum(Object.values(ALLOCATION_ROLES) as [string, ...string[]], {
     errorMap: () => ({ message: 'Invalid role' })
@@ -55,7 +78,9 @@ export const AllocationFiltersSchema = z.object({
   }).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format').optional(),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format').optional(),
-  isBillable: z.boolean().optional()
+  isBillable: z.boolean().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20)
 });
 
 export const ResourceAllocationResponseSchema = z.object({
@@ -74,12 +99,20 @@ export const ResourceAllocationResponseSchema = z.object({
   deletedAt: z.string().nullable()
 });
 
-export const ListAllocationsResponseSchema = z.object({
-  allocations: z.array(ResourceAllocationResponseSchema),
-  total: z.number(),
-  page: z.number(),
-  limit: z.number()
+// List allocations response schema using shared paging
+export const ListAllocationsResponseSchema = PagingResponseSchema.extend({
+  items: z.array(ResourceAllocationResponseSchema)
 });
+
+// Helper function to create paging response
+export const createAllocationsPagingResponse = (
+  allocations: z.infer<typeof ResourceAllocationResponseSchema>[],
+  page: number,
+  pageSize: number,
+  total: number
+) => {
+  return createPagingResponse(allocations, page, pageSize, total);
+};
 
 export const CapacitySummarySchema = z.object({
   userId: z.string(),

@@ -1,6 +1,6 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq, and, desc, asc } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { eq, and, desc } from 'drizzle-orm';
+import { generateId } from '@pivotal-flow/shared';
 import { approvalRequests, orgSettings } from '../../lib/schema.js';
 import { BaseRepository } from '../../lib/repo.base.js';
 import { PermissionService } from '../permissions/service.js';
@@ -15,7 +15,7 @@ import type {
   ApprovalFilters,
   ApprovalPolicy 
 } from './types.js';
-import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES, APPROVAL_POLICY_KEYS } from './constants.js';
+import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES, APPROVAL_POLICY_KEYS, type ApprovalEntityType } from './constants.js';
 
 /**
  * Approval Service
@@ -78,15 +78,15 @@ export class ApprovalService extends BaseRepository {
     }
 
     const approvalRequest = {
-      id: randomUUID(),
+      id: generateId(),
       organizationId: this.options.organizationId,
       entityType: data.entityType,
       entityId: data.entityId,
-      requestedBy: this.options.userId,
+      requestedBy: this.options.userId!,
       approverId: data.approverId,
       status: APPROVAL_STATUS.PENDING,
       requestedAt: new Date(),
-      reason: data.reason,
+      reason: data.reason || '',
       notes: data.notes || {},
       createdAt: new Date(),
       updatedAt: new Date()
@@ -101,7 +101,7 @@ export class ApprovalService extends BaseRepository {
       entityId: approvalRequest.id,
       organizationId: this.options.organizationId,
       userId: this.options.userId,
-      newValues: approvalRequest,
+      newValues: approvalRequest as unknown as Record<string, unknown>,
       metadata: {
         entityType: data.entityType,
         entityId: data.entityId,
@@ -109,7 +109,7 @@ export class ApprovalService extends BaseRepository {
       }
     });
 
-    return approvalRequest;
+    return approvalRequest as ApprovalRequest;
   }
 
   /**
@@ -152,13 +152,14 @@ export class ApprovalService extends BaseRepository {
     }
 
     const oldValues = { ...request };
-    const newValues = {
+    const newValues: ApprovalRequest = {
       ...request,
       status: APPROVAL_STATUS.APPROVED,
       decidedAt: new Date(),
-      reason: data.reason,
-      notes: { ...request.notes, ...data.notes },
-      updatedAt: new Date()
+      reason: data.reason || request.reason || '',
+      notes: { ...(request.notes as Record<string, unknown>), ...(data.notes || {}) },
+      updatedAt: new Date(),
+      entityType: request.entityType as ApprovalEntityType
     };
 
     await this.db
@@ -174,7 +175,7 @@ export class ApprovalService extends BaseRepository {
       organizationId: this.options.organizationId,
       userId: this.options.userId,
       oldValues,
-      newValues,
+      newValues: newValues as unknown as Record<string, unknown>,
       metadata: {
         entityType: request.entityType,
         entityId: request.entityId,
@@ -183,7 +184,7 @@ export class ApprovalService extends BaseRepository {
     });
 
     // Update the entity status based on type
-    await this.updateEntityStatus(request.entityType, request.entityId, 'approved');
+    await this.updateEntityStatus(request.entityType as ApprovalEntityType, request.entityId, 'approved');
 
     return newValues;
   }
@@ -228,13 +229,14 @@ export class ApprovalService extends BaseRepository {
     }
 
     const oldValues = { ...request };
-    const newValues = {
+    const newValues: ApprovalRequest = {
       ...request,
       status: APPROVAL_STATUS.REJECTED,
       decidedAt: new Date(),
       reason: data.reason,
-      notes: { ...request.notes, ...data.notes },
-      updatedAt: new Date()
+      notes: { ...(request.notes as Record<string, unknown>), ...(data.notes || {}) },
+      updatedAt: new Date(),
+      entityType: request.entityType as ApprovalEntityType
     };
 
     await this.db
@@ -250,7 +252,7 @@ export class ApprovalService extends BaseRepository {
       organizationId: this.options.organizationId,
       userId: this.options.userId,
       oldValues,
-      newValues,
+      newValues: newValues as unknown as Record<string, unknown>,
       metadata: {
         entityType: request.entityType,
         entityId: request.entityId,
@@ -259,7 +261,7 @@ export class ApprovalService extends BaseRepository {
     });
 
     // Update the entity status based on type
-    await this.updateEntityStatus(request.entityType, request.entityId, 'rejected');
+    await this.updateEntityStatus(request.entityType as ApprovalEntityType, request.entityId, 'rejected');
 
     return newValues;
   }
@@ -294,13 +296,14 @@ export class ApprovalService extends BaseRepository {
     }
 
     const oldValues = { ...request };
-    const newValues = {
+    const newValues: ApprovalRequest = {
       ...request,
       status: APPROVAL_STATUS.CANCELLED,
       decidedAt: new Date(),
-      reason: data.reason,
-      notes: { ...request.notes, ...data.notes },
-      updatedAt: new Date()
+      reason: data.reason || request.reason || '',
+      notes: { ...(request.notes as Record<string, unknown>), ...(data.notes || {}) },
+      updatedAt: new Date(),
+      entityType: request.entityType as ApprovalEntityType
     };
 
     await this.db
@@ -316,7 +319,7 @@ export class ApprovalService extends BaseRepository {
       organizationId: this.options.organizationId,
       userId: this.options.userId,
       oldValues,
-      newValues,
+      newValues: newValues as unknown as Record<string, unknown>,
       metadata: {
         entityType: request.entityType,
         entityId: request.entityId,
@@ -365,7 +368,7 @@ export class ApprovalService extends BaseRepository {
       .where(and(...conditions))
       .orderBy(desc(approvalRequests.createdAt));
 
-    return requests;
+    return requests as ApprovalRequest[];
   }
 
   /**
@@ -392,7 +395,7 @@ export class ApprovalService extends BaseRepository {
         )
       );
 
-    return request || null;
+    return (request as ApprovalRequest) || null;
   }
 
   /**
@@ -448,7 +451,7 @@ export class ApprovalService extends BaseRepository {
   /**
    * Update entity status after approval decision
    */
-  private async updateEntityStatus(entityType: string, entityId: string, decision: string): Promise<void> {
+  private async updateEntityStatus(entityType: ApprovalEntityType, entityId: string, decision: string): Promise<void> {
     // This is a placeholder for entity status updates
     // In a real implementation, this would update the actual entity tables
     // For now, we just log the action
@@ -457,7 +460,7 @@ export class ApprovalService extends BaseRepository {
       entityType,
       entityId,
       organizationId: this.options.organizationId,
-      userId: this.options.userId,
+      userId: this.options.userId || null,
       metadata: {
         decision,
         approvalRequired: true
