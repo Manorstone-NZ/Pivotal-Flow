@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { Decimal } from 'decimal.js';
+import { describe, it, expect } from 'vitest';
+
 import { calculateQuoteDebug } from '../index.js';
 
 describe('Complex Quote Examples - Snapshot Tests', () => {
@@ -38,19 +39,19 @@ describe('Complex Quote Examples - Snapshot Tests', () => {
       const debug = calculateQuoteDebug(input);
       
       // Verify line 1 calculations
-      expect(debug.lineCalculations[0].steps.calculations.subtotal.amount.toFixed(2)).toBe('6000.00');
-      expect(debug.lineCalculations[0].steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('700.00');
-      expect(debug.lineCalculations[0].steps.calculations.fixedDiscount?.amount.toFixed(2)).toBe('100.00');
-      expect(debug.lineCalculations[0].steps.calculations.taxableAmount.amount.toFixed(2)).toBe('5300.00');
-      expect(debug.lineCalculations[0].steps.calculations.taxAmount.amount.toFixed(2)).toBe('795.00');
-      expect(debug.lineCalculations[0].steps.calculations.totalAmount.amount.toFixed(2)).toBe('6095.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('6000.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('700.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.fixedDiscount?.amount.toFixed(2)).toBe('100.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.taxableAmount.amount.toFixed(2)).toBe('5300.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('795.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.totalAmount.amount.toFixed(2)).toBe('6095.00');
       
       // Verify line 2 calculations
-      expect(debug.lineCalculations[1].steps.calculations.subtotal.amount.toFixed(2)).toBe('2400.00');
-      expect(debug.lineCalculations[1].steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('120.00');
-      expect(debug.lineCalculations[1].steps.calculations.taxableAmount.amount.toFixed(2)).toBe('2280.00');
-      expect(debug.lineCalculations[1].steps.calculations.taxAmount.amount.toFixed(2)).toBe('342.00');
-      expect(debug.lineCalculations[1].steps.calculations.totalAmount.amount.toFixed(2)).toBe('2622.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('2400.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('120.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.taxableAmount.amount.toFixed(2)).toBe('2280.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('342.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.totalAmount.amount.toFixed(2)).toBe('2622.00');
       
       // Verify quote-level calculations
       expect(debug.quoteCalculations.calculations.subtotal.amount.toFixed(2)).toBe('8400.00');
@@ -58,8 +59,8 @@ describe('Complex Quote Examples - Snapshot Tests', () => {
       
       // Verify tax breakdown
       expect(debug.taxBreakdown).toHaveLength(1);
-      expect(debug.taxBreakdown[0].rate).toBe(15);
-      expect(debug.taxBreakdown[0].taxAmount.amount.toFixed(2)).toBe('1137.00');
+      expect(debug.taxBreakdown[0]?.rate).toBe(15);
+      expect(debug.taxBreakdown[0]?.taxAmount.amount.toFixed(2)).toBe('1137.00');
     });
   });
 
@@ -109,10 +110,10 @@ describe('Complex Quote Examples - Snapshot Tests', () => {
       const debug = calculateQuoteDebug(input);
       
       // Verify line calculations
-      expect(debug.lineCalculations[0].steps.calculations.taxAmount.amount.toFixed(2)).toBe('810.00'); // 15%
-      expect(debug.lineCalculations[1].steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00'); // 0%
-      expect(debug.lineCalculations[2].steps.calculations.taxAmount.amount.toFixed(2)).toBe('380.00'); // 10%
-      expect(debug.lineCalculations[3].steps.calculations.taxAmount.amount.toFixed(2)).toBe('75.00'); // 15%
+      expect(debug.lineCalculations[0]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('810.00'); // 15%
+      expect(debug.lineCalculations[1]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00'); // 0%
+      expect(debug.lineCalculations[2]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('380.00'); // 10%
+      expect(debug.lineCalculations[3]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('75.00'); // 15%
       
       // Verify tax breakdown
       expect(debug.taxBreakdown).toHaveLength(3);
@@ -170,17 +171,17 @@ describe('Complex Quote Examples - Snapshot Tests', () => {
       const debug = calculateQuoteDebug(input);
       
       // Verify very small amount handling
-      expect(debug.lineCalculations[0].steps.calculations.subtotal.amount.toFixed(2)).toBe('0.01');
-      expect(debug.lineCalculations[0].steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00'); // Rounded down
+      expect(debug.lineCalculations[0]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('0.01');
+      expect(debug.lineCalculations[0]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00'); // Rounded down
       
       // Verify large amount with small discount
-      expect(debug.lineCalculations[1].steps.calculations.subtotal.amount.toFixed(2)).toBe('1000000.00');
-      expect(debug.lineCalculations[1].steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('10000.00');
-      expect(debug.lineCalculations[1].steps.calculations.taxAmount.amount.toFixed(2)).toBe('148500.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('1000000.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('10000.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('148500.00');
       
       // Verify tax exempt handling
-      expect(debug.lineCalculations[2].steps.calculations.subtotal.amount.toFixed(2)).toBe('1000.00');
-      expect(debug.lineCalculations[2].steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00');
+      expect(debug.lineCalculations[2]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('1000.00');
+      expect(debug.lineCalculations[2]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00');
       
       // Verify tax breakdown includes exempt items
       const exemptTax = debug.taxBreakdown.find(t => t.rate === 0);
@@ -227,16 +228,16 @@ describe('Complex Quote Examples - Snapshot Tests', () => {
       const debug = calculateQuoteDebug(input);
       
       // Verify GST service (115.00 / 1.15 = 100.00)
-      expect(debug.lineCalculations[0].steps.calculations.subtotal.amount.toFixed(2)).toBe('1000.00');
-      expect(debug.lineCalculations[0].steps.calculations.taxAmount.amount.toFixed(2)).toBe('150.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('1000.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('150.00');
       
       // Verify reduced rate service (110.00 / 1.10 = 100.00)
-      expect(debug.lineCalculations[1].steps.calculations.subtotal.amount.toFixed(2)).toBe('500.00');
-      expect(debug.lineCalculations[1].steps.calculations.taxAmount.amount.toFixed(2)).toBe('50.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('500.00');
+      expect(debug.lineCalculations[1]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('50.00');
       
       // Verify tax exempt service (100.00 / 1.00 = 100.00)
-      expect(debug.lineCalculations[2].steps.calculations.subtotal.amount.toFixed(2)).toBe('200.00');
-      expect(debug.lineCalculations[2].steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00');
+      expect(debug.lineCalculations[2]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('200.00');
+      expect(debug.lineCalculations[2]?.steps.calculations.taxAmount.amount.toFixed(2)).toBe('0.00');
       
       // Verify tax breakdown
       expect(debug.taxBreakdown).toHaveLength(3);

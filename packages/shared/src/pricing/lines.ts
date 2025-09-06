@@ -1,9 +1,9 @@
 import { Decimal } from 'decimal.js';
-import type { MoneyAmount } from './money.js';
-import { createDecimal, roundToCurrency, roundToCurrencyDecimals, multiplyMoney } from './money.js';
+
 import type { DiscountType } from './discounts.js';
 import { calculateDiscount } from './discounts.js';
-import type { TaxRule } from './taxes.js';
+import type { MoneyAmount } from './money.js';
+import { createDecimal, roundToCurrency, roundToCurrencyDecimals, multiplyMoney } from './money.js';
 import { calculateTax, isTaxExempt } from './taxes.js';
 
 /**
@@ -171,11 +171,10 @@ export function calculateLineItems(lineItems: LineItem[], currencyDecimals: numb
     totalAmount: MoneyAmount;
   };
 } {
-  if (lineItems.length === 0) {
+  const currency = lineItems[0]?.unitPrice.currency;
+  if (!currency) {
     throw new Error('Cannot calculate empty line items array');
   }
-  
-  const currency = lineItems[0].unitPrice.currency;
   
   // Validate all items have same currency
   for (const item of lineItems) {

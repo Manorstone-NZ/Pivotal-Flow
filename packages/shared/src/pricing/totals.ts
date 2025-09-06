@@ -1,11 +1,12 @@
 import { Decimal } from 'decimal.js';
-import type { MoneyAmount } from './money.js';
-import { createDecimal, roundToCurrency, sumMoney } from './money.js';
+
 import type { DiscountType } from './discounts.js';
 import { calculateDiscount } from './discounts.js';
 import type { LineItemCalculation } from './lines.js';
+import { roundToCurrency, sumMoney } from './money.js';
+import type { MoneyAmount } from './money.js';
 import type { TaxBreakdown } from './taxes.js';
-import { calculateTaxBreakdown, calculateTotalTaxFromBreakdown } from './taxes.js';
+import { calculateTaxBreakdown } from './taxes.js';
 
 /**
  * Quote totals calculation functions
@@ -38,11 +39,10 @@ export function calculateQuoteTotals(
   lineCalculations: LineItemCalculation[],
   quoteDiscount?: QuoteDiscount
 ): QuoteTotals {
-  if (lineCalculations.length === 0) {
+  const currency = lineCalculations[0]?.totalAmount.currency;
+  if (!currency) {
     throw new Error('Cannot calculate totals for empty line calculations');
   }
-  
-  const currency = lineCalculations[0].totalAmount.currency;
   
   // Validate all calculations have same currency
   for (const calc of lineCalculations) {
@@ -108,7 +108,7 @@ export function calculateQuoteTotalsWithBreakdown(
     lineCalculations.map(calc => ({
       amount: calc.taxableAmount,
       taxRate: calc.lineItem.taxRate ?? 15,
-      isTaxExempt: calc.lineItem.isTaxExempt
+      ...(calc.lineItem.isTaxExempt !== undefined && { isTaxExempt: calc.lineItem.isTaxExempt }),
     }))
   );
   
@@ -125,11 +125,10 @@ export function calculateQuoteTotalsWithMultipleDiscounts(
   lineCalculations: LineItemCalculation[],
   quoteDiscounts: QuoteDiscount[]
 ): QuoteTotals {
-  if (lineCalculations.length === 0) {
+  const currency = lineCalculations[0]?.totalAmount.currency;
+  if (!currency) {
     throw new Error('Cannot calculate totals for empty line calculations');
   }
-  
-  const currency = lineCalculations[0].totalAmount.currency;
   
   // Validate all calculations have same currency
   for (const calc of lineCalculations) {

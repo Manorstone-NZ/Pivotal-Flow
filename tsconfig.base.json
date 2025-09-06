@@ -28,7 +28,19 @@
     "baseUrl": ".",
     "paths": {
       "@pivotal-flow/shared": ["packages/shared/dist"],
-      "@pivotal-flow/shared/*": ["packages/shared/dist/*"]
+      "@pivotal-flow/shared/*": ["packages/shared/dist/*"],
+      "bcrypt": ["packages/shared/dist/bcrypt.js"],
+      "@shared/*": ["packages/shared/*"],
+      "@integrations/xero/*": ["packages/integrations/xero/*"]
     }
-  }
+  },
+  "exclude": [
+    "apps/frontend/**",
+    "scripts/**",
+    "**/playwright.config.*",
+    "**/vitest.config.*",
+    "**/tests/e2e/**",
+    "**/node_modules/**",
+    "**/dist/**"
+  ]
 }

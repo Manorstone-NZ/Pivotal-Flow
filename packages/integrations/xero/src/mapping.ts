@@ -3,14 +3,16 @@
  * Converts between Pivotal Flow models and Xero DTOs
  */
 
+import { required } from '@pivotal-flow/shared/utils/strict.js';
+
 import type { 
   XeroContact, 
   XeroInvoice, 
   XeroInvoiceLineItem, 
   XeroPayment, 
-  XeroAccountCode,
   NZTaxMapping 
 } from './types.js';
+
 
 // Pivotal Flow model types (imported from main app)
 export interface PivotalContact {
@@ -89,55 +91,66 @@ export const NZ_TAX_MAPPING: NZTaxMapping = {
  * Map Pivotal Flow contact to Xero contact
  */
 export function mapContactToXero(contact: PivotalContact): XeroContact {
-  return {
+  const result: XeroContact = {
     contactId: contact.id,
     name: contact.companyName,
-    firstName: contact.firstName,
-    lastName: contact.lastName,
-    emailAddress: contact.email,
-    phoneNumber: contact.phone,
-    address: contact.address ? {
-      addressType: 'POBOX',
-      addressLine1: contact.address.line1,
-      addressLine2: contact.address.line2,
-      city: contact.address.city,
-      region: contact.address.region,
-      postalCode: contact.address.postalCode,
-      country: contact.address.country || 'NZ',
-    } : undefined,
-    taxNumber: contact.taxNumber,
-    accountNumber: contact.customerNumber,
     isCustomer: true,
     isSupplier: false,
     status: contact.isActive ? 'ACTIVE' : 'ARCHIVED',
     updatedDateUTC: new Date().toISOString(),
   };
+
+  if (contact.firstName) result.firstName = contact.firstName;
+  if (contact.lastName) result.lastName = contact.lastName;
+  if (contact.email) result.emailAddress = contact.email;
+  if (contact.phone) result.phoneNumber = contact.phone;
+  if (contact.taxNumber) result.taxNumber = contact.taxNumber;
+  if (contact.customerNumber) result.accountNumber = contact.customerNumber;
+
+  if (contact.address) {
+    result.address = {
+      addressType: 'POBOX',
+      country: contact.address.country || 'NZ',
+    };
+    if (contact.address.line1) result.address.addressLine1 = contact.address.line1;
+    if (contact.address.line2) result.address.addressLine2 = contact.address.line2;
+    if (contact.address.city) result.address.city = contact.address.city;
+    if (contact.address.region) result.address.region = contact.address.region;
+    if (contact.address.postalCode) result.address.postalCode = contact.address.postalCode;
+  }
+
+  return result;
 }
 
 /**
  * Map Xero contact to Pivotal Flow contact
  */
 export function mapContactFromXero(xeroContact: XeroContact): PivotalContact {
-  return {
+  const result: PivotalContact = {
     id: xeroContact.contactId,
     companyName: xeroContact.name,
-    firstName: xeroContact.firstName,
-    lastName: xeroContact.lastName,
-    email: xeroContact.emailAddress,
-    phone: xeroContact.phoneNumber,
-    address: xeroContact.address ? {
-      line1: xeroContact.address.addressLine1,
-      line2: xeroContact.address.addressLine2,
-      city: xeroContact.address.city,
-      region: xeroContact.address.region,
-      postalCode: xeroContact.address.postalCode,
-      country: xeroContact.address.country,
-    } : undefined,
-    taxNumber: xeroContact.taxNumber,
-    customerNumber: xeroContact.accountNumber,
     isActive: xeroContact.status === 'ACTIVE',
     organizationId: '', // Will be set by caller
   };
+
+  if (xeroContact.firstName) result.firstName = xeroContact.firstName;
+  if (xeroContact.lastName) result.lastName = xeroContact.lastName;
+  if (xeroContact.emailAddress) result.email = xeroContact.emailAddress;
+  if (xeroContact.phoneNumber) result.phone = xeroContact.phoneNumber;
+  if (xeroContact.taxNumber) result.taxNumber = xeroContact.taxNumber;
+  if (xeroContact.accountNumber) result.customerNumber = xeroContact.accountNumber;
+
+  if (xeroContact.address) {
+    result.address = {};
+    if (xeroContact.address.addressLine1) result.address.line1 = xeroContact.address.addressLine1;
+    if (xeroContact.address.addressLine2) result.address.line2 = xeroContact.address.addressLine2;
+    if (xeroContact.address.city) result.address.city = xeroContact.address.city;
+    if (xeroContact.address.region) result.address.region = xeroContact.address.region;
+    if (xeroContact.address.postalCode) result.address.postalCode = xeroContact.address.postalCode;
+    if (xeroContact.address.country) result.address.country = xeroContact.address.country;
+  }
+
+  return result;
 }
 
 /**
@@ -162,8 +175,8 @@ export function mapInvoiceToXero(invoice: PivotalInvoice): XeroInvoice {
       contactId: invoice.customerId,
       name: invoice.customerName,
     },
-    date: invoice.issueDate.toISOString().split('T')[0],
-    dueDate: invoice.dueDate.toISOString().split('T')[0],
+    date: required(invoice.issueDate, 'Invoice issueDate is required').toISOString().split('T')[0] as string,
+    dueDate: required(invoice.dueDate, 'Invoice dueDate is required').toISOString().split('T')[0] as string,
     status: mapInvoiceStatusToXero(invoice.status),
     lineAmountTypes: 'Exclusive', // NZ standard
     lineItems,
@@ -171,7 +184,7 @@ export function mapInvoiceToXero(invoice: PivotalInvoice): XeroInvoice {
     totalTax: invoice.taxAmount,
     total: invoice.total,
     currencyCode: invoice.currency,
-    currencyRate: invoice.fxRate,
+    ...(invoice.fxRate !== undefined && { currencyRate: invoice.fxRate }),
     hasAttachments: false,
     hasErrors: false,
   };
@@ -205,7 +218,7 @@ export function mapInvoiceFromXero(xeroInvoice: XeroInvoice): PivotalInvoice {
     taxAmount: xeroInvoice.totalTax,
     total: xeroInvoice.total,
     currency: xeroInvoice.currencyCode,
-    fxRate: xeroInvoice.currencyRate,
+    ...(xeroInvoice.currencyRate !== undefined && { fxRate: xeroInvoice.currencyRate }),
     organizationId: '', // Will be set by caller
     lineItems,
   };
@@ -226,10 +239,10 @@ export function mapPaymentToXero(payment: PivotalPayment): XeroPayment {
       code: '090',
       name: 'Bank Account',
     },
-    date: payment.paymentDate.toISOString().split('T')[0],
+    date: required(payment.paymentDate, 'Payment paymentDate is required').toISOString().split('T')[0] as string,
     amount: payment.amount,
-    currencyRate: payment.fxRate,
-    reference: payment.reference,
+    ...(payment.fxRate !== undefined && { currencyRate: payment.fxRate }),
+    ...(payment.reference && { reference: payment.reference }),
     status: 'AUTHORISED',
     paymentType: 'ACCRECPAYMENT',
     updatedDateUTC: new Date().toISOString(),
@@ -245,10 +258,10 @@ export function mapPaymentFromXero(xeroPayment: XeroPayment): PivotalPayment {
     invoiceId: xeroPayment.invoice.invoiceId,
     amount: xeroPayment.amount,
     currency: 'NZD', // Default for NZ
-    fxRate: xeroPayment.currencyRate,
+    ...(xeroPayment.currencyRate !== undefined && { fxRate: xeroPayment.currencyRate }),
     paymentDate: new Date(xeroPayment.date),
     paymentMethod: xeroPayment.account.name,
-    reference: xeroPayment.reference,
+    ...(xeroPayment.reference && { reference: xeroPayment.reference }),
     organizationId: '', // Will be set by caller
   };
 }

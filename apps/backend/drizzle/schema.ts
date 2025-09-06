@@ -1,5 +1,5 @@
-import { pgTable, varchar, timestamp, text, integer, index, numeric, jsonb, uniqueIndex, foreignKey, unique, check, boolean, inet, date, type AnyPgColumn, primaryKey } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import { pgTable, varchar, timestamp, text, integer, index, numeric, jsonb, uniqueIndex, foreignKey, unique, check, boolean, inet, date, primaryKey } from "drizzle-orm/pg-core"
 
 
 
@@ -36,7 +36,7 @@ export const quoteLineItems = pgTable("quote_line_items", {
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	sku: varchar({ length: 50 }),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_quote_line_items_sku").using("btree", table.sku.asc().nullsLast().op("text_ops")),
 ]);
 
@@ -51,7 +51,7 @@ export const policyOverrides = pgTable("policy_overrides", {
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	action: varchar({ length: 100 }).default('all').notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_policy_overrides_org_role").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.roleId.asc().nullsLast().op("text_ops")),
 	index("idx_policy_overrides_policy").using("gin", table.policy.asc().nullsLast().op("jsonb_path_ops")),
 	index("idx_policy_overrides_policy_gin").using("gin", table.policy.asc().nullsLast().op("jsonb_path_ops")),
@@ -82,7 +82,7 @@ export const orgSecurityPolicies = pgTable("org_security_policies", {
 	extras: jsonb(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	uniqueIndex("org_security_policies_org_unique").using("btree", table.orgId.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.orgId],
@@ -118,7 +118,7 @@ export const customers = pgTable("customers", {
 	phone: varchar({ length: 20 }),
 	email: varchar({ length: 255 }),
 	contactExtras: jsonb("contact_extras"),
-}, (table) => [
+}, (table): any[] => [
 	uniqueIndex("customers_customer_number_key").using("btree", table.customerNumber.asc().nullsLast().op("text_ops")),
 	index("idx_customers_address").using("btree", table.street.asc().nullsLast().op("text_ops"), table.city.asc().nullsLast().op("text_ops"), table.country.asc().nullsLast().op("text_ops")),
 	index("idx_customers_contact").using("btree", table.phone.asc().nullsLast().op("text_ops"), table.email.asc().nullsLast().op("text_ops")),
@@ -161,7 +161,7 @@ export const organizations = pgTable("organizations", {
 	email: varchar({ length: 255 }),
 	website: text(),
 	contactExtras: jsonb("contact_extras"),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_organizations_address").using("btree", table.street.asc().nullsLast().op("text_ops"), table.city.asc().nullsLast().op("text_ops"), table.country.asc().nullsLast().op("text_ops")),
 	index("idx_organizations_contact").using("btree", table.phone.asc().nullsLast().op("text_ops"), table.email.asc().nullsLast().op("text_ops")),
 	index("idx_organizations_domain").using("btree", table.domain.asc().nullsLast().op("text_ops")),
@@ -183,7 +183,7 @@ export const serviceCategories = pgTable("service_categories", {
 	code: varchar({ length: 50 }),
 	ordering: integer().default(0).notNull(),
 	isVisible: boolean("is_visible").default(true).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_service_categories_code").using("btree", table.code.asc().nullsLast().op("text_ops")),
 	index("idx_service_categories_ordering").using("btree", table.ordering.asc().nullsLast().op("int4_ops")),
 ]);
@@ -198,7 +198,7 @@ export const organizationSettings = pgTable("organization_settings", {
 	isSystem: boolean().default(false).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	uniqueIndex("organization_settings_organizationId_category_key_key").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.category.asc().nullsLast().op("text_ops"), table.key.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.organizationId],
@@ -217,7 +217,7 @@ export const roles = pgTable("roles", {
 	isActive: boolean("is_active").default(true).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_roles_name").using("btree", table.name.asc().nullsLast().op("text_ops")),
 	index("idx_roles_org_active").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.isActive.asc().nullsLast().op("text_ops")),
 	index("idx_roles_org_name").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.name.asc().nullsLast().op("text_ops")),
@@ -238,7 +238,7 @@ export const userRoles = pgTable("user_roles", {
 	assignedAt: timestamp("assigned_at", { precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	expiresAt: timestamp("expires_at", { precision: 3, mode: 'string' }),
 	isActive: boolean("is_active").default(true).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_user_roles_org_role_active").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.roleId.asc().nullsLast().op("text_ops"), table.isActive.asc().nullsLast().op("text_ops")),
 	index("idx_user_roles_org_user_active").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("bool_ops"), table.isActive.asc().nullsLast().op("text_ops")),
 	uniqueIndex("user_roles_user_id_role_id_organization_id_key").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.roleId.asc().nullsLast().op("text_ops"), table.organizationId.asc().nullsLast().op("text_ops")),
@@ -273,14 +273,13 @@ export const auditLogs = pgTable("audit_logs", {
 	entityId: text().notNull(),
 	oldValues: jsonb(),
 	newValues: jsonb(),
-	ipAddress: varchar({ length: 45 }),
 	userAgent: text(),
 	sessionId: varchar({ length: 255 }),
 	metadata: jsonb().default({}).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	requestId: text("request_id"),
 	ipAddress: inet("ip_address"),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_audit_logs_ip").using("btree", table.ipAddress.asc().nullsLast().op("inet_ops")),
 	index("idx_audit_logs_org_action").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.action.asc().nullsLast().op("text_ops"), table.createdAt.desc().nullsFirst().op("timestamp_ops")),
 	index("idx_audit_logs_org_created").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.createdAt.desc().nullsFirst().op("timestamp_ops")),
@@ -327,7 +326,7 @@ export const users = pgTable("users", {
 	deletedAt: timestamp("deleted_at", { precision: 3, mode: 'string' }),
 	dateFormat: varchar("date_format", { length: 20 }).default('DD MMM YYYY').notNull(),
 	timeFormat: varchar("time_format", { length: 10 }).default('24h').notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_users_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("idx_users_org_created").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.createdAt.desc().nullsFirst().op("timestamp_ops")),
 	index("idx_users_org_email").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.email.asc().nullsLast().op("text_ops")),
@@ -348,7 +347,7 @@ export const rolePermissions = pgTable("role_permissions", {
 	roleId: text("role_id").notNull(),
 	permissionId: text("permission_id").notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_role_permissions_permission").using("btree", table.permissionId.asc().nullsLast().op("text_ops")),
 	index("idx_role_permissions_permission_id").using("btree", table.permissionId.asc().nullsLast().op("text_ops")),
 	index("idx_role_permissions_role").using("btree", table.roleId.asc().nullsLast().op("text_ops")),
@@ -374,7 +373,7 @@ export const permissions = pgTable("permissions", {
 	resource: varchar({ length: 100 }).notNull(),
 	action: varchar({ length: 100 }).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_permissions_action_resource").using("btree", table.action.asc().nullsLast().op("text_ops"), table.resource.asc().nullsLast().op("text_ops")),
 	index("idx_permissions_category").using("btree", table.category.asc().nullsLast().op("text_ops")),
 	uniqueIndex("permissions_category_resource_action_key").using("btree", table.category.asc().nullsLast().op("text_ops"), table.resource.asc().nullsLast().op("text_ops"), table.action.asc().nullsLast().op("text_ops")),
@@ -395,7 +394,7 @@ export const projects = pgTable("projects", {
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	deletedAt: timestamp("deleted_at", { precision: 3, mode: 'string' }),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_projects_deleted_at").using("btree", table.deletedAt.asc().nullsLast().op("timestamp_ops")),
 	index("idx_projects_organization_id").using("btree", table.organizationId.asc().nullsLast().op("text_ops")),
 	index("idx_projects_owner_id").using("btree", table.ownerId.asc().nullsLast().op("text_ops")),
@@ -426,7 +425,7 @@ export const rateCards = pgTable("rate_cards", {
 	metadata: jsonb().default({}).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_rate_cards_currency").using("btree", table.currency.asc().nullsLast().op("text_ops")),
 	index("idx_rate_cards_effective_from").using("btree", table.effectiveFrom.asc().nullsLast().op("date_ops")),
 	index("idx_rate_cards_organization_id").using("btree", table.organizationId.asc().nullsLast().op("text_ops")),
@@ -449,7 +448,7 @@ export const currencies = pgTable("currencies", {
 	isActive: boolean("is_active").default(true).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_currencies_active").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	index("idx_currencies_code").using("btree", table.code.asc().nullsLast().op("text_ops")),
 ]);
@@ -471,7 +470,7 @@ export const rateCardItems = pgTable("rate_card_items", {
 	metadata: jsonb().default({}).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_rate_card_items_currency").using("btree", table.currency.asc().nullsLast().op("text_ops")),
 	index("idx_rate_card_items_rate_card_id").using("btree", table.rateCardId.asc().nullsLast().op("text_ops")),
 	index("idx_rate_card_items_service_category_id").using("btree", table.serviceCategoryId.asc().nullsLast().op("text_ops")),
@@ -507,7 +506,7 @@ export const idempotencyKeys = pgTable("idempotency_keys", {
 	responseBody: jsonb("response_body").notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	expiresAt: timestamp("expires_at", { precision: 3, mode: 'string' }).notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_idempotency_keys_expiry").using("btree", table.expiresAt.asc().nullsLast().op("timestamp_ops")),
 	index("idx_idempotency_keys_lookup").using("btree", table.organizationId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops"), table.route.asc().nullsLast().op("text_ops"), table.requestHash.asc().nullsLast().op("text_ops")),
 	foreignKey({
@@ -523,7 +522,7 @@ export const idempotencyKeys = pgTable("idempotency_keys", {
 	unique("idempotency_keys_organization_id_user_id_route_request_hash_key").on(table.organizationId, table.userId, table.route, table.requestHash),
 ]);
 
-export const quoteVersions = pgTable("quote_versions", {
+export const quoteVersions: any = pgTable("quote_versions", {
 	id: text().primaryKey().notNull(),
 	quoteId: text("quote_id").notNull(),
 	versionNumber: integer("version_number").notNull(),
@@ -556,7 +555,7 @@ export const quoteVersions = pgTable("quote_versions", {
 	expiresAt: timestamp("expires_at", { precision: 3, mode: 'string' }),
 	metadata: jsonb().default({}).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_quote_versions_created").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("idx_quote_versions_number").using("btree", table.quoteId.asc().nullsLast().op("int4_ops"), table.versionNumber.asc().nullsLast().op("text_ops")),
 	index("idx_quote_versions_quote").using("btree", table.quoteId.asc().nullsLast().op("text_ops")),
@@ -616,7 +615,7 @@ export const quoteLineItemVersions = pgTable("quote_line_item_versions", {
 	rateCardId: text("rate_card_id"),
 	metadata: jsonb().default({}).notNull(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_quote_line_item_versions_line").using("btree", table.quoteVersionId.asc().nullsLast().op("int4_ops"), table.lineNumber.asc().nullsLast().op("text_ops")),
 	index("idx_quote_line_item_versions_quote_version").using("btree", table.quoteVersionId.asc().nullsLast().op("text_ops")),
 	foreignKey({
@@ -637,7 +636,7 @@ export const quoteLineItemVersions = pgTable("quote_line_item_versions", {
 	unique("quote_line_item_versions_quote_version_id_line_number_key").on(table.quoteVersionId, table.lineNumber),
 ]);
 
-export const quotes = pgTable("quotes", {
+export const quotes: any = pgTable("quotes", {
 	id: text().primaryKey().notNull(),
 	organizationId: text("organization_id").notNull(),
 	quoteNumber: varchar("quote_number", { length: 50 }).notNull(),
@@ -672,7 +671,7 @@ export const quotes = pgTable("quotes", {
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	deletedAt: timestamp("deleted_at", { precision: 3, mode: 'string' }),
 	currentVersionId: text("current_version_id"),
-}, (table) => [
+}, (table): any[] => [
 	index("idx_quotes_currency").using("btree", table.currency.asc().nullsLast().op("text_ops")),
 	index("idx_quotes_current_version").using("btree", table.currentVersionId.asc().nullsLast().op("text_ops")),
 	index("idx_quotes_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
@@ -691,7 +690,7 @@ export const orgSettings = pgTable("org_settings", {
 	description: text(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	foreignKey({
 			columns: [table.orgId],
 			foreignColumns: [organizations.id],
@@ -708,7 +707,7 @@ export const orgFeatureFlags = pgTable("org_feature_flags", {
 	payload: jsonb(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	foreignKey({
 			columns: [table.orgId],
 			foreignColumns: [organizations.id],
@@ -724,7 +723,7 @@ export const orgNotificationPrefs = pgTable("org_notification_prefs", {
 	settings: jsonb(),
 	createdAt: timestamp("created_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { precision: 3, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, (table): any[] => [
 	foreignKey({
 			columns: [table.orgId],
 			foreignColumns: [organizations.id],
