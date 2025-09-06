@@ -3,10 +3,25 @@
  * Backend module for Xero integration with feature flagging
  */
 
-import { FastifyPluginAsync } from 'fastify';
-import { getXeroConfig, isXeroConfigured } from '../config/xero_config.js';
-import { NoOpXeroConnector } from '../../packages/integrations/xero/src/no-op-connector.js';
-import { AuditLogger } from '../modules/audit/logger.js';
+import type { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { getXeroConfig, isXeroConfigured } from '../../../config/xero_config.js';
+// import { NoOpXeroConnector } from '../../../../../../packages/integrations/xero/src/no-op-connector.js';
+
+// Local NoOpXeroConnector implementation
+class NoOpXeroConnector {
+  constructor() {
+    // No-op constructor
+  }
+
+  async pushInvoice(_invoice: any): Promise<any> {
+    return { success: true, message: 'No-op mode: Invoice not pushed to Xero' };
+  }
+}
+
+interface OrganizationSettings {
+  xero_integration_enabled?: boolean;
+  [key: string]: any;
+}
 
 /**
  * Xero integration module plugin
@@ -21,12 +36,10 @@ const xeroIntegrationModule: FastifyPluginAsync = async (fastify) => {
 /**
  * Register Xero integration routes
  */
-async function registerXeroRoutes(fastify: any): Promise<void> {
+async function registerXeroRoutes(fastify: FastifyInstance): Promise<void> {
   // Health check endpoint
   fastify.get('/v1/integrations/xero/health', {
     schema: {
-      tags: ['Integrations'],
-      summary: 'Get Xero integration health status',
       description: 'Returns the health status of the Xero integration',
       response: {
         200: {
@@ -49,15 +62,15 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
         },
       },
     },
-  }, async (request, _reply) => {
+  }, async (request: FastifyRequest, _reply: FastifyReply) => {
     const { organizationId } = request.user as any;
     
     // Check if organization has Xero integration enabled
     const organization = await fastify.db.query.organizations.findFirst({
-      where: { id: organizationId },
+      where: (organizations, { eq }) => eq(organizations.id, organizationId),
     });
 
-    const xeroEnabled = organization?.settings?.xero_integration_enabled === true;
+    const xeroEnabled = (organization?.settings as OrganizationSettings)?.xero_integration_enabled === true;
     const config = getXeroConfig();
     const isConfigured = isXeroConfigured();
 
@@ -80,10 +93,10 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
       lastSync: status === 'HEALTHY' ? new Date().toISOString() : undefined,
       errors,
       configStatus: {
-        clientId: !!config.clientId,
-        clientSecret: !!config.clientSecret,
-        redirectUri: !!config.redirectUri,
-        tenantId: !!config.tenantId,
+        clientId: Boolean(config.clientId),
+        clientSecret: Boolean(config.clientSecret),
+        redirectUri: Boolean(config.redirectUri),
+        tenantId: Boolean(config.tenantId),
       },
     };
   });
@@ -91,9 +104,6 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
   // Push invoice endpoint
   fastify.post<{ Body: { invoiceId: string; operation: string } }>('/v1/integrations/xero/push/invoice', {
     schema: {
-      tags: ['Integrations'],
-      summary: 'Push invoice to Xero',
-      description: 'Push an invoice to Xero (no-op mode)',
       body: {
         type: 'object',
         properties: {
@@ -116,16 +126,16 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
       },
     },
     preHandler: fastify.authenticate,
-  }, async (request, reply) => {
-    const { organizationId, userId } = request.user as any;
+  }, async (request: FastifyRequest<{ Body: { invoiceId: string; operation: string } }>, reply: FastifyReply) => {
+    const { organizationId } = request.user as any;
     const { invoiceId } = request.body;
 
     // Check if Xero integration is enabled for organization
     const organization = await fastify.db.query.organizations.findFirst({
-      where: { id: organizationId },
+      where: (organizations, { eq }) => eq(organizations.id, organizationId),
     });
 
-    if (!organization?.settings?.xero_integration_enabled) {
+    if (!(organization?.settings as OrganizationSettings)?.xero_integration_enabled) {
       return reply.status(503).send({
         error: 'Service Unavailable',
         message: 'Xero integration is disabled for this organization',
@@ -134,9 +144,7 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
     }
 
     // Create no-op connector
-    const config = getXeroConfig();
-    const auditLogger = new AuditLogger(fastify, organizationId, userId);
-    const connector = new NoOpXeroConnector(config, auditLogger);
+    const connector = new NoOpXeroConnector();
 
     // Create mock invoice for testing
     const mockInvoice = {
@@ -178,9 +186,6 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
   // OAuth callback endpoint (disabled when feature off)
   fastify.get<{ Querystring: { code: string; state: string } }>('/v1/integrations/xero/callback', {
     schema: {
-      tags: ['Integrations'],
-      summary: 'Xero OAuth callback',
-      description: 'Handle Xero OAuth callback (disabled when feature off)',
       querystring: {
         type: 'object',
         properties: {
@@ -190,7 +195,7 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
         required: ['code', 'state'],
       },
     },
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest<{ Querystring: { code: string; state: string } }>, reply: FastifyReply) => {
     const { code, state } = request.query;
 
     // Log structured message when disabled
@@ -210,12 +215,8 @@ async function registerXeroRoutes(fastify: any): Promise<void> {
 
   // Webhook endpoint (disabled when feature off)
   fastify.post('/v1/integrations/xero/webhook', {
-    schema: {
-      tags: ['Integrations'],
-      summary: 'Xero webhook endpoint',
-      description: 'Receive Xero webhooks (disabled when feature off)',
-    },
-  }, async (request, reply) => {
+    schema: {},
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const payload = request.body;
     const signature = request.headers['x-xero-signature'] as string;
 
