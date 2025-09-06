@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
-import { PermissionService } from '../service.js';
+
 import { testDb } from '../../../__tests__/setup.js';
+import { PermissionService } from '../service.js';
 
 describe('PermissionService Integration Tests', () => {
   let permissionService: PermissionService;

@@ -1,7 +1,9 @@
-import type { FastifyInstance } from 'fastify';
+import { verifyPassword } from '@pivotal-flow/shared';
 import { eq, and } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
+
 import { users, roles as rolesTable, userRoles as userRolesTable } from '../../lib/schema.js';
-import { verifyPassword } from '@pivotal-flow/shared/security/password';
+
 
 export interface UserWithRoles {
   id: string;

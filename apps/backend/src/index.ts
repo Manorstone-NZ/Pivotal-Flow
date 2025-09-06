@@ -1,28 +1,26 @@
 import 'dotenv/config';
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import Fastify from 'fastify';
+import { register, collectDefaultMetrics } from 'prom-client';
 
-import { logger } from './lib/logger.js';
-import { config } from './lib/config.js';
+import { config } from './config/index.js';
 
 // C0 Backend Readiness imports
-import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
+import { filesModule } from './files/index.js';
 import { accessControlMiddleware, tenancyMiddleware, requestContextMiddleware } from './lib/access-control.js';
 import { getCorsConfig, securityHeadersMiddleware } from './lib/cors-rate-limit.js';
+import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
 import { createIdempotencyMiddleware } from './lib/idempotency.js';
+import { logger } from './lib/logger.js';
 import { requestLoggingMiddleware as observabilityRequestLogging, metricsEndpointMiddleware, healthCheckMiddleware } from './lib/observability.js';
 import { openApiSchema } from './lib/openapi-schema.js';
-
-import { register, collectDefaultMetrics } from 'prom-client';
-import { metricsRoutes } from './routes/metrics.js';
-import { performanceRoutes } from './routes/perf.js';
 // Test auth route removed - no longer needed
+import { allocationModule } from './modules/allocations/index.js';
+import { approvalModule } from './modules/approvals/index.js';
 import { authPlugin, loginRoute, refreshRoute, logoutRoute, meRoute } from './modules/auth/index.js';
-import databasePlugin from './plugins/database.js';
-import { cachePlugin } from './plugins/cache.plugin.js';
 import {
   listUsersRoute,
   createUserRoute,
@@ -37,16 +35,19 @@ import { rateCardRoutes } from './modules/rate-cards/index.js';
 import { permissionRoutes } from './modules/permissions/index.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
 import { paymentRoutes } from './modules/payments/routes.js';
-import { approvalModule } from './modules/approvals/index.js';
-import { allocationModule } from './modules/allocations/index.js';
 import { portalModule } from './modules/portal/index.js';
 import { reportsModule } from './modules/reports/index.js';
 import { jobsModule } from './modules/jobs/index.js';
-import { filesModule } from './files/index.js';
 import { referenceDataModule } from './modules/reference-data/index.js';
 import { xeroIntegrationModule } from './modules/integrations/xero/index.js';
-import { payloadGuardPlugin } from './plugins/payloadGuard.js';
+import { cachePlugin } from './plugins/cache.plugin.js';
+import { cacheHeadersPlugin } from './plugins/cache-headers.js';
+import databasePlugin from './plugins/database.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
+import openapiPlugin from './plugins/openapi.js';
+import { payloadGuardPlugin } from './plugins/payloadGuard.js';
+import { metricsRoutes } from './routes/metrics.js';
+import { performanceRoutes } from './routes/perf.js';
 
 // Enable default metrics collection (once per process)
 const g = globalThis as any;
@@ -103,7 +104,7 @@ async function registerPlugins() {
     max: 1000,
     timeWindow: '1 minute',
     allowList: ['127.0.0.1', '::1'],
-    keyGenerator: (request: any) => (request as any).user?.sub || request.ip,
+    keyGenerator: (request: any) => (request).user?.sub || request.ip,
     errorResponseBuilder: (request: any, context: any) => ({
       error: {
         code: 'RATE_LIMIT_ERROR',
@@ -128,16 +129,20 @@ async function registerPlugins() {
 
   // Cache plugin (Redis integration)
   const cacheOptions: any = {
-    host: config.redis?.host || 'localhost',
-    port: config.redis?.port || 6379,
-    db: config.redis?.db || 0,
+    host: 'localhost', // Default host
+    port: 6379, // Default port
+    db: 0, // Default db
     keyPrefix: 'pivotal-flow:',
     ttl: 300, // 5 minutes default
-    enabled: config.redis?.enabled ?? true
+    enabled: true // Default enabled
   };
   
-  if (config.redis?.password) {
-    cacheOptions.password = config.redis.password;
+  // Parse Redis URL if available
+  if (config.redis.REDIS_URL) {
+    const redisUrl = new URL(config.redis.REDIS_URL);
+    cacheOptions.host = redisUrl.hostname;
+    cacheOptions.port = parseInt(redisUrl.port) || 6379;
+    cacheOptions.password = redisUrl.password;
   }
   
   await app.register(cachePlugin, cacheOptions);
@@ -159,6 +164,9 @@ async function registerPlugins() {
 
   // Register idempotency plugin (enables safe and repeatable writes)
   await app.register(idempotencyPlugin);
+
+  // D3 Contract Stability - Cache headers
+  await app.register(cacheHeadersPlugin);
 
   // C0 Backend Readiness - OpenAPI documentation
   app.get('/api/openapi.json', {
@@ -1436,6 +1444,73 @@ async function registerPlugins() {
   // Register metrics routes
   await app.register(metricsRoutes, { prefix: '/v1/metrics' });
   await app.register(performanceRoutes, { prefix: '/v1/perf' });
+
+  // OpenAPI Documentation (after all routes are registered)
+  console.log('About to register OpenAPI plugin...');
+  await app.register(openapiPlugin);
+  console.log('OpenAPI plugin registered successfully');
+  
+  // Add simple docs route if OPENAPI_ENABLE is true
+  if (process.env['OPENAPI_ENABLE'] === 'true') {
+    app.get('/docs', async (_request, reply) => {
+      console.log('Serving /docs route');
+      return reply.type('text/html').send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pivotal Flow API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '/api/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                validatorUrl: null,
+                onComplete: function() {
+                    console.log('Swagger UI loaded successfully');
+                },
+                onFailure: function(data) {
+                    console.error('Failed to load Swagger UI:', data);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
+      `);
+    });
+    console.log('Added /docs route');
+  }
 }
 
 app.get('/', async () => {
@@ -1620,7 +1695,7 @@ app.get('/health/db', async (req, reply) => {
 });
 
 // Top-level metrics endpoint (gated by config)
-if (config.metrics.enabled) {
+if (config.metrics.METRICS_ENABLED) {
   app.get('/metrics', async (_request, reply) => {
     try {
       const metrics = await register.metrics();
@@ -1635,8 +1710,8 @@ if (config.metrics.enabled) {
 
 app.get('/metrics/info', async () => {
   return {
-    enabled: config.metrics.enabled,
-    path: config.metrics.path,
+    enabled: config.metrics.METRICS_ENABLED,
+    path: config.metrics.METRICS_PATH,
     defaultMetrics: true,
     customMetrics: [],
   };
@@ -1657,8 +1732,8 @@ async function startServer() {
   try {
     logger.info(`Startup at ${new Date().toISOString()} - WATCHER WORKING!`);
     logger.info({ 
-      port: config.server.port, 
-      host: config.server.host,
+      port: config.server.PORT, 
+      host: config.server.HOST,
       startupTime: new Date().toISOString(),
       message: '🚀 BACKEND STARTUP - NEW INSTANCE - FILE WATCHING TEST'
     }, 'Starting server');
@@ -1680,13 +1755,13 @@ async function startServer() {
 
     logger.info({}, 'Calling app.listen');
     await app.listen({
-      port: Number(process.env['PORT']) ?? config.server.port,
-      host: config.server.host,
+      port: config.server.PORT,
+      host: config.server.HOST,
     });
     logger.info({}, 'app.listen completed');
 
     // Fail loud in dev if boot fails - check after listen
-    if (config.isDevelopment) {
+    if (config.server.NODE_ENV === 'development') {
       try {
         // Check if app is properly configured and listening
         if (!app.server || !app.server.listening) {
@@ -1700,7 +1775,7 @@ async function startServer() {
       }
     }
 
-    logger.info({ url: `http://${config.server.host}:${config.server.port}` }, 'Server running');
+    logger.info({ url: `http://${config.server.HOST}:${config.server.PORT}` }, 'Server running');
   } catch (err) {
     if (err instanceof Error) {
       logger.error(
@@ -1727,10 +1802,10 @@ async function startServer() {
         process.exit(1);
       }
     } else {
-      logger.error({ err: err as unknown }, 'Failed to start server with unknown error');
+      logger.error({ err: err }, 'Failed to start server with unknown error');
     }
 
-    if (config.isDevelopment) {
+    if (config.server.NODE_ENV === 'development') {
       logger.warn({}, 'Server failed to start, continuing in development mode');
     } else {
       process.exit(1);

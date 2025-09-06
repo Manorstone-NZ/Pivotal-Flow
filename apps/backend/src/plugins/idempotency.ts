@@ -1,13 +1,13 @@
+import { generateHash } from '@pivotal-flow/shared';
 import type { FastifyInstance, FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
+
 import { IdempotencyService } from '../lib/idempotency.js';
-import { generateHash, startTimer } from '@pivotal-flow/shared';
 
 export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _opts, done) => {
   const idempotencyService = new IdempotencyService();
 
   // Add preHandler hook to check idempotency
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    const timer = startTimer('idempotency_check');
     const idempotencyKey = request.headers['idempotency-key'] as string;
     
     // Only process idempotency for POST and PATCH requests
@@ -43,8 +43,8 @@ export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _
       request.method,
       request.url,
       request.body,
-      request.query,
-      request.params
+      request.query as Record<string, unknown> | undefined,
+      request.params as Record<string, unknown> | undefined
     );
 
     if (result.isDuplicate) {
@@ -62,7 +62,6 @@ export const idempotencyPlugin: FastifyPluginCallback = (app: FastifyInstance, _
       requestHash
     };
 
-    timer.end();
   });
 
   // Add onResponse hook to store successful responses

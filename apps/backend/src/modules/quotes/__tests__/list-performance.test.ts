@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { QuoteService } from '../service.js';
 
 describe('Quote List Performance with Filters', () => {

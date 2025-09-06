@@ -3,17 +3,12 @@
  * File storage implementation using local file system
  */
 
-import { generateId } from '@pivotal-flow/shared';
 import { createHmac } from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import type { 
-  StorageAdapter, 
-  GenerateFileOptions, 
-  SignedUrlOptions, 
-  FileInfo,
-  MimeType 
-} from './types.js';
+
+import { generateId } from '@pivotal-flow/shared';
+
 import { 
   ALLOWED_MIME_TYPES, 
   FILE_SIZE_LIMITS, 
@@ -21,6 +16,13 @@ import {
   FILE_ERRORS,
   FILE_RETENTION_PERIODS
 } from './constants.js';
+import type { 
+  StorageAdapter, 
+  GenerateFileOptions, 
+  SignedUrlOptions, 
+  FileInfo,
+  MimeType 
+} from './types.js';
 
 /**
  * Local storage adapter for file operations
@@ -90,7 +92,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       description,
       path: filePath,
       createdAt: now,
-      userId,
+      ...(userId ? { userId } : {}),
     };
 
     // Store metadata (in a real implementation, this would be in a database)
@@ -193,11 +195,11 @@ export class LocalStorageAdapter implements StorageAdapter {
   /**
    * Get file information
    */
-  async getFileInfo(fileId: string): Promise<FileInfo> {
+  async getFileInfo(fileId: string): Promise<FileInfo | null> {
     // In a real implementation, this would query a database
     // For now, we'll scan the file system
     const files = await this.getAllFiles();
-    return files.find(f => f.id === fileId);
+    return files.find(f => f.id === fileId) || null;
   }
 
   /**
@@ -213,7 +215,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       const [tokenFileId, expiresTimestamp, signature] = parts;
       
       // Check file ID match
-      if (tokenFileId !== fileId) {
+      if (tokenFileId !== fileId || !expiresTimestamp || !signature) {
         return false;
       }
 
@@ -308,6 +310,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     }
 
     const [, value, unit] = match;
+    if (!value || !unit) {
+      throw new Error('Invalid expiration format. Use: 15m, 1h, 7d');
+    }
     const numValue = parseInt(value);
 
     switch (unit) {

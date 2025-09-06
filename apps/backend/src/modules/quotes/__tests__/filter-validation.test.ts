@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { guardTypedFilters } from '@pivotal-flow/shared';
+import { describe, it, expect } from 'vitest';
 
 describe('Repository Filter Validation', () => {
   describe('guardTypedFilters', () => {

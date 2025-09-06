@@ -1,9 +1,27 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AllocationService } from '../service.js';
-import { ALLOCATION_ROLES } from '../constants.js';
+
 import { testUtils, testDb } from '../../../__tests__/setup.js';
 import { resourceAllocations, projects } from '../../../lib/schema.js';
-import { eq } from 'drizzle-orm';
+import { ALLOCATION_ROLES } from '../constants.js';
+import { AllocationService } from '../service.js';
+
+// Import the type from the service file
+type AllocationQueryResult = {
+  id: string;
+  userId: string;
+  projectId: string;
+  role: string;
+  allocationPercent: number;
+  startDate: Date;
+  endDate: Date;
+  isBillable: boolean;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  userName: string | null;
+  projectName: string | null;
+};
 
 describe('AllocationService', () => {
   let allocationService: AllocationService;
@@ -36,10 +54,7 @@ describe('AllocationService', () => {
       }
     };
 
-    allocationService = new AllocationService(testDb, {
-      organizationId: testOrg.id,
-      userId: testUser.id
-    }, testFastify);
+    allocationService = new AllocationService(testOrg.id, testUser.id, testFastify);
   });
 
   afterEach(async () => {
@@ -264,8 +279,8 @@ describe('AllocationService', () => {
       );
 
       expect(conflicts).toHaveLength(1);
-      expect(conflicts[0].conflictType).toBe('exceeds_100_percent');
-      expect(conflicts[0].totalAllocation).toBe(110); // 60 + 50
+      expect(conflicts[0]?.conflictType).toBe('exceeds_100_percent');
+      expect(conflicts[0]?.totalAllocation).toBe(110); // 60 + 50
     });
 
     it('should not detect conflicts for non-overlapping dates', async () => {
@@ -298,27 +313,43 @@ describe('AllocationService', () => {
       const startDate = new Date('2025-01-01');
       const endDate = new Date('2025-01-14'); // 2 weeks
 
-      const allocations = [
+      const allocations: AllocationQueryResult[] = [
         {
+          id: 'test-allocation-1',
           userId: testUser.id,
-          userName: 'Test User',
+          projectId: 'test-project-1',
+          role: 'Developer',
           allocationPercent: 50,
-          startDate: '2025-01-01',
-          endDate: '2025-01-07'
+          startDate: new Date('2025-01-01'),
+          endDate: new Date('2025-01-07'),
+          isBillable: true,
+          notes: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userName: 'Test User',
+          projectName: 'Test Project'
         },
         {
+          id: 'test-allocation-2',
           userId: testUser.id,
-          userName: 'Test User',
+          projectId: 'test-project-1',
+          role: 'Developer',
           allocationPercent: 75,
-          startDate: '2025-01-08',
-          endDate: '2025-01-14'
+          startDate: new Date('2025-01-08'),
+          endDate: new Date('2025-01-14'),
+          isBillable: true,
+          notes: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userName: 'Test User',
+          projectName: 'Test Project'
         }
       ];
 
       const capacity = allocationService['calculateWeeklyCapacity'](allocations, startDate, endDate);
 
       expect(capacity.length).toBeGreaterThan(0);
-      expect(capacity[0].plannedHours).toBe(20); // 50% of 40-hour week
+      expect(capacity[0]?.plannedHours).toBe(20); // 50% of 40-hour week
     });
   });
 
@@ -388,7 +419,7 @@ describe('AllocationService', () => {
       });
 
       expect(result.allocations).toHaveLength(1);
-      expect(result.allocations[0].isBillable).toBe(true);
+      expect(result.allocations[0]?.isBillable).toBe(true);
 
       // Restore original service
       allocationService['permissionService'] = originalPermissionService;

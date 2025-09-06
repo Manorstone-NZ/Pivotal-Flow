@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { AllocationService } from './service.js';
+
 import { 
   CreateAllocationRequestSchema,
   CreateAllocationBodySchema,
@@ -10,20 +10,15 @@ import {
   WeeklyCapacitySummarySchema,
   createAllocationsPagingResponse
 } from './schemas.js';
+import { AllocationService } from './service.js';
 
-// Type definition for authenticated user
-interface AuthenticatedUser {
-  userId: string;
-  organizationId: string;
-  roles: string[];
+// Helper function to safely extract error information
+function getErrorInfo(error: unknown): { message: string; statusCode?: number } {
+  if (error instanceof Error) {
+    return { message: error.message, statusCode: (error as any).statusCode };
+  }
+  return { message: String(error) };
 }
-
-// Use type assertion for authenticated requests
-type AuthenticatedRequest = FastifyRequest & {
-  user: AuthenticatedUser;
-  organizationId: string;
-  userId: string;
-};
 
 export async function allocationRoutes(fastify: FastifyInstance) {
   // Create allocation
@@ -65,7 +60,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         }
       }
     } as any,
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
       const allocationData = CreateAllocationRequestSchema.parse({
@@ -74,32 +69,34 @@ export async function allocationRoutes(fastify: FastifyInstance) {
       });
 
       const allocationService = new AllocationService(
-        request.organizationId,
-        request.userId,
+        (request as any).organizationId,
+        (request as any).userId,
         fastify
       );
 
       const allocation = await allocationService.createAllocation(allocationData as any);
 
       reply.status(201).send(allocation);
-    } catch (error: any) {
+    } catch (error: unknown) {
       (fastify.log as any).error('Error creating allocation:', error);
       
-      if (error.message.includes('conflicts detected')) {
+      const errorInfo = getErrorInfo(error);
+      
+      if (errorInfo.message.includes('conflicts detected')) {
         reply.status(409).send({
           error: 'Allocation Conflict',
-          message: error.message,
-          conflicts: JSON.parse(error.message.split(': ')[1] || '[]')
+          message: errorInfo.message,
+          conflicts: JSON.parse(errorInfo.message.split(': ')[1] || '[]')
         });
-      } else if (error.message.includes('permission')) {
+      } else if (errorInfo.message.includes('permission')) {
         reply.status(403).send({
           error: 'Forbidden',
-          message: error.message
+          message: errorInfo.message
         });
       } else {
         reply.status(400).send({
           error: 'Bad Request',
-          message: error.message
+          message: errorInfo.message
         });
       }
     }
@@ -129,7 +126,7 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         }
       }
     } as any,
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
       const query = AllocationFiltersSchema.parse({
@@ -138,8 +135,8 @@ export async function allocationRoutes(fastify: FastifyInstance) {
       });
 
       const allocationService = new AllocationService(
-        request.organizationId,
-        request.userId,
+        (request as any).organizationId,
+        (request as any).userId,
         fastify
       );
 
@@ -149,26 +146,45 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         query.pageSize || 20
       );
 
+      // Transform AllocationQueryResult to ResourceAllocationResponse format
+      const transformedAllocations = result.allocations.map(allocation => ({
+        id: allocation.id,
+        organizationId: (request as any).organizationId,
+        projectId: allocation.projectId,
+        userId: allocation.userId,
+        role: allocation.role,
+        allocationPercent: allocation.allocationPercent,
+        startDate: allocation.startDate.toISOString(),
+        endDate: allocation.endDate.toISOString(),
+        isBillable: allocation.isBillable,
+        notes: allocation.notes ? JSON.parse(allocation.notes) : {},
+        createdAt: allocation.createdAt.toISOString(),
+        updatedAt: allocation.updatedAt.toISOString(),
+        deletedAt: null
+      }));
+
       const pagingResponse = createAllocationsPagingResponse(
-        result.allocations,
+        transformedAllocations,
         query.page || 1,
         query.pageSize || 20,
         result.total
       );
 
       reply.send(pagingResponse);
-    } catch (error: any) {
+    } catch (error: unknown) {
       (fastify.log as any).error('Error getting allocations:', error);
       
-      if (error.message.includes('permission')) {
+      const errorInfo = getErrorInfo(error);
+      
+      if (errorInfo.message.includes('permission')) {
         reply.status(403).send({
           error: 'Forbidden',
-          message: error.message
+          message: errorInfo.message
         });
       } else {
         reply.status(400).send({
           error: 'Bad Request',
-          message: error.message
+          message: errorInfo.message
         });
       }
     }
@@ -220,43 +236,45 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         }
       }
     } as any,
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
       const updateData = UpdateAllocationRequestSchema.parse(request.body);
 
       const allocationService = new AllocationService(
-        request.organizationId,
-        request.userId,
+        (request as any).organizationId,
+        (request as any).userId,
         fastify
       );
 
       const allocation = await allocationService.updateAllocation(id, updateData as any);
 
       reply.send(allocation);
-    } catch (error: any) {
+    } catch (error: unknown) {
       (fastify.log as any).error('Error updating allocation:', error);
       
-      if (error.message.includes('conflicts detected')) {
+      const errorInfo = getErrorInfo(error);
+      
+      if (errorInfo.message.includes('conflicts detected')) {
         reply.status(409).send({
           error: 'Allocation Conflict',
-          message: error.message,
-          conflicts: JSON.parse(error.message.split(': ')[1] || '[]')
+          message: errorInfo.message,
+          conflicts: JSON.parse(errorInfo.message.split(': ')[1] || '[]')
         });
-      } else if (error.message.includes('not found')) {
+      } else if (errorInfo.message.includes('not found')) {
         reply.status(404).send({
           error: 'Not Found',
-          message: error.message
+          message: errorInfo.message
         });
-      } else if (error.message.includes('permission')) {
+      } else if (errorInfo.message.includes('permission')) {
         reply.status(403).send({
           error: 'Forbidden',
-          message: error.message
+          message: errorInfo.message
         });
       } else {
         reply.status(400).send({
           error: 'Bad Request',
-          message: error.message
+          message: errorInfo.message
         });
       }
     }
@@ -292,36 +310,38 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         }
       }
     } as any,
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
 
       const allocationService = new AllocationService(
-        request.organizationId,
-        request.userId,
+        (request as any).organizationId,
+        (request as any).userId,
         fastify
       );
 
       await allocationService.deleteAllocation(id);
 
       reply.status(204).send();
-    } catch (error: any) {
+    } catch (error: unknown) {
       (fastify.log as any).error('Error deleting allocation:', error);
       
-      if (error.message.includes('not found')) {
+      const errorInfo = getErrorInfo(error);
+      
+      if (errorInfo.message.includes('not found')) {
         reply.status(404).send({
           error: 'Not Found',
-          message: error.message
+          message: errorInfo.message
         });
-      } else if (error.message.includes('permission')) {
+      } else if (errorInfo.message.includes('permission')) {
         reply.status(403).send({
           error: 'Forbidden',
-          message: error.message
+          message: errorInfo.message
         });
       } else {
         reply.status(400).send({
           error: 'Bad Request',
-          message: error.message
+          message: errorInfo.message
         });
       }
     }
@@ -363,37 +383,39 @@ export async function allocationRoutes(fastify: FastifyInstance) {
         }
       }
     } as any,
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { projectId } = request.params as { projectId: string };
       const { weeks = 8 } = request.query as { weeks?: number };
 
       const allocationService = new AllocationService(
-        request.organizationId,
-        request.userId,
+        (request as any).organizationId,
+        (request as any).userId,
         fastify
       );
 
       const capacity = await allocationService.getProjectCapacity(projectId, weeks);
 
       reply.send(capacity);
-    } catch (error: any) {
+    } catch (error: unknown) {
       (fastify.log as any).error('Error getting project capacity:', error);
       
-      if (error.message.includes('not found')) {
+      const errorInfo = getErrorInfo(error);
+      
+      if (errorInfo.message.includes('not found')) {
         reply.status(404).send({
           error: 'Not Found',
-          message: error.message
+          message: errorInfo.message
         });
-      } else if (error.message.includes('permission')) {
+      } else if (errorInfo.message.includes('permission')) {
         reply.status(403).send({
           error: 'Forbidden',
-          message: error.message
+          message: errorInfo.message
         });
       } else {
         reply.status(400).send({
           error: 'Bad Request',
-          message: error.message
+          message: errorInfo.message
         });
       }
     }

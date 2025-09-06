@@ -4,24 +4,27 @@
  */
 
 import { eq, and, asc, desc } from 'drizzle-orm';
-import { getDatabase } from '../../lib/db.js';
+
 import { getCache } from '../../lib/cache.js';
+import { getDatabase } from '../../lib/db.js';
 import { 
   currencies, 
-  taxClasses, 
   roles, 
   permissions, 
   serviceCategories, 
-  rateCards 
+  rateCards,
+  taxClasses
 } from '../../lib/schema.js';
-import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../audit/logger.js';
+import type { AuditLogger } from '../audit/logger.js';
+import type { PermissionService } from '../permissions/service.js';
+
 import { 
   REFERENCE_ENDPOINTS, 
   REFERENCE_METRICS, 
   REFERENCE_ERRORS 
 } from './constants.js';
 import type { 
+  ReferenceDataItem,
   CurrencyReference,
   TaxClassReference,
   RoleReference,
@@ -49,7 +52,10 @@ export class ReferenceDataService {
    * Get currencies reference data
    */
   async getCurrencies(): Promise<ReferenceDataResponse<CurrencyReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.currencies;
+    const endpointConfig = REFERENCE_ENDPOINTS['currencies'];
+    if (!endpointConfig) {
+      throw new Error('Currency endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Try to get from cache
@@ -73,7 +79,7 @@ export class ReferenceDataService {
       .orderBy(asc(currencies.name));
 
     const result: ReferenceDataResponse<CurrencyReference> = {
-      data: currenciesData,
+      data: currenciesData as CurrencyReference[],
       total: currenciesData.length,
       cached: false,
       cacheKey,
@@ -90,7 +96,10 @@ export class ReferenceDataService {
    * Get tax classes reference data
    */
   async getTaxClasses(): Promise<ReferenceDataResponse<TaxClassReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.taxClasses;
+    const endpointConfig = REFERENCE_ENDPOINTS['taxClasses'];
+    if (!endpointConfig) {
+      throw new Error('Tax classes endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Try to get from cache
@@ -114,9 +123,15 @@ export class ReferenceDataService {
       .where(eq(taxClasses.isActive, true))
       .orderBy(asc(taxClasses.displayOrder), asc(taxClasses.name));
 
+    // Convert rate from string to number
+    const convertedData = taxClassesData.map(item => ({
+      ...item,
+      rate: parseFloat(item.rate)
+    }));
+
     const result: ReferenceDataResponse<TaxClassReference> = {
-      data: taxClassesData,
-      total: taxClassesData.length,
+      data: convertedData,
+      total: convertedData.length,
       cached: false,
       cacheKey,
     };
@@ -132,13 +147,16 @@ export class ReferenceDataService {
    * Get roles reference data
    */
   async getRoles(): Promise<ReferenceDataResponse<RoleReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.roles;
+    const endpointConfig = REFERENCE_ENDPOINTS['roles'];
+    if (!endpointConfig) {
+      throw new Error('Roles endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission);
+        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }
@@ -156,11 +174,9 @@ export class ReferenceDataService {
     const rolesData = await this.db
       .select({
         id: roles.id,
-        code: roles.code,
         name: roles.name,
         description: roles.description,
         isActive: roles.isActive,
-        displayOrder: roles.displayOrder,
       })
       .from(roles)
       .where(
@@ -169,10 +185,10 @@ export class ReferenceDataService {
           eq(roles.isActive, true)
         )
       )
-      .orderBy(asc(roles.displayOrder), asc(roles.name));
+      .orderBy(asc(roles.name));
 
     const result: ReferenceDataResponse<RoleReference> = {
-      data: rolesData,
+      data: rolesData as RoleReference[],
       total: rolesData.length,
       cached: false,
       cacheKey,
@@ -189,13 +205,16 @@ export class ReferenceDataService {
    * Get permissions reference data
    */
   async getPermissions(): Promise<ReferenceDataResponse<PermissionSummaryReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.permissions;
+    const endpointConfig = REFERENCE_ENDPOINTS['permissions'];
+    if (!endpointConfig) {
+      throw new Error('Permissions endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission);
+        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }
@@ -213,17 +232,15 @@ export class ReferenceDataService {
     const permissionsData = await this.db
       .select({
         id: permissions.id,
-        code: permissions.name,
         name: permissions.name,
         category: permissions.category,
         description: permissions.description,
-        displayOrder: permissions.displayOrder,
       })
       .from(permissions)
-      .orderBy(asc(permissions.category), asc(permissions.displayOrder), asc(permissions.name));
+      .orderBy(asc(permissions.category), asc(permissions.name));
 
     const result: ReferenceDataResponse<PermissionSummaryReference> = {
-      data: permissionsData,
+      data: permissionsData as PermissionSummaryReference[],
       total: permissionsData.length,
       cached: false,
       cacheKey,
@@ -240,7 +257,10 @@ export class ReferenceDataService {
    * Get service categories reference data
    */
   async getServiceCategories(): Promise<ReferenceDataResponse<ServiceCategoryReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.serviceCategories;
+    const endpointConfig = REFERENCE_ENDPOINTS['serviceCategories'];
+    if (!endpointConfig) {
+      throw new Error('Service categories endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Try to get from cache
@@ -258,7 +278,7 @@ export class ReferenceDataService {
         name: serviceCategories.name,
         description: serviceCategories.description,
         isActive: serviceCategories.isActive,
-        displayOrder: serviceCategories.displayOrder,
+        displayOrder: serviceCategories.ordering,
       })
       .from(serviceCategories)
       .where(
@@ -267,10 +287,10 @@ export class ReferenceDataService {
           eq(serviceCategories.isActive, true)
         )
       )
-      .orderBy(asc(serviceCategories.displayOrder), asc(serviceCategories.name));
+      .orderBy(asc(serviceCategories.ordering), asc(serviceCategories.name));
 
     const result: ReferenceDataResponse<ServiceCategoryReference> = {
-      data: serviceCategoriesData,
+      data: serviceCategoriesData as ServiceCategoryReference[],
       total: serviceCategoriesData.length,
       cached: false,
       cacheKey,
@@ -287,13 +307,16 @@ export class ReferenceDataService {
    * Get rate cards reference data
    */
   async getRateCards(): Promise<ReferenceDataResponse<RateCardReference>> {
-    const endpointConfig = REFERENCE_ENDPOINTS.rateCards;
+    const endpointConfig = REFERENCE_ENDPOINTS['rateCards'];
+    if (!endpointConfig) {
+      throw new Error('Rate cards endpoint configuration not found');
+    }
     const cacheKey = `${endpointConfig.cacheConfig.keyPrefix}:${this.organizationId}`;
 
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission);
+        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }
@@ -318,7 +341,6 @@ export class ReferenceDataService {
         isActive: rateCards.isActive,
         effectiveFrom: rateCards.effectiveFrom,
         effectiveUntil: rateCards.effectiveUntil,
-        displayOrder: rateCards.displayOrder,
       })
       .from(rateCards)
       .where(
@@ -330,7 +352,7 @@ export class ReferenceDataService {
       .orderBy(desc(rateCards.isDefault), desc(rateCards.effectiveFrom), asc(rateCards.name));
 
     const result: ReferenceDataResponse<RateCardReference> = {
-      data: rateCardsData,
+      data: rateCardsData as RateCardReference[],
       total: rateCardsData.length,
       cached: false,
       cacheKey,
@@ -359,10 +381,11 @@ export class ReferenceDataService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'reference_cache_busted',
-      resource: 'reference_data',
-      details: {
+      entityType: 'reference_data',
+      entityId: referenceType,
+      metadata: {
         referenceType,
         cacheKey,
       },
@@ -372,7 +395,7 @@ export class ReferenceDataService {
   /**
    * Get data from cache
    */
-  private async getFromCache<T>(cacheKey: string): Promise<ReferenceDataResponse<T> | null> {
+  private async getFromCache<T extends ReferenceDataItem>(cacheKey: string): Promise<ReferenceDataResponse<T> | null> {
     try {
       const cached = await this.cache.get(cacheKey);
       if (cached) {
@@ -387,9 +410,9 @@ export class ReferenceDataService {
   /**
    * Set data in cache
    */
-  private async setCache<T>(cacheKey: string, data: ReferenceDataResponse<T>, ttl: number): Promise<void> {
+  private async setCache<T extends ReferenceDataItem>(cacheKey: string, data: ReferenceDataResponse<T>, ttl: number): Promise<void> {
     try {
-      await this.cache.setex(cacheKey, ttl, JSON.stringify(data));
+      await this.cache.set(cacheKey, JSON.stringify(data), ttl);
     } catch (error) {
       console.error('Cache set error:', error);
     }

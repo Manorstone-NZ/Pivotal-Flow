@@ -1,7 +1,11 @@
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { BaseRepository } from './repo.base.js';
-import { currencies, fxRates } from '../schema.js';
 import crypto from 'crypto';
+
+import { eq, and, desc, sql } from 'drizzle-orm';
+
+import { currencies, fxRates } from '../schema.js';
+import { required } from '../utils/strict.js';
+
+import { BaseRepository } from './repo.base.js';
 
 /**
  * Currency Repository
@@ -59,7 +63,7 @@ export class CurrencyRepository extends BaseRepository {
     asOfDate: Date = new Date()
   ): Promise<any | null> {
     try {
-      const dateStr = asOfDate.toISOString().split('T')[0];
+      const dateStr = required(asOfDate, 'asOfDate is required').toISOString().split('T')[0];
 
       // First try to get exact date match
       let result = await this.db
@@ -68,7 +72,7 @@ export class CurrencyRepository extends BaseRepository {
         .where(and(
           eq(fxRates.baseCurrency, baseCurrency),
           eq(fxRates.quoteCurrency, quoteCurrency),
-          eq(fxRates.effectiveFrom, dateStr)
+          eq(fxRates.effectiveFrom, dateStr as string)
         ))
         .limit(1);
 
@@ -110,7 +114,7 @@ export class CurrencyRepository extends BaseRepository {
   ): Promise<any | null> {
     try {
       // Try direct rate first
-      let rate = await this.getFxRate(baseCurrency, quoteCurrency, asOfDate);
+      const rate = await this.getFxRate(baseCurrency, quoteCurrency, asOfDate);
       
       if (rate) {
         return rate;
@@ -152,7 +156,7 @@ export class CurrencyRepository extends BaseRepository {
     verified?: boolean;
   }): Promise<any> {
     try {
-      const dateStr = data.effectiveFrom.toISOString().split('T')[0];
+      const dateStr = required(data.effectiveFrom, 'effectiveFrom is required').toISOString().split('T')[0];
       
       // Check if rate already exists for this date
       const existing = await this.db
@@ -161,7 +165,7 @@ export class CurrencyRepository extends BaseRepository {
         .where(and(
           eq(fxRates.baseCurrency, data.baseCurrency),
           eq(fxRates.quoteCurrency, data.quoteCurrency),
-          eq(fxRates.effectiveFrom, dateStr)
+          eq(fxRates.effectiveFrom, dateStr as string)
         ))
         .limit(1);
 
@@ -188,7 +192,7 @@ export class CurrencyRepository extends BaseRepository {
             baseCurrency: data.baseCurrency,
             quoteCurrency: data.quoteCurrency,
             rate: data.rate.toString(),
-            effectiveFrom: dateStr,
+            effectiveFrom: dateStr as string,
             source: data.source,
             verified: data.verified ?? false
           })

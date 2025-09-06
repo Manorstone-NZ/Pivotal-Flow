@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+
 import type { MoneyAmount } from './money.js';
 import { createDecimal, roundToCurrency, calculatePercentage } from './money.js';
 
@@ -88,11 +89,10 @@ export function calculateTaxBreakdown(
     isTaxExempt?: boolean;
   }>
 ): TaxBreakdown[] {
-  if (lineItems.length === 0) {
+  const currency = lineItems[0]?.amount.currency;
+  if (!currency) {
     return [];
   }
-  
-  const currency = lineItems[0].amount.currency;
   
   // Validate all items have same currency
   for (const item of lineItems) {
@@ -152,11 +152,10 @@ export function calculateTaxBreakdown(
  * Calculate total tax amount from tax breakdown
  */
 export function calculateTotalTaxFromBreakdown(breakdown: TaxBreakdown[]): MoneyAmount {
-  if (breakdown.length === 0) {
+  const currency = breakdown[0]?.taxAmount.currency;
+  if (!currency) {
     return { amount: new Decimal(0), currency: 'NZD' };
   }
-  
-  const currency = breakdown[0].taxAmount.currency;
   const totalTax = breakdown.reduce((sum, item) => {
     if (item.taxAmount.currency !== currency) {
       throw new Error(`Cannot sum tax amounts with different currencies: ${currency} and ${item.taxAmount.currency}`);
@@ -218,7 +217,7 @@ export function validateTaxRate(rate: number): boolean {
  * Get tax rate for a specific service type (future extensibility)
  */
 export function getTaxRateForService(
-  serviceType: string,
+  _serviceType: string,
   defaultRate: number = DEFAULT_GST_RATE
 ): number {
   // Future implementation: lookup tax rates by service type

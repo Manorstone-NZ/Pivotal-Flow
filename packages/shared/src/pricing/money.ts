@@ -129,11 +129,10 @@ export function calculatePercentage(money: MoneyAmount, percentage: number | Dec
  * Sum an array of monetary amounts (must be same currency)
  */
 export function sumMoney(amounts: MoneyAmount[]): MoneyAmount {
-  if (amounts.length === 0) {
+  const currency = amounts[0]?.currency;
+  if (!currency) {
     throw new Error('Cannot sum empty array of amounts');
   }
-  
-  const currency = amounts[0].currency;
   
   // Validate all amounts have same currency
   for (const amount of amounts) {

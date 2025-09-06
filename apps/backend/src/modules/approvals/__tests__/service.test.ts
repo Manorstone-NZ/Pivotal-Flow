@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ApprovalService } from '../service.js';
+
 import { testUtils, testDb } from '../../../__tests__/setup.js';
+import { ApprovalService } from '../service.js';
 
 describe('ApprovalService', () => {
   let approvalService: ApprovalService;

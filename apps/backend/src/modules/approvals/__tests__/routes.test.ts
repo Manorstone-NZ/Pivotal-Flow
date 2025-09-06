@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { testUtils, testDb } from '../../../__tests__/setup.js';
 import { ApprovalService } from '../service.js';
 

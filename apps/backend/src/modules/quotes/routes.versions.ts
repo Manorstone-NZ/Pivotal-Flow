@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { QuoteService } from './service.js';
+
 import { logger } from '../../lib/logger.js';
+
+import { QuoteService } from './service.js';
 
 interface GetQuoteVersionsRequest {
   Params: {

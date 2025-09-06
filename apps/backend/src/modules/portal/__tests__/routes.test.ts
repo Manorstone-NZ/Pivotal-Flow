@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { build } from '../../../app.js';
 import type { FastifyInstance } from 'fastify';
-import { testDb, createTestUser, createTestCustomer, createTestOrganization, cleanup } from '../../../__tests__/setup.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { testDb, testUtils } from '../../../__tests__/setup.js';
+import { build } from '../../../app.js';
 import { quotes, invoices } from '../../../lib/schema.js';
 
 describe('Portal Routes', () => {
@@ -18,25 +19,27 @@ describe('Portal Routes', () => {
     await app.ready();
 
     // Create test organization
-    testOrgId = await createTestOrganization('Portal Routes Test Org');
+    testOrgId = await testUtils.createTestOrganization({ name: 'Portal Routes Test Org' });
     
     // Create test customer
-    testCustomerId = await createTestCustomer(testOrgId, {
+    testCustomerId = await testUtils.createTestCustomer(testOrgId, {
       companyName: 'Test Customer Company',
       customerNumber: 'CUST-001'
     });
     
     // Create external customer user
-    externalUserId = await createTestUser(testOrgId, {
+    externalUserId = await testUtils.createTestUser({
       email: 'customer@testcustomer.com',
       userType: 'external_customer',
-      customerId: testCustomerId
+      customerId: testCustomerId,
+      organizationId: testOrgId
     });
 
     // Create internal user
-    internalUserId = await createTestUser(testOrgId, {
+    internalUserId = await testUtils.createTestUser({
       email: 'internal@company.com',
-      userType: 'internal'
+      userType: 'internal',
+      organizationId: testOrgId
     });
 
     // Mock JWT tokens (in real implementation, these would be proper JWTs)
@@ -70,7 +73,7 @@ describe('Portal Routes', () => {
 
   afterEach(async () => {
     await app.close();
-    await cleanup();
+    await testUtils.cleanupTestData();
   });
 
   describe('Authentication and Authorization', () => {
@@ -155,8 +158,8 @@ describe('Portal Routes', () => {
       });
 
       // Check rate limit headers are decreasing
-      const remaining1 = parseInt(responses[0].headers['x-ratelimit-remaining'] as string);
-      const remaining2 = parseInt(responses[9].headers['x-ratelimit-remaining'] as string);
+      const remaining1 = parseInt(responses[0]?.headers['x-ratelimit-remaining'] as string);
+      const remaining2 = parseInt(responses[9]?.headers['x-ratelimit-remaining'] as string);
       expect(remaining2).toBeLessThan(remaining1);
     });
   });

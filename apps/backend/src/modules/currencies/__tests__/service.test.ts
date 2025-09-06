@@ -1,8 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { CurrencyService } from '../service.js';
+
 import { getDatabase } from '../../../lib/db.js';
 import { organizations, currencies } from '../../../lib/schema.js';
-import { eq } from 'drizzle-orm';
+import { CurrencyService } from '../service.js';
 
 describe('CurrencyService', () => {
   let currencyService: CurrencyService;
@@ -29,8 +30,10 @@ describe('CurrencyService', () => {
   });
 
   afterEach(async () => {
-    // Clean up test data
-    await testDb.delete(currencies).where(eq(currencies.organizationId, testOptions.organizationId));
+    // Clean up test data - currencies is global, so we clean up by code
+    await testDb.delete(currencies).where(eq(currencies.code, 'USD'));
+    await testDb.delete(currencies).where(eq(currencies.code, 'EUR'));
+    await testDb.delete(currencies).where(eq(currencies.code, 'GBP'));
     await testDb.delete(organizations).where(eq(organizations.id, testOptions.organizationId));
   });
 
@@ -39,26 +42,20 @@ describe('CurrencyService', () => {
       // Create test currencies
       const testCurrencies = [
         {
-          id: `currency-1-${Date.now()}`,
-          organizationId: testOptions.organizationId,
           code: 'USD',
           name: 'US Dollar',
           symbol: '$',
           isDefault: true,
           isActive: true,
-          exchangeRate: 1.0,
           createdAt: new Date(),
           updatedAt: new Date()
         },
         {
-          id: `currency-2-${Date.now()}`,
-          organizationId: testOptions.organizationId,
           code: 'EUR',
           name: 'Euro',
           symbol: '€',
           isDefault: false,
           isActive: true,
-          exchangeRate: 0.85,
           createdAt: new Date(),
           updatedAt: new Date()
         }
@@ -137,36 +134,30 @@ describe('CurrencyService', () => {
   });
 
   describe('getCurrency', () => {
-    it('should return currency by ID', async () => {
+    it('should return currency by code', async () => {
       // Create test currency
-      const currencyId = `currency-1-${Date.now()}`;
       await testDb.insert(currencies).values({
-        id: currencyId,
-        organizationId: testOptions.organizationId,
         code: 'USD',
         name: 'US Dollar',
         symbol: '$',
         isDefault: true,
         isActive: true,
-        exchangeRate: 1.0,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
-      const result = await currencyService.getCurrency(currencyId);
+      const result = await currencyService.getCurrency('USD');
 
       expect(result).toBeDefined();
-      expect(result.id).toBe(currencyId);
       expect(result.code).toBe('USD');
       expect(result.name).toBe('US Dollar');
       expect(result.symbol).toBe('$');
       expect(result.isDefault).toBe(true);
       expect(result.isActive).toBe(true);
-      expect(result.exchangeRate).toBe(1.0);
     });
 
     it('should return null for non-existent currency', async () => {
-      const result = await currencyService.getCurrency('non-existent-id');
+      const result = await currencyService.getCurrency('XXX');
       expect(result).toBeNull();
     });
   });
@@ -176,8 +167,7 @@ describe('CurrencyService', () => {
       const currencyData = {
         code: 'GBP',
         name: 'British Pound',
-        symbol: '£',
-        exchangeRate: 0.75
+        symbol: '£'
       };
 
       const result = await currencyService.createCurrency(currencyData);
@@ -186,8 +176,6 @@ describe('CurrencyService', () => {
       expect(result.code).toBe(currencyData.code);
       expect(result.name).toBe(currencyData.name);
       expect(result.symbol).toBe(currencyData.symbol);
-      expect(result.exchangeRate).toBe(currencyData.exchangeRate);
-      expect(result.organizationId).toBe(testOptions.organizationId);
       expect(result.isActive).toBe(true);
       expect(result.isDefault).toBe(false);
 
@@ -200,14 +188,11 @@ describe('CurrencyService', () => {
     it('should throw error for duplicate currency code', async () => {
       // Create first currency
       await testDb.insert(currencies).values({
-        id: `currency-1-${Date.now()}`,
-        organizationId: testOptions.organizationId,
         code: 'USD',
         name: 'US Dollar',
         symbol: '$',
         isDefault: true,
         isActive: true,
-        exchangeRate: 1.0,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -216,8 +201,7 @@ describe('CurrencyService', () => {
       const currencyData = {
         code: 'USD', // Duplicate code
         name: 'US Dollar',
-        symbol: '$',
-        exchangeRate: 1.0
+        symbol: '$'
       };
 
       await expect(currencyService.createCurrency(currencyData))
@@ -229,8 +213,7 @@ describe('CurrencyService', () => {
       const currencyData = {
         code: 'INVALID', // Invalid code (should be 3 letters)
         name: 'Invalid Currency',
-        symbol: '?',
-        exchangeRate: 1.0
+        symbol: '?'
       };
 
       await expect(currencyService.createCurrency(currencyData))
@@ -242,35 +225,29 @@ describe('CurrencyService', () => {
   describe('updateCurrency', () => {
     it('should update currency successfully', async () => {
       // Create test currency
-      const currencyId = `currency-1-${Date.now()}`;
       await testDb.insert(currencies).values({
-        id: currencyId,
-        organizationId: testOptions.organizationId,
         code: 'USD',
         name: 'US Dollar',
         symbol: '$',
         isDefault: true,
         isActive: true,
-        exchangeRate: 1.0,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
       const updateData = {
         name: 'Updated US Dollar',
-        symbol: 'US$',
-        exchangeRate: 1.1
+        symbol: 'US$'
       };
 
-      const result = await currencyService.updateCurrency(currencyId, updateData);
+      const result = await currencyService.updateCurrency('USD', updateData);
 
       expect(result).toBeDefined();
       expect(result.name).toBe(updateData.name);
       expect(result.symbol).toBe(updateData.symbol);
-      expect(result.exchangeRate).toBe(updateData.exchangeRate);
 
       // Verify it was updated in database
-      const updated = await testDb.select().from(currencies).where(eq(currencies.id, currencyId));
+      const updated = await testDb.select().from(currencies).where(eq(currencies.code, 'USD'));
       expect(updated[0].name).toBe(updateData.name);
     });
 
@@ -279,7 +256,7 @@ describe('CurrencyService', () => {
         name: 'Updated'
       };
 
-      await expect(currencyService.updateCurrency('non-existent-id', updateData))
+      await expect(currencyService.updateCurrency('XXX', updateData))
         .rejects
         .toThrow('Currency not found');
     });
@@ -321,15 +298,15 @@ describe('CurrencyService', () => {
       const result = await currencyService.setDefaultCurrency(currency2Id);
 
       expect(result).toBeDefined();
-      expect(result.id).toBe(currency2Id);
+      expect(result.code).toBe(currency2Id);
       expect(result.isDefault).toBe(true);
 
       // Verify previous default is no longer default
-      const previousDefault = await testDb.select().from(currencies).where(eq(currencies.id, currency1Id));
+      const previousDefault = await testDb.select().from(currencies).where(eq(currencies.code, currency1Id));
       expect(previousDefault[0].isDefault).toBe(false);
 
       // Verify new default is set
-      const newDefault = await testDb.select().from(currencies).where(eq(currencies.id, currency2Id));
+      const newDefault = await testDb.select().from(currencies).where(eq(currencies.code, currency2Id));
       expect(newDefault[0].isDefault).toBe(true);
     });
 
@@ -360,7 +337,6 @@ describe('CurrencyService', () => {
       const result = await currencyService.getDefaultCurrency();
 
       expect(result).toBeDefined();
-      expect(result.id).toBe(currencyId);
       expect(result.code).toBe('USD');
       expect(result.isDefault).toBe(true);
     });

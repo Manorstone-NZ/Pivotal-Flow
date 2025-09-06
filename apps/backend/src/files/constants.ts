@@ -3,6 +3,8 @@
  * Configuration and validation constants for file storage
  */
 
+import { config } from '../config/index.js';
+
 import type { MimeType } from './types.js';
 
 // Allowed MIME types with file extensions
@@ -66,7 +68,7 @@ export const STORAGE_CONFIG = {
   LOCAL_MAX_SIZE: 10 * 1024 * 1024 * 1024, // 10 GB
   
   // Token configuration
-  TOKEN_SECRET: process.env['FILE_TOKEN_SECRET'] || 'pivotal-flow-file-secret-dev',
+  TOKEN_SECRET: config.files.tokenSecret,
   TOKEN_ALGORITHM: 'HS256',
   
   // Cleanup configuration

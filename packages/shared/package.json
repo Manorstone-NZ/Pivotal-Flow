@@ -50,6 +50,10 @@
     "./db/filterGuard": {
       "import": "./dist/db/filterGuard.js",
       "types": "./dist/db/filterGuard.d.ts"
+    },
+    "./cache/types": {
+      "import": "./dist/cache/types.js",
+      "types": "./dist/cache/types.d.ts"
     }
   },
   "scripts": {

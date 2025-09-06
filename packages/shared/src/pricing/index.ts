@@ -1,14 +1,8 @@
 import { Decimal } from 'decimal.js';
 import { z } from 'zod';
-import type { MoneyAmount } from './money.js';
-import { createDecimal } from './money.js';
-import type { DiscountType } from './discounts.js';
-import { calculateDiscount } from './discounts.js';
-import type { LineItem } from './lines.js';
+
 import { calculateLineItem, calculateLineItems } from './lines.js';
-import type { QuoteTotals, QuoteDiscount } from './totals.js';
 import { calculateQuoteTotals, calculateQuoteTotalsWithBreakdown } from './totals.js';
-import type { TaxBreakdown } from './taxes.js';
 
 /**
  * Main pricing orchestration module
@@ -162,13 +156,18 @@ export function calculateQuote(input: CalculateQuoteInput, currencyDecimals: num
   try {
     // Ensure all line items have the same currency
     const currency = validatedInput.currency;
-    const normalizedLineItems = validatedInput.lineItems.map(item => ({
-      ...item,
-      unitPrice: {
-        ...item.unitPrice,
-        currency
-      }
-    }));
+    const normalizedLineItems = validatedInput.lineItems.map(item => {
+      const normalized: any = {
+        ...item,
+        unitPrice: {
+          ...item.unitPrice,
+          currency
+        }
+      };
+      if (item.serviceType !== undefined) normalized.serviceType = item.serviceType;
+      if (item.description !== undefined) normalized.description = item.description;
+      return normalized;
+    });
     
     // Calculate line items
     const lineCalculations = normalizedLineItems.map(item => calculateLineItem(item, currencyDecimals));
@@ -178,7 +177,11 @@ export function calculateQuote(input: CalculateQuoteInput, currencyDecimals: num
     
     // Calculate quote totals
     const totals = validatedInput.quoteDiscount
-      ? calculateQuoteTotals(lineCalculations, validatedInput.quoteDiscount)
+      ? calculateQuoteTotals(lineCalculations, {
+          type: validatedInput.quoteDiscount.type,
+          value: validatedInput.quoteDiscount.value,
+          ...(validatedInput.quoteDiscount.description && { description: validatedInput.quoteDiscount.description }),
+        })
       : calculateQuoteTotals(lineCalculations);
     
     return {
@@ -202,20 +205,29 @@ export function calculateQuoteDebug(input: CalculateQuoteInput): QuoteDebugOutpu
   try {
     // Ensure all line items have the same currency
     const currency = validatedInput.currency;
-    const normalizedLineItems = validatedInput.lineItems.map(item => ({
-      ...item,
-      unitPrice: {
-        ...item.unitPrice,
-        currency
-      }
-    }));
+    const normalizedLineItems = validatedInput.lineItems.map(item => {
+      const normalized: any = {
+        ...item,
+        unitPrice: {
+          ...item.unitPrice,
+          currency
+        }
+      };
+      if (item.serviceType !== undefined) normalized.serviceType = item.serviceType;
+      if (item.description !== undefined) normalized.description = item.description;
+      return normalized;
+    });
     
     // Calculate line items with debug information
     const lineCalculations = normalizedLineItems.map(calculateLineItem);
     
     // Calculate quote totals with breakdown
     const totalsWithBreakdown = validatedInput.quoteDiscount
-      ? calculateQuoteTotalsWithBreakdown(lineCalculations, validatedInput.quoteDiscount)
+      ? calculateQuoteTotalsWithBreakdown(lineCalculations, {
+          type: validatedInput.quoteDiscount.type,
+          value: validatedInput.quoteDiscount.value,
+          ...(validatedInput.quoteDiscount.description && { description: validatedInput.quoteDiscount.description }),
+        })
       : calculateQuoteTotalsWithBreakdown(lineCalculations);
     
     // Build debug output

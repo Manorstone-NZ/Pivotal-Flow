@@ -3,17 +3,19 @@
  * Manages async export jobs with background processing
  */
 
-import { eq, and, desc, sql } from 'drizzle-orm';
 import { generateId } from '@pivotal-flow/shared';
+import { eq, and, desc, sql } from 'drizzle-orm';
+
+import type { AuditLogger } from '../../lib/audit/logger.js';
 import { getDatabase } from '../../lib/db.js';
 import { exportJobs } from '../../lib/schema.js';
-import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../../lib/audit/logger.js';
-import { ReportingMetrics } from './metrics.js';
+import type { PermissionService } from '../permissions/service.js';
+
 import { 
   EXPORT_JOB_STATUS, 
   REPORT_TYPES 
 } from './constants.js';
+import { ReportingMetrics } from './metrics.js';
 import type { 
   ExportJob, 
   ExportJobRequest,
@@ -112,10 +114,13 @@ export class ExportJobService {
     }
 
     const exportJob = job[0];
-    const progress = this.calculateProgress(exportJob);
+    if (!exportJob) {
+      throw new Error('Export job not found');
+    }
+    const progress = this.calculateProgress(exportJob as any as ExportJob);
 
     return {
-      job: exportJob,
+      job: exportJob as any as ExportJob,
       progress,
     };
   }
@@ -151,7 +156,7 @@ export class ExportJobService {
     ]);
 
     return {
-      jobs,
+      jobs: jobs as unknown as ExportJob[],
       total: totalResult[0]?.count || 0,
     };
   }
@@ -175,7 +180,7 @@ export class ExportJobService {
         )
       );
 
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       throw new Error('Export job not found or cannot be cancelled');
     }
 
@@ -218,9 +223,12 @@ export class ExportJobService {
       }
 
       const exportJob = job[0];
+      if (!exportJob) {
+        throw new Error('Export job not found');
+      }
 
       // Generate export data based on report type
-      const exportData = await this.generateExportData(exportJob);
+      const exportData = await this.generateExportData(exportJob as any as ExportJob);
 
       // Create download URL (in production, this would be a file storage service)
       const downloadUrl = `/api/v1/reports/export/${jobId}/download`;

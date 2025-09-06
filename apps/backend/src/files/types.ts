@@ -57,8 +57,9 @@ export interface StorageAdapter {
   getSignedUrl(fileId: string, options: SignedUrlOptions): Promise<string>;
   deleteFile(fileId: string): Promise<void>;
   cleanupExpiredFiles(): Promise<number>;
-  getFileInfo(fileId: string): Promise<FileInfo>;
+  getFileInfo(fileId: string): Promise<FileInfo | null>;
   validateFile(fileId: string, token: string): Promise<boolean>;
+  getFileContent(fileId: string): Promise<{ content: Buffer; mimeType: MimeType; filename: string }>;
 }
 
 // File validation result

@@ -1,64 +1,23 @@
 /**
- * Audit types shared across the application
+ * Audit event types
+ * Defines the structure for audit logging events
  */
 
-export enum AuditEventType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  APPROVE = 'approve',
-  REJECT = 'reject',
-  LOGIN = 'login',
-  LOGOUT = 'logout',
-  EXPORT = 'export',
-  IMPORT = 'import',
-  CONFIGURE = 'configure',
-  VIEW = 'view'
-}
+export type AuditAction = 
+  | "created" 
+  | "updated" 
+  | "deleted" 
+  | "approved" 
+  | "rejected" 
+  | "payment_applied" 
+  | "payment_voided"
 
 export interface AuditEvent {
-  id: string;
-  organizationId: string;
-  userId: string;
-  eventType: AuditEventType;
-  entityType: string;
-  entityId: string;
-  oldValues?: any;
-  newValues?: any;
-  metadata?: Record<string, any>;
-  timestamp: Date;
-  ipAddress?: string;
-  userAgent?: string;
+  actorId: string | null
+  organisationId: string
+  entityType: string
+  entityId: string
+  action: AuditAction
+  metadata?: Record<string, unknown>
+  createdAt?: Date
 }
-
-export interface AuditLogEntry {
-  action: string;
-  entityType: string;
-  entityId: string;
-  organizationId: string;
-  userId: string;
-  oldValues?: any;
-  newValues?: any;
-  metadata?: Record<string, any>;
-}
-
-export interface AuditContext {
-  organizationId: string;
-  userId: string;
-  ipAddress?: string;
-  userAgent?: string;
-}
-
-export type AuditEntityType = 
-  | 'User'
-  | 'Customer'
-  | 'Project'
-  | 'Quote'
-  | 'Invoice'
-  | 'Payment'
-  | 'TimeEntry'
-  | 'ResourceAllocation'
-  | 'Approval'
-  | 'Organization'
-  | 'Role'
-  | 'Permission';

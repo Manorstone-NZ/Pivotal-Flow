@@ -1,5 +1,6 @@
-import { getRedisHealth } from './utils.js';
 import { createRedisLogger } from '../logger.js';
+
+import { getRedisHealth } from './utils.js';
 
 export async function checkRedisHealth() {
   const startTime = Date.now();

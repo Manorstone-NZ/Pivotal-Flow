@@ -25,29 +25,30 @@ export interface ErrorResponse {
 }
 
 /**
- * Standard pagination envelope for list endpoints
+ * Standard pagination envelope for list endpoints - unified format
  */
 export interface PaginationEnvelope<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
+  data: T[];
   meta: {
-    api_version: string;
-    documentation_url: string;
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
     organization_id?: string;
+    filtered_count?: number;
   };
 }
 
 /**
- * Common filter parameters for list endpoints
+ * Common filter parameters for list endpoints - unified format
  */
 export interface CommonFilters {
   page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  size?: number;
+  sort?: string;
+  filter?: string;
   search?: string;
 }
 
@@ -155,7 +156,7 @@ export interface UpdateUserRequest {
 }
 
 /**
- * User filters for list endpoint
+ * User filters for list endpoint - unified format
  */
 export interface UserFilters extends CommonFilters {
   role?: string;
@@ -243,7 +244,7 @@ export interface QuoteStatusTransitionRequest {
 }
 
 /**
- * Quote filters for list endpoint
+ * Quote filters for list endpoint - unified format
  */
 export interface QuoteFilters extends CommonFilters {
   status?: QuoteStatus;

@@ -4,6 +4,7 @@
  */
 
 import { eq, and, isNull, desc, asc, sql } from 'drizzle-orm';
+
 import { getDatabase } from '../lib/db.js';
 import { customers } from '../lib/schema.js';
 
@@ -101,7 +102,7 @@ export class CustomerRepository {
           id: customers.id,
           email: customers.email,
           displayName: customers.companyName,
-          isActive: sql`${customers.status} = 'active'`,
+          isActive: sql<boolean>`${customers.status} = 'active'`,
           organizationId: customers.organizationId,
         })
         .from(customers)
@@ -120,7 +121,10 @@ export class CustomerRepository {
     const totalPages = Math.ceil(total / pageSize);
 
     return {
-      customers: customerData,
+      customers: customerData.map(customer => ({
+        ...customer,
+        email: customer.email || ''
+      })),
       pagination: {
         page,
         pageSize,
@@ -141,7 +145,7 @@ export class CustomerRepository {
         id: customers.id,
         email: customers.email,
         displayName: customers.companyName,
-        isActive: sql`${customers.status} = 'active'`,
+        isActive: sql<boolean>`${customers.status} = 'active'`,
         organizationId: customers.organizationId,
       })
       .from(customers)
@@ -152,7 +156,10 @@ export class CustomerRepository {
       ))
       .limit(1);
 
-    return result[0] || null;
+    return result[0] ? {
+      ...result[0],
+      email: result[0].email || ''
+    } : null;
   }
 
   /**
@@ -164,7 +171,7 @@ export class CustomerRepository {
         id: customers.id,
         email: customers.email,
         displayName: customers.companyName,
-        isActive: sql`${customers.status} = 'active'`,
+        isActive: sql<boolean>`${customers.status} = 'active'`,
         organizationId: customers.organizationId,
       })
       .from(customers)
@@ -175,7 +182,10 @@ export class CustomerRepository {
       ))
       .limit(1);
 
-    return result[0] || null;
+    return result[0] ? {
+      ...result[0],
+      email: result[0].email || ''
+    } : null;
   }
 
   /**

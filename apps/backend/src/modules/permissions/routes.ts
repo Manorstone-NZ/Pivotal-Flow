@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { PermissionService } from './service.js';
+
 import { PERMISSIONS } from './constants.js';
+import { PermissionService } from './service.js';
 
 // Request schemas
 const CheckPermissionRequestSchema = z.object({

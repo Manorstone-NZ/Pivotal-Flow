@@ -1,0 +1,109 @@
+# Multi-stage production Dockerfile for Pivotal Flow Frontend
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
+# Copy package files for dependency resolution
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/frontend/package.json apps/frontend/
+COPY packages/shared/package.json packages/shared/
+COPY packages/sdk/package.json packages/sdk/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --prod=false
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Copy source code
+COPY . .
+
+# Install all dependencies (including dev dependencies for building)
+RUN pnpm install --frozen-lockfile
+
+# Build shared package first
+RUN pnpm -C packages/shared run build
+
+# Build SDK package
+RUN pnpm -C packages/sdk run build
+
+# Build frontend
+RUN pnpm -C apps/frontend run typecheck
+RUN pnpm -C apps/frontend run lint
+RUN pnpm -C apps/frontend run build
+
+# Stage 3: Runtime (Optimized nginx)
+FROM nginx:1.27-alpine AS runtime
+
+# Install envsubst for environment variable substitution
+RUN apk add --no-cache gettext
+
+# Create non-root user
+RUN addgroup -g 10001 -S nginxuser && \
+    adduser -S -D -H -u 10001 -h /var/cache/nginx -s /sbin/nologin -G nginxuser -g nginxuser nginxuser
+
+# Copy built application
+COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
+
+# Copy nginx configurations
+COPY apps/frontend/nginx.conf /etc/nginx/nginx.conf
+COPY apps/frontend/nginx-security.conf /etc/nginx/conf.d/security.conf
+
+# Create environment template for runtime configuration
+RUN echo 'window.env = { \
+  VITE_API_BASE_URL: "${VITE_API_BASE_URL:-http://localhost:3000/api/v1}" \
+};' > /usr/share/nginx/html/env.js.template
+
+# Create entrypoint script for environment injection
+RUN echo '#!/bin/sh \
+set -e \
+echo "Starting Pivotal Flow Frontend..." \
+echo "Injecting environment variables..." \
+envsubst < /usr/share/nginx/html/env.js.template > /usr/share/nginx/html/env.js \
+echo "Environment injected successfully" \
+echo "Starting nginx..." \
+exec nginx -g "daemon off;"' > /entrypoint.sh
+
+# Set ownership and permissions
+RUN chown -R nginxuser:nginxuser /usr/share/nginx/html && \
+    chown -R nginxuser:nginxuser /var/cache/nginx && \
+    chown -R nginxuser:nginxuser /var/log/nginx && \
+    chown -R nginxuser:nginxuser /etc/nginx && \
+    chmod +x /entrypoint.sh
+
+# Switch to non-root user
+USER nginxuser
+
+# Set environment variables
+ENV VITE_API_BASE_URL=http://localhost:3000/api/v1
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+
+# Prometheus labels for scraping
+LABEL prometheus.io/scrape="true" \
+      prometheus.io/port="8080" \
+      prometheus.io/path="/health" \
+      org.opencontainers.image.title="Pivotal Flow Frontend" \
+      org.opencontainers.image.description="Production frontend SPA" \
+      org.opencontainers.image.version="0.1.0"
+
+# Start application
+CMD ["/entrypoint.sh"]

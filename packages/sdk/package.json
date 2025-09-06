@@ -31,6 +31,8 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
+    "generate": "tsx scripts/generate.ts",
+    "generate:watch": "tsx scripts/generate.ts --watch",
     "prepublishOnly": "npm run clean && npm run build && npm run type-check",
     "publish:dry-run": "npm pack --dry-run",
     "version": "npm run build && git add -A dist",

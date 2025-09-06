@@ -51,7 +51,7 @@ export class AuditLogger {
       // TODO: Implement database storage
       // await this.fastify.db.insert(auditLogs).values(auditRecord);
     } catch (error) {
-      this.fastify.log.error('Audit logging failed:', error as Error);
+      this.fastify.log.error({ error }, 'Audit logging failed');
     }
   }
 

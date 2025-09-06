@@ -1,5 +1,14 @@
 // Cache layer with Redis getOrSet, key ttl, fn, and bust helpers
 
+import type { CacheMetrics } from '../metrics/index.js';
+import { required } from '../utils/strict.js';
+
+// Re-export types from types module
+export type { CacheApi } from './types.js';
+
+// Re-export CacheMetrics from metrics module to maintain compatibility
+export type { CacheMetrics } from '../metrics/index.js';
+
 export interface CacheOptions {
   ttl?: number; // seconds
   prefix?: string;
@@ -12,14 +21,6 @@ export interface CacheKeyOptions {
   resource: string;
   identifier?: string | undefined;
   action?: string | undefined;
-}
-
-export interface CacheMetrics {
-  hits: number;
-  misses: number;
-  sets: number;
-  busts: number;
-  errors: number;
 }
 
 export class CacheError extends Error {
@@ -170,7 +171,7 @@ export class CacheWrapper {
   ): Promise<T> {
     // Check if request is already in flight
     if (this.inFlightRequests.has(key)) {
-      return this.inFlightRequests.get(key)!;
+      return required(this.inFlightRequests.get(key), `In-flight request for key ${key} should exist`);
     }
 
     // Create new request promise
@@ -325,7 +326,7 @@ export class CacheWrapper {
   /**
    * Bust cache by pattern (implementation depends on cache provider)
    */
-  private async bustPattern(pattern: string): Promise<void> {
+  private async bustPattern(_pattern: string): Promise<void> {
     // This is a simplified implementation
     // In practice, you'd need to implement pattern-based deletion
     // or use cache provider-specific methods

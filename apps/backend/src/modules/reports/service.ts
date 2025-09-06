@@ -3,7 +3,9 @@
  * Core business logic for generating reports and summaries
  */
 
+import { required, startTimer } from '@pivotal-flow/shared';
 import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
+
 import { getDatabase } from '../../lib/db.js';
 import { 
   quotes, 
@@ -12,9 +14,47 @@ import {
   customers,
   projects
 } from '../../lib/schema.js';
-import { PermissionService } from '../permissions/service.js';
-import { ReportingMetrics } from './metrics.js';
+import type { PermissionService } from '../permissions/service.js';
+
 import { REPORT_TYPES } from './constants.js';
+import { ReportingMetrics } from './metrics.js';
+
+// Database query result types
+interface QuoteQueryResult {
+  id: string;
+  quoteNumber: string;
+  status: string;
+  createdAt: Date;
+  sentAt: Date | null;
+  acceptedAt: Date | null;
+  totalAmount: number;
+  currency: string;
+  customerName: string | null;
+  projectName: string | null;
+}
+
+interface QuoteWithCycleTime extends QuoteQueryResult {
+  cycleTimeDays: number;
+}
+
+interface InvoiceQueryResult {
+  id: string;
+  invoiceNumber: string;
+  status: string;
+  createdAt: Date;
+  dueDate: Date;
+  paidAt: Date | null;
+  totalAmount: number;
+  balanceAmount: number;
+  currency: string;
+  customerName: string | null;
+  projectName: string | null;
+}
+
+interface InvoiceWithSettlementTime extends InvoiceQueryResult {
+  settlementTimeDays: number;
+}
+
 import type {
   QuoteCycleTimeFilters,
   InvoiceSettlementTimeFilters,
@@ -45,6 +85,8 @@ export class ReportingService {
    * Generate quote cycle time summary
    */
   async generateQuoteCycleTimeSummary(filters: QuoteCycleTimeFilters): Promise<QuoteCycleTimeSummary> {
+    const timer = startTimer();
+    
     // Check permissions
     const canViewReports = await this.permissionService.hasPermission(
       this.userId,
@@ -100,23 +142,27 @@ export class ReportingService {
         ? Math.ceil((new Date(quote.acceptedAt).getTime() - new Date(quote.sentAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
       
-      return { ...quote, cycleTimeDays };
-    }).filter((quote: any) => quote.cycleTimeDays > 0 || filters.minCycleTimeDays === undefined);
+      return { 
+        ...quote, 
+        cycleTimeDays,
+        totalAmount: Number(quote.totalAmount)
+      };
+    }).filter((quote: QuoteWithCycleTime) => quote.cycleTimeDays > 0 || filters.minCycleTimeDays === undefined);
 
     // Apply cycle time filters
     let filteredQuotes = quotesWithCycleTime;
     if (filters.minCycleTimeDays !== undefined) {
-      filteredQuotes = filteredQuotes.filter((quote: any) => quote.cycleTimeDays >= filters.minCycleTimeDays!);
+      filteredQuotes = filteredQuotes.filter((quote: QuoteWithCycleTime) => quote.cycleTimeDays >= required(filters.minCycleTimeDays, "minCycleTimeDays is required"));
     }
     if (filters.maxCycleTimeDays !== undefined) {
-      filteredQuotes = filteredQuotes.filter((quote: any) => quote.cycleTimeDays <= filters.maxCycleTimeDays!);
+      filteredQuotes = filteredQuotes.filter((quote: QuoteWithCycleTime) => quote.cycleTimeDays <= required(filters.maxCycleTimeDays, "maxCycleTimeDays is required"));
     }
 
     // Calculate summary statistics
-    const cycleTimes = filteredQuotes.map((q: any) => q.cycleTimeDays).filter((t: any) => t > 0);
+    const cycleTimes = filteredQuotes.map((q: QuoteWithCycleTime) => q.cycleTimeDays).filter((t: number) => t > 0);
     const totalQuotes = filteredQuotes.length;
     const averageCycleTimeDays = cycleTimes.length > 0 
-      ? cycleTimes.reduce((sum: any, time: any) => sum + time, 0) / cycleTimes.length 
+      ? cycleTimes.reduce((sum: number, time: number) => sum + time, 0) / cycleTimes.length
       : 0;
     const medianCycleTimeDays = this.calculateMedian(cycleTimes);
     const minCycleTimeDays = cycleTimes.length > 0 ? Math.min(...cycleTimes) : 0;
@@ -148,7 +194,17 @@ export class ReportingService {
     };
 
     // Record metrics
+    const duration = timer();
     this.metrics.recordReportGenerated(REPORT_TYPES.QUOTE_CYCLE_TIME, this.organizationId);
+    this.metrics.recordReportDuration(REPORT_TYPES.QUOTE_CYCLE_TIME, this.organizationId, duration);
+
+    // Log performance metrics
+    console.log({
+      reportName: 'quote-cycle-time',
+      organizationId: this.organizationId,
+      rows: totalQuotes,
+      ms: duration
+    });
 
     return summary;
   }
@@ -213,34 +269,39 @@ export class ReportingService {
 
     // Calculate settlement times
     const invoicesWithSettlementTime = invoicesData.map((invoice: any) => {
-      const settlementTimeDays = invoice.paidAt && invoice.issuedAt 
-        ? Math.ceil((new Date(invoice.paidAt).getTime() - new Date(invoice.issuedAt).getTime()) / (1000 * 60 * 60 * 24))
+      const settlementTimeDays = invoice.paidAt && invoice.createdAt 
+        ? Math.ceil((new Date(invoice.paidAt).getTime() - new Date(invoice.createdAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
       
-      return { ...invoice, settlementTimeDays };
+      return { 
+        ...invoice, 
+        settlementTimeDays,
+        totalAmount: Number(invoice.totalAmount),
+        balanceAmount: Number(invoice.balanceAmount)
+      };
     });
 
     // Apply settlement time filters
     let filteredInvoices = invoicesWithSettlementTime;
     if (filters.minSettlementTimeDays !== undefined) {
-      filteredInvoices = filteredInvoices.filter((invoice: any) => invoice.settlementTimeDays >= filters.minSettlementTimeDays!);
+      filteredInvoices = filteredInvoices.filter((invoice: InvoiceWithSettlementTime) => invoice.settlementTimeDays >= required(filters.minSettlementTimeDays, "minSettlementTimeDays is required"));
     }
     if (filters.maxSettlementTimeDays !== undefined) {
-      filteredInvoices = filteredInvoices.filter((invoice: any) => invoice.settlementTimeDays <= filters.maxSettlementTimeDays!);
+      filteredInvoices = filteredInvoices.filter((invoice: InvoiceWithSettlementTime) => invoice.settlementTimeDays <= required(filters.maxSettlementTimeDays, "maxSettlementTimeDays is required"));
     }
 
     // Calculate summary statistics
-    const settlementTimes = filteredInvoices.map((i: any) => i.settlementTimeDays).filter((t: any) => t > 0);
+    const settlementTimes = filteredInvoices.map((i: InvoiceWithSettlementTime) => i.settlementTimeDays).filter((t: number) => t > 0);
     const totalInvoices = filteredInvoices.length;
     const averageSettlementTimeDays = settlementTimes.length > 0 
-      ? settlementTimes.reduce((sum: any, time: any) => sum + time, 0) / settlementTimes.length 
+      ? settlementTimes.reduce((sum: number, time: number) => sum + time, 0) / settlementTimes.length
       : 0;
     const medianSettlementTimeDays = this.calculateMedian(settlementTimes);
     
-    const overdueInvoices = filteredInvoices.filter((i: any) => i.status === 'overdue').length;
+    const overdueInvoices = filteredInvoices.filter((i: InvoiceWithSettlementTime) => i.status === 'overdue').length;
     const overdueAmount = filteredInvoices
-      .filter((i: any) => i.status === 'overdue')
-      .reduce((sum: any, i: any) => sum + Number(i.balanceAmount), 0);
+      .filter((i: InvoiceWithSettlementTime) => i.status === 'overdue')
+      .reduce((sum: number, i: InvoiceWithSettlementTime) => sum + Number(i.balanceAmount), 0);
 
     // Group by status and customer
     const invoicesByStatus = this.groupBy(filteredInvoices, 'status');
@@ -372,13 +433,17 @@ export class ReportingService {
 
     // Calculate summary statistics
     const totalPayments = paymentsData.length;
-    const totalAmount = paymentsData.reduce((sum: any, p: any) => sum + Number(p.amount), 0);
-    const averageAmount = totalPayments > 0 ? totalAmount / totalPayments : 0;
+    const calculatedTotalAmount = paymentsData.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    const averageAmount = totalPayments > 0 ? calculatedTotalAmount / totalPayments : 0;
 
     // Group by method, month, and customer
     const paymentsByMethod = this.groupBy(paymentsData, 'method');
     const paymentsByMonth = this.groupBy(
-      paymentsData.map((p: any) => ({ ...p, month: new Date(p.paidAt).toISOString().slice(0, 7) })),
+      paymentsData.map((p: any) => ({ 
+        ...p, 
+        month: new Date(p.paidAt).toISOString().slice(0, 7),
+        amount: Number(p.amount)
+      })),
       'month'
     );
     const paymentsByCustomer = this.groupBy(paymentsData, 'customerName');
@@ -396,7 +461,7 @@ export class ReportingService {
 
     const summary: PaymentsReceivedSummary = {
       totalPayments,
-      totalAmount,
+      totalAmount: calculatedTotalAmount,
       averageAmount: Math.round(averageAmount * 100) / 100,
       paymentsByMethod,
       paymentsByMonth,
@@ -476,7 +541,7 @@ export class ReportingService {
       .offset(offset);
 
     // Calculate cycle times and apply filters
-    const rows: QuoteCycleTimeRow[] = quotesData.map(quote => {
+    const rows: QuoteCycleTimeRow[] = quotesData.map((quote: any) => {
       const cycleTimeDays = quote.acceptedAt && quote.sentAt 
         ? Math.ceil((new Date(quote.acceptedAt).getTime() - new Date(quote.sentAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
@@ -485,11 +550,11 @@ export class ReportingService {
         quoteId: quote.id,
         quoteNumber: quote.quoteNumber,
         customerName: quote.customerName || 'Unknown',
-        projectName: quote.projectName,
+        projectName: quote.projectName || 'Unknown',
         status: quote.status,
         createdAt: quote.createdAt.toISOString(),
-        sentAt: quote.sentAt?.toISOString(),
-        acceptedAt: quote.acceptedAt?.toISOString(),
+        sentAt: quote.sentAt?.toISOString() || '',
+        acceptedAt: quote.acceptedAt?.toISOString() || '',
         cycleTimeDays,
         totalAmount: Number(quote.totalAmount),
         currency: quote.currency,
@@ -499,10 +564,10 @@ export class ReportingService {
     // Apply cycle time filters
     let filteredRows = rows;
     if (filters.minCycleTimeDays !== undefined) {
-      filteredRows = filteredRows.filter(row => row.cycleTimeDays >= filters.minCycleTimeDays!);
+      filteredRows = filteredRows.filter(row => row.cycleTimeDays >= required(filters.minCycleTimeDays, "minCycleTimeDays is required"));
     }
     if (filters.maxCycleTimeDays !== undefined) {
-      filteredRows = filteredRows.filter(row => row.cycleTimeDays <= filters.maxCycleTimeDays!);
+      filteredRows = filteredRows.filter(row => row.cycleTimeDays <= required(filters.maxCycleTimeDays, "maxCycleTimeDays is required"));
     }
 
     return {
@@ -528,8 +593,8 @@ export class ReportingService {
     const mid = Math.floor(sorted.length / 2);
     
     return sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid];
+      ? (required(sorted[mid - 1], "median calculation requires valid array access") + required(sorted[mid], "median calculation requires valid array access")) / 2
+      : required(sorted[mid], "median calculation requires valid array access");
   }
 
   /**

@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { testUtils, testDb } from '../../../__tests__/setup.js';
-import { AllocationService } from '../service.js';
-import { ALLOCATION_ROLES } from '../constants.js';
 import { resourceAllocations, projects } from '../../../lib/schema.js';
+import { ALLOCATION_ROLES } from '../constants.js';
+import { AllocationService } from '../service.js';
 
 describe('Allocation Service Integration', () => {
   let allocationService: AllocationService;
@@ -35,10 +36,7 @@ describe('Allocation Service Integration', () => {
       }
     };
 
-    allocationService = new AllocationService(testDb, {
-      organizationId: testOrg.id,
-      userId: testUser.id
-    }, testFastify);
+    allocationService = new AllocationService(testOrg.id, testUser.id, testFastify);
   });
 
   afterEach(async () => {
@@ -95,7 +93,7 @@ describe('Allocation Service Integration', () => {
           role: ALLOCATION_ROLES.ARCHITECT
         });
         expect(allocationsList.allocations).toHaveLength(1);
-        expect(allocationsList.allocations[0].role).toBe(ALLOCATION_ROLES.ARCHITECT);
+        expect(allocationsList.allocations[0]?.role).toBe(ALLOCATION_ROLES.ARCHITECT);
 
         // 5. Delete allocation
         await allocationService.deleteAllocation(createdAllocation.id);

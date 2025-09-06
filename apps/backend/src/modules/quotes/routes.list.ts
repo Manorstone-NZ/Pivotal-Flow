@@ -1,10 +1,12 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { logger } from '../../lib/logger.js';
-import { QuoteService } from './service.js';
-import { QuoteListFiltersSchema } from './schemas.js';
-// import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 import { z } from 'zod';
+
+import { logger } from '../../lib/logger.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
+
+import { QuoteListFiltersSchema } from './schemas.js';
+import { QuoteService } from './service.js';
+// import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
 interface ListQuotesRequest {
   Querystring: {

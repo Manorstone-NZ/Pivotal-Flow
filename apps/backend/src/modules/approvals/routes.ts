@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { ApprovalService } from './service.js';
+import type { z } from 'zod';
+
 import { getDatabase } from '../../lib/db.js';
+
 import { 
   CreateApprovalRequestSchema,
   ApproveRequestSchema,
@@ -11,6 +12,7 @@ import {
   ListApprovalsResponseSchema,
   createApprovalsPagingResponse
 } from './schemas.js';
+import { ApprovalService } from './service.js';
 
 // Type definition for authenticated user
 interface AuthenticatedUser {

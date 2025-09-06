@@ -1,4 +1,6 @@
+import type { CacheApi } from '@pivotal-flow/shared';
 import { createClient } from 'redis';
+
 import { logger } from './logger.js';
 
 export interface CacheOptions {
@@ -25,8 +27,8 @@ export interface CacheItem<T> {
  * - Organization settings and feature flags
  * - Frequently accessed business data
  */
-export class CacheService {
-  private client: ReturnType<typeof createClient>; // Redis client instance
+export class CacheService implements CacheApi {
+  protected client: ReturnType<typeof createClient>; // Redis client instance
   private isConnected: boolean = false;
   private readonly keyPrefix: string;
   private readonly defaultTTL: number;
@@ -169,7 +171,7 @@ export class CacheService {
         return null;
       }
 
-      const cacheItem: CacheItem<T> = JSON.parse(value as string);
+      const cacheItem: CacheItem<T> = JSON.parse(value);
       
       // Check if item has expired
       const now = Date.now();
@@ -305,7 +307,7 @@ export class CacheService {
       const keys = await this.client.dbSize();
       
       // Parse memory info (simplified)
-      const memoryMatch = (info as string).match(/used_memory_human:(\S+)/);
+      const memoryMatch = (info).match(/used_memory_human:(\S+)/);
       const memoryUsage = memoryMatch?.[1] ?? '0B';
       
       return {

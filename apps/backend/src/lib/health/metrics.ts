@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config, metricsConfig } from '../../config/index.js';
 import { logger } from '../logger.js';
 
 export async function checkMetricsHealth() {
@@ -9,7 +9,7 @@ export async function checkMetricsHealth() {
     metricsLogger.debug('Starting metrics health check');
     
     // Check if metrics are enabled
-    if (!config.metrics.enabled) {
+    if (!config.metrics.METRICS_ENABLED) {
       const latency = Date.now() - startTime;
       const timestamp = new Date().toISOString();
       
@@ -34,7 +34,7 @@ export async function checkMetricsHealth() {
     metricsLogger.info({
       message: 'Metrics health check successful',
       latency,
-      path: config.metrics.path,
+      path: metricsConfig.path,
     });
     
     return {

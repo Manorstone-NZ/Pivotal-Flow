@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { validateAuditLogData, validateAuditValues } from '../../lib/audit-schema.js';
 
 describe('API Hardening - Core Functionality', () => {

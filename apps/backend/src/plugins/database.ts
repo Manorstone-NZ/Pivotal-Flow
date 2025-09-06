@@ -1,6 +1,7 @@
-import fp from 'fastify-plugin';
-import { initializeDatabase, getDatabase, getClient } from '../lib/db.js';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import fp from 'fastify-plugin';
+
+import { initializeDatabase, getDatabase, getClient } from '../lib/db.js';
 
 export default fp(async app => {
   try {

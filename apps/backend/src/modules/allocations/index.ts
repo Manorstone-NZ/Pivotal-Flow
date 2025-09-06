@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+
 import { allocationRoutes } from './routes.js';
 
 export async function allocationModule(fastify: FastifyInstance) {

@@ -1,6 +1,8 @@
-import { getDatabaseHealth } from './utils.js';
-import { createDbLogger } from '../logger.js';
 import type { FastifyInstance } from 'fastify';
+
+import { createDbLogger } from '../logger.js';
+
+import { getDatabaseHealth } from './utils.js';
 
 export async function checkDatabaseHealth(fastify: FastifyInstance) {
   const startTime = Date.now();

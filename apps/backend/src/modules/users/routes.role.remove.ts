@@ -1,11 +1,13 @@
 // Remove role from user route with RBAC and audit logging
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { removeRoleFromUser } from './service.drizzle.js';
-import { canModifyUser, extractUserContext } from './rbac.js';
-import { logger } from '../../lib/logger.js';
 import { generateId } from '@pivotal-flow/shared';
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+
+import { logger } from '../../lib/logger.js';
 import { auditLogs } from '../../lib/schema.js';
+
+import { canModifyUser, extractUserContext } from './rbac.js';
+import { removeRoleFromUser } from './service.drizzle.js';
 
 export const removeRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/v1/users/:id/roles/:roleId', {

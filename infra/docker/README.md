@@ -1,230 +1,316 @@
-# Pivotal Flow - Docker Development Stack
+# Pivotal Flow Production Docker Setup
 
-This directory contains the Docker Compose configuration for the Pivotal Flow development environment.
+## Overview
 
-## 🚀 Quick Start
+This directory contains the complete production Docker setup for Pivotal Flow, including:
+
+- **Multi-stage Dockerfiles** for backend and frontend
+- **Production Docker Compose** with all services
+- **Monitoring stack** (Prometheus + Grafana)
+- **Infrastructure services** (PostgreSQL + Redis)
+- **Security configurations** and health checks
+
+## Quick Start
 
 ### Prerequisites
-- Docker installed and running
-- Docker Compose v2 available
-- At least 4GB RAM available for containers
-- User has sudo access (or is in docker group)
 
-### Start the Stack
+1. **Docker** and **Docker Compose** installed
+2. **Environment file** configured (see Environment Configuration below)
+3. **At least 4GB RAM** available for containers
+
+### Start Production Stack
+
 ```bash
 # From project root
-./scripts/docker/up.sh
+cd infra/docker
+
+# Copy and customize environment
+cp .env.production.example .env.production
+# Edit .env.production with your settings
+
+# Start all services
+docker compose -f docker-compose.prod.yml up -d
+
+# Check status
+docker compose -f docker-compose.prod.yml ps
 ```
 
-This will:
-- Start PostgreSQL 16, Redis 7, Prometheus, and Grafana
-- Create named volumes for data persistence
-- Set up health checks for all services
-- Display service status and connection information
+### Run Validation Tests
 
-## 🔧 Common Commands
-
-### Service Management
 ```bash
-# Start services
-./scripts/docker/up.sh
-
-# Stop services (preserve volumes)
-./scripts/docker/down.sh
-
-# Stop services and remove volumes
-./scripts/docker/down.sh --volumes
-
-# View logs for all services
-./scripts/docker/logs.sh
-
-# View logs for specific service
-./scripts/docker/logs.sh postgres
-./scripts/docker/logs.sh redis
-./scripts/docker/logs.sh prometheus
-./scripts/docker/logs.sh grafana
+# From project root
+./scripts/docker/test-prod.sh
 ```
 
-### Database Access
-```bash
-# Connect to PostgreSQL
-./scripts/db/psql.sh
+## Services
 
-# Connect to Redis
-./scripts/redis/cli.sh
+### Application Services
+
+- **Backend**: Multi-stage build with distroless runtime
+  - Port: 3000
+  - Health: `/health`
+  - Metrics: `/metrics`
+  - OpenAPI: `/api/openapi.json`
+
+- **Frontend**: Nginx with security headers and optimizations
+  - Port: 8080
+  - Health: `/health`
+  - Static assets with caching
+
+### Infrastructure Services
+
+- **PostgreSQL 16**: Production database
+  - Port: 5432 (internal)
+  - Optimized configuration
+  - Persistent volumes
+
+- **Redis 7**: Caching and sessions
+  - Port: 6379 (internal)
+  - Memory limits configured
+  - Persistent volumes
+
+### Monitoring Services
+
+- **Prometheus**: Metrics collection
+  - Port: 9090
+  - Scrapes all services
+  - Alert rules configured
+
+- **Grafana**: Dashboards and visualization
+  - Port: 3000
+  - Admin credentials: admin/admin
+  - Pre-configured datasources
+
+## Environment Configuration
+
+Create `.env.production` with the following variables:
+
+```bash
+# Database Configuration
+DATABASE_URL=postgresql://pivotal:pivotal@postgres:5432/pivotal
+POSTGRES_USER=pivotal
+POSTGRES_PASSWORD=pivotal
+POSTGRES_DB=pivotal
+
+# Redis Configuration
+REDIS_URL=redis://redis:6379
+
+# Application Configuration
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=3000
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Rate Limiting
+RATE_LIMIT_DEFAULT=100
+RATE_LIMIT_AUTHENTICATED=1000
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:8080,http://localhost:3000
+
+# Monitoring
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
-### Manual Docker Commands
+## Docker Images
+
+### Backend Image (`apps/backend/Dockerfile.prod`)
+
+- **Multi-stage build**: Dependencies → Builder → Runtime
+- **Base**: `node:20-bookworm-slim` → `node:20-bookworm-slim` (optimized)
+- **Size**: ~200MB
+- **Security**: Non-root user, minimal dependencies
+- **Features**: Health checks, Prometheus labels, dependency waiting
+
+### Frontend Image (`apps/frontend/Dockerfile.prod`)
+
+- **Multi-stage build**: Builder → Runtime
+- **Base**: `node:20-alpine` → `nginx:1.27-alpine`
+- **Size**: ~50MB
+- **Security**: Non-root user, security headers
+- **Features**: Gzip compression, static asset caching, SPA routing
+
+## Health Checks
+
+All services include comprehensive health checks:
+
+- **Backend**: HTTP GET `/health`
+- **Frontend**: HTTP GET `/health`
+- **PostgreSQL**: `pg_isready` command
+- **Redis**: `redis-cli ping`
+- **Prometheus**: HTTP GET `/-/healthy`
+- **Grafana**: HTTP GET `/api/health`
+
+## Monitoring
+
+### Prometheus Targets
+
+- Backend API metrics
+- PostgreSQL metrics
+- Redis metrics
+- Node/system metrics (if node-exporter added)
+
+### Grafana Dashboards
+
+- System overview
+- Application performance
+- Database metrics
+- Infrastructure health
+
+### Alert Rules
+
+- Service down alerts
+- High error rates
+- Resource usage warnings
+- Performance degradation
+
+## Security Features
+
+### Backend Security
+
+- Non-root user execution
+- Minimal runtime dependencies
+- Environment variable configuration
+- Health check endpoints
+
+### Frontend Security
+
+- Security headers (CSP, HSTS, X-Frame-Options)
+- Non-root nginx user
+- Static asset caching
+- SPA routing protection
+
+### Infrastructure Security
+
+- Internal networking
+- Resource limits
+- Persistent volumes
+- Health check dependencies
+
+## Resource Management
+
+### CPU Limits
+
+- Backend: 1.0 CPU (0.5 reserved)
+- Frontend: 0.5 CPU (0.25 reserved)
+- PostgreSQL: 1.0 CPU (0.5 reserved)
+- Redis: 0.5 CPU (0.25 reserved)
+- Prometheus: 1.0 CPU (0.5 reserved)
+- Grafana: 0.5 CPU (0.25 reserved)
+
+### Memory Limits
+
+- Backend: 512MB (256MB reserved)
+- Frontend: 128MB (64MB reserved)
+- PostgreSQL: 1GB (512MB reserved)
+- Redis: 256MB (128MB reserved)
+- Prometheus: 1GB (512MB reserved)
+- Grafana: 512MB (256MB reserved)
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Services not starting**: Check resource limits and available memory
+2. **Health checks failing**: Verify service dependencies and networking
+3. **Database connection issues**: Check PostgreSQL configuration and volumes
+4. **Frontend not loading**: Verify nginx configuration and static files
+
+### Logs
+
 ```bash
-# Check service status
-docker compose -f infra/docker/docker-compose.yml ps
+# View all service logs
+docker compose -f docker-compose.prod.yml logs -f
 
-# View service logs
-docker compose -f infra/docker/docker-compose.yml logs -f
+# View specific service logs
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f frontend
+```
 
+### Debugging
+
+```bash
 # Execute commands in containers
-docker compose -f infra/docker/docker-compose.yml exec postgres psql -U pivotal -d pivotal
-docker compose -f infra/docker/docker-compose.yml exec redis redis-cli
+docker compose -f docker-compose.prod.yml exec backend sh
+docker compose -f docker-compose.prod.yml exec postgres psql -U pivotal -d pivotal
+
+# Check service health
+docker compose -f docker-compose.prod.yml ps
 ```
 
-## 🛑 Stopping and Cleaning
+## Production Deployment
 
-### Stop Services
+### With Traefik (Reverse Proxy)
+
 ```bash
-./scripts/docker/down.sh
+# Start with Traefik profile
+docker compose -f docker-compose.prod.yml --profile traefik up -d
 ```
 
-### Remove All Data (Volumes)
+### With External Infrastructure
+
 ```bash
-./scripts/docker/down.sh --volumes
+# Start only application services
+docker compose -f docker-compose.prod.yml up -d backend frontend migrate
 ```
 
-### Remove Individual Volumes
+### Scaling
+
 ```bash
-docker volume rm pivotal_pgdata
-docker volume rm pivotal_redisdata
-docker volume rm pivotal_prometheus_data
-docker volume rm pivotal_grafanadata
+# Scale backend instances
+docker compose -f docker-compose.prod.yml up -d --scale backend=3
 ```
 
-## 📊 Service Details
+## Maintenance
 
-### PostgreSQL 16
-- **Port**: 5433
-- **User**: pivotal
-- **Password**: pivotal
-- **Database**: pivotal
-- **Volume**: pgdata
-- **Health Check**: `psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'select 1'`
+### Updates
 
-### Redis 7
-- **Port**: 6379
-- **Volume**: redisdata
-- **Health Check**: `redis-cli -h localhost ping`
-
-### Prometheus
-- **Port**: 9090
-- **Config**: `infra/docker/prometheus.yml`
-- **Volume**: prometheus_data
-- **Health Check**: HTTP endpoint `/-/healthy`
-
-### Grafana
-- **Port**: 3001 (mapped from container port 3000)
-- **Admin User**: admin
-- **Admin Password**: admin
-- **Volume**: grafanadata
-- **Auto-provisioning**: Prometheus datasource configured automatically
-- **Health Check**: HTTP endpoint `/api/health`
-
-## 🌐 Access URLs
-
-- **PostgreSQL**: `localhost:5433`
-- **Redis**: `localhost:6379`
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3001
-
-## 🔍 Health Checks
-
-All services include health checks that run every 5-30 seconds:
-
-- **PostgreSQL**: Database connectivity test
-- **Redis**: PING command response
-- **Prometheus**: HTTP health endpoint
-- **Grafana**: API health endpoint
-
-## 📁 File Structure
-
-```
-infra/docker/
-├── docker-compose.yml          # Main compose file
-├── prometheus.yml              # Prometheus configuration
-├── grafana/                    # Grafana provisioning
-│   └── provisioning/
-│       └── datasources/
-│           └── datasource.yml  # Auto-configure Prometheus datasource
-└── README.md                   # This file
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-The stack uses environment variables from `.env` file (created from `env.example`):
-
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- `PROMETHEUS_PORT`, `GRAFANA_PORT`
-- `METRICS_ENABLED`
-
-### Prometheus Configuration
-- Global scrape interval: 15 seconds
-- Backend metrics target: `localhost:3000/metrics` (commented until backend is ready)
-- Self-monitoring enabled
-
-### Grafana Auto-provisioning
-- Prometheus datasource automatically configured
-- Points to `http://prometheus:9090` (internal Docker network)
-- Set as default datasource
-
-## 🚨 Troubleshooting
-
-### Services Won't Start
-1. Check Docker is running: `sudo docker info`
-2. Check Docker Compose version: `sudo docker compose version`
-3. Verify ports are not in use: `netstat -an | grep :5432`
-
-### Permission Issues
-If you get permission denied errors:
-1. **Option 1**: Use sudo with all commands (current setup)
-2. **Option 2**: Add user to docker group:
-   ```bash
-   sudo usermod -aG docker $USER
-   newgrp docker
-   ```
-   Then restart your terminal session
-
-### Connection Issues
-1. Wait for health checks to pass (may take 1-2 minutes)
-2. Check service logs: `./scripts/docker/logs.sh <service>`
-3. Verify environment variables in `.env` file
-
-### Performance Issues
-1. Ensure Docker has sufficient resources (4GB+ RAM)
-2. Check container resource usage: `docker stats`
-3. Consider increasing Docker Desktop memory allocation
-
-### Data Persistence
-- Volumes are preserved between restarts
-- To reset data, use `./scripts/docker/down.sh --volumes`
-- Individual volumes can be removed separately
-
-## 🔄 Updates and Maintenance
-
-### Updating Images
 ```bash
-# Pull latest images
-sudo docker compose -f infra/docker/docker-compose.yml pull
-
-# Restart services with new images
-sudo docker compose -f infra/docker/docker-compose.yml up -d
+# Rebuild and restart services
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Backup and Restore
+### Backups
+
 ```bash
-# Backup PostgreSQL data
-sudo docker compose -f infra/docker/docker-compose.yml exec postgres pg_dump -U pivotal pivotal > backup.sql
+# Backup PostgreSQL
+docker compose -f docker-compose.prod.yml exec postgres pg_dump -U pivotal pivotal > backup.sql
 
-# Restore PostgreSQL data
-sudo docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U pivotal -d pivotal < backup.sql
+# Backup Redis
+docker compose -f docker-compose.prod.yml exec redis redis-cli BGSAVE
 ```
 
-## 📚 Additional Resources
+### Cleanup
 
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [PostgreSQL Docker Image](https://hub.docker.com/_/postgres)
-- [Redis Docker Image](https://hub.docker.com/_/redis)
-- [Prometheus Docker Image](https://hub.docker.com/r/prom/prometheus)
-- [Grafana Docker Image](https://hub.docker.com/r/grafana/grafana)
+```bash
+# Stop and remove containers
+docker compose -f docker-compose.prod.yml down
 
-## 📖 Development Instructions
+# Stop and remove volumes
+docker compose -f docker-compose.prod.yml down -v
 
-- [Docker Development Instructions](../../docs/docker/DOCKER_DEVELOPMENT_INSTRUCTIONS.md) - Comprehensive guide for Docker-first development
-- [Docker Quick Reference](../../docs/docker/DOCKER_QUICK_REFERENCE.md) - Essential commands and reminders
+# Remove unused images
+docker image prune -f
+```
+
+## Performance Optimization
+
+### Image Optimization
+
+- Multi-stage builds reduce final image size
+- Distroless runtime minimizes attack surface
+- Layer caching optimizes build times
+
+### Runtime Optimization
+
+- Resource limits prevent resource exhaustion
+- Health checks ensure service reliability
+- Monitoring provides performance insights
+
+### Network Optimization
+
+- Internal networking reduces latency
+- Service discovery simplifies configuration
+- Load balancing (with Traefik) distributes traffic

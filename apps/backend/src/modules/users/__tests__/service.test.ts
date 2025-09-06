@@ -1,8 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { UserService } from '../service.drizzle.js';
+
 import { getDatabase } from '../../../lib/db.js';
 import { organizations, users, roles, permissions, rolePermissions, userRoles } from '../../../lib/schema.js';
-import { eq } from 'drizzle-orm';
+import { UserService } from '../service.drizzle.js';
 
 describe('UserService', () => {
   let userService: UserService;
@@ -16,7 +17,7 @@ describe('UserService', () => {
   beforeEach(async () => {
     // Setup real test database
     testDb = await getDatabase();
-    userService = new UserService(testDb, testOptions);
+    userService = new UserService(testOptions);
 
     // Setup test data
     await testDb.insert(organizations).values({
@@ -54,17 +55,17 @@ describe('UserService', () => {
         email: 'newuser@example.com',
         firstName: 'New',
         lastName: 'User',
-        password: 'testpassword123'
+        password: 'testpassword123',
+        displayName: 'New User'
       };
 
       const result = await userService.createUser(userData);
 
       expect(result).toBeDefined();
       expect(result.email).toBe(userData.email);
-      expect(result.firstName).toBe(userData.firstName);
-      expect(result.lastName).toBe(userData.lastName);
+      expect(result.displayName).toBe(userData.displayName);
       expect(result.organizationId).toBe(testOptions.organizationId);
-      expect(result.passwordHash).toBeUndefined(); // Should not return password hash
+      expect(result.status).toBe('active');
 
       // Verify it was saved to database
       const saved = await testDb.select().from(users).where(eq(users.email, userData.email));
@@ -104,11 +105,11 @@ describe('UserService', () => {
       const result = await userService.getUser(testOptions.userId);
 
       expect(result).toBeDefined();
-      expect(result.id).toBe(testOptions.userId);
-      expect(result.email).toBe('test@example.com');
-      expect(result.firstName).toBe('Test');
-      expect(result.lastName).toBe('User');
-      expect(result.passwordHash).toBeUndefined(); // Should not return password hash
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(testOptions.userId);
+      expect(result!.email).toBe('test@example.com');
+      expect(result!.displayName).toBe('Test User');
+      expect(result!.status).toBe('active');
     });
 
     it('should return null for non-existent user', async () => {
@@ -146,44 +147,44 @@ describe('UserService', () => {
       const result = await userService.getUsers({ page: 1, limit: 10 });
 
       expect(result).toBeDefined();
-      expect(result.users).toHaveLength(3); // Original + 2 new users
+      expect(result.items).toHaveLength(3); // Original + 2 new users
       expect(result.total).toBe(3);
-      expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.totalPages).toBe(1);
     });
 
     it('should filter users by search term', async () => {
       const result = await userService.getUsers({ page: 1, limit: 10, search: 'Test' });
 
       expect(result).toBeDefined();
-      expect(result.users).toHaveLength(1);
-      expect(result.users[0].firstName).toBe('Test');
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.displayName).toBe('Test User');
     });
   });
 
   describe('updateUser', () => {
     it('should update user successfully', async () => {
       const updateData = {
-        firstName: 'Updated',
-        lastName: 'Name',
-        email: 'updated@example.com'
+        displayName: 'Updated Name',
+        status: 'active',
+        mfaEnabled: true
       };
 
       const result = await userService.updateUser(testOptions.userId, updateData);
 
       expect(result).toBeDefined();
-      expect(result.firstName).toBe(updateData.firstName);
-      expect(result.lastName).toBe(updateData.lastName);
-      expect(result.email).toBe(updateData.email);
+      expect(result).not.toBeNull();
+      expect(result!.displayName).toBe(updateData.displayName);
+      expect(result!.status).toBe(updateData.status);
+      expect(result!.mfaEnabled).toBe(updateData.mfaEnabled);
 
       // Verify it was updated in database
       const updated = await testDb.select().from(users).where(eq(users.id, testOptions.userId));
-      expect(updated[0].firstName).toBe(updateData.firstName);
+      expect(updated[0].displayName).toBe(updateData.displayName);
     });
 
     it('should throw error for non-existent user', async () => {
       const updateData = {
-        firstName: 'Updated'
+        displayName: 'Updated'
       };
 
       await expect(userService.updateUser('non-existent-id', updateData))

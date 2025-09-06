@@ -5,7 +5,7 @@ export default {
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgresql://pivotal:pivotal@localhost:5432/pivotal',
+    url: process.env['DATABASE_URL'] || 'postgresql://pivotal:pivotal@localhost:5432/pivotal',
   },
   verbose: true,
   strict: true,

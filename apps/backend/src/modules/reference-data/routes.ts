@@ -3,10 +3,11 @@
  * API endpoints for reference data with caching
  */
 
-import { FastifyInstance } from 'fastify';
-import { ReferenceDataService } from './service.js';
-import { PermissionService } from '../permissions/service.js';
+import type { FastifyInstance } from 'fastify';
+
 import { AuditLogger } from '../audit/logger.js';
+import { PermissionService } from '../permissions/service.js';
+
 import {
   CurrenciesResponseSchema,
   TaxClassesResponseSchema,
@@ -15,6 +16,7 @@ import {
   ServiceCategoriesResponseSchema,
   RateCardsResponseSchema,
 } from './schemas.js';
+import { ReferenceDataService } from './service.js';
 
 /**
  * Register reference data routes
@@ -32,7 +34,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     },
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -53,7 +55,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     },
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -75,7 +77,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -97,7 +99,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -118,7 +120,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     },
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -140,7 +142,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);
@@ -152,9 +154,6 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
   // Bust cache for a specific reference type
   fastify.post<{ Body: { referenceType: string } }>('/v1/reference/cache/bust', {
     schema: {
-      tags: ['Reference'],
-      summary: 'Bust cache for reference data',
-      description: 'Invalidates cache for a specific reference data type',
       body: {
         type: 'object',
         properties: {
@@ -179,7 +178,7 @@ export async function registerReferenceDataRoutes(fastify: FastifyInstance): Pro
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { referenceType } = request.body;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const referenceService = new ReferenceDataService(organizationId, userId, permissionService, auditLogger);

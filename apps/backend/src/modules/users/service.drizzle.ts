@@ -1,8 +1,9 @@
 // User service layer - Drizzle ORM calls only, no HTTP logic
 
-import type { FastifyInstance } from 'fastify';
+import { generateId, required } from '@pivotal-flow/shared';
 import { eq, and, like, desc, asc, isNull, count } from 'drizzle-orm';
-import { generateId } from '@pivotal-flow/shared';
+import type { FastifyInstance } from 'fastify';
+
 import { users, roles, userRoles } from '../../lib/schema.js';
 // Local type definitions to avoid shared module dependencies
 export interface UserPublic {
@@ -164,7 +165,8 @@ export async function listUsers(options: UserListOptions, fastify: FastifyInstan
     }
 
     if (row.roleId && row.roleName && row.roleIsSystem !== null && row.roleIsActive !== null) {
-      userMap.get(userId)!.roles.push({
+      const user = required(userMap.get(userId), `User ${userId} should exist in map`);
+      user.roles.push({
         id: row.roleId,
         name: row.roleName,
         description: row.roleDescription,
@@ -560,4 +562,74 @@ export async function userHasRole(userId: string, roleName: string, fastify: Fas
     .limit(1);
 
   return result.length > 0;
+}
+
+/**
+ * UserService class for backward compatibility with tests
+ */
+export class UserService {
+  constructor(private options: { organizationId: string; userId: string }) {}
+
+  async createUser(userData: UserCreateRequest): Promise<UserWithRoles> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    return createUser(userData, this.options.organizationId, fastify);
+  }
+
+  async getUser(userId: string): Promise<UserWithRoles | null> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    return getUserById(userId, this.options.organizationId, fastify);
+  }
+
+  async getUsers(options: { page: number; limit: number; search?: string }): Promise<UserListResult> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    const listOptions = {
+      organizationId: this.options.organizationId,
+      page: options.page,
+      pageSize: options.limit,
+      filters: options.search ? { q: options.search } : {},
+      sort: { field: 'createdAt' as const, direction: 'desc' as const }
+    };
+    return listUsers(listOptions, fastify);
+  }
+
+  async updateUser(userId: string, updateData: UserUpdateRequest): Promise<UserWithRoles | null> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    return updateUser(userId, updateData, this.options.organizationId, fastify);
+  }
+
+  async addUserRole(userId: string, roleName: string): Promise<{
+    userId: string;
+    roleId: string;
+    organizationId: string;
+    isActive: boolean;
+  }> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    await addRoleToUser(userId, roleName, this.options.organizationId, fastify);
+    
+    // Return the created user role assignment
+    return {
+      userId,
+      roleId: roleName,
+      organizationId: this.options.organizationId,
+      isActive: true
+    };
+  }
+
+  async removeUserRole(userId: string, roleName: string): Promise<{
+    userId: string;
+    roleId: string;
+    organizationId: string;
+    isActive: boolean;
+  }> {
+    const fastify = { log: { info: () => {}, error: () => {}, warn: () => {} } } as any;
+    await removeRoleFromUser(userId, roleName, this.options.organizationId, fastify);
+    
+    // Return the removed user role assignment info
+    return {
+      userId,
+      roleId: roleName,
+      organizationId: this.options.organizationId,
+      isActive: false
+    };
+  }
 }

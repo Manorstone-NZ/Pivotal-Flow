@@ -4,11 +4,13 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import { AuditLogger } from '../../lib/audit/logger.js';
 import { getDatabase } from '../../lib/db.js';
 import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../../lib/audit/logger.js';
+
+import type { ReportType, ExportFormat } from './constants.js';
 import { ExportJobService } from './export-job.service.js';
-import { ReportingService } from './service.js';
 import {
   ExportJobRequestSchema,
   QuoteCycleTimeFiltersSchema,
@@ -20,7 +22,7 @@ import {
   ReportSummaryResponseSchema,
   ErrorResponseSchema,
 } from './schemas.js';
-import type { ReportType, ExportFormat } from './constants.js';
+import { ReportingService } from './service.js';
 import type { 
   QuoteCycleTimeFilters, 
   InvoiceSettlementTimeFilters, 

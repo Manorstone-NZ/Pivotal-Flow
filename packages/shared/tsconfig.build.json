@@ -15,11 +15,13 @@
   },
   "include": [
     "src/index.ts",
+    "src/bcrypt.ts",
     "src/db/repo.payments.ts", 
     "src/db/repo.base.ts", 
     "src/schema.ts", 
     "src/metrics/index.ts",
-    "src/pricing/**/*"
+    "src/pricing/**/*",
+    "src/security/**/*"
   ],
   "exclude": [
     "src/db/repo.audit.ts",

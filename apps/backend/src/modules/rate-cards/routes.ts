@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+
 import { RateCardService } from './service.js';
 
 // Request schemas

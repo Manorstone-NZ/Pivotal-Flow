@@ -1,10 +1,14 @@
-import fp from 'fastify-plugin';
-import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
+import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
+import { TokenManager } from '@pivotal-flow/shared';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { config } from '../../lib/config.js';
+import fp from 'fastify-plugin';
+
+import { config } from '../../config/index.js';
 import { logger } from '../../lib/logger.js';
+
+
 import { createTokenManager } from './tokens.js';
 
 // Type definitions for request context
@@ -27,13 +31,34 @@ interface RateLimitContext {
   after: number;
 }
 
+/**
+ * Parse TTL string to seconds
+ */
+function parseTTL(ttl: string): number {
+  const match = ttl.match(/^(\d+)([smhd])$/);
+  if (!match) {
+    return 900; // Default to 15 minutes
+  }
+
+  const value = parseInt(match[1] ?? '0', 10);
+  const unit = match[2];
+
+  switch (unit) {
+    case 's': return value;
+    case 'm': return value * 60;
+    case 'h': return value * 3600;
+    case 'd': return value * 86400;
+    default: return 900;
+  }
+}
+
 export default fp(async function authPlugin(app: FastifyInstance) {
   // Register cookie plugin first
   await app.register(cookie, { 
-    secret: config.auth.cookieSecret,
+    secret: config.auth.COOKIE_SECRET,
     parseOptions: {
       httpOnly: true,
-      secure: config.auth.cookieSecure,
+      secure: config.auth.COOKIE_SECURE,
       sameSite: 'lax',
       path: '/',
     },
@@ -41,11 +66,11 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
   // Register JWT plugin
   await app.register(jwt as any, {
-    secret: config.auth.jwtSecret,
+    secret: config.auth.JWT_SECRET,
     sign: {
       issuer: 'pivotal-flow',
       audience: 'pivotal-flow-api',
-      expiresIn: config.auth.accessTokenTTL,
+      expiresIn: config.auth.ACCESS_TOKEN_TTL,
       algorithm: 'HS256',
     },
     verify: {
@@ -56,8 +81,8 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
   // Register rate limiting for auth routes with tiers
   await app.register(rateLimit as any, {
-    max: config.rateLimit.unauth, // Default for unauthenticated
-    timeWindow: config.rateLimit.window,
+    max: config.rateLimit.RATE_LIMIT_UNAUTH_MAX, // Default for unauthenticated
+    timeWindow: config.rateLimit.RATE_LIMIT_WINDOW,
     keyGenerator: (request: AuthenticatedRequest) => {
       // Use IP for unauthenticated routes, user ID for authenticated
       const user = request.user;
@@ -106,7 +131,21 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
   // Create the TokenManager only after JWT is ready
   const tokenManager = createTokenManager(app);
+  
+  // Create Redis-based TokenManager for refresh token storage
+  const cacheAdapter = {
+    get: (key: string) => Promise.resolve((app as any).cache.get(key)),
+    set: (key: string, value: string, _mode?: string, ttl?: number) => Promise.resolve((app as any).cache.set(key, value, ttl)),
+    del: (key: string) => Promise.resolve((app as any).cache.delete(key))
+  };
+  
+  const refreshTokenManager = new TokenManager(
+    cacheAdapter,
+    parseTTL(config.auth.REFRESH_TOKEN_TTL)
+  );
+  
   app.decorate('tokenManager', tokenManager);
+  app.decorate('refreshTokenManager', refreshTokenManager);
 
   // Add JWT verification preHandler
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -144,7 +183,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
       await (request as any).jwtVerify();
       
       // Extract user context from JWT payload
-      const payload = (request as any).user as any;
+      const payload = (request as any).user;
       (request as any).user = {
         userId: payload.sub,
         organizationId: payload.org,

@@ -1,0 +1,286 @@
+/**
+ * Jobs module schemas
+ * Zod validation schemas for job-related requests and responses
+ */
+import { z } from 'zod';
+export declare const CreateJobRequestSchema: z.ZodObject<{
+    jobType: z.ZodEnum<["export_report", "data_processing", "notification", "cleanup", "sync"]>;
+    payload: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodAny>>;
+    priority: z.ZodDefault<z.ZodNumber>;
+    maxRetries: z.ZodDefault<z.ZodNumber>;
+    scheduledAt: z.ZodOptional<z.ZodDate>;
+    totalSteps: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    payload: Record<string, any>;
+    jobType: "cleanup" | "export_report" | "data_processing" | "notification" | "sync";
+    priority: number;
+    maxRetries: number;
+    totalSteps?: number | undefined;
+    scheduledAt?: Date | undefined;
+}, {
+    jobType: "cleanup" | "export_report" | "data_processing" | "notification" | "sync";
+    payload?: Record<string, any> | undefined;
+    priority?: number | undefined;
+    maxRetries?: number | undefined;
+    totalSteps?: number | undefined;
+    scheduledAt?: Date | undefined;
+}>;
+export declare const JobStatusResponseSchema: z.ZodObject<{
+    job: z.ZodObject<{
+        id: z.ZodString;
+        organizationId: z.ZodString;
+        userId: z.ZodString;
+        jobType: z.ZodString;
+        status: z.ZodString;
+        priority: z.ZodNumber;
+        retryCount: z.ZodNumber;
+        maxRetries: z.ZodNumber;
+        payload: z.ZodRecord<z.ZodString, z.ZodAny>;
+        result: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodAny>>;
+        errorMessage: z.ZodNullable<z.ZodString>;
+        progress: z.ZodNumber;
+        totalSteps: z.ZodNullable<z.ZodNumber>;
+        currentStep: z.ZodNumber;
+        startedAt: z.ZodNullable<z.ZodDate>;
+        completedAt: z.ZodNullable<z.ZodDate>;
+        scheduledAt: z.ZodNullable<z.ZodDate>;
+        createdAt: z.ZodDate;
+        updatedAt: z.ZodDate;
+    }, "strip", z.ZodTypeAny, {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }, {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }>;
+    progress: z.ZodNumber;
+    estimatedTimeRemaining: z.ZodOptional<z.ZodNumber>;
+    canCancel: z.ZodBoolean;
+    canRetry: z.ZodBoolean;
+}, "strip", z.ZodTypeAny, {
+    progress: number;
+    job: {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    };
+    canCancel: boolean;
+    canRetry: boolean;
+    estimatedTimeRemaining?: number | undefined;
+}, {
+    progress: number;
+    job: {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    };
+    canCancel: boolean;
+    canRetry: boolean;
+    estimatedTimeRemaining?: number | undefined;
+}>;
+export declare const JobListResponseSchema: z.ZodObject<{
+    jobs: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        organizationId: z.ZodString;
+        userId: z.ZodString;
+        jobType: z.ZodString;
+        status: z.ZodString;
+        priority: z.ZodNumber;
+        retryCount: z.ZodNumber;
+        maxRetries: z.ZodNumber;
+        payload: z.ZodRecord<z.ZodString, z.ZodAny>;
+        result: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodAny>>;
+        errorMessage: z.ZodNullable<z.ZodString>;
+        progress: z.ZodNumber;
+        totalSteps: z.ZodNullable<z.ZodNumber>;
+        currentStep: z.ZodNumber;
+        startedAt: z.ZodNullable<z.ZodDate>;
+        completedAt: z.ZodNullable<z.ZodDate>;
+        scheduledAt: z.ZodNullable<z.ZodDate>;
+        createdAt: z.ZodDate;
+        updatedAt: z.ZodDate;
+    }, "strip", z.ZodTypeAny, {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }, {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }>, "many">;
+    total: z.ZodNumber;
+    page: z.ZodNumber;
+    pageSize: z.ZodNumber;
+    totalPages: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    jobs: {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }[];
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+}, {
+    jobs: {
+        id: string;
+        startedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        status: string;
+        userId: string;
+        payload: Record<string, any>;
+        errorMessage: string | null;
+        completedAt: Date | null;
+        jobType: string;
+        priority: number;
+        retryCount: number;
+        maxRetries: number;
+        result: Record<string, any> | null;
+        progress: number;
+        totalSteps: number | null;
+        currentStep: number;
+        scheduledAt: Date | null;
+    }[];
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+}>;
+export declare const JobQuerySchema: z.ZodObject<{
+    page: z.ZodDefault<z.ZodNumber>;
+    pageSize: z.ZodDefault<z.ZodNumber>;
+    status: z.ZodOptional<z.ZodString>;
+    jobType: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    page: number;
+    pageSize: number;
+    status?: string | undefined;
+    jobType?: string | undefined;
+}, {
+    status?: string | undefined;
+    jobType?: string | undefined;
+    page?: number | undefined;
+    pageSize?: number | undefined;
+}>;
+export type CreateJobRequest = z.infer<typeof CreateJobRequestSchema>;
+export type JobStatusResponse = z.infer<typeof JobStatusResponseSchema>;
+export type JobListResponse = z.infer<typeof JobListResponseSchema>;
+export type JobQuery = z.infer<typeof JobQuerySchema>;
+//# sourceMappingURL=schemas.d.ts.map

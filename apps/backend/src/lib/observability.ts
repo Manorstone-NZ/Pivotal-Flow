@@ -6,6 +6,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { register, Counter, Histogram, Gauge } from 'prom-client';
 
+import { config } from '../config/index.js';
+
 // Prometheus metrics
 export const metrics = {
   // Request counters
@@ -117,7 +119,7 @@ export function requestLoggingMiddleware(request: FastifyRequest, reply: Fastify
 
   // Override reply.send to capture response data
   const originalSend = reply.send.bind(reply);
-  reply.send = function(data: any) {
+  reply.send = function(data: unknown) {
     const duration = (Date.now() - startTime) / 1000; // Convert to seconds
     const statusCode = reply.statusCode;
 
@@ -172,7 +174,7 @@ export function requestLoggingMiddleware(request: FastifyRequest, reply: Fastify
 /**
  * Database query monitoring middleware
  */
-export function databaseMonitoringMiddleware(query: string, params: any[], startTime: number) {
+export function databaseMonitoringMiddleware(query: string, params: unknown[], startTime: number) {
   const duration = (Date.now() - startTime) / 1000; // Convert to seconds
   const queryType = getQueryType(query);
   const table = getTableFromQuery(query);
@@ -273,11 +275,11 @@ function getTableFromQuery(query: string): string {
   return match ? (match[1] || match[2] || match[3] || 'unknown') : 'unknown';
 }
 
-function getOrganizationFromParams(params: any[]): string | undefined {
+function getOrganizationFromParams(params: unknown[]): string | undefined {
   // Look for organization ID in params
   for (const param of params) {
-    if (typeof param === 'object' && param.organizationId) {
-      return param.organizationId;
+    if (typeof param === 'object' && param !== null && 'organizationId' in param) {
+      return (param as { organizationId: string }).organizationId;
     }
     if (typeof param === 'string' && param.includes('org_')) {
       return param;
@@ -318,27 +320,35 @@ export function healthCheckMiddleware(_request: FastifyRequest, reply: FastifyRe
  * Structured logging configuration
  */
 export const loggingConfig = {
-  level: process.env['LOG_LEVEL'] || 'info',
+  level: config.server.LOG_LEVEL,
   serializers: {
-    req: (req: any) => ({
-      id: req.id,
-      method: req.method,
-      url: req.url,
-      userAgent: req.headers['user-agent'],
-      ip: req.ip
+    req: (req: unknown) => ({
+      id: (req as { id?: string }).id,
+      method: (req as { method?: string }).method,
+      url: (req as { url?: string }).url,
+      userAgent: (req as { headers?: { 'user-agent'?: string } }).headers?.['user-agent'],
+      ip: (req as { ip?: string }).ip
     }),
-    res: (res: any) => ({
-      statusCode: res.statusCode
+    res: (res: unknown) => ({
+      statusCode: (res as { statusCode?: number }).statusCode
     }),
-    err: (err: any) => ({
-      type: err.type,
-      message: err.message,
-      stack: err.stack
+    err: (err: unknown) => ({
+      type: (err as { type?: string }).type,
+      message: (err as { message?: string }).message,
+      stack: (err as { stack?: string }).stack
     })
   },
   formatters: {
     level: (label: string) => ({ level: label }),
-    log: (object: any) => {
+    log: (object: unknown) => {
+      if (typeof object !== 'object' || object === null) {
+        return {
+          message: String(object),
+          timestamp: new Date().toISOString(),
+          service: 'pivotal-flow-api',
+          version: '1.0.0'
+        };
+      }
       return {
         ...object,
         timestamp: new Date().toISOString(),
@@ -352,18 +362,21 @@ export const loggingConfig = {
 /**
  * Error logging middleware
  */
-export function errorLoggingMiddleware(error: any, request: FastifyRequest, _reply: FastifyReply) {
-  const user = (request as any).user;
+export function errorLoggingMiddleware(error: unknown, request: FastifyRequest, _reply: FastifyReply) {
+  const user = (request as unknown as { user?: { org?: string; sub?: string } }).user;
   const organizationId = user?.org || 'unknown';
   const userId = user?.sub || 'anonymous';
+
+  // Type guard to check if error is an Error object
+  const errorObj = error instanceof Error ? error : new Error(String(error));
 
   request.log.error({
     message: 'Request error',
     error: {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      code: error.code || 'UNKNOWN_ERROR'
+      name: errorObj.name,
+      message: errorObj.message,
+      stack: errorObj.stack,
+      code: (errorObj as any).code || 'UNKNOWN_ERROR'
     },
     request: {
       id: request.id,
@@ -383,7 +396,7 @@ export function errorLoggingMiddleware(error: any, request: FastifyRequest, _rep
   metrics.httpErrorsTotal.inc({
     method: request.method,
     route: request.url,
-    error_code: error.statusCode || 500,
+    error_code: (errorObj as any).statusCode || 500,
     organization_id: organizationId
   });
 }

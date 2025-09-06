@@ -4,6 +4,7 @@
  */
 
 import type { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 import { getXeroConfig, isXeroConfigured } from '../../../config/xero_config.js';
 // import { NoOpXeroConnector } from '../../../../../../packages/integrations/xero/src/no-op-connector.js';
 
@@ -75,7 +76,7 @@ async function registerXeroRoutes(fastify: FastifyInstance): Promise<void> {
     const isConfigured = isXeroConfigured();
 
     let status: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY' | 'DISABLED';
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     if (!xeroEnabled) {
       status = 'DISABLED';

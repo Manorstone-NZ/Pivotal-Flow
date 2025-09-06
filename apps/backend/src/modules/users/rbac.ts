@@ -1,7 +1,8 @@
 // RBAC permission checks for users module
 
-import type { FastifyRequest, FastifyInstance } from 'fastify';
 import { eq, and, isNull } from 'drizzle-orm';
+import type { FastifyRequest, FastifyInstance } from 'fastify';
+
 import { users } from '../../lib/schema.js';
 
 export interface UserContext {

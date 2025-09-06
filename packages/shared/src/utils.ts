@@ -1,5 +1,7 @@
 // Utility functions
 
+import { createHash } from 'crypto';
+
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -7,6 +9,13 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export function generateRequestId(): string {
   return uuidv4();
+}
+
+/**
+ * Generate a hash for the given input string
+ */
+export function generateHash(input: string): string {
+  return createHash('sha256').update(input).digest('hex');
 }
 
 /**

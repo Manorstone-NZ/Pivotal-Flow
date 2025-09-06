@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+
 import { approvalRoutes } from './routes.js';
 
 export async function approvalModule(fastify: FastifyInstance) {

@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify';
+
 import { registerCreateQuoteRoute } from './routes.create.js';
-import { registerListQuotesRoute } from './routes.list.js';
 import { registerGetQuoteRoute } from './routes.get.js';
-import { registerUpdateQuoteRoute } from './routes.update.js';
+import { registerListQuotesRoute } from './routes.list.js';
 import { registerStatusTransitionRoute } from './routes.status.js';
+import { registerUpdateQuoteRoute } from './routes.update.js';
 import { registerGetQuoteVersionsRoute, registerGetQuoteVersionRoute } from './routes.versions.js';
 
 /**

@@ -1,5 +1,5 @@
-import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date, uniqueIndex, index, inet } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { pgTable, text, timestamp, boolean, jsonb, integer, varchar, decimal, date, uniqueIndex, index, inet } from 'drizzle-orm/pg-core';
 
 // Currencies table - ISO 4217 currency codes for validation
 export const currencies = pgTable('currencies', {
@@ -7,9 +7,26 @@ export const currencies = pgTable('currencies', {
   name: varchar('name', { length: 100 }).notNull(),
   symbol: varchar('symbol', { length: 10 }),
   isActive: boolean('is_active').notNull().default(true),
+  isDefault: boolean('is_default').notNull().default(false),
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
+
+// Tax Classes table - tax classifications and rates
+export const taxClasses = pgTable('tax_classes', {
+  id: text('id').primaryKey(),
+  code: varchar('code', { length: 20 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
+  rate: decimal('rate', { precision: 5, scale: 4 }).notNull().default('0.0000'), // Tax rate as decimal (e.g., 0.1500 for 15%)
+  isActive: boolean('is_active').notNull().default(true),
+  displayOrder: integer('display_order').notNull().default(0),
+  description: text('description'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  codeUnique: uniqueIndex('tax_classes_code_unique').on(table.code),
+  activeOrder: uniqueIndex('tax_classes_active_order').on(table.isActive, table.displayOrder),
+}));
 
 // FX Rates table - exchange rates with effective dates
 export const fxRates = pgTable('fx_rates', {

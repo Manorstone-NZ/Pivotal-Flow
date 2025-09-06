@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { RateCardService } from '../service.js';
+
 import { testDb, testUtils } from '../../../__tests__/setup.js';
+import { RateCardService } from '../service.js';
 
 describe('RateCardService Integration Tests', () => {
   let rateCardService: RateCardService;

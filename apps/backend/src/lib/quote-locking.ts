@@ -1,12 +1,13 @@
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, and } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
 import { quotes, userRoles, roles, permissions } from './schema.js';
 
 export interface QuoteLockContext {
   quoteId: string;
   organizationId: string;
   userId: string;
-  newData: any;
+  newData: unknown;
 }
 
 export interface QuoteLockResult {

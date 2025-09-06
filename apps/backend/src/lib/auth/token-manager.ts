@@ -1,4 +1,5 @@
-import { TokenPayload } from '../../types/auth.js';
+import { config } from '../../config/index.js';
+import type { TokenPayload } from '../../types/auth.js';
 
 export class TokenManager {
   private secret: string;
@@ -6,6 +7,9 @@ export class TokenManager {
   private audience: string;
 
   constructor(secret: string, issuer: string = 'pivotal-flow-auth', audience: string = 'pivotal-flow-api') {
+    if (!secret || secret.trim() === '') {
+      throw new Error('JWT_SECRET must not be empty');
+    }
     this.secret = secret;
     this.issuer = issuer;
     this.audience = audience;
@@ -34,6 +38,11 @@ export class TokenManager {
     const header = { alg: 'HS256', typ: 'JWT' };
     const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
     const encodedPayload = Buffer.from(JSON.stringify(tokenPayload)).toString('base64url');
+    
+    // Ensure secret is defined before using in Buffer.from
+    if (!this.secret) {
+      throw new Error('JWT secret is not defined');
+    }
     const signature = Buffer.from(`${encodedHeader}.${encodedPayload}.${this.secret}`).toString('base64url');
     
     return `${encodedHeader}.${encodedPayload}.${signature}`;
@@ -56,7 +65,7 @@ export class TokenManager {
     
     try {
       const parts = token.split('.');
-      if (parts.length !== 3) {
+      if (parts.length !== 3 || !parts[1]) {
         throw new Error('Invalid token format');
       }
       
@@ -76,7 +85,7 @@ export class TokenManager {
   decodeToken(token: string): TokenPayload | null {
     try {
       const parts = token.split('.');
-      if (parts.length !== 3) {
+      if (parts.length !== 3 || !parts[1]) {
         return null;
       }
       
@@ -90,7 +99,7 @@ export class TokenManager {
 
 // Export a default instance
 export const tokenManager = new TokenManager(
-  process.env['JWT_SECRET'] || 'your-secret-key',
-  process.env['JWT_ISSUER'] || 'pivotal-flow-auth',
-  process.env['JWT_AUDIENCE'] || 'pivotal-flow-api'
+  config.auth.JWT_SECRET,
+  config.auth.JWT_ISSUER,
+  config.auth.JWT_AUDIENCE
 );

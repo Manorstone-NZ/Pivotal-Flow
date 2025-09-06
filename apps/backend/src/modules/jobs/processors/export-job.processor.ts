@@ -47,7 +47,7 @@ export class ExportJobProcessor implements JobProcessor {
         await this.simulateProcessing(1000 + Math.random() * 2000);
         
         // Update progress
-        await updateProgress(step.progress, i + 1);
+        await updateProgress(step?.progress ?? 0, i + 1);
       }
 
       // Generate mock result
@@ -85,17 +85,17 @@ export class ExportJobProcessor implements JobProcessor {
     }
 
     // Validate format
-    if (!validFormats.includes(payload.format)) {
+    if (!validFormats.includes(payload['format'])) {
       return false;
     }
 
     // Validate report type
-    if (!validReportTypes.includes(payload.reportType)) {
+    if (!validReportTypes.includes(payload['reportType'])) {
       return false;
     }
 
     // Ensure no monetary values in JSONB
-    if (payload.amount || payload.total || payload.cost) {
+    if (payload['amount'] || payload['total'] || payload['cost']) {
       return false;
     }
 

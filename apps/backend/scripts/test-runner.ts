@@ -7,7 +7,7 @@
  */
 
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join } from 'path';
 
 const TEST_TYPES = {
@@ -163,6 +163,9 @@ class TestRunner {
     try {
       const lines = output.trim().split('\n');
       const lastLine = lines[lines.length - 1];
+      if (!lastLine) {
+        throw new Error('No output to parse');
+      }
       const result = JSON.parse(lastLine);
 
       return {

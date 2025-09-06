@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
+
 import { portalRoutes } from './routes.js';
 
 /**

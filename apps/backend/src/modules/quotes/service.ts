@@ -1,10 +1,22 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { z } from 'zod';
-import { quotes, quoteLineItems } from '../../lib/schema.js';
-import { eq, and, isNull, desc, asc, like, or, gte, lte } from 'drizzle-orm';
-import { calculateQuote, calculateQuoteDebug } from '@pivotal-flow/shared/pricing';
+import { guardTypedFilters } from '@pivotal-flow/shared';
+import { generateId, startTimer } from '@pivotal-flow/shared';
 import { throwIfMonetaryInMetadata } from '@pivotal-flow/shared/guards/jsonbMonetaryGuard';
+import { calculateQuote, calculateQuoteDebug } from '@pivotal-flow/shared/pricing';
 import { Decimal } from 'decimal.js';
+import { eq, and, isNull, desc, asc, like, or, gte, lte } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { z } from 'zod';
+
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { QuoteLockingService } from '../../lib/quote-locking.js';
+import { QuoteVersioningService } from '../../lib/quote-versioning.js';
+import { BaseRepository } from '../../lib/repo.base.js';
+import { quotes, quoteLineItems } from '../../lib/schema.js';
+
+import { withTx } from '../../lib/withTx.js';
+import { PermissionService } from '../permissions/service.js';
+import { RateCardService } from '../rate-cards/service.js';
+
 import { QuoteNumberGenerator } from './quote-number.js';
 import { 
   QuoteStatus, 
@@ -14,16 +26,8 @@ import {
   type UpdateQuoteSchema,
   type QuoteStatusTransitionSchema
 } from './schemas.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
-import { withTx } from '../../lib/withTx.js';
-import { BaseRepository } from '../../lib/repo.base.js';
+
 import type { PaginationOptions } from '../../lib/repo.base.js';
-import { RateCardService } from '../rate-cards/service.js';
-import { PermissionService } from '../permissions/service.js';
-import { guardTypedFilters } from '@pivotal-flow/shared';
-import { generateId, createTimer } from '@pivotal-flow/shared';
-import { QuoteVersioningService } from '../../lib/quote-versioning.js';
-import { QuoteLockingService } from '../../lib/quote-locking.js';
 // import { quoteMetrics } from '@pivotal-flow/shared/metrics/quote-metrics';
 
 /**
@@ -62,7 +66,7 @@ export class QuoteService extends BaseRepository {
    * Create a new quote with line items
    */
   async createQuote(data: z.infer<typeof CreateQuoteSchema>): Promise<any> {
-    const timer = createTimer('QuoteService.createQuote');
+    const timer = startTimer();
     
     try {
       // Validate quote data
@@ -256,7 +260,7 @@ export class QuoteService extends BaseRepository {
  * Update quote header and/or line items with recalculation
  */
   async updateQuote(quoteId: string, data: z.infer<typeof UpdateQuoteSchema>): Promise<any> {
-    const timer = createTimer('QuoteService.updateQuote');
+    const timer = startTimer();
     
     try {
       // Get existing quote
@@ -608,7 +612,7 @@ export class QuoteService extends BaseRepository {
     pagination: PaginationOptions,
     filters: any = {}
   ): Promise<{ quotes: any[]; pagination: any }> {
-    const timer = createTimer('QuoteService.listQuotes');
+    const timer = startTimer();
     
     try {
       // Guard against JSONB filter misuse
@@ -647,13 +651,15 @@ export class QuoteService extends BaseRepository {
     }
 
     if (filters.q) {
-      whereConditions.push(
-        or(
-          like(quotes.title, `%${filters.q}%`),
-          like(quotes.description, `%${filters.q}%`),
-          like(quotes.quoteNumber, `%${filters.q}%`)
-        )!
-      );
+      const searchConditions = [
+        like(quotes.title, `%${filters.q}%`),
+        like(quotes.description, `%${filters.q}%`),
+        like(quotes.quoteNumber, `%${filters.q}%`)
+      ].filter(Boolean);
+      
+      if (searchConditions.length > 0) {
+        whereConditions.push(or(...searchConditions) as any);
+      }
     }
 
     if (filters.validFrom) {

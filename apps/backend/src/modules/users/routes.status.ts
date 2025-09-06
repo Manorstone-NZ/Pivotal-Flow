@@ -1,15 +1,18 @@
 // Update user status route with RBAC and audit logging
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import { generateId } from '@pivotal-flow/shared';
 import { eq, and, isNull, count, ne } from 'drizzle-orm';
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+
+import { logger } from '../../lib/logger.js';
 import { users, userRoles, roles, auditLogs } from '../../lib/schema.js';
+
+import { canModifyUser, extractUserContext } from './rbac.js';
 import { 
   userStatusSchema
 } from './schemas.js';
 import { getUserById, updateUser } from './service.drizzle.js';
-import { canModifyUser, extractUserContext } from './rbac.js';
-import { logger } from '../../lib/logger.js';
-import { generateId } from '@pivotal-flow/shared';
+
 
 export const updateUserStatusRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/status', {

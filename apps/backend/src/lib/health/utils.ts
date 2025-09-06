@@ -1,6 +1,7 @@
 // Health-related functions moved from shared package
 
 import type { FastifyInstance } from 'fastify';
+
 import { healthCheck } from '../db.js';
 
 /**

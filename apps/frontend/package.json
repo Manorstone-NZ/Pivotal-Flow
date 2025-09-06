@@ -17,6 +17,7 @@
     "analyze:build": "npm run build"
   },
   "dependencies": {
+    "@pivotal-flow/sdk": "workspace:^",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.4"

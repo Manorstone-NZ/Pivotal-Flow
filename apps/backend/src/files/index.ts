@@ -4,6 +4,7 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
+
 import { registerFileRoutes } from './routes.js';
 
 /**

@@ -4,17 +4,19 @@
  */
 
 import type { FastifyInstance } from 'fastify';
-import { getDatabase } from '../../lib/db.js';
-import { JobsService } from './service.js';
-import { ExportJobProcessor } from './processors/export-job.processor.js';
-import { PermissionService } from '../permissions/service.js';
+
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { getDatabase } from '../../lib/db.js';
+import { PermissionService } from '../permissions/service.js';
+
+import { ExportJobProcessor } from './processors/export-job.processor.js';
 import {
   CreateJobRequestSchema,
   JobStatusResponseSchema,
   JobListResponseSchema,
   JobQuerySchema,
 } from './schemas.js';
+import { JobsService } from './service.js';
 
 /**
  * Register jobs routes

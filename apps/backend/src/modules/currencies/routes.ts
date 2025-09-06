@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+
 import { CurrencyService } from './service.js';
 
 /**

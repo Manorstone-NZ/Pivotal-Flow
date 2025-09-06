@@ -3,13 +3,17 @@
  * Manages background job processing with queue, status, and retry logic
  */
 
+import { generateId, required } from '@pivotal-flow/shared';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { generateId } from '@pivotal-flow/shared';
+
+
+import type { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { getDatabase } from '../../lib/db.js';
 import { jobs } from '../../lib/schema.js';
-import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import type { PermissionService } from '../permissions/service.js';
+
 import { JOB_STATUS, JOB_PRIORITY, DEFAULT_RETRY_CONFIG } from './constants.js';
+import type { JobType } from './types.js';
 import type { 
   CreateJobRequest,
   JobStatusResponse,
@@ -63,7 +67,7 @@ export class JobsService {
       throw new Error(`No processor registered for job type: ${request.jobType}`);
     }
 
-    const processor = this.processors.get(request.jobType)!;
+    const processor = required(this.processors.get(request.jobType), `Processor for job type ${request.jobType} not found`);
     
     // Validate payload if processor has validation
     if (processor.validatePayload && !processor.validatePayload(request.payload)) {
@@ -138,7 +142,7 @@ export class JobsService {
       throw new Error('Job not found');
     }
 
-    const jobRecord = job[0];
+    const jobRecord = required(job[0], 'Job not found');
     const progress = this.calculateProgress(jobRecord);
     const canCancel = jobRecord.status === JOB_STATUS.QUEUED || jobRecord.status === JOB_STATUS.RUNNING;
     const canRetry = jobRecord.status === JOB_STATUS.FAILED && jobRecord.retryCount < jobRecord.maxRetries;
@@ -214,7 +218,7 @@ export class JobsService {
         )
       );
 
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       throw new Error('Job not found or cannot be cancelled');
     }
 
@@ -250,6 +254,9 @@ export class JobsService {
     }
 
     const jobRecord = job[0];
+    if (!jobRecord) {
+      throw new Error('Job not found or cannot be retried');
+    }
 
     if (jobRecord.retryCount >= jobRecord.maxRetries) {
       throw new Error('Job has exceeded maximum retry attempts');
@@ -271,7 +278,7 @@ export class JobsService {
       .where(eq(jobs.id, jobId));
 
     // Record metrics
-    this.metrics.recordJobRetried(jobRecord.jobType, this.organizationId, jobRecord.retryCount + 1);
+          this.metrics.recordJobRetried(jobRecord.jobType as JobType, this.organizationId, jobRecord.retryCount + 1);
 
     // Log audit event
     await this.auditLogger.logEvent({
@@ -288,7 +295,7 @@ export class JobsService {
     // Start processing
     this.processJob(jobId).catch(error => {
       console.error('Job retry processing failed:', error);
-      this.metrics.recordJobFailed(jobRecord.jobType, this.organizationId, 'retry_processing_error');
+      this.metrics.recordJobFailed(jobRecord.jobType as JobType, this.organizationId, 'retry_processing_error');
     });
   }
 
@@ -311,6 +318,9 @@ export class JobsService {
       }
 
       const jobRecord = job[0];
+      if (!jobRecord) {
+        throw new Error('Job not found');
+      }
 
       // Check if job is still queued
       if (jobRecord.status !== JOB_STATUS.QUEUED) {
@@ -328,7 +338,7 @@ export class JobsService {
         .where(eq(jobs.id, jobId));
 
       // Record metrics
-      this.metrics.recordJobStarted(jobRecord.jobType, this.organizationId);
+      this.metrics.recordJobStarted(jobRecord.jobType as JobType, this.organizationId);
 
       // Get processor
       const processor = this.processors.get(jobRecord.jobType);
@@ -341,8 +351,8 @@ export class JobsService {
         jobId: jobRecord.id,
         organizationId: jobRecord.organizationId,
         userId: jobRecord.userId,
-        jobType: jobRecord.jobType,
-        payload: jobRecord.payload,
+        jobType: jobRecord.jobType as JobType,
+        payload: jobRecord.payload as Record<string, any>,
         updateProgress: async (progress: number, currentStep?: number) => {
           await this.updateJobProgress(jobId, progress, currentStep);
         },
@@ -370,7 +380,7 @@ export class JobsService {
         .where(eq(jobs.id, jobId));
 
       // Record metrics
-      this.metrics.recordJobCompleted(jobRecord.jobType, this.organizationId, duration);
+      this.metrics.recordJobCompleted(jobRecord.jobType as JobType, this.organizationId, duration);
 
     } catch (error) {
       console.error('Job processing error:', error);
@@ -385,7 +395,7 @@ export class JobsService {
         .limit(1);
 
       if (job.length > 0) {
-        this.metrics.recordJobFailed(job[0].jobType, this.organizationId, errorMessage);
+        this.metrics.recordJobFailed(job[0]?.jobType as JobType, this.organizationId, errorMessage);
       }
     }
   }

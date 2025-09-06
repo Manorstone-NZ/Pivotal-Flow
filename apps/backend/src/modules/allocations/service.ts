@@ -1,9 +1,12 @@
-import { eq, and, or, gte, lte, isNull, sql } from 'drizzle-orm';
-import { getDatabase } from '../../lib/db.js';
-import { resourceAllocations, projects, users } from '../../lib/schema.js';
-import { PermissionService } from '../permissions/service.js';
-import { AuditLogger } from '../../lib/audit/logger.js';
 import { generateId } from '@pivotal-flow/shared';
+import { eq, and, or, gte, lte, isNull, sql } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
+
+import { AuditLogger } from '../../lib/audit/logger.js';
+import { getDatabase } from '../../lib/db.js';
+import { resourceAllocations, projects, users, type NewResourceAllocation } from '../../lib/schema.js';
+import { PermissionService } from '../permissions/service.js';
+
 import { ALLOCATION_PERMISSIONS } from './constants.js';
 import type { 
   CreateAllocationRequest, 
@@ -12,7 +15,36 @@ import type {
   WeeklyCapacitySummary,
   AllocationConflict 
 } from './types.js';
-import type { FastifyInstance } from 'fastify';
+
+
+// Database query result types
+interface AllocationQueryResult {
+  id: string;
+  userId: string;
+  projectId: string;
+  role: string;
+  allocationPercent: number;
+  startDate: Date;
+  endDate: Date;
+  isBillable: boolean;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  userName: string | null;
+  projectName: string | null;
+}
+
+interface WeeklyCapacityResult {
+  userId: string;
+  userName: string;
+  weekStart: string;
+  weekEnd: string;
+  plannedHours: number;
+  actualHours: number;
+  plannedPercent: number;
+  actualPercent: number;
+  variance: number;
+}
 
 export class AllocationService {
   private db = getDatabase();
@@ -42,28 +74,30 @@ export class AllocationService {
     }
 
     // Create allocation
-    const allocation = await this.db.insert(resourceAllocations).values({
+    const allocationData: NewResourceAllocation = {
       id: generateId(),
       organizationId: this.organizationId,
       projectId: data.projectId,
       userId: data.userId,
       role: data.role,
-      allocationPercent: data.allocationPercent,
-      startDate: data.startDate,
-      endDate: data.endDate,
+      allocationPercent: data.allocationPercent.toString(),
+      startDate: new Date(data.startDate).toISOString().split('T')[0] as string,
+      endDate: new Date(data.endDate).toISOString().split('T')[0] as string,
       isBillable: data.isBillable ?? true,
-      notes: data.notes ?? {}
-    }).returning();
+      notes: data.notes ?? {},
+    };
+    
+    const allocation = await this.db.insert(resourceAllocations).values(allocationData).returning();
 
     // Log audit event
     await this.auditLogger.logEvent({
       action: 'allocations.create',
       entityType: 'ResourceAllocation',
-      entityId: allocation[0].id,
+      entityId: allocation[0]?.id || '',
       organizationId: this.organizationId,
       userId: this.userId,
       oldValues: null,
-      newValues: allocation[0]
+      newValues: allocation[0] ?? null
     });
 
     return allocation[0];
@@ -90,15 +124,15 @@ export class AllocationService {
 
     // Check for conflicts if dates or allocation percent changed
     if (data.startDate || data.endDate || data.allocationPercent) {
-      const startDate = data.startDate ?? existing[0].startDate;
-      const endDate = data.endDate ?? existing[0].endDate;
-      const allocationPercent = data.allocationPercent ?? existing[0].allocationPercent;
+      const startDate = data.startDate ?? existing[0]?.startDate;
+      const endDate = data.endDate ?? existing[0]?.endDate;
+      const allocationPercent = data.allocationPercent ?? existing[0]?.allocationPercent;
       
       const conflicts = await this.checkAllocationConflicts(
-        existing[0].userId, 
-        startDate, 
-        endDate, 
-        allocationPercent,
+        existing[0]?.userId ?? '', 
+        startDate ?? existing[0]?.startDate ?? '', 
+        endDate ?? existing[0]?.endDate ?? '', 
+        Number(allocationPercent),
         id // Exclude current allocation from conflict check
       );
       
@@ -108,11 +142,19 @@ export class AllocationService {
     }
 
     // Update allocation
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.allocationPercent !== undefined) updateData.allocationPercent = data.allocationPercent;
+    if (data.startDate !== undefined) updateData.startDate = data.startDate;
+    if (data.endDate !== undefined) updateData.endDate = data.endDate;
+    if (data.isBillable !== undefined) updateData.isBillable = data.isBillable;
+    if (data.notes !== undefined) updateData.notes = JSON.stringify(data.notes);
+
     const updated = await this.db.update(resourceAllocations)
-      .set({
-        ...data,
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(and(
         eq(resourceAllocations.id, id),
         eq(resourceAllocations.organizationId, this.organizationId)
@@ -126,8 +168,8 @@ export class AllocationService {
       entityId: id,
       organizationId: this.organizationId,
       userId: this.userId,
-      oldValues: existing[0],
-      newValues: updated[0]
+      oldValues: existing[0] ?? null,
+      newValues: updated[0] ?? null
     });
 
     return updated[0];
@@ -170,12 +212,12 @@ export class AllocationService {
       entityId: id,
       organizationId: this.organizationId,
       userId: this.userId,
-      oldValues: existing[0],
+      oldValues: existing[0] ?? null,
       newValues: null
     });
   }
 
-  async getAllocations(filters: AllocationFilters = {}, page = 1, limit = 20): Promise<{ allocations: any[]; total: number }> {
+  async getAllocations(filters: AllocationFilters = {}, page = 1, limit = 20): Promise<{ allocations: AllocationQueryResult[]; total: number }> {
     // Check permissions
     const hasPermission = await this.permissionService.hasPermission(this.userId, ALLOCATION_PERMISSIONS.READ);
     if (!hasPermission.hasPermission) {
@@ -219,7 +261,7 @@ export class AllocationService {
         startDate: resourceAllocations.startDate,
         endDate: resourceAllocations.endDate,
         isBillable: resourceAllocations.isBillable,
-        notes: resourceAllocations.notes,
+        notes: resourceAllocations.notes as Record<string, any>,
         createdAt: resourceAllocations.createdAt,
         updatedAt: resourceAllocations.updatedAt,
         deletedAt: resourceAllocations.deletedAt,
@@ -240,8 +282,8 @@ export class AllocationService {
     ]);
 
     return {
-      allocations,
-      total: totalResult[0].count
+      allocations: allocations as unknown as AllocationQueryResult[],
+      total: totalResult[0]?.count || 0
     };
   }
 
@@ -338,8 +380,25 @@ export class AllocationService {
       )
     ));
 
+    // Transform query result to AllocationQueryResult format
+    const transformedAllocations: AllocationQueryResult[] = allocations.map(allocation => ({
+      id: '', // Not selected in query, but required by interface
+      userId: allocation.userId,
+      projectId: projectId,
+      role: allocation.role,
+      allocationPercent: Number(allocation.allocationPercent),
+      startDate: new Date(allocation.startDate),
+      endDate: new Date(allocation.endDate),
+      isBillable: allocation.isBillable,
+      notes: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userName: allocation.userName,
+      projectName: project[0]?.name || null
+    }));
+
     // Group by week and calculate capacity
-    const weeklyCapacity = this.calculateWeeklyCapacity(allocations, startDate, endDate);
+    const weeklyCapacity = this.calculateWeeklyCapacity(transformedAllocations, startDate, endDate);
 
     return {
       projectId,
@@ -347,11 +406,11 @@ export class AllocationService {
       weekStart: startDate.toISOString().split('T')[0] || '',
       weekEnd: endDate.toISOString().split('T')[0] || '',
       allocations: weeklyCapacity,
-      totalPlannedHours: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.plannedHours, 0),
-      totalActualHours: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.actualHours, 0),
-      totalPlannedPercent: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.plannedPercent, 0),
-      totalActualPercent: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.actualPercent, 0),
-      totalVariance: weeklyCapacity.reduce((sum: number, cap: any) => sum + cap.variance, 0)
+      totalPlannedHours: weeklyCapacity.reduce((sum: number, cap: WeeklyCapacityResult) => sum + cap.plannedHours, 0),
+      totalActualHours: weeklyCapacity.reduce((sum: number, cap: WeeklyCapacityResult) => sum + cap.actualHours, 0),
+      totalPlannedPercent: weeklyCapacity.reduce((sum: number, cap: WeeklyCapacityResult) => sum + cap.plannedPercent, 0),
+      totalActualPercent: weeklyCapacity.reduce((sum: number, cap: WeeklyCapacityResult) => sum + cap.actualPercent, 0),
+      totalVariance: weeklyCapacity.reduce((sum: number, cap: WeeklyCapacityResult) => sum + cap.variance, 0)
     };
   }
 
@@ -413,8 +472,8 @@ export class AllocationService {
             projectName: alloc.projectName || '',
             role: alloc.role,
             allocationPercent: Number(alloc.allocationPercent),
-            startDate: alloc.startDate,
-            endDate: alloc.endDate,
+            startDate: alloc.startDate.toISOString().split('T')[0],
+            endDate: alloc.endDate.toISOString().split('T')[0],
             overlapStart: startDate,
             overlapEnd: endDate,
             totalAllocation: totalAllocation
@@ -433,8 +492,8 @@ export class AllocationService {
     return conflicts;
   }
 
-  private calculateWeeklyCapacity(allocations: any[], startDate: Date, endDate: Date): any[] {
-    const weeklyCapacity: any[] = [];
+  private calculateWeeklyCapacity(allocations: AllocationQueryResult[], startDate: Date, endDate: Date): WeeklyCapacityResult[] {
+    const weeklyCapacity: WeeklyCapacityResult[] = [];
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {

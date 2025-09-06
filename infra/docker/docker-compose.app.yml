@@ -50,7 +50,7 @@ services:
       - ../../.env
     volumes:
       - ../..:/app
-    entrypoint: [ "sh", "-lc", "cd apps/backend && corepack enable && pnpm install && npx prisma migrate deploy" ]
+    entrypoint: [ "sh", "-lc", "cd apps/backend && corepack enable && pnpm install && pnpm drizzle-kit migrate" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,6 +59,25 @@ services:
     restart: "no"
     profiles:
       - local_db
+
+  migrate-prod:
+    image: node:20-alpine
+    working_dir: /app
+    env_file:
+      - ../../.env.example
+      - ../../apps/backend/.env.example
+      - ../../.env
+    volumes:
+      - ../..:/app
+    entrypoint: [ "sh", "-lc", "cd apps/backend && corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate:ci" ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - devnet
+    restart: "no"
+    profiles:
+      - production
 
 networks:
   devnet:

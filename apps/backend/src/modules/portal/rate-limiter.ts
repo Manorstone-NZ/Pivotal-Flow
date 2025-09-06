@@ -5,8 +5,9 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { PortalUserContext, PortalRateLimitContext } from './types.js';
+
 import { PORTAL_RATE_LIMITS } from './constants.js';
+import type { PortalUserContext, PortalRateLimitContext } from './types.js';
 
 // In-memory rate limit store (replace with Redis in production)
 const rateLimitStore = new Map<string, PortalRateLimitContext>();

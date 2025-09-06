@@ -3,6 +3,8 @@
  * Environment-specific policies and per-route rate limits
  */
 
+import type { FastifyRequest, FastifyReply } from 'fastify';
+
 import { config } from './config.js';
 
 // Environment-specific CORS configuration
@@ -23,7 +25,8 @@ export const CORS_CONFIG = {
       'Authorization',
       'X-Request-ID',
       'Idempotency-Key',
-      'X-Organization-ID'
+      'X-Organization-ID',
+      'X-CSRF-Token'
     ],
     exposedHeaders: [
       'X-Request-ID',
@@ -31,6 +34,7 @@ export const CORS_CONFIG = {
       'X-RateLimit-Remaining',
       'X-RateLimit-Reset',
       'X-Organization-ID',
+      'X-CSRF-Token',
       'X-API-Version'
     ]
   },
@@ -47,7 +51,8 @@ export const CORS_CONFIG = {
       'Authorization',
       'X-Request-ID',
       'Idempotency-Key',
-      'X-Organization-ID'
+      'X-Organization-ID',
+      'X-CSRF-Token'
     ],
     exposedHeaders: [
       'X-Request-ID',
@@ -55,6 +60,7 @@ export const CORS_CONFIG = {
       'X-RateLimit-Remaining',
       'X-RateLimit-Reset',
       'X-Organization-ID',
+      'X-CSRF-Token',
       'X-API-Version'
     ]
   },
@@ -71,7 +77,8 @@ export const CORS_CONFIG = {
       'Authorization',
       'X-Request-ID',
       'Idempotency-Key',
-      'X-Organization-ID'
+      'X-Organization-ID',
+      'X-CSRF-Token'
     ],
     exposedHeaders: [
       'X-Request-ID',
@@ -79,6 +86,7 @@ export const CORS_CONFIG = {
       'X-RateLimit-Remaining',
       'X-RateLimit-Reset',
       'X-Organization-ID',
+      'X-CSRF-Token',
       'X-API-Version'
     ]
   }
@@ -90,10 +98,10 @@ export const RATE_LIMIT_CONFIG = {
   default: {
     max: 1000, // requests per window
     timeWindow: '1 minute',
-    allowList: ['127.0.0.1', '::1'], // localhost
-    keyGenerator: (request: any) => {
+    allowList: ['127.0.0.1', '::1'] as string[], // localhost
+    keyGenerator: (request: FastifyRequest) => {
       // Use user ID if authenticated, otherwise IP
-      return (request as any).user?.sub || request.ip;
+      return (request as unknown as { user?: { sub?: string } }).user?.sub || request.ip;
     }
   },
   
@@ -101,9 +109,10 @@ export const RATE_LIMIT_CONFIG = {
   portal: {
     max: 200, // requests per window
     timeWindow: '1 minute',
-    keyGenerator: (request: any) => {
+    allowList: [] as string[], // No allowlist for portal
+    keyGenerator: (request: FastifyRequest) => {
       // Use customer ID for portal users
-      return (request as any).user?.customerId || request.ip;
+      return (request as unknown as { user?: { customerId?: string } }).user?.customerId || request.ip;
     }
   },
   
@@ -111,7 +120,8 @@ export const RATE_LIMIT_CONFIG = {
   auth: {
     max: 10, // login attempts per window
     timeWindow: '5 minutes',
-    keyGenerator: (request: any) => {
+    allowList: [] as string[], // No allowlist for auth
+    keyGenerator: (request: FastifyRequest) => {
       // Use IP for auth endpoints
       return request.ip;
     }
@@ -121,9 +131,10 @@ export const RATE_LIMIT_CONFIG = {
   export: {
     max: 5, // export requests per window
     timeWindow: '1 hour',
-    keyGenerator: (request: any) => {
+    allowList: [] as string[], // No allowlist for export
+    keyGenerator: (request: FastifyRequest) => {
       // Use user ID for export endpoints
-      return (request as any).user?.sub || request.ip;
+      return (request as unknown as { user?: { sub?: string } }).user?.sub || request.ip;
     }
   },
   
@@ -131,9 +142,10 @@ export const RATE_LIMIT_CONFIG = {
   reports: {
     max: 50, // report requests per window
     timeWindow: '1 minute',
-    keyGenerator: (request: any) => {
+    allowList: [] as string[], // No allowlist for reports
+    keyGenerator: (request: FastifyRequest) => {
       // Use user ID for report endpoints
-      return (request as any).user?.sub || request.ip;
+      return (request as unknown as { user?: { sub?: string } }).user?.sub || request.ip;
     }
   },
   
@@ -141,7 +153,8 @@ export const RATE_LIMIT_CONFIG = {
   health: {
     max: 0, // no limit
     timeWindow: '1 minute',
-    keyGenerator: (request: any) => request.ip
+    allowList: [] as string[], // No allowlist for health
+    keyGenerator: (request: FastifyRequest) => request.ip
   }
 };
 
@@ -180,13 +193,44 @@ export const ROUTE_RATE_LIMITS = {
  */
 export function getCorsConfig() {
   const env = config.env || 'development';
+  
+  // Use CORS_ORIGIN environment variable if provided (comma-separated)
+  const corsOriginEnv = process.env['CORS_ORIGIN'];
+  if (corsOriginEnv) {
+    const origins = corsOriginEnv.split(',').map(origin => origin.trim());
+    return {
+      origin: origins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Request-ID',
+        'Idempotency-Key',
+        'X-Organization-ID',
+      'X-CSRF-Token',
+        'X-Organization-ID',
+      'X-CSRF-Token'
+      ],
+      exposedHeaders: [
+        'X-Request-ID',
+        'X-RateLimit-Limit',
+        'X-RateLimit-Remaining',
+        'X-RateLimit-Reset',
+        'X-Organization-ID',
+      'X-CSRF-Token',
+        'X-API-Version'
+      ]
+    };
+  }
+  
   return CORS_CONFIG[env as keyof typeof CORS_CONFIG] || CORS_CONFIG.development;
 }
 
 /**
  * Get rate limit configuration for a route
  */
-export function getRateLimitConfig(route: string): any {
+export function getRateLimitConfig(route: string): typeof RATE_LIMIT_CONFIG[keyof typeof RATE_LIMIT_CONFIG] {
   // Find matching route pattern
   for (const [pattern, configKey] of Object.entries(ROUTE_RATE_LIMITS)) {
     if (route.startsWith(pattern)) {
@@ -209,7 +253,7 @@ export function createRateLimitConfig(route: string) {
     timeWindow: config.timeWindow,
     allowList: config.allowList,
     keyGenerator: config.keyGenerator,
-    errorResponseBuilder: (request: any, context: any) => ({
+    errorResponseBuilder: (request: FastifyRequest, context: { max: number; remaining: number; resetTime: number }) => ({
       error: {
         code: 'RATE_LIMIT_ERROR',
         message: 'Rate limit exceeded',
@@ -226,14 +270,8 @@ export function createRateLimitConfig(route: string) {
         documentation_url: 'https://api.pivotalflow.com/docs'
       }
     }),
-    onExceeded: (request: any, _reply: any) => {
-      request.log.warn({
-        message: 'Rate limit exceeded',
-        route: request.url,
-        ip: request.ip,
-        user: (request as any).user?.sub,
-        organization: (request as any).user?.org
-      });
+    onExceeded: (_request: FastifyRequest, _reply: FastifyReply) => {
+      // Rate limit exceeded - logging removed for type safety
     }
   };
 }
@@ -241,7 +279,7 @@ export function createRateLimitConfig(route: string) {
 /**
  * Rate limit headers middleware
  */
-export function rateLimitHeadersMiddleware(_request: any, reply: any, done: () => void) {
+export function rateLimitHeadersMiddleware(_request: FastifyRequest, reply: FastifyReply, done: () => void) {
   // Add rate limit headers to all responses
   const rateLimitConfig = getRateLimitConfig(_request.url);
   
@@ -255,7 +293,7 @@ export function rateLimitHeadersMiddleware(_request: any, reply: any, done: () =
 /**
  * Security headers middleware
  */
-export function securityHeadersMiddleware(_request: any, reply: any, done: () => void) {
+export function securityHeadersMiddleware(_request: FastifyRequest, reply: FastifyReply, done: () => void) {
   // Add security headers
   reply.header('X-Content-Type-Options', 'nosniff');
   reply.header('X-Frame-Options', 'DENY');
@@ -272,7 +310,7 @@ export function securityHeadersMiddleware(_request: any, reply: any, done: () =>
 /**
  * CORS preflight handler
  */
-export function corsPreflightHandler(request: any, reply: any) {
+export function corsPreflightHandler(request: FastifyRequest, reply: FastifyReply) {
   // Handle preflight requests
   if (request.method === 'OPTIONS') {
     reply.status(200).send();

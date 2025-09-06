@@ -1,4 +1,6 @@
-import { guardTypedFilters } from "./filterGuard";
+import { describe, it, expect } from 'vitest';
+
+import { guardTypedFilters } from "./filterGuard.js";
 
 describe("filter guard", () => {
   it("blocks metadata path for core fields", () => {

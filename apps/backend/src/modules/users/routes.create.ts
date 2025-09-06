@@ -1,14 +1,16 @@
 // Create user route with RBAC and audit logging
 
+import { generateId } from '@pivotal-flow/shared';
+import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { ZodError, type infer as ZodInfer } from "zod";
-import { and, eq, isNull } from "drizzle-orm";
-import { generateId } from '@pivotal-flow/shared';
+
+import { logger } from "../../lib/logger.js";
 import { users, auditLogs } from "../../lib/schema.js";
+
+import { canManageUsers, extractUserContext } from "./rbac.js";
 import { userCreateSchema } from "./schemas.js";
 import { createUser } from "./service.drizzle.js";
-import { canManageUsers, extractUserContext } from "./rbac.js";
-import { logger } from "../../lib/logger.js";
 
 type CreateBody = ZodInfer<typeof userCreateSchema>;
 

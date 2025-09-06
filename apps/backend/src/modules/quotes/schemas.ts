@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { Decimal } from 'decimal.js';
+import { z } from 'zod';
 
 // Quote status enum based on B.1 specification
 export const QuoteStatus = {

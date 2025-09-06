@@ -98,4 +98,4 @@ export function asyncTimer(name?: string) {
 }
 
 // Export a simple timer function for backward compatibility
-export const timer = createTimer;
+export const timerFunction = createTimer;

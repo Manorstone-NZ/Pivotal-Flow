@@ -1,6 +1,7 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { quotes } from '../../lib/schema.js';
 import { eq, and, isNull } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
+import { quotes } from '../../lib/schema.js';
 import { withTx } from '../../lib/withTx.js';
 
 /**
@@ -48,7 +49,7 @@ export class QuoteNumberGenerator {
       for (const quote of existingQuotes) {
         if (quote.quoteNumber) {
           const match = quote.quoteNumber.match(new RegExp(`${prefix}-${currentYear}-(\\d+)`));
-          if (match && match[1]) {
+          if (match?.[1]) {
             const sequence = parseInt(match[1], 10);
             if (sequence >= nextSequence) {
               nextSequence = sequence + 1;
@@ -90,7 +91,7 @@ export class QuoteNumberGenerator {
   static parseQuoteNumber(quoteNumber: string): { prefix: string; year: number; sequence: number } | null {
     const match = quoteNumber.match(/^([A-Z]{1,3})-(\d{4})-(\d{4})$/);
     
-    if (!match || !match[1] || !match[2] || !match[3]) {
+    if (!match?.[1] || !match[2] || !match[3]) {
       return null;
     }
 

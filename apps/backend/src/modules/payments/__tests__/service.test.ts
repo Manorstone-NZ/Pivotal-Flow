@@ -1,7 +1,8 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { getDatabase } from '../../../lib/db.js';
 import { organizations, users, payments, quotes } from '../../../lib/schema.js';
-import { eq } from 'drizzle-orm';
 
 describe('Payments Module', () => {
   let testDb: any;

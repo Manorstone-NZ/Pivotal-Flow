@@ -4,13 +4,12 @@
  * Service for customer portal APIs with strict security isolation
  */
 
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, and, isNull, desc, asc, count, gte, lte, inArray } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyInstance } from 'fastify';
 
-import { BaseRepository } from '../../lib/repo.base.js';
-import { PermissionService } from '../permissions/service.js';
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { BaseRepository } from '../../lib/repo.base.js';
 import { 
   quotes, 
   quoteLineItems, 
@@ -18,7 +17,12 @@ import {
   invoiceLineItems,
   users 
 } from '../../lib/schema.js';
+import { PermissionService } from '../permissions/service.js';
 
+import {
+  PORTAL_PERMISSIONS,
+  PORTAL_CONFIG
+} from './constants.js';
 import type {
   PortalUserContext,
   PortalQuote,
@@ -35,10 +39,6 @@ import type {
   PortalSecurityViolation
 } from './types.js';
 
-import {
-  PORTAL_PERMISSIONS,
-  PORTAL_CONFIG
-} from './constants.js';
 
 /**
  * Portal Service
@@ -131,7 +131,7 @@ export class PortalService extends BaseRepository {
       entityId: violation.attemptedResourceId || 'unknown',
       organizationId: this.userContext.organizationId,
       userId: this.userContext.userId,
-      metadata: fullViolation as Record<string, unknown>
+      metadata: fullViolation as unknown as Record<string, unknown>
     });
 
     // Increment metrics counter

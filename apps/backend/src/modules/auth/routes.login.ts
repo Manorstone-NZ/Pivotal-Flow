@@ -1,8 +1,10 @@
 import type { FastifyPluginAsync } from "fastify";
+
 // import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
+import { config } from "../../config/index.js";
 import { logger } from "../../lib/logger.js";
+
 import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
-import { config } from "../../lib/config.js";
 import { AuthService } from "./service.drizzle.js";
 
 export const loginRoute: FastifyPluginAsync = async fastify => {
@@ -48,7 +50,7 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
       }
     },
     async (request, reply) => {
-      // const tokenManager = (fastify as any).tokenManager;
+      const tokenManager = (fastify as any).tokenManager;
       const { email: rawEmail, password } = request.body;
       const authService = new AuthService(fastify);
 
@@ -60,19 +62,14 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
         
         if (!user) {
           // Log failed login attempt
-          /*
-          try {
-            await auditLogger.logAuthEvent(
-              "auth.login_failed",
-              "6732d5a4-8565-4b33-a333-2db57f443445", // Use test organization for failed logins
-              "unknown",
-              { email, reason: "invalid_credentials" },
-              request
-            );
-          } catch (auditError) {
-            logger.warn({ err: auditError }, "Audit log write failed for failed login");
-          }
-          */
+          logger.info({
+            request_id: request.id,
+            user_id: 'unknown',
+            organisation_id: 'unknown',
+            outcome: 'failed',
+            reason: 'invalid_credentials',
+            email: email
+          }, 'Login failed: invalid credentials');
 
           return reply.status(401).send({
             error: "Unauthorized",
@@ -93,27 +90,32 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
           roles: user.roles
         });
 
+        // Store refresh token in Redis using TokenManager
+        const refreshTokenManager = (fastify as any).refreshTokenManager;
+        const refreshJti = `refresh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await refreshTokenManager.setRefresh(refreshJti, {
+          jti: refreshJti,
+          userId: user.id,
+          organisationId: user.organizationId,
+          expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+        });
+
         reply.setCookie("refreshToken", refreshToken, {
           httpOnly: true,
-          secure: config.auth.cookieSecure,
+          secure: config.auth.COOKIE_SECURE,
           sameSite: "lax",
           path: "/",
           maxAge: 7 * 24 * 60 * 60
         });
 
-        /*
-        try {
-          await auditLogger.logAuthEvent(
-            "auth.login",
-            user.organizationId,
-            user.id,
-            { email: user.email },
-            request
-          );
-        } catch (auditError) {
-          logger.warn({ err: auditError }, "Audit log write failed for login");
-        }
-        */
+        // Log successful login
+        logger.info({
+          request_id: request.id,
+          user_id: user.id,
+          organisation_id: user.organizationId,
+          outcome: 'success',
+          email: user.email
+        }, 'Login successful');
 
         return reply.status(200).send({
           accessToken,

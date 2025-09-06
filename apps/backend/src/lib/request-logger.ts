@@ -1,5 +1,6 @@
-import type { FastifyRequest } from 'fastify';
 import { generateRequestId } from '@pivotal-flow/shared';
+import type { FastifyRequest } from 'fastify';
+
 import { createRequestLogger } from './logger.js';
 
 // Type definitions for request context

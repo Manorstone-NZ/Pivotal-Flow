@@ -1,6 +1,9 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+
+import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
+
 import type { RefreshRequest, RefreshResponse, AuthError } from './schemas.js';
 
 // Type definitions for request context
@@ -73,7 +76,13 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
         
         // Validate refresh token in Redis
         if (!decoded.jti) {
-          logger.warn({ event: 'auth.refresh_failed', reason: 'no_jti' }, 'Refresh failed: no JTI in token');
+          logger.warn({ 
+            request_id: request.id,
+            user_id: 'unknown',
+            organisation_id: 'unknown',
+            outcome: 'failed',
+            reason: 'no_jti' 
+          }, 'Refresh failed: no JTI in token');
           return reply.status(401).send({
             error: 'Unauthorized',
             message: 'Invalid refresh token',
@@ -81,12 +90,15 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
           });
         }
         
-        const tokenData = await (fastify as any).tokenManager.validateRefreshToken(decoded.jti);
+        const refreshTokenManager = (fastify as any).refreshTokenManager;
+        const tokenData = await refreshTokenManager.getRefresh(decoded.jti);
         if (!tokenData) {
           logger.warn({ 
-            userId: decoded.sub, 
+            request_id: request.id,
+            user_id: decoded.sub, 
+            organisation_id: decoded.org,
             jti: decoded.jti, 
-            event: 'auth.refresh_failed', 
+            outcome: 'failed',
             reason: 'invalid_refresh_token' 
           }, 'Refresh failed: invalid or expired refresh token');
           
@@ -98,7 +110,15 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
         }
 
         // Rotate refresh token (revoke old, create new)
-        const newRefreshToken = await (fastify as any).tokenManager.rotateRefreshToken(decoded.jti, {
+        const newJti = `refresh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await refreshTokenManager.rotateRefresh(decoded.jti, newJti, {
+          jti: newJti,
+          userId: decoded.sub,
+          organisationId: decoded.org,
+          expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+        });
+        
+        const newRefreshToken = await (fastify as any).tokenManager.signRefreshToken({
           sub: decoded.sub,
           org: decoded.org,
           roles: decoded.roles ?? [],
@@ -114,7 +134,7 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
         // Set new refresh token as HTTP-only cookie
         reply.setCookie('refreshToken', newRefreshToken, {
           httpOnly: true,
-          secure: process.env['COOKIE_SECURE'] === 'true',
+          secure: config.auth.COOKIE_SECURE,
           sameSite: 'lax',
           path: '/',
           maxAge: 7 * 24 * 60 * 60, // 7 days
@@ -122,9 +142,10 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
 
         // Log successful refresh
         logger.info({ 
-          userId: decoded.sub, 
-          organizationId: decoded.org,
-          event: 'auth.refresh_success' 
+          request_id: request.id,
+          user_id: decoded.sub, 
+          organisation_id: decoded.org,
+          outcome: 'success'
         }, 'Access token refreshed successfully');
 
         // Log audit event for successful refresh

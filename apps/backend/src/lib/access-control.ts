@@ -4,6 +4,7 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
+
 import { AuthenticationError, AuthorizationError } from '../lib/error-handler.js';
 
 // Route to permission mapping
@@ -119,7 +120,7 @@ function getRoutePermission(method: string, url: string): string | null {
   const exactKey = `${method} ${cleanUrl}`;
   const exactPermission = ROUTE_PERMISSIONS[exactKey as keyof typeof ROUTE_PERMISSIONS];
   if (exactPermission) {
-    return exactPermission!;
+    return exactPermission;
   }
   
   // Check pattern matches (for parameterized routes)

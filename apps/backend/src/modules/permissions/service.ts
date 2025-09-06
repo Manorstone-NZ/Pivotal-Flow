@@ -1,7 +1,9 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, and, isNull, or } from 'drizzle-orm';
-import { roles, userRoles, permissions, rolePermissions, policyOverrides } from '../../lib/schema.js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
 import { BaseRepository } from '../../lib/repo.base.js';
+import { roles, userRoles, permissions, rolePermissions, policyOverrides } from '../../lib/schema.js';
+
 import type { PermissionName, PermissionCheck } from './types.js';
 
 /**

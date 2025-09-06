@@ -58,9 +58,9 @@ export function guardTypedFilters(filters: Record<string, unknown>): FilterCheck
       /* extract the field name from the metadata path */
       let fieldName: string;
       if (k.includes("metadata->")) {
-        fieldName = k.split("metadata->")[1];
+        fieldName = k.split("metadata->")[1] ?? k;
       } else {
-        fieldName = k.split(".").pop() || k;
+        fieldName = (k.split(".").pop() ?? k);
       }
       /* only reject if the field is a core field */
       if (CORE_FIELDS.has(fieldName)) {

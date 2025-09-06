@@ -3,12 +3,21 @@
  * Standard envelope with pagination and filtering validation
  */
 
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-// Standard pagination schema
+// Standard pagination schema - unified format
 export const PaginationSchema = z.object({
-  page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(1).max(1000).default(25),
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  size: z.coerce.number().int().min(1, 'Page size must be at least 1').max(100, 'Page size cannot exceed 100').default(25),
+  sort: z.string().optional(),
+  filter: z.string().optional(),
+});
+
+// Legacy pagination schema for backward compatibility during transition
+export const LegacyPaginationSchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  pageSize: z.coerce.number().int().min(1, 'Page size must be at least 1').max(100, 'Page size cannot exceed 100').default(25),
 });
 
 // Common filter schema
@@ -18,8 +27,23 @@ export const CommonFilterSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-// Pagination envelope type
+// Standard pagination envelope type - unified format
 export interface PaginationEnvelope<T> {
+  data: T[];
+  meta: {
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+    organization_id?: string;
+    filtered_count?: number;
+  };
+}
+
+// Legacy pagination envelope for backward compatibility
+export interface LegacyPaginationEnvelope<T> {
   items: T[];
   pagination: {
     page: number;
@@ -44,15 +68,42 @@ export interface FilterValidationResult {
 }
 
 /**
- * Create pagination envelope
+ * Create standardized pagination envelope
  */
 export function createPaginationEnvelope<T>(
+  items: T[],
+  page: number,
+  size: number,
+  total: number,
+  organizationId?: string
+): PaginationEnvelope<T> {
+  const totalPages = Math.ceil(total / size);
+  
+  return {
+    data: items,
+    meta: {
+      page,
+      size,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      ...(organizationId && { organization_id: organizationId }),
+      filtered_count: items.length
+    }
+  };
+}
+
+/**
+ * Create legacy pagination envelope for backward compatibility
+ */
+export function createLegacyPaginationEnvelope<T>(
   items: T[],
   page: number,
   pageSize: number,
   total: number,
   organizationId?: string
-): PaginationEnvelope<T> {
+): LegacyPaginationEnvelope<T> {
   const totalPages = Math.ceil(total / pageSize);
   
   return {
@@ -75,20 +126,39 @@ export function createPaginationEnvelope<T>(
 /**
  * Calculate pagination offset
  */
-export function getPaginationOffset(page: number, pageSize: number): number {
-  return (page - 1) * pageSize;
+export function getPaginationOffset(page: number, size: number): number {
+  return (page - 1) * size;
+}
+
+/**
+ * Type guard to check if value is a record
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
  * Validate filters against allowed filters
  */
 export function validateFilters(
-  query: Record<string, any>,
+  query: unknown,
   allowedFilters: string[],
   allowedSorts: string[] = []
 ): FilterValidationResult {
   const errors: string[] = [];
-  const providedFilters = Object.keys(query).filter(key => 
+  
+  // Type guard to ensure query is an object
+  if (!isRecord(query)) {
+    return {
+      isValid: true,
+      errors: [],
+      allowedFilters,
+      allowedSorts
+    };
+  }
+  
+  const queryObj = query;
+  const providedFilters = Object.keys(queryObj).filter(key => 
     !['page', 'pageSize', 'search'].includes(key)
   );
   
@@ -102,8 +172,8 @@ export function validateFilters(
   }
   
   // Check for unknown sort fields
-  if (query['sortBy'] && allowedSorts.length > 0 && !allowedSorts.includes(query['sortBy'])) {
-    errors.push(`Unknown sort field: ${query['sortBy']}. Allowed sorts: ${allowedSorts.join(', ')}`);
+  if (queryObj['sortBy'] && allowedSorts.length > 0 && !allowedSorts.includes(queryObj['sortBy'] as string)) {
+    errors.push(`Unknown sort field: ${queryObj['sortBy']}. Allowed sorts: ${allowedSorts.join(', ')}`);
   }
   
   return {
@@ -115,9 +185,28 @@ export function validateFilters(
 }
 
 /**
- * Parse and validate pagination parameters
+ * Parse and validate pagination parameters - unified format
  */
 export function parsePaginationParams(query: Record<string, any>) {
+  const page = parseInt(query['page'] as string) || 1;
+  const size = parseInt(query['size'] as string) || 25;
+  
+  // Validate pagination limits
+  if (page < 1) {
+    throw new Error('Page must be greater than 0');
+  }
+  
+  if (size < 1 || size > 100) {
+    throw new Error('Page size must be between 1 and 100');
+  }
+  
+  return { page, size };
+}
+
+/**
+ * Parse and validate legacy pagination parameters
+ */
+export function parseLegacyPaginationParams(query: Record<string, any>) {
   const page = parseInt(query['page'] as string) || 1;
   const pageSize = parseInt(query['pageSize'] as string) || 25;
   
@@ -126,31 +215,34 @@ export function parsePaginationParams(query: Record<string, any>) {
     throw new Error('Page must be greater than 0');
   }
   
-  if (pageSize < 1 || pageSize > 1000) {
-    throw new Error('Page size must be between 1 and 1000');
+  if (pageSize < 1 || pageSize > 100) {
+    throw new Error('Page size must be between 1 and 100');
   }
   
   return { page, pageSize };
 }
 
 /**
- * Build database query with pagination
+ * Build database query with pagination - unified format
  */
-export function buildPaginationQuery(
-  baseQuery: any,
+export function buildPaginationQuery<T extends { limit: (n: number) => T; offset: (n: number) => T; orderBy: (field: string, order: string) => T }>(
+  baseQuery: T,
   page: number,
-  pageSize: number,
+  size: number,
   sortBy?: string,
   sortOrder: 'asc' | 'desc' = 'desc'
-) {
-  const offset = getPaginationOffset(page, pageSize);
-  
-  let query = baseQuery.limit(pageSize).offset(offset);
-  
+): T {
+  const offset = getPaginationOffset(page, size);
+
+  // The Drizzle ORM query builder returns a new query object on each call,
+  // so we need to chain the calls and return the final query.
+  let query = baseQuery.limit(size);
+  query = query.offset(offset);
+
   if (sortBy) {
     query = query.orderBy(sortBy, sortOrder);
   }
-  
+
   return query;
 }
 
@@ -233,7 +325,7 @@ export function createFilterValidationMiddleware(
   allowedFilters: string[],
   allowedSorts: string[] = []
 ) {
-  return function validateFiltersMiddleware(request: any, reply: any, done: () => void) {
+  return function validateFiltersMiddleware(request: FastifyRequest, reply: FastifyReply, done: () => void) {
     const validation = validateFilters(request.query, allowedFilters, allowedSorts);
     
     if (!validation.isValid) {
@@ -262,16 +354,31 @@ export function createFilterValidationMiddleware(
 }
 
 /**
- * Standard response serializer for pagination
+ * Standard response serializer for pagination - unified format
  */
 export function createPaginationSerializer<T>() {
   return function serializePaginationResponse(
+    items: T[],
+    page: number,
+    size: number,
+    total: number,
+    organizationId?: string
+  ) {
+    return createPaginationEnvelope(items, page, size, total, organizationId);
+  };
+}
+
+/**
+ * Legacy response serializer for pagination - backward compatibility
+ */
+export function createLegacyPaginationSerializer<T>() {
+  return function serializeLegacyPaginationResponse(
     items: T[],
     page: number,
     pageSize: number,
     total: number,
     organizationId?: string
   ) {
-    return createPaginationEnvelope(items, page, pageSize, total, organizationId);
+    return createLegacyPaginationEnvelope(items, page, pageSize, total, organizationId);
   };
 }

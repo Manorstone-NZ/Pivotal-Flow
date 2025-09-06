@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { PivotalFlowClient } from './index.js';
 
 /**
@@ -83,7 +84,7 @@ describe('PivotalFlowClient', () => {
 
       try {
         await mockClient.system.health();
-        fail('Should have thrown an error');
+        expect.fail('Should have thrown an error');
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
       }

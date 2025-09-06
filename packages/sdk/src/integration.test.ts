@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { PivotalFlowClient } from './index.js';
 
 /**
@@ -47,7 +48,9 @@ describe('SDK Integration', () => {
         throw new Error('Should have failed');
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
-        console.log('✅ Connection error handled gracefully:', error.message);
+        if (error instanceof Error) {
+          console.log('✅ Connection error handled gracefully:', error.message);
+        }
       }
     });
   });
@@ -60,7 +63,9 @@ describe('SDK Integration', () => {
         throw new Error('Should have failed with auth error');
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
-        console.log('✅ Authentication error handled:', error.message);
+        if (error instanceof Error) {
+          console.log('✅ Authentication error handled:', error.message);
+        }
       }
     });
   });

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { QuoteService } from '../modules/quotes/service.js';
+
 import { PermissionService } from '../modules/permissions/service.js';
+import { QuoteService } from '../modules/quotes/service.js';
+
 import { testUtils } from './setup.js';
 
 describe('Service Layer Tests', () => {

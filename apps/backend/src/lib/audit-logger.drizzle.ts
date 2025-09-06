@@ -1,6 +1,7 @@
-import type { FastifyRequest, FastifyInstance } from 'fastify';
-import { auditLogs } from './schema.js';
 import { generateId } from '@pivotal-flow/shared';
+import type { FastifyRequest, FastifyInstance } from 'fastify';
+
+import { auditLogs } from './schema.js';
 
 export interface AuditEvent {
   action: string;

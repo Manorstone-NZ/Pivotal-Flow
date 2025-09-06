@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { testDb, testRedis, testUtils } from './setup.js';
-import { users, userRoles, roles, quotes } from '../lib/schema.js';
 import { eq, sql } from 'drizzle-orm';
+import { describe, it, expect } from 'vitest';
+
+import { users, userRoles, roles, quotes } from '../lib/schema.js';
+
+import { testDb, testRedis, testUtils } from './setup.js';
 
 describe('Database Integration Tests', () => {
   
@@ -175,7 +177,7 @@ describe('Database Integration Tests', () => {
       
       // Get from cache
       const cached = await testRedis.get(cacheKey);
-      const cachedUser = JSON.parse(cached!);
+      const cachedUser = JSON.parse(cached);
       
       expect(cachedUser.id).toBe(user.id);
       expect(cachedUser.email).toBe(user.email);

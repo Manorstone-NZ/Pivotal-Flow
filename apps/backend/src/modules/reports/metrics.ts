@@ -4,6 +4,7 @@
  */
 
 import { Counter, Histogram } from 'prom-client';
+
 import { REPORTING_METRICS } from './constants.js';
 
 /**
@@ -16,6 +17,7 @@ export class ReportingMetrics {
   private exportFailedTotal: Counter<string>;
   private exportDurationMs: Histogram<string>;
   private reportGeneratedTotal: Counter<string>;
+  private reportDurationMs: Histogram<string>;
 
   constructor() {
     // Initialize export job metrics
@@ -48,6 +50,13 @@ export class ReportingMetrics {
       name: REPORTING_METRICS.REPORT_GENERATED_TOTAL,
       help: 'Total number of reports generated',
       labelNames: ['report_type', 'organization_id']
+    });
+
+    this.reportDurationMs = new Histogram({
+      name: 'pivotal_reports_duration_ms',
+      help: 'Duration of report generation in milliseconds',
+      labelNames: ['report_type', 'organization_id'],
+      buckets: [100, 500, 1000, 2000, 5000, 10000, 30000, 60000] // 100ms to 1m
     });
   }
 
@@ -99,6 +108,16 @@ export class ReportingMetrics {
       report_type: reportType,
       organization_id: organizationId
     });
+  }
+
+  /**
+   * Record report duration
+   */
+  recordReportDuration(reportType: string, organizationId: string, durationMs: number): void {
+    this.reportDurationMs.observe({
+      report_type: reportType,
+      organization_id: organizationId
+    }, durationMs);
   }
 
   /**

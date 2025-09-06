@@ -3,11 +3,11 @@
 // Cache performance testing script
 // Tests cache hit/miss performance and compares with no-cache scenarios
 
-import { PrismaClient } from '@prisma/client';
-import { UsersRepository } from '../../packages/shared/dist/db/repo.users.js';
-import { OrganizationSettingsRepository } from '../../packages/shared/dist/db/repo.org-settings.js';
-import { MemoryCacheProvider, CacheWrapper } from '../../packages/shared/dist/cache/index.js';
-import { globalMetrics } from '../../packages/shared/dist/metrics/index.js';
+const { PrismaClient } = require('@prisma/client');
+const { UsersRepository } = require('../../packages/shared/dist/db/repo.users.js');
+const { OrganizationSettingsRepository } = require('../../packages/shared/dist/db/repo.org-settings.js');
+const { MemoryCacheProvider, CacheWrapper } = require('../../packages/shared/dist/cache/index.js');
+const { globalMetrics } = require('../../packages/shared/dist/metrics/index.js');
 
 // Development logger for performance testing
 class DevLogger {
@@ -370,7 +370,7 @@ class CachePerformanceTester {
    */
   private calculatePercentile(sorted: number[], percentile: number): number {
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? 0;
   }
 
   /**

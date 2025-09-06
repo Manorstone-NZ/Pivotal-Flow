@@ -1,0 +1,45 @@
+-- Migration: Baseline from Prisma migrations
+-- This migration represents the current database state migrated from Prisma
+-- Date: 2025-09-06
+-- Purpose: Establish Drizzle as single schema source
+
+-- Note: This migration represents the current state of the database
+-- All tables and constraints already exist from previous Prisma migrations
+-- This is a baseline migration to establish Drizzle migration tracking
+
+-- The following tables exist in the database:
+-- - organizations
+-- - users  
+-- - roles
+-- - permissions
+-- - role_permissions
+-- - user_roles
+-- - customers
+-- - projects
+-- - service_categories
+-- - rate_cards
+-- - rate_card_items
+-- - quotes
+-- - quote_versions
+-- - quote_line_items
+-- - quote_line_item_versions
+-- - invoices
+-- - invoice_line_items
+-- - payments
+-- - currencies
+-- - fx_rates
+-- - audit_logs
+-- - idempotency_keys
+-- - policy_overrides
+-- - resource_allocations
+-- - org_security_policies
+-- - org_feature_flags
+-- - org_notification_prefs
+-- - org_settings
+-- - organization_settings
+-- - approval_requests
+-- - jobs
+
+-- This migration establishes Drizzle as the migration system going forward
+-- All future schema changes will be managed through Drizzle migrations
+

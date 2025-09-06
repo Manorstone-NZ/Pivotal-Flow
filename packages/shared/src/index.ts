@@ -1,69 +1,39 @@
-// Export all shared types and utilities
-export * from './constants.js';
-export * from './validation.js';
-export * from './redis.js';
+/**
+ * Shared package barrel exports
+ * Re-exports all public types and utilities
+ */
 
-// Export security and tenancy modules
-export * from './security/password.js';
-// Export JWT types but exclude AuthContext to avoid conflict
-export type { 
-  JWTPayload, 
-  AccessTokenPayload, 
-  RefreshTokenPayload, 
-  TokenPair, 
-  RefreshTokenData,
-  LoginRequest,
-  LoginResponse,
-  RefreshRequest,
-  RefreshResponse,
-  LogoutResponse,
-  MeResponse,
-  AuthError
-} from './security/jwt-types.js';
-export * from './tenancy/guard.js';
+// Utils
+export * from './utils/strict.js'
+export * from './utils/id.js'
+export * from './utils/time.js'
+export * from './utils.js'
 
-// Export user management types
-export * from './types/user.js';
+// Types
+export * from './types/audit.js'
 
-// Export auth and audit types
-export * from './types/auth.js';
-export * from './types/audit.js';
+// Audit
+export * from './audit/logger.js'
+export * from './audit/normalise.js'
 
-// Export ID and time utilities
-export * from './utils/id.js';
-export * from './utils/time.js';
+// Cache
+export * from './cache/types.js'
+export * from './cache/index.js'
 
-// Export audit and permission services
-export * from './audit/logger.js';
-export type { 
-  PermissionName,
-  PermissionServiceOptions
-} from './security/permissions.js';
-export { PermissionService } from './security/permissions.js';
+// Security
+export * from './security/password.js'
+export * from './security/tokenManager.js'
+export * from './bcrypt.js'
 
-// Export API schemas
-export * from './api/schemas.js';
+// API Schemas
+export * from './api/schemas.js'
 
-// Export utils but exclude conflicting functions
-export { 
-  getTimestamp,
-  getUptime,
-  formatBytes,
-  sleep,
-  retry,
-  sanitizeForLogging,
-  deepClone
-} from './utils.js';
+// Guards
+export * from './guards/jsonbMonetaryGuard.js'
 
-// Export cache and metrics
-export * from './cache/index.js';
-export { prometheusMetrics, globalMetrics, recordMetrics, MetricsCollector } from './metrics/index.js';
+// Database
+export * from './db/filterGuard.js'
+export * from './db/repo.payments.js'
 
-// Export guards and database utilities
-export * from './guards/jsonbMonetaryGuard.js';
-export * from './db/filterGuard.js';
-
-// Export Drizzle-based components
-export * from './db/repo.base.js';
-export * from './schema.js';
-export * from './pricing/index.js';
+// Metrics
+export * from './metrics/index.js'

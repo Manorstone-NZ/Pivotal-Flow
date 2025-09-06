@@ -1,5 +1,7 @@
 // Performance metrics collection for cache and repository operations
 
+import { required } from '../utils/strict.js';
+
 export interface CacheMetrics {
   hits: number;
   misses: number;
@@ -269,7 +271,8 @@ export class MetricsCollector {
       if (!operationMap.has(metric.operation)) {
         operationMap.set(metric.operation, []);
       }
-      operationMap.get(metric.operation)!.push(metric.duration);
+      const operationMetrics = required(operationMap.get(metric.operation), `Operation ${metric.operation} should exist in map`);
+      operationMetrics.push(metric.duration);
     }
 
     // Calculate statistics for each operation

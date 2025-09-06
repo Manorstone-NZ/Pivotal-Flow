@@ -13,6 +13,7 @@ declare module 'fastify' {
     cache: CacheService;
     jwt: any; // JWT plugin decoration
     db: any; // Database instance
+    authenticate: (request: any, reply: any) => Promise<void>; // Authentication middleware
   }
 
   interface FastifyRequest {

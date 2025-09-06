@@ -1,0 +1,1 @@
+{"version":3,"file":"playwright.config.js","sourceRoot":"","sources":["playwright.config.ts"],"names":[],"mappings":";;AAAA,2CAA+C;AAE/C,kBAAe,IAAA,mBAAY,EAAC;IAC1B,OAAO,EAAE,WAAW;IACpB,QAAQ,EAAE,CAAC,CAAC,MAAM,CAAC,CAAC;IACpB,GAAG,EAAE;QACH,OAAO,EAAE,OAAO,CAAC,GAAG,CAAC,YAAY,IAAI,uBAAuB;QAC5D,KAAK,EAAE,gBAAgB;KACxB;IACD,OAAO,EAAE,CAAC;CACX,CAAC,CAAA"}

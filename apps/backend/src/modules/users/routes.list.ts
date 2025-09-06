@@ -1,14 +1,16 @@
 // List users route with pagination and filters
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+
+import { logger } from '../../lib/logger.js';
+
+import { canViewUsers, extractUserContext } from './rbac.js';
 import { 
   paginationSchema, 
   userListFiltersSchema, 
   userListSortSchema
 } from './schemas.js';
 import { listUsers, type UserListSort } from './service.drizzle.js';
-import { canViewUsers, extractUserContext } from './rbac.js';
-import { logger } from '../../lib/logger.js';
 
 interface ListUsersQuery {
   page?: number;

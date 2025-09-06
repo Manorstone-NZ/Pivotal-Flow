@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { Decimal } from 'decimal.js';
-import { calculateQuote, calculateQuoteDebug } from '../index.js';
+import { describe, it, expect } from 'vitest';
+
 import { validateMetadataJSONB, FORBIDDEN_JSONB_FIELDS } from '../../guards/jsonb.js';
+import { calculateQuote, calculateQuoteDebug } from '../index.js';
 
 describe('Enhanced Quote Calculator', () => {
   describe('Tax Inclusive Calculations', () => {
@@ -23,9 +24,9 @@ describe('Enhanced Quote Calculator', () => {
       const result = calculateQuote(input);
       
       // Tax exclusive price should be 172.50 / 1.15 = 150.00
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('6000.00');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('900.00');
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('6900.00');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('6000.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('900.00');
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('6900.00');
     });
 
     it('should handle tax inclusive with discounts', () => {
@@ -52,10 +53,10 @@ describe('Enhanced Quote Calculator', () => {
       // Taxable: 2400.00 - 240.00 = 2160.00
       // Tax: 2160.00 * 15% = 324.00
       // Total: 2160.00 + 324.00 = 2484.00
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('2400.00');
-      expect(result.lineCalculations[0].discountAmount.amount.toFixed(2)).toBe('240.00');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('324.00');
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('2484.00');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('2400.00');
+      expect(result.lineCalculations[0]?.discountAmount.amount.toFixed(2)).toBe('240.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('324.00');
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('2484.00');
     });
   });
 
@@ -91,13 +92,13 @@ describe('Enhanced Quote Calculator', () => {
       const result = calculateQuote(input);
       
       // Line 1: 40 * 150 = 6000, tax = 6000 * 15% = 900
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('900.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('900.00');
       
       // Line 2: 100 * 0.85 = 85, tax = 0 (exempt)
-      expect(result.lineCalculations[1].taxAmount.amount.toFixed(2)).toBe('0.00');
+      expect(result.lineCalculations[1]?.taxAmount.amount.toFixed(2)).toBe('0.00');
       
       // Line 3: 20 * 200 = 4000, tax = 4000 * 10% = 400
-      expect(result.lineCalculations[2].taxAmount.amount.toFixed(2)).toBe('400.00');
+      expect(result.lineCalculations[2]?.taxAmount.amount.toFixed(2)).toBe('400.00');
       
       // Total tax should be 900 + 0 + 400 = 1300
       expect(result.totals.taxAmount.amount.toFixed(2)).toBe('1300.00');
@@ -130,10 +131,10 @@ describe('Enhanced Quote Calculator', () => {
       // Taxable: 2400 - 290 = 2110
       // Tax: 2110 * 15% = 316.50
       // Total: 2110 + 316.50 = 2426.50
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('2400.00');
-      expect(result.lineCalculations[0].discountAmount.amount.toFixed(2)).toBe('290.00');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('316.50');
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('2426.50');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('2400.00');
+      expect(result.lineCalculations[0]?.discountAmount.amount.toFixed(2)).toBe('290.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('316.50');
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('2426.50');
     });
   });
 
@@ -197,15 +198,15 @@ describe('Enhanced Quote Calculator', () => {
       const debug = calculateQuoteDebug(input);
       
       expect(debug.lineCalculations).toHaveLength(1);
-      expect(debug.lineCalculations[0].lineNumber).toBe(1);
-      expect(debug.lineCalculations[0].description).toBe('Web Development');
-      expect(debug.lineCalculations[0].steps.input.quantity).toBe(40);
-      expect(debug.lineCalculations[0].steps.input.taxInclusive).toBe(false);
-      expect(debug.lineCalculations[0].steps.calculations.subtotal.amount.toFixed(2)).toBe('6000.00');
-      expect(debug.lineCalculations[0].steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('600.00');
+      expect(debug.lineCalculations[0]?.lineNumber).toBe(1);
+      expect(debug.lineCalculations[0]?.description).toBe('Web Development');
+      expect(debug.lineCalculations[0]?.steps.input.quantity).toBe(40);
+      expect(debug.lineCalculations[0]?.steps.input.taxInclusive).toBe(false);
+      expect(debug.lineCalculations[0]?.steps.calculations.subtotal.amount.toFixed(2)).toBe('6000.00');
+      expect(debug.lineCalculations[0]?.steps.calculations.percentageDiscount?.amount.toFixed(2)).toBe('600.00');
       expect(debug.taxBreakdown).toHaveLength(1);
-      expect(debug.taxBreakdown[0].rate).toBe(15);
-      expect(debug.taxBreakdown[0].description).toBe('GST (15%)');
+      expect(debug.taxBreakdown[0]?.rate).toBe(15);
+      expect(debug.taxBreakdown[0]?.description).toBe('GST (15%)');
     });
 
     it('should show tax breakdown for mixed rates', () => {
@@ -232,10 +233,10 @@ describe('Enhanced Quote Calculator', () => {
       const debug = calculateQuoteDebug(input);
       
       expect(debug.taxBreakdown).toHaveLength(2);
-      expect(debug.taxBreakdown[0].rate).toBe(0);
-      expect(debug.taxBreakdown[0].description).toBe('Exempt (0%)');
-      expect(debug.taxBreakdown[1].rate).toBe(15);
-      expect(debug.taxBreakdown[1].description).toBe('GST (15%)');
+      expect(debug.taxBreakdown[0]?.rate).toBe(0);
+      expect(debug.taxBreakdown[0]?.description).toBe('Exempt (0%)');
+      expect(debug.taxBreakdown[1]?.rate).toBe(15);
+      expect(debug.taxBreakdown[1]?.description).toBe('GST (15%)');
     });
   });
 
@@ -260,8 +261,8 @@ describe('Enhanced Quote Calculator', () => {
       expect(result.totals.grandTotal.amount.isNegative()).toBe(false);
       expect(result.totals.subtotal.amount.isNegative()).toBe(false);
       expect(result.totals.taxAmount.amount.isNegative()).toBe(false);
-      expect(result.lineCalculations[0].subtotal.amount.isNegative()).toBe(false);
-      expect(result.lineCalculations[0].taxAmount.amount.isNegative()).toBe(false);
+      expect(result.lineCalculations[0]?.subtotal.amount.isNegative()).toBe(false);
+      expect(result.lineCalculations[0]?.taxAmount.amount.isNegative()).toBe(false);
     });
 
     it('should maintain tax consistency', () => {
@@ -337,9 +338,9 @@ describe('Enhanced Quote Calculator', () => {
 
       const result = calculateQuote(input);
       
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('0.00');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('0.00');
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('0.00');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('0.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('0.00');
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('0.00');
     });
 
     it('should handle tax exempt items', () => {
@@ -359,9 +360,9 @@ describe('Enhanced Quote Calculator', () => {
 
       const result = calculateQuote(input);
       
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('1000.00');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('0.00');
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('1000.00');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('1000.00');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('0.00');
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('1000.00');
     });
 
     it('should handle very small amounts', () => {
@@ -380,9 +381,9 @@ describe('Enhanced Quote Calculator', () => {
 
       const result = calculateQuote(input);
       
-      expect(result.lineCalculations[0].subtotal.amount.toFixed(2)).toBe('0.01');
-      expect(result.lineCalculations[0].taxAmount.amount.toFixed(2)).toBe('0.00'); // Rounded down
-      expect(result.lineCalculations[0].totalAmount.amount.toFixed(2)).toBe('0.01');
+      expect(result.lineCalculations[0]?.subtotal.amount.toFixed(2)).toBe('0.01');
+      expect(result.lineCalculations[0]?.taxAmount.amount.toFixed(2)).toBe('0.00'); // Rounded down
+      expect(result.lineCalculations[0]?.totalAmount.amount.toFixed(2)).toBe('0.01');
     });
   });
 });

@@ -3,7 +3,8 @@
  * Read-only endpoints for frontend pickers with caching
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+
 import { registerReferenceDataRoutes } from './routes.js';
 
 /**

@@ -1,14 +1,16 @@
 // Assign role to user route with RBAC and audit logging
 
+import { generateId } from '@pivotal-flow/shared';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+
+import { logger } from '../../lib/logger.js';
+import { auditLogs } from '../../lib/schema.js';
+
+import { canModifyUser, extractUserContext } from './rbac.js';
 import { 
   roleAssignmentSchema
 } from './schemas.js';
 import { addRoleToUser } from './service.drizzle.js';
-import { canModifyUser, extractUserContext } from './rbac.js';
-import { logger } from '../../lib/logger.js';
-import { generateId } from '@pivotal-flow/shared';
-import { auditLogs } from '../../lib/schema.js';
 
 export const assignRoleRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/v1/users/:id/roles', {

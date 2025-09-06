@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { app, testUtils } from './setup.js';
 
 describe('API Functionality Tests', () => {

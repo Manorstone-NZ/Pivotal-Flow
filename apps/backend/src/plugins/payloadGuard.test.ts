@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { payloadGuardPlugin } from './payloadGuard.js';
 
 describe('Payload Guard Plugin', () => {

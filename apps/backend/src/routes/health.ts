@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { logger } from '../lib/logger.js';
 import { z } from 'zod';
+
+import { logger } from '../lib/logger.js';
 
 // Health check response schema
 const healthStatusSchema = z.object({

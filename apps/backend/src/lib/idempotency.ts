@@ -3,8 +3,11 @@
  * Supports Idempotency-Key header on create and update routes
  */
 
-import { ConflictError } from '../lib/error-handler.js';
 import { createHash } from 'crypto';
+
+import type { FastifyRequest, FastifyReply } from 'fastify';
+
+import { ConflictError } from '../lib/error-handler.js';
 
 // Idempotency key storage interface
 interface IdempotencyRecord {
@@ -14,7 +17,7 @@ interface IdempotencyRecord {
   route: string;
   method: string;
   requestHash: string;
-  responseData: any;
+  responseData: unknown;
   statusCode: number;
   createdAt: Date;
   expiresAt: Date;
@@ -51,9 +54,9 @@ export class IdempotencyService {
   private generateRequestHash(
     method: string,
     route: string,
-    body: any,
-    query: any = {},
-    params: any = {}
+    body: unknown,
+    query: Record<string, unknown> = {},
+    params: Record<string, unknown> = {}
   ): string {
     const data = {
       method: method.toUpperCase(),
@@ -77,10 +80,10 @@ export class IdempotencyService {
     _userId: string,
     method: string,
     route: string,
-    body: any,
-    query: any = {},
-    params: any = {}
-  ): Promise<{ exists: boolean; isDuplicate: boolean; response?: any; statusCode?: number; responseStatus?: number; responseBody?: any }> {
+    body: unknown,
+    query: Record<string, unknown> = {},
+    params: Record<string, unknown> = {}
+  ): Promise<{ exists: boolean; isDuplicate: boolean; response?: unknown; statusCode?: number; responseStatus?: number; responseBody?: unknown }> {
     if (!this.config.enabled) {
       return { exists: false, isDuplicate: false };
     }
@@ -127,10 +130,10 @@ export class IdempotencyService {
     _userId: string,
     method: string,
     route: string,
-    body: any,
-    query: any = {},
-    params: any = {},
-    response: any,
+    body: unknown,
+    query: Record<string, unknown> = {},
+    params: Record<string, unknown> = {},
+    response: unknown,
     statusCode: number
   ): Promise<void> {
     if (!this.config.enabled) {
@@ -169,7 +172,7 @@ export class IdempotencyService {
   async storeResponse(
     context: { organizationId: string; userId: string; route: string; requestHash: string },
     statusCode: number,
-    responseBody: any
+    responseBody: unknown
   ): Promise<void> {
     if (!this.config.enabled) {
       return;
@@ -268,18 +271,18 @@ export class IdempotencyService {
 export function createIdempotencyMiddleware(config: Partial<IdempotencyConfig> = {}) {
   const idempotencyService = new IdempotencyService(config);
 
-  return async function idempotencyMiddleware(request: any, reply: any) {
+  return async function idempotencyMiddleware(request: FastifyRequest, reply: FastifyReply) {
     // Only apply to POST, PUT, PATCH methods
     if (!['POST', 'PUT', 'PATCH'].includes(request.method)) {
       return;
     }
 
     const idempotencyKey = request.headers['idempotency-key'];
-    if (!idempotencyKey) {
+    if (!idempotencyKey || Array.isArray(idempotencyKey)) {
       return;
     }
 
-    const user = (request as any).user;
+    const user = (request as unknown as { user?: { org?: string; sub?: string } }).user;
     if (!user?.org || !user?.sub) {
       return;
     }
@@ -293,8 +296,8 @@ export function createIdempotencyMiddleware(config: Partial<IdempotencyConfig> =
         request.method,
         request.url,
         request.body,
-        request.query,
-        request.params
+        request.query as Record<string, unknown>,
+        request.params as Record<string, unknown>
       );
 
       if (checkResult.exists) {
@@ -308,20 +311,20 @@ export function createIdempotencyMiddleware(config: Partial<IdempotencyConfig> =
       let responseSent = false;
 
       // Override send method to capture response
-      reply.send = function(data: any) {
+      reply.send = function(data: unknown) {
         if (!responseSent) {
           responseSent = true;
           
           // Store idempotency record
           idempotencyService.storeIdempotency(
             idempotencyKey,
-            user.org,
-            user.sub,
+            user.org || 'unknown',
+            user.sub || 'unknown',
             request.method,
             request.url,
             request.body,
-            request.query,
-            request.params,
+            request.query as Record<string, unknown>,
+            request.params as Record<string, unknown>,
             data,
             reply.statusCode
           );

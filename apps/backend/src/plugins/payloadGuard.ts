@@ -1,5 +1,5 @@
-import type { FastifyInstance, FastifyPluginCallback } from "fastify";
 import { throwIfMonetaryInMetadata } from "@pivotal-flow/shared";
+import type { FastifyInstance, FastifyPluginCallback } from "fastify";
 
 /* Apply to POST and PATCH on quotes and quote lines */
 export const payloadGuardPlugin: FastifyPluginCallback = (app: FastifyInstance, _opts, done) => {

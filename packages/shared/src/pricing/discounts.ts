@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+
 import type { MoneyAmount } from './money.js';
 import { createDecimal, roundToCurrency, calculatePercentage, isNegative } from './money.js';
 

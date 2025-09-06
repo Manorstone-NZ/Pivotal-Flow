@@ -1,14 +1,17 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { Sql } from 'postgres';
+
+import { config } from '../config/index.js';
+
 import * as schema from './schema.js';
 
 // Create postgres connection
-const connectionString = process.env['DATABASE_URL'] ?? 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
+const connectionString = config.db.DATABASE_URL;
 
 // Database client and instance variables
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let client: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let db: any = null;
+let client: Sql | null = null;
+let db: PostgresJsDatabase<typeof schema> | null = null;
 let isInitialized = false;
 
 // Database initialization function
@@ -44,8 +47,7 @@ export async function initializeDatabase(): Promise<void> {
 }
 
 // Get database instance (throws if not initialized)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getDatabase(): any {
+export function getDatabase(): PostgresJsDatabase<typeof schema> {
   if (!isInitialized || !db) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
@@ -53,8 +55,7 @@ export function getDatabase(): any {
 }
 
 // Get client instance (throws if not initialized)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getClient(): any {
+export function getClient(): Sql {
   if (!isInitialized || !client) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
@@ -78,8 +79,8 @@ export const hybridDb = {
   },
   get execute(): unknown {
     // Drizzle doesn't have an execute method, use the client directly
-    return async (sql: string, params?: any[]) => {
-      return await getClient().unsafe(sql, params);
+    return async (sql: string, params?: unknown[]) => {
+      return await getClient().unsafe(sql, params as any);
     };
   },
   get transaction(): unknown {
@@ -87,10 +88,9 @@ export const hybridDb = {
   },
   
   // Raw query method for backward compatibility
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async query(sql: string, params?: any[]): Promise<unknown> {
+  async query(sql: string, params?: unknown[]): Promise<unknown> {
     try {
-      return await getClient().unsafe(sql, params);
+      return await getClient().unsafe(sql, params as any);
     } catch (error) {
               // eslint-disable-next-line no-console
         console.error('Database query error:', error);

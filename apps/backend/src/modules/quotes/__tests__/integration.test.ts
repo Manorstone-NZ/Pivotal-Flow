@@ -1,12 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq, and } from 'drizzle-orm';
-import { quotes, quoteLineItems, organizations, customers, users, auditLogs, serviceCategories } from '../../../lib/schema.js';
-import { QuoteService } from '../service.js';
-import { QuoteStatus } from '../schemas.js';
-import { AuditLogger } from '../../../lib/audit-logger.drizzle.js';
 import { randomUUID } from 'crypto';
+
 import { Decimal } from 'decimal.js';
+import { eq, and } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
+
+import type { AuditLogger } from '../../../lib/audit-logger.drizzle.js';
+import { quotes, quoteLineItems, organizations, customers, users, auditLogs, serviceCategories } from '../../../lib/schema.js';
+import { QuoteStatus } from '../schemas.js';
+import { QuoteService } from '../service.js';
+
 
 // Test database connection - using dynamic import to avoid ESM issues
 let testClient: any;

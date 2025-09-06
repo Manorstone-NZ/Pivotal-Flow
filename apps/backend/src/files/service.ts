@@ -3,16 +3,17 @@
  * High-level service for file operations using storage adapters
  */
 
+import type { AuditLogger } from '../modules/audit/logger.js';
+import type { PermissionService } from '../modules/permissions/service.js';
+
+import { DEFAULT_EXPIRATION_TIMES, FILE_ERRORS } from './constants.js';
 import { LocalStorageAdapter } from './local-storage.adapter.js';
-import { PermissionService } from '../modules/permissions/service.js';
-import { AuditLogger } from '../modules/audit/logger.js';
 import type { 
   StorageAdapter, 
   GenerateFileOptions, 
   FileInfo,
   FileType 
 } from './types.js';
-import { DEFAULT_EXPIRATION_TIMES, FILE_ERRORS } from './constants.js';
 
 /**
  * File service for managing file operations
@@ -61,11 +62,11 @@ export class FileService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'file_generated',
-      resource: 'files',
-      resourceId: fileId,
-      details: {
+      entityType: 'files',
+      entityId: fileId,
+      metadata: {
         fileType: options.fileType,
         mimeType: options.mimeType,
         size: Buffer.isBuffer(options.content) ? options.content.length : Buffer.byteLength(options.content, 'utf8'),
@@ -114,11 +115,11 @@ export class FileService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'file_access_requested',
-      resource: 'files',
-      resourceId: fileId,
-      details: {
+      entityType: 'files',
+      entityId: fileId,
+      metadata: {
         fileType: fileInfo.fileType,
         expiresIn,
       },
@@ -143,11 +144,11 @@ export class FileService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'file_downloaded',
-      resource: 'files',
-      resourceId: fileId,
-      details: {
+      entityType: 'files',
+      entityId: fileId,
+      metadata: {
         filename: fileContent.filename,
         size: fileContent.content.length,
       },
@@ -187,11 +188,11 @@ export class FileService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'file_deleted',
-      resource: 'files',
-      resourceId: fileId,
-      details: {
+      entityType: 'files',
+      entityId: fileId,
+      metadata: {
         fileType: fileInfo.fileType,
         size: fileInfo.size,
       },
@@ -246,10 +247,11 @@ export class FileService {
     // Log audit event
     await this.auditLogger.logEvent({
       organizationId: this.organizationId,
-      userId: this.userId,
+      actorId: this.userId,
       action: 'files_cleanup_completed',
-      resource: 'files',
-      details: {
+      entityType: 'files',
+      entityId: 'cleanup',
+      metadata: {
         deletedCount,
       },
     });

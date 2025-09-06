@@ -1,7 +1,8 @@
-import { eq } from 'drizzle-orm';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { currencies } from '../../lib/schema.js';
+import { eq, and, like, or, asc } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
 import { BaseRepository } from '../../lib/repo.base.js';
+import { currencies } from '../../lib/schema.js';
 // import { AuditLogger } from '../../lib/audit.logger.js';
 
 export interface CurrencyData {
@@ -9,6 +10,22 @@ export interface CurrencyData {
   name: string;
   symbol?: string;
   isActive?: boolean;
+  exchangeRate?: number;
+}
+
+export interface CurrencyFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  activeOnly?: boolean;
+}
+
+export interface CurrencyResponse {
+  currencies: any[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
@@ -47,6 +64,125 @@ export class CurrencyService extends BaseRepository {
       .select()
       .from(currencies)
       .orderBy(currencies.code);
+  }
+
+  /**
+   * Get currencies with pagination and filtering
+   */
+  async getCurrencies(filters: CurrencyFilters = {}): Promise<CurrencyResponse> {
+    const { page = 1, limit = 10, search, activeOnly } = filters;
+    const offset = (page - 1) * limit;
+
+    let whereConditions = undefined;
+
+    if (activeOnly) {
+      whereConditions = eq(currencies.isActive, true);
+    }
+
+    if (search) {
+      const searchCondition = or(
+        like(currencies.code, `%${search}%`),
+        like(currencies.name, `%${search}%`)
+      );
+      whereConditions = whereConditions ? and(whereConditions, searchCondition) : searchCondition;
+    }
+
+    const [currenciesData, totalResult] = await Promise.all([
+      this.db
+        .select()
+        .from(currencies)
+        .where(whereConditions)
+        .orderBy(asc(currencies.code))
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: currencies.code })
+        .from(currencies)
+        .where(whereConditions)
+    ]);
+
+    const total = totalResult.length;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      currencies: currenciesData,
+      total,
+      page,
+      limit,
+      totalPages
+    };
+  }
+
+  /**
+   * Get currency by code
+   */
+  async getCurrency(code: string): Promise<any | null> {
+    const result = await this.db
+      .select()
+      .from(currencies)
+      .where(eq(currencies.code, code))
+      .limit(1);
+
+    return result[0] || null;
+  }
+
+  /**
+   * Create a new currency
+   */
+  async createCurrency(data: CurrencyData): Promise<any> {
+    // Validate currency code format (3 letters)
+    if (!/^[A-Z]{3}$/.test(data.code)) {
+      throw new Error('Currency code must be exactly 3 uppercase letters');
+    }
+
+    // Check if currency already exists
+    const existing = await this.getCurrencyByCode(data.code);
+    if (existing) {
+      throw new Error('Currency with this code already exists');
+    }
+
+    const now = new Date();
+
+    const currencyData = {
+      code: data.code,
+      name: data.name,
+      symbol: data.symbol || data.code,
+      isActive: data.isActive ?? true,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const result = await this.db
+      .insert(currencies)
+      .values(currencyData)
+      .returning();
+
+    return result[0];
+  }
+
+  /**
+   * Update an existing currency
+   */
+  async updateCurrency(code: string, data: Partial<CurrencyData>): Promise<any> {
+    // Check if currency exists
+    const existing = await this.getCurrency(code);
+    if (!existing) {
+      throw new Error('Currency not found');
+    }
+
+    const updateData = {
+      ...data,
+      updatedAt: new Date()
+    };
+
+    const result = await this.db
+      .update(currencies)
+      .set(updateData)
+      .where(eq(currencies.code, code))
+      .returning();
+
+    return result[0];
   }
 
   /**
@@ -134,7 +270,7 @@ export class CurrencyService extends BaseRepository {
    */
   async formatCurrency(amount: number, currencyCode: string, locale: string = 'en-NZ'): Promise<string> {
     const currency = await this.getCurrencyByCode(currencyCode);
-    if (!currency || !currency.isActive) {
+    if (!currency?.isActive) {
       return `${amount} ${currencyCode}`;
     }
 
@@ -170,5 +306,42 @@ export class CurrencyService extends BaseRepository {
       to: { code: to.code, name: to.name, symbol: to.symbol },
       note: 'Exchange rate API integration not yet implemented'
     };
+  }
+
+  /**
+   * Set a currency as the default currency
+   */
+  async setDefaultCurrency(currencyCode: string): Promise<any> {
+    // First, unset any existing default currency
+    await this.db
+      .update(currencies)
+      .set({ isDefault: false })
+      .where(eq(currencies.isDefault, true));
+
+    // Set the new default currency
+    const result = await this.db
+      .update(currencies)
+      .set({ isDefault: true })
+      .where(eq(currencies.code, currencyCode))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error('Currency not found');
+    }
+
+    return result[0];
+  }
+
+  /**
+   * Get the default currency
+   */
+  async getDefaultCurrency(): Promise<any | null> {
+    const result = await this.db
+      .select()
+      .from(currencies)
+      .where(eq(currencies.isDefault, true))
+      .limit(1);
+
+    return result[0] || null;
   }
 }

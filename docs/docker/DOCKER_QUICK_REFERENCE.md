@@ -30,6 +30,15 @@
 
 ## 🛠️ Development Commands
 
+### Code Quality
+```bash
+pnpm lint                    # Run ESLint
+pnpm typecheck              # Run TypeScript compiler
+pnpm test                   # Run unit and integration tests
+pnpm test:e2e               # Run end-to-end tests
+pnpm run qa:forbid          # Check for any types and non-null assertions
+```
+
 ### Database
 ```bash
 ./scripts/db/psql.sh                    # Connect to PostgreSQL

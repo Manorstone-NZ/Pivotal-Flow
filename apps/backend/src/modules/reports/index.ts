@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
+
 import { reportsRoutes } from './routes.js';
 
 /**

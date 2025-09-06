@@ -1,4 +1,6 @@
-import { assertNoMonetaryInMetadata } from "./jsonbMonetaryGuard";
+import { describe, it, expect } from 'vitest';
+
+import { assertNoMonetaryInMetadata } from "./jsonbMonetaryGuard.js";
 
 describe("jsonb monetary guard", () => {
   it("allows benign metadata", () => {
@@ -9,7 +11,7 @@ describe("jsonb monetary guard", () => {
   it("rejects totals in metadata", () => {
     const v = assertNoMonetaryInMetadata({ subtotal: 10 });
     expect(v.length).toBeGreaterThan(0);
-    expect(v[0].key).toBe("subtotal");
+    expect(v[0]?.key).toBe("subtotal");
   });
 
   it("rejects nested monetary fields", () => {
@@ -19,7 +21,7 @@ describe("jsonb monetary guard", () => {
       } 
     });
     expect(v.length).toBeGreaterThan(0);
-    expect(v[0].key).toBe("unitPrice");
+    expect(v[0]?.key).toBe("unitPrice");
   });
 
   it("rejects array items with monetary fields", () => {
@@ -28,8 +30,8 @@ describe("jsonb monetary guard", () => {
       { metadata: { discount: 10 } }
     ]);
     expect(v.length).toBe(2);
-    expect(v[0].key).toBe("amount");
-    expect(v[1].key).toBe("discount");
+    expect(v[0]?.key).toBe("amount");
+    expect(v[1]?.key).toBe("discount");
   });
 
   it("allows valid metadata structures", () => {

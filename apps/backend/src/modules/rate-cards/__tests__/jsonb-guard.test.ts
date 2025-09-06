@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { throwIfMonetaryInMetadata } from '@pivotal-flow/shared/guards/jsonbMonetaryGuard.js';
+import { describe, it, expect } from 'vitest';
 
 describe('JSONB Guard - throwIfMonetaryInMetadata', () => {
   describe('should allow valid metadata', () => {

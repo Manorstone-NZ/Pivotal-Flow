@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
 import { logger } from '../lib/logger.js';
 
 // Performance summary schema - removed unused variable

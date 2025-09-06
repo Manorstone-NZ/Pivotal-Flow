@@ -1,6 +1,7 @@
-import type { FastifyInstance } from 'fastify';
 import { generateId } from '@pivotal-flow/shared';
-import { config } from '../../lib/config.js';
+import type { FastifyInstance } from 'fastify';
+
+import { config } from '../../config/index.js';
 import { logger } from '../../lib/logger.js';
 // import type { JWTPayload, RefreshTokenData } from '@pivotal-flow/shared/security/jwt-types';
 // Using local types for now to avoid module resolution issues
@@ -42,10 +43,10 @@ export function createTokenManager(app: FastifyInstance) {
       ...payload,
       jti: generateJTI(),
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.accessTokenTTL),
+      exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.ACCESS_TOKEN_TTL),
     };
 
-    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.accessTokenTTL });
+    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.ACCESS_TOKEN_TTL });
   }
 
   /**
@@ -57,7 +58,7 @@ export function createTokenManager(app: FastifyInstance) {
       ...payload,
       jti,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.refreshTokenTTL),
+      exp: Math.floor(Date.now() / 1000) + parseTTL(config.auth.REFRESH_TOKEN_TTL),
     };
 
     // Store refresh token in cache (optional for now)
@@ -74,7 +75,7 @@ export function createTokenManager(app: FastifyInstance) {
       logger.warn({ err: error }, 'Failed to store refresh token, continuing without cache');
     }
 
-    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.refreshTokenTTL });
+    return (app as any).jwt.sign(tokenPayload, { algorithm: alg, expiresIn: config.auth.REFRESH_TOKEN_TTL });
   }
 
   /**
@@ -125,13 +126,13 @@ export function createTokenManager(app: FastifyInstance) {
     const key = `pivotal:refresh_token:${jti}`;
     
     // Debug: Check if cache is available
-    if (!app.cache) {
+    if (!(app as any).cache) {
       logger.warn('Cache is not available in validateRefreshToken, returning null');
       return null;
     }
     
     try {
-      const data = await app.cache.get(key);
+      const data = await (app as any).cache.get(key);
       
       if (!data) {
         return null;
@@ -157,13 +158,13 @@ export function createTokenManager(app: FastifyInstance) {
     const key = `pivotal:refresh_token:${jti}`;
     
     // Debug: Check if cache is available
-    if (!app.cache) {
+    if (!(app as any).cache) {
       logger.warn('Cache is not available in revokeRefreshToken, skipping revocation');
       return;
     }
     
     try {
-      await app.cache.delete(key);
+      await (app as any).cache.delete(key);
       logger.info({ jti }, 'Refresh token revoked');
     } catch (error) {
       logger.warn({ err: error, jti }, 'Failed to revoke refresh token from cache');

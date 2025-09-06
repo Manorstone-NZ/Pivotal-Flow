@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CI Pipeline: Database Migration
-# This script runs Prisma migrations against an ephemeral postgres
+# This script runs Drizzle migrations against an ephemeral postgres
 
 set -euo pipefail
 
@@ -15,16 +15,13 @@ cd "$PROJECT_ROOT"
 # Enable corepack for pnpm
 corepack enable
 
-# Generate Prisma client
-echo "🔧 Generating Prisma client..."
-pnpm -w prisma generate
-
-# Run migrations
-echo "🚀 Running Prisma migrations..."
-ALLOW_LOCAL_DB_CREATION=yes pnpm -w prisma migrate deploy
+# Run Drizzle migrations
+echo "🚀 Running Drizzle migrations..."
+cd apps/backend
+pnpm drizzle-kit migrate
 
 echo "✅ Database migrations completed successfully"
 
 # Verify schema version
-echo "📋 Current schema version:"
-ALLOW_LOCAL_DB_CREATION=yes pnpm -w prisma migrate status
+echo "📋 Current migration status:"
+pnpm drizzle-kit migrate

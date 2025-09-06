@@ -1,16 +1,21 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import type { FastifyInstance } from 'fastify';
-import { getDatabase, getClient, initializeDatabase } from '../lib/db.js';
+// Load test environment FIRST before any other imports
+import '../config/load-test-env.js';
+
 import { getRedisClient } from '@pivotal-flow/shared/redis.js';
-import { organizations, users, customers, quotes, quoteLineItems, roles, userRoles } from '../lib/schema.js';
 import { eq } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
 import jwt from 'jsonwebtoken';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+
+import { config } from '../config/index.js';
+import { getDatabase, getClient, initializeDatabase } from '../lib/db.js';
+import { organizations, users, customers, quotes, quoteLineItems, roles, userRoles } from '../lib/schema.js';
 
 // Test database and Redis clients
 let testDb: any;
 let testRedis: any;
 let app: FastifyInstance;
-let config: any;
+let testConfig: any;
 
 // Test utilities
 const testUtils = {
@@ -88,7 +93,7 @@ const testUtils = {
         permissions,
         type: 'access'
       },
-      config.auth.jwtSecret,
+      testConfig.auth.jwtSecret,
       { expiresIn: '15m' }
     );
   },
@@ -112,39 +117,10 @@ const testUtils = {
 
 // Setup and teardown
 beforeAll(async () => {
-  // Set test environment variables
-  process.env['NODE_ENV'] = 'test';
-  process.env['DATABASE_URL'] = 'postgresql://pivotal:pivotal@localhost:5433/pivotal_test';
-  process.env['REDIS_URL'] = 'redis://localhost:6379';
-  process.env['REDIS_HOST'] = 'localhost';
-  process.env['REDIS_PORT'] = '6379';
-  process.env['REDIS_PASSWORD'] = '';
-  process.env['REDIS_DB'] = '1';
-  process.env['JWT_SECRET'] = 'test-jwt-secret-key-that-is-at-least-32-characters-long';
-  process.env['JWT_ACCESS_TTL'] = '15m';
-  process.env['JWT_REFRESH_TTL'] = '7d';
-  process.env['COOKIE_SECRET'] = 'test-cookie-secret-key-that-is-at-least-32-characters-long';
-  process.env['COOKIE_SECURE'] = 'false';
-  process.env['PORT'] = '3001';
-  process.env['HOST'] = 'localhost';
-  process.env['RATE_LIMIT_ENABLED'] = 'false';
-  process.env['RATE_LIMIT_MAX'] = '1000';
-  process.env['RATE_LIMIT_WINDOW'] = '900000';
-  process.env['RATE_LIMIT_UNAUTH_MAX'] = '1000';
-  process.env['RATE_LIMIT_AUTH_MAX'] = '5000';
-  process.env['RATE_LIMIT_ADMIN_MAX'] = '10000';
-  process.env['RATE_LIMIT_LOGIN_MAX'] = '100';
-  process.env['CORS_ORIGIN'] = 'http://localhost:5173';
-  process.env['LOG_LEVEL'] = 'error';
-  process.env['LOG_PRETTY'] = 'false';
-  process.env['METRICS_ENABLED'] = 'false';
-  process.env['METRICS_PORT'] = '9091';
-  process.env['METRICS_PATH'] = '/metrics';
-  
   try {
-    // Load config after environment variables are set
-    const { config: configModule } = await import('../lib/config.js');
-    config = configModule;
+    // Test environment is loaded via load-test-env.js import
+    // Config is already loaded from the centralized module
+    testConfig = config;
     
     // Initialize database
     await initializeDatabase();
@@ -192,7 +168,7 @@ export { app, testDb, testRedis, testUtils };
 // Basic test to verify setup
 describe('Test Setup', () => {
   it('should have proper test environment', () => {
-    expect(process.env['NODE_ENV']).toBe('test');
+    expect(testConfig.server.NODE_ENV).toBe('test');
   });
 
   it('should have database connection', async () => {

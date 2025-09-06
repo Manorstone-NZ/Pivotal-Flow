@@ -6,11 +6,13 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 
+import { config } from '../config/index.js';
+
 export interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: string;
     request_id: string;
   };
@@ -20,12 +22,52 @@ export interface ErrorResponse {
   };
 }
 
+/**
+ * Create standardized error response
+ */
+export function createErrorResponse(
+  code: string,
+  message: string,
+  _statusCode: number,
+  requestId: string,
+  details?: unknown
+): ErrorResponse {
+  return {
+    error: {
+      code,
+      message,
+      details,
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+    },
+    meta: {
+      api_version: '1.0.0',
+      documentation_url: 'https://api.pivotalflow.com/docs',
+    },
+  };
+}
+
+/**
+ * Send standardized error response
+ */
+export function sendErrorResponse(
+  reply: FastifyReply,
+  code: string,
+  message: string,
+  statusCode: number,
+  requestId: string,
+  details?: unknown
+): void {
+  const errorResponse = createErrorResponse(code, message, statusCode, requestId, details);
+  reply.status(statusCode).send(errorResponse);
+}
+
 export class AppError extends Error {
   constructor(
     public code: string,
     message: string,
     public statusCode: number = 500,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'AppError';
@@ -33,7 +75,7 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super('VALIDATION_ERROR', message, 400, details);
     this.name = 'ValidationError';
   }
@@ -109,7 +151,7 @@ export function globalErrorHandler(
     const details = error.errors.map(err => ({
       field: err.path.join('.'),
       message: err.message,
-      value: (err as any).input
+      value: (err as unknown as { input: unknown }).input
     }));
     
     errorResponse = {
@@ -147,10 +189,10 @@ export function globalErrorHandler(
     errorResponse = {
       error: {
         code: 'INTERNAL_ERROR',
-        message: process.env['NODE_ENV'] === 'production' 
+        message: config.server.NODE_ENV === 'production' 
           ? 'An unexpected error occurred' 
           : error.message,
-        details: process.env['NODE_ENV'] === 'production' ? undefined : {
+        details: config.server.NODE_ENV === 'production' ? undefined : {
           stack: error.stack,
           name: error.name
         },
@@ -178,8 +220,8 @@ export function globalErrorHandler(
       userAgent: request.headers['user-agent'],
       ip: request.ip
     },
-    user: (request as any).user?.sub,
-    organization: (request as any).user?.org
+    user: (request as unknown as { user?: { sub?: string } }).user?.sub,
+    organization: (request as unknown as { user?: { org?: string } }).user?.org
   });
   
   // Send error response
@@ -199,7 +241,7 @@ export function requestIdMiddleware(request: FastifyRequest, reply: FastifyReply
   const requestId = (request.headers['x-request-id'] as string) || 
                    `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  (request as any).id = requestId;
+  (request as unknown as { id: string }).id = requestId;
   reply.header('X-Request-ID', requestId);
   
   done();

@@ -3,7 +3,9 @@
  * Drizzle-based user data access with proper DTOs
  */
 
+import { required } from '@pivotal-flow/shared';
 import { eq, and, isNull, desc, asc, sql } from 'drizzle-orm';
+
 import { getDatabase } from '../lib/db.js';
 import { users, userRoles, roles } from '../lib/schema.js';
 
@@ -41,6 +43,28 @@ export interface UserListFilters {
   userType?: string;
   createdFrom?: Date;
   createdTo?: Date;
+}
+
+// Database query result types
+interface UserWithRolesQueryResult {
+  id: string;
+  email: string;
+  displayName: string | null;
+  isActive: boolean;
+  organizationId: string;
+  roleId: string | null;
+  roleName: string | null;
+  roleDescription: string | null;
+  roleIsSystem: boolean | null;
+  roleIsActive: boolean | null;
+}
+
+interface UserSimpleQueryResult {
+  id: string;
+  email: string;
+  displayName: string | null;
+  isActive: boolean;
+  organizationId: string;
 }
 
 // User list options
@@ -121,7 +145,7 @@ export class UserRepository {
             id: users.id,
             email: users.email,
             displayName: users.displayName,
-            isActive: sql`${users.status} = 'active'`,
+            isActive: sql<boolean>`${users.status} = 'active'`,
             organizationId: users.organizationId,
             roleId: userRoles.roleId,
             roleName: roles.name,
@@ -146,7 +170,7 @@ export class UserRepository {
       // Group by user and build roles
       const userMap = new Map<string, UserWithRolesDTO>();
       
-      userData.forEach(row => {
+      userData.forEach((row: UserWithRolesQueryResult) => {
         if (!userMap.has(row.id)) {
           userMap.set(row.id, {
             id: row.id,
@@ -159,13 +183,13 @@ export class UserRepository {
         }
 
         if (row.roleId) {
-          const user = userMap.get(row.id)!;
+          const user = required(userMap.get(row.id), "User should exist in map");
           user.roles.push({
             id: row.roleId,
-            name: row.roleName,
+            name: required(row.roleName, 'Role name is required'),
             description: row.roleDescription,
-            isSystem: row.roleIsSystem,
-            isActive: row.roleIsActive
+            isSystem: required(row.roleIsSystem, 'Role isSystem is required'),
+            isActive: required(row.roleIsActive, 'Role isActive is required')
           });
         }
       });
@@ -193,7 +217,7 @@ export class UserRepository {
             id: users.id,
             email: users.email,
             displayName: users.displayName,
-            isActive: sql`${users.status} = 'active'`,
+            isActive: sql<boolean>`${users.status} = 'active'`,
             organizationId: users.organizationId,
           })
           .from(users)
@@ -212,7 +236,7 @@ export class UserRepository {
       const totalPages = Math.ceil(total / pageSize);
 
       return {
-        users: userData.map(user => ({
+        users: userData.map((user: UserSimpleQueryResult) => ({
           ...user,
           displayName: user.displayName || user.email,
           roles: [] // Empty array for simple DTO
@@ -239,7 +263,7 @@ export class UserRepository {
           id: users.id,
           email: users.email,
           displayName: users.displayName,
-          isActive: sql`${users.status} = 'active'`,
+          isActive: sql<boolean>`${users.status} = 'active'`,
           organizationId: users.organizationId,
           roleId: userRoles.roleId,
           roleName: roles.name,
@@ -258,23 +282,23 @@ export class UserRepository {
 
       if (result.length === 0) return null;
 
-      const userRoles = result
-        .filter(row => row.roleId)
-        .map(row => ({
-          id: row.roleId!,
-          name: row.roleName!,
+      const userRolesData = result
+        .filter((row: UserWithRolesQueryResult) => row.roleId)
+        .map((row: UserWithRolesQueryResult) => ({
+          id: required(row.roleId, "roleId is required for role mapping"),
+          name: required(row.roleName, "roleName is required for role mapping"),
           description: row.roleDescription,
-          isSystem: row.roleIsSystem!,
-          isActive: row.roleIsActive!
+          isSystem: required(row.roleIsSystem, "roleIsSystem is required for role mapping"),
+          isActive: required(row.roleIsActive, "roleIsActive is required for role mapping")
         }));
 
       return {
-        id: result[0].id,
-        email: result[0].email,
-        displayName: result[0].displayName || result[0].email,
-        isActive: result[0].isActive,
-        organizationId: result[0].organizationId,
-        roles: userRoles
+        id: result[0]!.id,
+        email: result[0]!.email,
+        displayName: result[0]!.displayName || result[0]!.email,
+        isActive: result[0]!.isActive,
+        organizationId: result[0]!.organizationId,
+        roles: userRolesData
       };
     } else {
       const result = await this.db
@@ -282,7 +306,7 @@ export class UserRepository {
           id: users.id,
           email: users.email,
           displayName: users.displayName,
-          isActive: sql`${users.status} = 'active'`,
+          isActive: sql<boolean>`${users.status} = 'active'`,
           organizationId: users.organizationId,
         })
         .from(users)
@@ -295,9 +319,15 @@ export class UserRepository {
 
       if (result.length === 0) return null;
 
+      const user = result[0];
+      if (!user) return null;
+      
       return {
-        ...result[0],
-        displayName: result[0].displayName || result[0].email,
+        id: required(user.id, 'User id is required'),
+        email: required(user.email, 'User email is required'),
+        displayName: user.displayName || user.email,
+        isActive: required(user.isActive, 'User isActive is required'),
+        organizationId: required(user.organizationId, 'User organizationId is required'),
         roles: []
       };
     }
@@ -325,9 +355,15 @@ export class UserRepository {
 
     if (result.length === 0) return null;
 
+    const user = result[0];
+    if (!user) return null;
+    
     return {
-      ...result[0],
-      displayName: result[0].displayName || result[0].email,
+      id: required(user.id, 'User id is required'),
+      email: required(user.email, 'User email is required'),
+      displayName: user.displayName || user.email,
+      isActive: required(user.isActive as boolean, 'User isActive is required'),
+      organizationId: required(user.organizationId, 'User organizationId is required'),
       roles: []
     };
   }

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { Decimal } from 'decimal.js';
-import { calculateQuote, MoneyAmount, LineItem } from '../index.js';
+import { describe, it, expect } from 'vitest';
+
+import { calculateQuote } from '../index.js';
+import type { LineItem } from '../index.js';
 
 /**
  * Comprehensive test suite for B1 Quote Calculation
@@ -24,9 +26,9 @@ describe('B1 Quote Calculation Library', () => {
       const result = calculateQuote(input);
 
       expect(result.lineCalculations).toHaveLength(1);
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(6000);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(900);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(6900);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(6000);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(900);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(6900);
       expect(result.totals.grandTotal.amount.toNumber()).toBe(6900);
     });
 
@@ -46,11 +48,11 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(2400);
-      expect(result.lineCalculations[0].discountAmount.amount.toNumber()).toBe(240);
-      expect(result.lineCalculations[0].taxableAmount.amount.toNumber()).toBe(2160);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(324);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(2484);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(2400);
+      expect(result.lineCalculations[0]?.discountAmount.amount.toNumber()).toBe(240);
+      expect(result.lineCalculations[0]?.taxableAmount.amount.toNumber()).toBe(2160);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(324);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(2484);
       expect(result.totals.grandTotal.amount.toNumber()).toBe(2484);
     });
 
@@ -70,11 +72,11 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(1500);
-      expect(result.lineCalculations[0].discountAmount.amount.toNumber()).toBe(75);
-      expect(result.lineCalculations[0].taxableAmount.amount.toNumber()).toBe(1425);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(213.75);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(1638.75);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(1500);
+      expect(result.lineCalculations[0]?.discountAmount.amount.toNumber()).toBe(75);
+      expect(result.lineCalculations[0]?.taxableAmount.amount.toNumber()).toBe(1425);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(213.75);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(1638.75);
       expect(result.totals.grandTotal.amount.toNumber()).toBe(1638.75);
     });
 
@@ -92,9 +94,9 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(640);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(96);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(736);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(640);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(96);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(736);
       expect(result.totals.grandTotal.amount.toNumber()).toBe(736);
     });
 
@@ -113,9 +115,9 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(85);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(0);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(85);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(85);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(0);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(85);
       expect(result.totals.grandTotal.amount.toNumber()).toBe(85);
     });
 
@@ -210,9 +212,9 @@ describe('B1 Quote Calculation Library', () => {
       const result = calculateQuote(input);
 
       // All amounts should have the same currency
-      expect(result.lineCalculations[0].subtotal.currency).toBe('NZD');
-      expect(result.lineCalculations[0].taxAmount.currency).toBe('NZD');
-      expect(result.lineCalculations[0].totalAmount.currency).toBe('NZD');
+      expect(result.lineCalculations[0]?.subtotal.currency).toBe('NZD');
+      expect(result.lineCalculations[0]?.taxAmount.currency).toBe('NZD');
+      expect(result.lineCalculations[0]?.totalAmount.currency).toBe('NZD');
       expect(result.totals.subtotal.currency).toBe('NZD');
       expect(result.totals.grandTotal.currency).toBe('NZD');
     });
@@ -318,10 +320,10 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(0.01);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(0.01);
       // Tax on 0.01 should be 0.0015, but rounding to 2 decimal places makes it 0
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(0);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(0.01);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(0);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(0.01);
     });
 
     it('should handle very large amounts correctly', () => {
@@ -337,9 +339,9 @@ describe('B1 Quote Calculation Library', () => {
 
       const result = calculateQuote(input);
 
-      expect(result.lineCalculations[0].subtotal.amount.toNumber()).toBe(1000000);
-      expect(result.lineCalculations[0].taxAmount.amount.toNumber()).toBe(150000);
-      expect(result.lineCalculations[0].totalAmount.amount.toNumber()).toBe(1150000);
+      expect(result.lineCalculations[0]?.subtotal.amount.toNumber()).toBe(1000000);
+      expect(result.lineCalculations[0]?.taxAmount.amount.toNumber()).toBe(150000);
+      expect(result.lineCalculations[0]?.totalAmount.amount.toNumber()).toBe(1150000);
     });
 
     it('should handle empty line items array', () => {

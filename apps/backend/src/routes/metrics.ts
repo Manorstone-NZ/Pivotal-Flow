@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { logger } from '../lib/logger.js';
-import { config } from '../lib/config.js';
 import { register } from 'prom-client';
+
+import { config } from '../config/index.js';
+import { logger } from '../lib/logger.js';
 
 // Default metrics are already collected in main index.ts
 
@@ -13,7 +14,7 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
     
     try {
       // Check if metrics are enabled
-      if (!config.metrics.enabled) {
+      if (!config.metrics.METRICS_ENABLED) {
         requestLogger.warn('Metrics endpoint accessed but metrics are disabled');
         return reply.status(404).send('Metrics endpoint disabled');
       }
@@ -51,8 +52,8 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
       requestLogger.debug('Metrics info requested');
       
       const info = {
-        enabled: config.metrics.enabled,
-        path: config.metrics.path,
+        enabled: config.metrics.METRICS_ENABLED,
+        path: config.metrics.METRICS_PATH,
         defaultMetrics: true,
         customMetrics: [
           'pivotal_cache_hits_total',
@@ -93,7 +94,7 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         metrics: {
-          enabled: config.metrics.enabled,
+          enabled: config.metrics.METRICS_ENABLED,
           registryWorking: metrics.length > 0,
           contentType: register.contentType
         }

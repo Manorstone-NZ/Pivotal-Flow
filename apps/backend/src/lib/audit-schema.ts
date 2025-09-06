@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 // JSON schema for audit log old/new values
-export const AuditValuesSchema = z.record(z.any()).optional();
+export const AuditValuesSchema = z.record(z.unknown()).optional();
 
 // JSON schema for audit log metadata
-export const AuditMetadataSchema = z.record(z.any()).optional();
+export const AuditMetadataSchema = z.record(z.unknown()).optional();
 
 // Complete audit log schema
 export const AuditLogSchema = z.object({
@@ -24,8 +24,17 @@ export const AuditLogSchema = z.object({
   createdAt: z.date()
 });
 
+// Type for audit log data
+export type AuditLogData = z.infer<typeof AuditLogSchema>;
+
+// Type for audit values
+export type AuditValues = z.infer<typeof AuditValuesSchema>;
+
+// Type for audit metadata
+export type AuditMetadata = z.infer<typeof AuditMetadataSchema>;
+
 // Validation function for audit log data
-export function validateAuditLogData(data: any): { isValid: boolean; errors: string[] } {
+export function validateAuditLogData(data: unknown): { isValid: boolean; errors: string[] } {
   try {
     AuditLogSchema.parse(data);
     return { isValid: true, errors: [] };
@@ -44,7 +53,7 @@ export function validateAuditLogData(data: any): { isValid: boolean; errors: str
 }
 
 // Validation function specifically for old/new values
-export function validateAuditValues(values: any, context: string): { isValid: boolean; errors: string[] } {
+export function validateAuditValues(values: unknown, context: string): { isValid: boolean; errors: string[] } {
   try {
     AuditValuesSchema.parse(values);
     return { isValid: true, errors: [] };
@@ -74,10 +83,10 @@ export function createAuditLogData(data: {
   ipAddress?: string;
   userAgent?: string;
   sessionId?: string;
-  oldValues?: any;
-  newValues?: any;
-  metadata?: any;
-}): any {
+  oldValues?: AuditValues;
+  newValues?: AuditValues;
+  metadata?: AuditMetadata;
+}): AuditLogData {
   const auditData = {
     ...data,
     createdAt: new Date()

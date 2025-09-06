@@ -1,6 +1,6 @@
 /* Static scan for risky JSONB usage in SQL or Prisma raw strings */
-import fs from "node:fs";
-import path from "node:path";
+const fs = require("fs");
+const path = require("path");
 
 const ROOT = process.cwd();
 const FORBIDDEN_PATTERNS: RegExp[] = [

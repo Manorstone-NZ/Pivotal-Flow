@@ -1,11 +1,15 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { generateId, required, auditUserId } from '@pivotal-flow/shared';
 import { eq, and, desc } from 'drizzle-orm';
-import { generateId } from '@pivotal-flow/shared';
-import { approvalRequests, orgSettings } from '../../lib/schema.js';
-import { BaseRepository } from '../../lib/repo.base.js';
-import { PermissionService } from '../permissions/service.js';
-import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyInstance } from 'fastify';
+
+import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { BaseRepository } from '../../lib/repo.base.js';
+import { approvalRequests, orgSettings } from '../../lib/schema.js';
+import { PermissionService } from '../permissions/service.js';
+
+
+import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES, APPROVAL_POLICY_KEYS, type ApprovalEntityType } from './constants.js';
 import type { 
   ApprovalRequest, 
   CreateApprovalRequest, 
@@ -15,7 +19,6 @@ import type {
   ApprovalFilters,
   ApprovalPolicy 
 } from './types.js';
-import { APPROVAL_STATUS, APPROVAL_ENTITY_TYPES, APPROVAL_POLICY_KEYS, type ApprovalEntityType } from './constants.js';
 
 /**
  * Approval Service
@@ -41,8 +44,9 @@ export class ApprovalService extends BaseRepository {
    */
   async createApprovalRequest(data: CreateApprovalRequest): Promise<ApprovalRequest> {
     // Check if user has permission to request approvals
+    const actorId = required(this.options.userId, "authenticated user id missing");
     const hasPermission = await this.permissionService.hasPermission(
-      this.options.userId, 
+      actorId, 
       'approvals.request' as any
     );
 
@@ -100,7 +104,7 @@ export class ApprovalService extends BaseRepository {
       entityType: 'approval_request',
       entityId: approvalRequest.id,
       organizationId: this.options.organizationId,
-      userId: this.options.userId,
+      userId: auditUserId(this.options.userId),
       newValues: approvalRequest as unknown as Record<string, unknown>,
       metadata: {
         entityType: data.entityType,
@@ -117,8 +121,9 @@ export class ApprovalService extends BaseRepository {
    */
   async approveRequest(requestId: string, data: ApproveRequest): Promise<ApprovalRequest> {
     // Check if user has permission to decide approvals
+    const actorId = required(this.options.userId, "authenticated user id missing");
     const hasPermission = await this.permissionService.hasPermission(
-      this.options.userId, 
+      actorId, 
       'approvals.decide' as any
     );
 
@@ -194,8 +199,9 @@ export class ApprovalService extends BaseRepository {
    */
   async rejectRequest(requestId: string, data: RejectRequest): Promise<ApprovalRequest> {
     // Check if user has permission to decide approvals
+    const actorId = required(this.options.userId, "authenticated user id missing");
     const hasPermission = await this.permissionService.hasPermission(
-      this.options.userId, 
+      actorId, 
       'approvals.decide' as any
     );
 
@@ -335,8 +341,9 @@ export class ApprovalService extends BaseRepository {
    */
   async getApprovalRequests(filters: ApprovalFilters = {}): Promise<ApprovalRequest[]> {
     // Check if user has permission to view approvals
+    const actorId = required(this.options.userId, "authenticated user id missing");
     const hasPermission = await this.permissionService.hasPermission(
-      this.options.userId, 
+      actorId, 
       'approvals.view' as any
     );
 
@@ -376,8 +383,9 @@ export class ApprovalService extends BaseRepository {
    */
   async getApprovalRequest(requestId: string): Promise<ApprovalRequest | null> {
     // Check if user has permission to view approvals
+    const actorId = required(this.options.userId, "authenticated user id missing");
     const hasPermission = await this.permissionService.hasPermission(
-      this.options.userId, 
+      actorId, 
       'approvals.view' as any
     );
 

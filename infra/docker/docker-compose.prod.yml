@@ -1,0 +1,303 @@
+# Production Docker Compose for Pivotal Flow
+# Complete stack with monitoring and infrastructure
+
+services:
+  # Application Services
+  backend:
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile.prod
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://pivotal:pivotal@postgres:5432/pivotal
+      REDIS_URL: redis://redis:6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: pivotal
+      POSTGRES_DB: pivotal
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MIGRATE_ON_START: "false"  # Migrations handled by migrate service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=3000"
+      - "prometheus.io/path=/metrics"
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.pivotalflow.com`)"
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: apps/frontend/Dockerfile.prod
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`pivotalflow.com`)"
+
+  # Migration Service
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://pivotal:pivotal@postgres:5432/pivotal
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: pivotal
+      POSTGRES_DB: pivotal
+    volumes:
+      - ../..:/app:ro
+    entrypoint: ["sh", "-c", "cd apps/backend && corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate:ci"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - appnet
+    restart: "no"
+    profiles:
+      - production
+
+  # Seed Service (optional)
+  seed:
+    image: node:20-alpine
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://pivotal:pivotal@postgres:5432/pivotal
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: pivotal
+      POSTGRES_DB: pivotal
+    volumes:
+      - ../..:/app:ro
+    entrypoint: ["sh", "-c", "cd apps/backend && corepack enable && pnpm install --frozen-lockfile && pnpm db:seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - appnet
+    restart: "no"
+    profiles:
+      - production
+
+  # Infrastructure Services
+  postgres:
+    image: postgres:16-alpine
+    container_name: pivotal-postgres-prod
+    environment:
+      POSTGRES_USER: pivotal
+      POSTGRES_PASSWORD: pivotal
+      POSTGRES_DB: pivotal
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql/postgresql.conf:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pivotal -d pivotal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: pivotal-redis-prod
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=6379"
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pivotal-prometheus-prod
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.pivotalflow.com`)"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pivotal-grafana-prod
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel,grafana-worldmap-panel
+      GF_SERVER_ROOT_URL: http://grafana.pivotalflow.com
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - appnet
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.pivotalflow.com`)"
+
+  # Reverse Proxy (optional - for production)
+  traefik:
+    image: traefik:v3.0
+    container_name: pivotal-traefik-prod
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@pivotalflow.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_data:/letsencrypt
+    networks:
+      - appnet
+    restart: unless-stopped
+    profiles:
+      - production
+      - traefik
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  traefik_data:
+    driver: local
+
+networks:
+  appnet:
+    driver: bridge
+    name: pivotal-prodnet

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { eq, and } from 'drizzle-orm';
-import { PortalService } from '../service.js';
+
+import { testDb, testUtils } from '../../../__tests__/setup.js';
 import { quotes, invoices } from '../../../lib/schema.js';
+import { PortalService } from '../service.js';
 import type { PortalUserContext } from '../types.js';
-import { testDb, createTestUser, createTestCustomer, createTestOrganization, cleanup } from '../../../__tests__/setup.js';
 
 describe('PortalService', () => {
   let testOrgId: string;
@@ -14,19 +14,20 @@ describe('PortalService', () => {
 
   beforeEach(async () => {
     // Create test organization
-    testOrgId = await createTestOrganization('Portal Test Org');
+    testOrgId = await testUtils.createTestOrganization({ name: 'Portal Test Org' });
     
     // Create test customer
-    testCustomerId = await createTestCustomer(testOrgId, {
+    testCustomerId = await testUtils.createTestCustomer(testOrgId, {
       companyName: 'Test Customer Company',
       customerNumber: 'CUST-001'
     });
     
     // Create external customer user
-    testUserId = await createTestUser(testOrgId, {
+    testUserId = await testUtils.createTestUser({
       email: 'customer@testcustomer.com',
       userType: 'external_customer',
-      customerId: testCustomerId
+      customerId: testCustomerId,
+      organizationId: testOrgId
     });
 
     // Setup portal user context
@@ -50,7 +51,7 @@ describe('PortalService', () => {
   });
 
   afterEach(async () => {
-    await cleanup();
+    await testUtils.cleanupTestData();
   });
 
   describe('Portal Access Validation', () => {
@@ -67,7 +68,7 @@ describe('PortalService', () => {
     it('should reject internal users', async () => {
       const internalUserContext = {
         ...portalUserContext,
-        userType: 'internal' as const
+        userType: 'internal' as any
       };
       
       const service = new PortalService(testDb, internalUserContext, mockFastify);
@@ -79,7 +80,7 @@ describe('PortalService', () => {
 
     it('should reject cross-customer access attempts', async () => {
       // Create another customer
-      const otherCustomerId = await createTestCustomer(testOrgId, {
+      const otherCustomerId = await testUtils.createTestCustomer(testOrgId, {
         companyName: 'Other Customer',
         customerNumber: 'CUST-002'
       });
@@ -110,7 +111,7 @@ describe('PortalService', () => {
 
     it('should enforce customer isolation for quotes', async () => {
       // Create quotes for different customers
-      const otherCustomerId = await createTestCustomer(testOrgId, {
+      const otherCustomerId = await testUtils.createTestCustomer(testOrgId, {
         companyName: 'Other Customer',
         customerNumber: 'CUST-002'
       });
@@ -159,12 +160,12 @@ describe('PortalService', () => {
       
       // Should only see own quote
       expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('quote-own');
-      expect(result.data[0].title).toBe('Own Quote');
+      expect(result.data[0]?.id).toBe('quote-own');
+      expect(result.data[0]?.title).toBe('Own Quote');
     });
 
     it('should prevent access to cross-customer quote details', async () => {
-      const otherCustomerId = await createTestCustomer(testOrgId, {
+      const otherCustomerId = await testUtils.createTestCustomer(testOrgId, {
         companyName: 'Other Customer',
         customerNumber: 'CUST-002'
       });
@@ -208,7 +209,7 @@ describe('PortalService', () => {
     });
 
     it('should enforce customer isolation for invoices', async () => {
-      const otherCustomerId = await createTestCustomer(testOrgId, {
+      const otherCustomerId = await testUtils.createTestCustomer(testOrgId, {
         companyName: 'Other Customer',
         customerNumber: 'CUST-002'
       });
@@ -253,8 +254,8 @@ describe('PortalService', () => {
       
       // Should only see own invoice
       expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('invoice-own');
-      expect(result.data[0].title).toBe('Own Invoice');
+      expect(result.data[0]?.id).toBe('invoice-own');
+      expect(result.data[0]?.title).toBe('Own Invoice');
     });
   });
 

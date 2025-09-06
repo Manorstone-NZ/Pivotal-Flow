@@ -1,5 +1,7 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import * as Types from './types.js';
+import axios from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+
+import type * as Types from './types.js';
 
 /**
  * Configuration for the Pivotal Flow SDK client
@@ -47,7 +49,7 @@ export interface PivotalFlowConfig {
  */
 export class PivotalFlowClient {
   private config: PivotalFlowConfig;
-  private axios: AxiosInstance;
+  protected axios: AxiosInstance;
 
   constructor(config: PivotalFlowConfig) {
     this.config = {
@@ -57,7 +59,7 @@ export class PivotalFlowClient {
 
     this.axios = config.axiosInstance || axios.create({
       baseURL: config.baseURL,
-      timeout: config.timeout,
+      timeout: config.timeout ?? 30000,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -488,3 +490,7 @@ export class PivotalFlowClient {
 
 // Export types for use in consuming applications
 export * from './types.js';
+
+// Export generated types and client
+export * from './gen/types.js';
+export { GeneratedPivotalFlowClient } from './gen/client.js';

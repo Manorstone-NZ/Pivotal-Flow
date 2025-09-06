@@ -1,6 +1,7 @@
+import { PaymentRepository, MetricsCollector, generateId } from '@pivotal-flow/shared';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { PaymentRepository, MetricsCollector } from '@pivotal-flow/shared';
+import { sendErrorResponse } from '../../lib/error-handler.js';
 
 // Zod schemas for validation
 const CreatePaymentSchema = z.object({
@@ -46,14 +47,16 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
       const organizationId = (request as any).user?.organizationId;
       
       if (!userId || !organizationId) {
-        return reply.status(401).send({ error: 'Unauthorized' });
+        sendErrorResponse(reply, 'AUTHENTICATION_ERROR', 'Authentication required', 401, request.id);
+        return;
       }
 
       // Create payment data with proper defaults
       const paymentData = {
+        id: generateId(),
         organizationId: organizationId,
         invoiceId: data.invoiceId,
-        amount: data.amount,
+        amount: data.amount.toString(),
         currency: data.currency,
         method: data.method,
         reference: data.reference || '',
@@ -100,7 +103,7 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      fastify.log.error('Payment creation failed', { error });
+      fastify.log.error({ error }, 'Payment creation failed');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });
@@ -124,7 +127,7 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply.status(200).send(result.payments);
     } catch (error) {
-      fastify.log.error('Failed to get invoice payments', { error });
+      fastify.log.error({ error }, 'Failed to get invoice payments');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });
@@ -157,7 +160,7 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      fastify.log.error('Payment void failed', { error });
+      fastify.log.error({ error }, 'Payment void failed');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });
@@ -178,7 +181,7 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         payments: result.payments
       });
     } catch (error) {
-      fastify.log.error('Failed to get invoice payments', { error });
+      fastify.log.error({ error }, 'Failed to get invoice payments');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });
@@ -197,9 +200,10 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
       
       // Create payment data with proper defaults
       const paymentData = {
+        id: generateId(),
         organizationId: organizationId,
         invoiceId: data.invoiceId,
-        amount: data.amount,
+        amount: data.amount.toString(),
         currency: data.currency,
         method: data.method,
         reference: data.reference || '',
@@ -246,7 +250,7 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      fastify.log.error('Payment creation failed', { error });
+      fastify.log.error({ error }, 'Payment creation failed');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });

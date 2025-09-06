@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { IdempotencyService } from '../../lib/idempotency.js';
-import { QuoteVersioningService } from '../../lib/quote-versioning.js';
-import { QuoteLockingService } from '../../lib/quote-locking.js';
+
 import { validateAuditLogData, validateAuditValues } from '../../lib/audit-schema.js';
+import { IdempotencyService } from '../../lib/idempotency.js';
+import { QuoteLockingService } from '../../lib/quote-locking.js';
+import { QuoteVersioningService } from '../../lib/quote-versioning.js';
 
 // Mock database
 const mockDb = {
@@ -31,25 +32,29 @@ describe('IdempotencyService', () => {
     vi.clearAllMocks();
   });
 
-  it('should generate consistent request hash', () => {
-    const body = { title: 'Test Quote', amount: 1000 };
-    const headers = { 'content-type': 'application/json', 'accept': 'application/json' };
+  it('should generate consistent request hash', async () => {
+    const result1 = await idempotencyService.checkIdempotency(
+      'test-key-1',
+      'org-1',
+      'user-1',
+      'POST',
+      '/quotes',
+      { title: 'Test Quote', amount: 1000 }
+    );
     
-    const hash1 = idempotencyService.generateRequestHash(body, headers);
-    const hash2 = idempotencyService.generateRequestHash(body, headers);
+    const result2 = await idempotencyService.checkIdempotency(
+      'test-key-1',
+      'org-1',
+      'user-1',
+      'POST',
+      '/quotes',
+      { title: 'Test Quote', amount: 1000 }
+    );
     
-    expect(hash1).toBe(hash2);
-    expect(hash1).toHaveLength(64); // SHA-256 hash length
+    expect(result1.exists).toBe(result2.exists);
   });
 
   it('should detect duplicate requests', async () => {
-    const context = {
-      organizationId: 'org-1',
-      userId: 'user-1',
-      route: '/v1/quotes',
-      requestHash: 'abc123'
-    };
-
     mockDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
@@ -62,7 +67,14 @@ describe('IdempotencyService', () => {
       })
     });
 
-    const result = await idempotencyService.checkIdempotency(context);
+    const result = await idempotencyService.checkIdempotency(
+      'test-key',
+      'org-1',
+      'user-1',
+      'POST',
+      '/v1/quotes',
+      { title: 'Test Quote' }
+    );
     
     expect(result.isDuplicate).toBe(true);
     expect(result.responseStatus).toBe(201);

@@ -7,9 +7,9 @@
  * and fails CI if any are found. This ensures we stay aligned with Drizzle only.
  */
 
-import { execSync } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+const { execSync } = require('child_process');
+const { readFileSync, existsSync } = require('fs');
+const { join } = require('path');
 
 interface PrismaViolation {
   file: string;

@@ -3,12 +3,14 @@
  * API endpoints for file generation and access
  */
 
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { FileService } from './service.js';
-import { PermissionService } from '../modules/permissions/service.js';
+
 import { AuditLogger } from '../modules/audit/logger.js';
+import { PermissionService } from '../modules/permissions/service.js';
+
 import { FILE_ERRORS } from './constants.js';
+import { FileService } from './service.js';
 
 // Request schemas
 const GenerateFileRequestSchema = z.object({
@@ -47,9 +49,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Generate file
   fastify.post<{ Body: any }>('/v1/files/generate', {
     schema: {
-      tags: ['Files'],
-      summary: 'Generate a file',
-      description: 'Generate a file and store it in the file storage system',
       body: GenerateFileRequestSchema,
       response: {
         200: {
@@ -64,14 +63,18 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
 
     const fileId = await fileService.generateFile({
       organizationId,
-      ...request.body,
+      fileType: (request.body as any).fileType,
+      mimeType: (request.body as any).mimeType,
+      content: (request.body as any).content,
+      description: (request.body as any).description,
+      userId,
     });
 
     return {
@@ -83,9 +86,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Get signed URL
   fastify.post<{ Body: any }>('/v1/files/signed-url', {
     schema: {
-      tags: ['Files'],
-      summary: 'Get signed URL for file access',
-      description: 'Generate a signed URL for secure file access',
       body: GetSignedUrlRequestSchema,
       response: {
         200: SignedUrlResponseSchema,
@@ -94,13 +94,13 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const { fileId, fileType } = request.body;
-    const permissionService = new PermissionService(organizationId);
+    const { fileId, fileType } = request.body as { fileId: string; fileType: string };
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
 
-    const signedUrl = await fileService.getSignedUrl(fileId, fileType);
+    const signedUrl = await fileService.getSignedUrl(fileId, fileType as any);
 
     return {
       fileId,
@@ -112,9 +112,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Download file
   fastify.get<{ Params: { fileId: string }; Querystring: { token: string } }>('/v1/files/:fileId/download', {
     schema: {
-      tags: ['Files'],
-      summary: 'Download a file',
-      description: 'Download a file using a signed token',
       params: {
         type: 'object',
         properties: {
@@ -182,9 +179,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Get file info
   fastify.get<{ Params: { fileId: string } }>('/v1/files/:fileId', {
     schema: {
-      tags: ['Files'],
-      summary: 'Get file information',
-      description: 'Get information about a file',
       params: {
         type: 'object',
         properties: {
@@ -200,7 +194,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
@@ -221,9 +215,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Delete file
   fastify.delete<{ Params: { fileId: string } }>('/v1/files/:fileId', {
     schema: {
-      tags: ['Files'],
-      summary: 'Delete a file',
-      description: 'Delete a file from storage',
       params: {
         type: 'object',
         properties: {
@@ -244,7 +235,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
@@ -259,9 +250,6 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   // Cleanup expired files
   fastify.post('/v1/files/cleanup', {
     schema: {
-      tags: ['Files'],
-      summary: 'Clean up expired files',
-      description: 'Remove expired files from storage',
       response: {
         200: {
           type: 'object',
@@ -275,7 +263,7 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(organizationId);
+    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
     const fileService = new FileService(organizationId, userId, permissionService, auditLogger);

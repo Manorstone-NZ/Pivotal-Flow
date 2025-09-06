@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Decimal } from 'decimal.js';
-import { RateCardService } from '../service.js';
-import { QuoteService } from '../../quotes/service.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { PermissionService } from '../../permissions/service.js';
+import { QuoteService } from '../../quotes/service.js';
+import { RateCardService } from '../service.js';
 
 // Mock dependencies
 const mockDb = {

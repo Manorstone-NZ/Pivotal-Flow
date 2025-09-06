@@ -2,6 +2,116 @@
 
 This document describes the QA scripts used to maintain code quality and consistency in the Pivotal Flow project.
 
+## Enterprise Guardrails
+
+### ESLint Rules Enforced
+
+The project enforces strict enterprise-grade ESLint rules:
+
+#### Safety Rules
+- `no-console`: Error - No console statements in production code
+- `@typescript-eslint/no-explicit-any`: Error - No explicit `any` types
+- `@typescript-eslint/no-non-null-assertion`: Error - No non-null assertions (`!`)
+- `@typescript-eslint/consistent-type-imports`: Error - Use type imports consistently
+- `@typescript-eslint/no-unsafe-assignment`: Error - No unsafe assignments
+- `@typescript-eslint/no-unsafe-call`: Error - No unsafe function calls
+- `@typescript-eslint/no-unsafe-member-access`: Error - No unsafe member access
+- `@typescript-eslint/no-unsafe-return`: Error - No unsafe returns
+
+#### Code Health Rules
+- `unused-imports/no-unused-imports`: Error - Remove unused imports
+- `@typescript-eslint/no-unused-vars`: Error - Remove unused variables (except `_` prefixed)
+- `max-lines-per-function`: Error - Max 50 lines per function
+- `max-lines`: Error - Max 250 lines per file
+- `import/order`: Error - Consistent import ordering
+
+#### Test File Overrides
+Test files (`**/*.test.ts`, `**/tests/**`, `**/e2e/**`) have relaxed rules:
+- Console statements allowed
+- Unsafe type operations allowed
+- No line limits
+
+#### Script File Overrides
+Script files (`scripts/**`, `infra/**`) allow console statements.
+
+### QA Forbid Check
+
+#### Purpose
+The `scripts/qa/forbid_any_and_bang.ts` script ensures enterprise-grade type safety by detecting:
+- Explicit `any` types (`: any`)
+- Non-null assertions (`!`)
+
+#### What it checks
+- **Source files**: TypeScript files in `apps/**` and `packages/**`
+- **Patterns**: `: any` and `!` operators outside approved locations
+- **Exclusions**: Test files, scripts, and infrastructure code
+
+#### Usage
+```bash
+# Run locally
+pnpm run qa:forbid
+
+# Run in CI
+pnpm run qa:forbid
+```
+
+#### CI Integration
+The QA forbid check runs as a separate CI job and must pass before build:
+```yaml
+qa-forbid:
+  name: QA Forbid Check
+  runs-on: ubuntu-latest
+  steps:
+    - name: Run QA forbid check
+      run: pnpm run qa:forbid
+```
+
+#### Violation Types
+1. **Any violations**: `const data: any = ...`
+2. **Bang violations**: `const value = data!.property`
+
+#### Exceptions
+The script allows violations in:
+- Test files (`.test.ts`)
+- Test directories (`tests/`)
+- Scripts (`scripts/`)
+- Infrastructure (`infra/`)
+
+#### Fixing Violations
+1. **Replace `any` types**:
+   ```typescript
+   // Bad
+   const data: any = response;
+   
+   // Good
+   const data: ResponseData = response;
+   ```
+
+2. **Replace non-null assertions**:
+   ```typescript
+   // Bad
+   const value = data!.property;
+   
+   // Good
+   const value = required(data, "Data should exist").property;
+   ```
+
+### Type Safety Guidelines
+
+#### Proper Type Usage
+- Use specific interfaces instead of `any`
+- Use `unknown` for truly unknown data
+- Use `required()` helper for non-nullable values
+- Use optional chaining (`?.`) for nullable values
+
+#### Import Organization
+Imports are automatically organized with:
+- External packages first
+- Internal packages second
+- Relative imports last
+- Alphabetical ordering within groups
+- Newlines between groups
+
 ## Prisma Forbidden Check
 
 ### Purpose

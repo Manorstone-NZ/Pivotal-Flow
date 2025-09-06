@@ -62,7 +62,6 @@ export interface XeroInvoiceLineItem {
   accountCode: string;
   taxType: string;
   taxAmount: number;
-  lineItemId?: string;
   tracking?: {
     trackingCategoryId: string;
     name: string;

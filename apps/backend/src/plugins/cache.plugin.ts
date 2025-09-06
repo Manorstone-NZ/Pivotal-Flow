@@ -1,10 +1,12 @@
+import type { CacheApi } from '@pivotal-flow/shared';
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
+
 import { CacheService, type CacheOptions } from '../lib/cache.service.js';
 import { logger } from '../lib/logger.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    cache: CacheService;
+    cache: CacheApi;
   }
 }
 
@@ -85,22 +87,19 @@ export const cachePlugin: FastifyPluginCallback<CachePluginOptions> = async (
     logger.error('Failed to initialize cache plugin:', error);
     
     // Create a proper fallback cache service that handles all operations
-    const fallbackCache = {
-      async connect() {
-        logger.warn('Cache connect called but Redis is not available');
-      },
-      async disconnect() {
-        logger.warn('Cache disconnect called but Redis is not available');
-      },
-      async set(key: string, _data: any, _ttl?: number) {
-        logger.warn(`Cache set operation called but Redis is not available: ${key}`);
-      },
-      async get(key: string) {
+    const fallbackCache: CacheApi = {
+      async get<T>(key: string): Promise<T | null> {
         logger.warn(`Cache get operation called but Redis is not available: ${key}`);
         return null;
       },
-      async delete(key: string) {
+      async set<T>(key: string, _value: T, _ttl?: number): Promise<void> {
+        logger.warn(`Cache set operation called but Redis is not available: ${key}`);
+      },
+      async delete(key: string): Promise<void> {
         logger.warn(`Cache delete operation called but Redis is not available: ${key}`);
+      },
+      async healthCheck(): Promise<boolean> {
+        return false;
       },
       async getStats() {
         return {
@@ -110,10 +109,10 @@ export const cachePlugin: FastifyPluginCallback<CachePluginOptions> = async (
           hitRate: 0
         };
       },
-      async clear() {
+      async clear(): Promise<void> {
         logger.warn('Cache clear operation called but Redis is not available');
       }
-    } as CacheService;
+    };
     
     fastify.decorate('cache', fallbackCache);
     

@@ -4,7 +4,11 @@
  */
 
 import type { Job } from '../../lib/schema.js';
+
 import type { JobType, JobPriority } from './constants.js';
+
+// Re-export types for external use
+export type { JobType, JobPriority };
 
 // Job request for creating new jobs
 export interface CreateJobRequest {

@@ -1,6 +1,7 @@
 import { generateId } from '@pivotal-flow/shared';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, desc, and } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
 import { quoteVersions, quoteLineItemVersions, quotes, quoteLineItems } from './schema.js';
 import { withTx } from './withTx.js';
 
@@ -33,7 +34,7 @@ export interface QuoteVersionData {
   sentAt?: Date;
   acceptedAt?: Date;
   expiresAt?: Date;
-  metadata: any;
+  metadata: Record<string, unknown>;
   lineItems: Array<{
     lineNumber: number;
     type: string;
@@ -53,7 +54,7 @@ export interface QuoteVersionData {
     totalAmount: string;
     serviceCategoryId?: string;
     rateCardId?: string;
-    metadata: any;
+    metadata: Record<string, unknown>;
   }>;
 }
 
@@ -217,7 +218,7 @@ export class QuoteVersioningService {
   /**
    * Check if a quote has been materially changed
    */
-  async hasMaterialChanges(quoteId: string, newData: any): Promise<boolean> {
+  async hasMaterialChanges(quoteId: string, newData: unknown): Promise<boolean> {
     const currentQuote = await this.db
       .select()
       .from(quotes)
@@ -230,6 +231,13 @@ export class QuoteVersioningService {
 
     const current = currentQuote[0];
     
+    // Type guard to check if newData is an object
+    if (typeof newData !== 'object' || newData === null) {
+      return false;
+    }
+    
+    const data = newData as Record<string, any>;
+    
     // Define material fields that trigger versioning
     const materialFields = [
       'title', 'description', 'type', 'validFrom', 'validUntil', 'currency',
@@ -239,26 +247,26 @@ export class QuoteVersioningService {
 
     // Check if any material fields have changed
     for (const field of materialFields) {
-      if (current && (current as any)[field] !== newData[field]) {
+      if (current && (current as any)[field] !== data[field]) {
         return true;
       }
     }
 
     // Check line items for changes
-    if (newData.lineItems) {
+    if (data['lineItems']) {
       const currentLineItems = await this.db
         .select()
         .from(quoteLineItems)
         .where(eq(quoteLineItems.quoteId, quoteId))
         .orderBy(quoteLineItems.lineNumber);
 
-      if (currentLineItems.length !== newData.lineItems.length) {
+      if (currentLineItems.length !== data['lineItems'].length) {
         return true;
       }
 
               for (let i = 0; i < currentLineItems.length; i++) {
           const currentItem = currentLineItems[i];
-          const newItem = newData.lineItems[i];
+          const newItem = data['lineItems'][i];
           
           if (!currentItem || !newItem) continue;
           
@@ -268,7 +276,7 @@ export class QuoteVersioningService {
           ];
 
           for (const field of lineItemFields) {
-            if ((currentItem as any)[field] !== (newItem as any)[field]) {
+            if ((currentItem as any)[field] !== (newItem)[field]) {
               return true;
             }
           }

@@ -1,6 +1,9 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+
+import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
+
 import type { LogoutResponse } from './schemas.js';
 
 // Type definitions for authenticated user
@@ -37,7 +40,7 @@ export const logoutRoute: FastifyPluginAsync = async (fastify) => {
         const authenticatedRequest = request as AuthenticatedRequest;
         const user = authenticatedRequest.user;
         
-        if (!user || !user.jti) {
+        if (!user?.jti) {
           logger.warn({ event: 'auth.logout_failed', reason: 'no_user_context' }, 'Logout failed: no user context');
           return reply.status(400).send({
             message: 'No active session to logout',
@@ -45,22 +48,24 @@ export const logoutRoute: FastifyPluginAsync = async (fastify) => {
         }
 
         // Revoke refresh token from cache
-        await (fastify as any).tokenManager.revokeRefreshToken(user.jti);
+        const refreshTokenManager = (fastify as any).refreshTokenManager;
+        await refreshTokenManager.revokeRefresh(user.jti);
 
         // Clear refresh token cookie
         reply.clearCookie('refreshToken', {
           path: '/',
           httpOnly: true,
-          secure: process.env['COOKIE_SECURE'] === 'true',
+          secure: config.auth.COOKIE_SECURE,
           sameSite: 'lax',
         });
 
         // Log successful logout
         logger.info({ 
-          userId: user.userId, 
-          organizationId: user.organizationId,
+          request_id: request.id,
+          user_id: user.userId, 
+          organisation_id: user.organizationId,
           jti: user.jti,
-          event: 'auth.logout_success' 
+          outcome: 'success'
         }, 'User logged out successfully');
 
         // Log audit event for successful logout

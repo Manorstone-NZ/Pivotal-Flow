@@ -3,7 +3,8 @@
  * Background job processing with queue, status, and retry logic
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+
 import { registerJobsRoutes } from './routes.js';
 
 /**

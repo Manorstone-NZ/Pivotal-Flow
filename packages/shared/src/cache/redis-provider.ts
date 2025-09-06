@@ -1,4 +1,5 @@
 import { getRedisClient } from '../redis.js';
+
 import type { CacheProvider, CacheMetrics } from './index.js';
 
 /**

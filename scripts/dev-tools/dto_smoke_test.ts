@@ -7,8 +7,8 @@
  * with the expected fields (id, email, displayName, isActive, organizationId).
  */
 
-import { CustomerRepository } from '../../apps/backend/src/lib/repo.customers';
-import { UserRepository } from '../../apps/backend/src/lib/repo.users';
+const { CustomerRepository } = require('../../apps/backend/src/lib/repo.customers');
+const { UserRepository } = require('../../apps/backend/src/lib/repo.users');
 
 async function testCustomerDTOs() {
   console.log('🧪 Testing Customer DTOs...');

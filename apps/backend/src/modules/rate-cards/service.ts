@@ -1,11 +1,19 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq, and, isNull, desc, or, like, sql, type SQL } from 'drizzle-orm';
-import { Decimal } from 'decimal.js';
 import { generateId } from '@pivotal-flow/shared';
+import { getRedisClient } from '@pivotal-flow/shared/redis';
+import { Decimal } from 'decimal.js';
+import { eq, and, isNull, desc, or, like, sql, type SQL } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { logger } from '../../lib/logger.js';
+import { BaseRepository } from '../../lib/repo.base.js';
+import type { PaginationOptions } from '../../lib/repo.base.js';
 import { 
   rateCards,
   rateCardItems
 } from '../../lib/schema.js';
+import { withTx } from '../../lib/withTx.js';
+
 import { 
   validateRateCardData,
   validateRateCardItemData,
@@ -14,12 +22,7 @@ import {
   type CreateRateCardItemSchema,
   type UpdateRateCardItemSchema
 } from './schemas.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
-import { withTx } from '../../lib/withTx.js';
-import { BaseRepository } from '../../lib/repo.base.js';
-import type { PaginationOptions } from '../../lib/repo.base.js';
-import { logger } from '../../lib/logger.js';
-import { getRedisClient } from '@pivotal-flow/shared/redis';
+
 
 // Cache TTL constants as per requirements
 const RATE_CARD_CACHE_TTL = 60; // 60 seconds for active rate card
@@ -464,7 +467,7 @@ export class RateCardService extends BaseRepository {
     _description: string
   ): any | null {
     // First try exact service category match
-    let match = rateItems.find(item => 
+    const match = rateItems.find(item => 
       item.serviceCategoryId === serviceCategoryId &&
       item.isActive
     );

@@ -1,4 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+
+import { config } from '../config/index.js';
+
 import type { RequestLogger } from './logger.js';
 
 export interface LogContext {
@@ -99,6 +102,6 @@ export class LogEnricher {
    * Formats logs for cloud shipping (JSON without pretty formatting)
    */
   static isCloudShippingEnabled(): boolean {
-    return process.env['LOG_CLOUD_SHIPPING'] === 'true';
+    return config.server.LOG_CLOUD_SHIPPING;
   }
 }

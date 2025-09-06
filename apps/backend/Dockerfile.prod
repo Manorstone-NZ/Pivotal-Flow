@@ -1,0 +1,111 @@
+# Multi-stage production Dockerfile for Pivotal Flow Backend
+# Stage 1: Dependencies
+FROM node:20-bookworm-slim AS deps
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files for dependency resolution
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/backend/package.json apps/backend/
+COPY packages/shared/package.json packages/shared/
+
+# Install pnpm and dependencies
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+RUN pnpm install --frozen-lockfile --prod=false
+
+# Stage 2: Builder
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y \
+    openssl \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Copy source code
+COPY . .
+
+# Install all dependencies (including dev dependencies for building)
+RUN pnpm install --frozen-lockfile
+
+# Build shared package
+RUN pnpm -C packages/shared run build
+
+# Build backend (skip type-check and lint for now)
+RUN pnpm -C apps/backend run build
+
+# Stage 3: Production dependencies
+FROM node:20-bookworm-slim AS prod-deps
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/backend/package.json apps/backend/
+COPY packages/shared/package.json packages/shared/
+
+# Install only production dependencies
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+RUN pnpm install --frozen-lockfile --prod=true
+
+# Stage 4: Runtime (Optimized Node.js)
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    redis-tools \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r nodeuser && useradd -r -g nodeuser nodeuser
+
+# Copy built application
+COPY --from=builder /app/apps/backend/dist ./dist
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=builder /app/apps/backend/package.json ./package.json
+COPY --from=builder /app/apps/backend/entrypoint.sh ./entrypoint.sh
+
+# Set ownership and permissions
+RUN chown -R nodeuser:nodeuser /app && chmod +x ./entrypoint.sh
+
+# Switch to non-root user
+USER nodeuser
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["node", "-e", "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+
+# Prometheus labels for scraping
+LABEL prometheus.io/scrape="true" \
+      prometheus.io/port="3000" \
+      prometheus.io/path="/metrics" \
+      org.opencontainers.image.title="Pivotal Flow Backend" \
+      org.opencontainers.image.description="Production backend API" \
+      org.opencontainers.image.version="0.1.0"
+
+# Start application
+CMD ["./entrypoint.sh"]

@@ -1,7 +1,9 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AuthService } from './service.drizzle.js';
+
 import { logger } from '../../lib/logger.js';
+
 import type { MeResponse, AuthError } from './schemas.js';
+import { AuthService } from './service.drizzle.js';
 
 // Type definitions for authenticated user
 interface AuthenticatedUser {
@@ -58,7 +60,7 @@ export const meRoute: FastifyPluginAsync = async (fastify) => {
         const authenticatedRequest = request as AuthenticatedRequest;
         const user = authenticatedRequest.user;
         
-        if (!user || !user.userId) {
+        if (!user?.userId) {
           logger.warn({ event: 'auth.me_failed', reason: 'no_user_context' }, 'Me route failed: no user context');
           return reply.status(401).send({
             error: 'Unauthorized',

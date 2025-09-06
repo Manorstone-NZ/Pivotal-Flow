@@ -19,7 +19,9 @@ export default [
         document: 'readonly',
         window: 'readonly',
         console: 'readonly',
-        JSX: 'readonly'
+        JSX: 'readonly',
+        localStorage: 'readonly',
+        fetch: 'readonly'
       }
     },
     plugins: {

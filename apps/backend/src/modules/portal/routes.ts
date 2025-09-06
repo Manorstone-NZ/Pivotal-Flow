@@ -5,9 +5,8 @@
  */
 
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { PortalService } from './service.js';
+
 import { portalAuth, portalRateLimit } from './rate-limiter.js';
-import type { PortalUserContext } from './types.js';
 import {
   PortalQuoteFiltersSchema,
   PortalInvoiceFiltersSchema,
@@ -22,6 +21,8 @@ import {
   PortalTimeEntryListResponseSchema,
   PortalErrorResponseSchema
 } from './schemas.js';
+import { PortalService } from './service.js';
+import type { PortalUserContext, PortalQuoteFilters, PortalInvoiceFilters, PortalTimeEntryFilters } from './types.js';
 
 // Type for authenticated portal requests
 interface PortalRequest extends FastifyRequest {
@@ -61,7 +62,10 @@ export async function portalRoutes(fastify: FastifyInstance) {
         const startTime = Date.now();
         
         // Validate and parse query parameters
-        const filters = PortalQuoteFiltersSchema.parse(request.query);
+        const parsedFilters = PortalQuoteFiltersSchema.parse(request.query);
+        const filters = Object.fromEntries(
+          Object.entries(parsedFilters).filter(([_, value]) => value !== undefined)
+        ) as PortalQuoteFilters;
         
         // Create portal service
         const portalService = new PortalService(
@@ -172,7 +176,10 @@ export async function portalRoutes(fastify: FastifyInstance) {
         const startTime = Date.now();
         
         // Validate and parse query parameters
-        const filters = PortalInvoiceFiltersSchema.parse(request.query);
+        const parsedFilters = PortalInvoiceFiltersSchema.parse(request.query);
+        const filters = Object.fromEntries(
+          Object.entries(parsedFilters).filter(([_, value]) => value !== undefined)
+        ) as PortalInvoiceFilters;
         
         // Create portal service
         const portalService = new PortalService(
@@ -283,7 +290,10 @@ export async function portalRoutes(fastify: FastifyInstance) {
         const startTime = Date.now();
         
         // Validate and parse query parameters
-        const filters = PortalTimeEntryFiltersSchema.parse(request.query);
+        const parsedFilters = PortalTimeEntryFiltersSchema.parse(request.query);
+        const filters = Object.fromEntries(
+          Object.entries(parsedFilters).filter(([_, value]) => value !== undefined)
+        ) as PortalTimeEntryFilters;
         
         // Create portal service
         const portalService = new PortalService(

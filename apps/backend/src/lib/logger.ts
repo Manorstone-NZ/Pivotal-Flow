@@ -1,9 +1,10 @@
 import { pino } from 'pino';
-import { config } from './config.js';
+
+import { config } from '../config/index.js';
 
 // Create the logger instance
 const loggerOptions: pino.LoggerOptions = {
-  level: config.logging.level,
+  level: config.server.LOG_LEVEL,
   formatters: {
     level: (label) => ({ level: label }),
     log: (object: Record<string, unknown>) => {
@@ -16,15 +17,15 @@ const loggerOptions: pino.LoggerOptions = {
   },
   timestamp: pino.stdTimeFunctions.isoTime,
   base: {
-    env: config.env,
+    env: config.server.NODE_ENV,
     version: '0.1.0',
   },
 };
 
 // Check if cloud shipping is enabled
-const isCloudShipping = process.env['LOG_CLOUD_SHIPPING'] === 'true';
+const isCloudShipping = config.server.LOG_CLOUD_SHIPPING;
 
-if (config.logging.pretty && !config.isProduction && !isCloudShipping) {
+if (config.server.NODE_ENV !== 'production' && !isCloudShipping) {
   loggerOptions.transport = {
     target: 'pino-pretty',
     options: {

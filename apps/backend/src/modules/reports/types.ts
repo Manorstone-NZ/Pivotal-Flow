@@ -67,7 +67,7 @@ export interface ExportJob {
   reportType: ReportType;
   format: ExportFormat;
   status: ExportJobStatus;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   fileName: string;
   totalRows?: number;
   processedRows?: number;
@@ -212,7 +212,7 @@ export interface PaginatedResponse<T> {
 // Report summary response
 export interface ReportSummaryResponse {
   reportType: ReportType;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   summary: QuoteCycleTimeSummary | InvoiceSettlementTimeSummary | TimeApprovalsSummary | PaymentsReceivedSummary;
   generatedAt: string;
 }

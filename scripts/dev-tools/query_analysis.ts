@@ -4,8 +4,9 @@
 // Analyzes query performance and generates optimization recommendations
 
 import { PrismaClient } from '@prisma/client';
-import { UsersRepository } from '../../packages/shared/dist/db/repo.users.js';
-import { OrganizationSettingsRepository } from '../../packages/shared/dist/db/repo.org-settings.js';
+// Note: Repository classes not available in shared package yet
+// import { UsersRepository } from '../../packages/shared/dist/db/repo.users.js';
+// import { OrganizationSettingsRepository } from '../../packages/shared/dist/db/repo.org-settings.js';
 
 // Development logger for query analysis
 class DevLogger {
@@ -76,8 +77,8 @@ interface AnalysisResult {
 
 class QueryAnalyzer {
   private prisma: PrismaClient;
-  private usersRepo: UsersRepository;
-  private orgSettingsRepo: OrganizationSettingsRepository;
+  // private usersRepo: UsersRepository;
+  // private orgSettingsRepo: OrganizationSettingsRepository;
   private logger: DevLogger;
   private results: AnalysisResult[] = [];
 
@@ -85,22 +86,22 @@ class QueryAnalyzer {
     this.prisma = new PrismaClient();
     this.logger = new DevLogger('[Query Analysis] ');
     
-    // Create repositories
-    this.usersRepo = new UsersRepository(
-      this.prisma,
-      {
-        organizationId: 'test-org-id',
-        userId: 'test-user-id'
-      }
-    );
+    // Note: Repository classes not available yet
+    // this.usersRepo = new UsersRepository(
+    //   this.prisma,
+    //   {
+    //     organizationId: 'test-org-id',
+    //     userId: 'test-user-id'
+    //   }
+    // );
 
-    this.orgSettingsRepo = new OrganizationSettingsRepository(
-      this.prisma,
-      {
-        organizationId: 'test-org-id',
-        userId: 'test-user-id'
-      }
-    );
+    // this.orgSettingsRepo = new OrganizationSettingsRepository(
+    //   this.prisma,
+    //   {
+    //     organizationId: 'test-org-id',
+    //     userId: 'test-user-id'
+    //   }
+    // );
   }
 
   /**
@@ -130,26 +131,28 @@ class QueryAnalyzer {
 
     const userResults: QueryResult[] = [];
 
-    // Test getUserById performance
+    // Test direct Prisma user queries
     const start1 = Date.now();
-    await this.usersRepo.getUserById('test-user-id');
+    await this.prisma.user.findUnique({
+      where: { id: 'test-user-id' }
+    });
     const duration1 = Date.now() - start1;
     userResults.push({
-      query: 'getUserById',
+      query: 'getUserById (Prisma)',
       duration: duration1,
       optimization: duration1 > 50 ? 'Consider adding index on id' : 'Good performance'
     });
 
     // Test listUsers performance
     const start2 = Date.now();
-    await this.usersRepo.listUsers({
-      pagination: { page: 1, pageSize: 20 },
-      filters: {},
-      sort: { field: 'createdAt', direction: 'desc' }
+    await this.prisma.user.findMany({
+      take: 20,
+      skip: 0,
+      orderBy: { createdAt: 'desc' }
     });
     const duration2 = Date.now() - start2;
     userResults.push({
-      query: 'listUsers',
+      query: 'listUsers (Prisma)',
       duration: duration2,
       optimization: duration2 > 100 ? 'Consider pagination optimization' : 'Good performance'
     });

@@ -3,9 +3,9 @@
 // Repository users list performance testing script
 // Tests repository performance for listing users with various filters and pagination
 
-import { PrismaClient } from '@prisma/client';
-import { UsersRepository } from '../../packages/shared/dist/db/repo.users.js';
-import { MemoryCacheProvider, CacheWrapper } from '../../packages/shared/dist/cache/index.js';
+const { PrismaClient } = require('@prisma/client');
+const { UsersRepository } = require('../../packages/shared/dist/db/repo.users.js');
+const { MemoryCacheProvider, CacheWrapper } = require('../../packages/shared/dist/cache/index.js');
 
 // Development logger for performance testing
 class DevLogger {
@@ -268,12 +268,12 @@ class RepositoryPerformanceTester {
    */
   private calculateMetrics(durations: number[]): PerformanceMetrics {
     const sorted = [...durations].sort((a, b) => a - b);
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
+    const min = sorted[0] ?? 0;
+    const max = sorted[sorted.length - 1] ?? 0;
     const mean = durations.reduce((sum, d) => sum + d, 0) / durations.length;
-    const median = sorted[Math.floor(sorted.length / 2)];
-    const p95 = sorted[Math.floor(sorted.length * 0.95)];
-    const p99 = sorted[Math.floor(sorted.length * 0.99)];
+    const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+    const p95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0;
+    const p99 = sorted[Math.floor(sorted.length * 0.99)] ?? 0;
 
     return { min, max, mean, median, p95, p99 };
   }
