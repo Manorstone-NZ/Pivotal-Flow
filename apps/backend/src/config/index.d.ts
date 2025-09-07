@@ -8,8 +8,8 @@ export declare const serverConfig: {
     readonly port: number;
     readonly host: string;
     readonly corsOrigin: string;
-    readonly logLevel: "debug" | "fatal" | "error" | "warn" | "info" | "trace";
-    readonly nodeEnv: "development" | "staging" | "production" | "test";
+    readonly logLevel: string;
+    readonly nodeEnv: string;
     readonly logCloudShipping: boolean;
 };
 export declare const authConfig: {

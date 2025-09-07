@@ -145,7 +145,7 @@ export const SystemStatusWidget: React.FC<SystemStatusWidgetProps> = ({
             disabled={isLoading}
           >
             {isLoading ? 'Refreshing...' : 'Refresh'}
-          ../Button>
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

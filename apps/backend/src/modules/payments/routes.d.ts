@@ -1,3 +1,3 @@
-import type { FastifyPluginAsync } from 'fastify';
-export declare const paymentRoutes: FastifyPluginAsync;
+import type { FastifyInstance } from 'fastify';
+export declare function paymentRoutes(fastify: FastifyInstance): Promise<void>;
 //# sourceMappingURL=routes.d.ts.map

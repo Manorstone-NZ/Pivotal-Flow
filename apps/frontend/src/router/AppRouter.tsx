@@ -4,6 +4,7 @@ import { RequireAuth } from '../features/auth/RequireAuth';
 import { LoginPage } from '../features/auth/LoginPage';
 import { AppLayout } from '../components/layout/AppLayout';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import { PerformanceMarks, RoutePrefetch, ErrorBoundary, setupGlobalErrorHandling } from '../components/performance';
 
 // Lazy load all page components for code splitting
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -28,148 +29,127 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
-// Error boundary component
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
-
-class RouteErrorBoundary extends React.Component<
-  React.PropsWithChildren<{}>,
-  ErrorBoundaryState
-> {
-  constructor(props: React.PropsWithChildren<{}>) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Route error:', error, errorInfo);
-  }
-
-  override render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-surface-background flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-text-primary mb-4">
-              Something went wrong
-            </h1>
-            <p className="text-text-secondary mb-4">
-              We're sorry, but something unexpected happened.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-brand-primary text-text-inverse rounded-lg hover:bg-brand-secondary transition-colors"
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
 // Main router component
 export const AppRouter: React.FC = () => {
+  // Setup global error handling
+  React.useEffect(() => {
+    setupGlobalErrorHandling();
+  }, []);
+
   return (
     <BrowserRouter>
-      <RouteErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<LoginPage />} />
-            
-            {/* Protected Routes with Layout */}
-            <Route
-              path="/"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <DashboardPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/quotes"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <QuotesPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/quotes/:id"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <QuoteDetailPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/rate-cards"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <RateCardsPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/users"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <UsersPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/payments"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <PaymentsPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            <Route
-              path="/settings"
-              element={
-                <RequireAuth>
-                  <AppLayout>
-                    <SettingsPage />
-                  </AppLayout>
-                </RequireAuth>
-              }
-            />
-            
-            {/* Catch-all route - redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </RouteErrorBoundary>
+      <ErrorBoundary>
+        <RoutePrefetch>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public Routes */}
+              <Route 
+                path="/login" 
+                element={
+                  <PerformanceMarks routeName="login">
+                    <LoginPage />
+                  </PerformanceMarks>
+                } 
+              />
+              
+              {/* Protected Routes with Layout */}
+              <Route
+                path="/"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="dashboard">
+                        <DashboardPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/quotes"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="quotes">
+                        <QuotesPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/quotes/:id"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="quote-detail">
+                        <QuoteDetailPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/rate-cards"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="rate-cards">
+                        <RateCardsPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/users"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="users">
+                        <UsersPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/payments"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="payments">
+                        <PaymentsPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/settings"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="settings">
+                        <SettingsPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              {/* Catch-all route - redirect to dashboard */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </RoutePrefetch>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 };

@@ -1,18 +1,13 @@
 import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
+import { LogoutResponseSchema } from './typeboxSchemas.js';
 export const logoutRoute = async (fastify) => {
     const auditLogger = createAuditLogger(fastify);
     fastify.post('/logout', {
         schema: {
             response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        message: { type: 'string' },
-                    },
-                    required: ['message'],
-                },
+                200: LogoutResponseSchema,
             },
         },
     }, async (request, reply) => {

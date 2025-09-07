@@ -1,73 +1,27 @@
-import { z } from 'zod';
-// JSON schema for audit log old/new values
-export const AuditValuesSchema = z.record(z.unknown()).optional();
-// JSON schema for audit log metadata
-export const AuditMetadataSchema = z.record(z.unknown()).optional();
-// Complete audit log schema
-export const AuditLogSchema = z.object({
-    id: z.string(),
-    organizationId: z.string(),
-    entityType: z.string(),
-    entityId: z.string(),
-    action: z.string(),
-    actorId: z.string().optional(),
-    requestId: z.string().optional(),
-    ipAddress: z.string().optional(),
-    userAgent: z.string().optional(),
-    sessionId: z.string().optional(),
-    oldValues: AuditValuesSchema,
-    newValues: AuditValuesSchema,
-    metadata: AuditMetadataSchema,
-    createdAt: z.date()
-});
-// Validation function for audit log data
-export function validateAuditLogData(data) {
-    try {
-        AuditLogSchema.parse(data);
-        return { isValid: true, errors: [] };
-    }
-    catch (error) {
-        if (error instanceof z.ZodError) {
-            return {
-                isValid: false,
-                errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
-            };
-        }
-        return {
-            isValid: false,
-            errors: ['Unknown validation error']
-        };
-    }
-}
-// Validation function specifically for old/new values
-export function validateAuditValues(values, context) {
-    try {
-        AuditValuesSchema.parse(values);
-        return { isValid: true, errors: [] };
-    }
-    catch (error) {
-        if (error instanceof z.ZodError) {
-            return {
-                isValid: false,
-                errors: error.errors.map(err => `${context}.${err.path.join('.')}: ${err.message}`)
-            };
-        }
-        return {
-            isValid: false,
-            errors: [`${context}: Unknown validation error`]
-        };
-    }
-}
-// Helper function to create audit log data with validation
-export function createAuditLogData(data) {
-    const auditData = {
+// Helper functions for audit logging
+export function createAuditLog(data) {
+    return {
         ...data,
-        createdAt: new Date()
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
     };
-    const validation = validateAuditLogData(auditData);
-    if (!validation.isValid) {
-        throw new Error(`Invalid audit log data: ${validation.errors.join(', ')}`);
+}
+export function validateAuditLog(data) {
+    if (typeof data !== 'object' || data === null) {
+        return false;
     }
-    return auditData;
+    const auditLog = data;
+    return (typeof auditLog['id'] === 'string' &&
+        typeof auditLog['userId'] === 'string' &&
+        typeof auditLog['organizationId'] === 'string' &&
+        typeof auditLog['action'] === 'string' &&
+        typeof auditLog['resourceType'] === 'string' &&
+        typeof auditLog['resourceId'] === 'string' &&
+        typeof auditLog['timestamp'] === 'string' &&
+        (auditLog['oldValues'] === undefined || typeof auditLog['oldValues'] === 'object') &&
+        (auditLog['newValues'] === undefined || typeof auditLog['newValues'] === 'object') &&
+        (auditLog['metadata'] === undefined || typeof auditLog['metadata'] === 'object') &&
+        (auditLog['ipAddress'] === undefined || typeof auditLog['ipAddress'] === 'string') &&
+        (auditLog['userAgent'] === undefined || typeof auditLog['userAgent'] === 'string'));
 }
 //# sourceMappingURL=audit-schema.js.map

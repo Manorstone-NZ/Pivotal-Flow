@@ -1,38 +1,13 @@
 import { logger } from '../../lib/logger.js';
+import { MeResponseSchema, AuthErrorSchema } from './typeboxSchemas.js';
 import { AuthService } from './service.drizzle.js';
 export const meRoute = async (fastify) => {
     fastify.get('/me', {
         schema: {
             response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        id: { type: 'string' },
-                        email: { type: 'string' },
-                        displayName: { type: 'string' },
-                        roles: { type: 'array', items: { type: 'string' } },
-                        organizationId: { type: 'string' },
-                    },
-                    required: ['id', 'email', 'displayName', 'roles', 'organizationId'],
-                },
-                401: {
-                    type: 'object',
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' },
-                    },
-                    required: ['error', 'message', 'code'],
-                },
-                500: {
-                    type: 'object',
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' },
-                    },
-                    required: ['error', 'message', 'code'],
-                },
+                200: MeResponseSchema,
+                401: AuthErrorSchema,
+                500: AuthErrorSchema,
             },
         },
     }, async (request, reply) => {

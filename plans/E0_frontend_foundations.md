@@ -1,300 +1,270 @@
 # E0 Frontend Foundations Plan
 
-## 🎯 **Executive Summary**
+## Executive Summary
 
-This document establishes the foundational architecture, standards, and implementation plan for the Pivotal Flow frontend application. The plan leverages our existing technology decisions (Tailwind CSS + Headless UI, custom components, CSS variables for design tokens) while establishing performance budgets, accessibility targets, and comprehensive testing strategies.
+This document establishes the foundational architecture, standards, and implementation strategy for the Pivotal Flow frontend application. The plan leverages our existing technology decisions (React 18.3.1, TypeScript, Vite, Zustand) and integrates with the production-ready backend API.
 
-## 📋 **Current State Analysis**
+## Current State Analysis
 
-### **Existing Infrastructure**
-- **Framework**: React 18+ with TypeScript 5+
-- **Build Tool**: Vite 5+ with optimized configuration
-- **Styling**: CSS variables for design tokens (basic implementation)
-- **State Management**: Zustand for local state
-- **Testing**: Vitest + Playwright configured
-- **API Integration**: Generated SDK from backend OpenAPI
+### Existing Infrastructure
+- **Backend API**: Production-ready with 12 endpoints, TypeBox schemas, JWT authentication
+- **Frontend Stack**: React 18.3.1, TypeScript 5.5.4, Vite 5.4.2, Zustand 4.5.4
+- **Development Tools**: ESLint, Playwright, Vitest, Rollup Visualizer
+- **Design System**: CSS custom properties with Pivotal Flow brand colors
+- **API Integration**: Pivotal Flow SDK with authentication handling
 
-### **Current Limitations**
-- Minimal component library (only Button component)
-- Basic routing with manual state management
-- Limited design token system
-- No accessibility testing framework
-- No performance monitoring
-- Missing comprehensive testing strategy
-
----
-
-## 🏗️ **Information Architecture & Site Map**
-
-### **Primary Navigation Structure**
+### Available Backend Endpoints
 ```
-Pivotal Flow Application
-├── Authentication
-│   ├── Login (/login)
-│   ├── Register (/register)
-│   └── Password Reset (/reset-password)
-├── Dashboard (/dashboard)
-│   ├── Overview
-│   ├── Recent Activity
-│   ├── Quick Actions
-│   └── Analytics Widgets
-├── Projects (/projects)
-│   ├── Project List (/projects)
-│   ├── Project Detail (/projects/:id)
-│   ├── Project Create (/projects/new)
-│   └── Project Edit (/projects/:id/edit)
+Authentication: /login, /logout, /refresh, /me
+User Management: /v1/users
+Business Logic: /quotes, /rate-cards, /rate-cards/items
+Reference Data: /currencies, /permissions, /payments
+System: / (health check)
+```
+
+## Information Architecture & Site Map
+
+### Primary Navigation Structure
+```
+Pivotal Flow App
+├── Dashboard (/)
+│   ├── Overview metrics
+│   ├── Recent quotes
+│   ├── Quick actions
+│   └── System status
 ├── Quotes (/quotes)
-│   ├── Quote List (/quotes)
-│   ├── Quote Detail (/quotes/:id)
-│   ├── Quote Create (/quotes/new)
-│   └── Quote Edit (/quotes/:id/edit)
-├── Time Tracking (/time-tracking)
-│   ├── Time Entries (/time-tracking/entries)
-│   ├── Time Entry Create (/time-tracking/entries/new)
-│   └── Time Reports (/time-tracking/reports)
+│   ├── Quote list
+│   ├── Create quote
+│   ├── Quote details
+│   └── Quote approval workflow
+├── Rate Cards (/rate-cards)
+│   ├── Rate card management
+│   ├── Service pricing
+│   └── Rate card items
 ├── Users (/users)
-│   ├── User List (/users)
-│   ├── User Detail (/users/:id)
-│   ├── User Create (/users/new)
-│   └── User Edit (/users/:id/edit)
-├── Reports (/reports)
-│   ├── Financial Reports (/reports/financial)
-│   ├── Project Reports (/reports/projects)
-│   ├── Time Reports (/reports/time)
-│   └── Export Jobs (/reports/exports)
-├── Settings (/settings)
-│   ├── Profile (/settings/profile)
-│   ├── Organization (/settings/organization)
-│   ├── Preferences (/settings/preferences)
-│   └── Integrations (/settings/integrations)
-└── Admin (role-based)
-    ├── Rate Cards (/admin/rate-cards)
-    ├── Currencies (/admin/currencies)
-    ├── Permissions (/admin/permissions)
-    └── System Settings (/admin/system)
+│   ├── User management
+│   ├── Role assignment
+│   └── Permission management
+├── Payments (/payments)
+│   ├── Payment processing
+│   ├── Payment history
+│   └── Payment reconciliation
+└── Settings (/settings)
+    ├── Profile management
+    ├── System preferences
+    └── Reference data
 ```
 
-### **Route Planning**
+### Route Plan
 ```typescript
-// Core route structure
+// Core application routes
 const routes = [
-  // Public routes
-  { path: '/login', component: 'Login', public: true },
-  { path: '/register', component: 'Register', public: true },
-  
-  // Protected routes with role-based access
-  { path: '/dashboard', component: 'Dashboard', permissions: ['dashboard.view'] },
-  { path: '/projects/*', component: 'Projects', permissions: ['projects.view_projects'] },
-  { path: '/quotes/*', component: 'Quotes', permissions: ['quotes.view_quotes'] },
-  { path: '/time-tracking/*', component: 'TimeTracking', permissions: ['time.view_time_entries'] },
-  { path: '/users/*', component: 'Users', permissions: ['users.view_users'] },
-  { path: '/reports/*', component: 'Reports', permissions: ['reports.view_reports'] },
-  { path: '/settings/*', component: 'Settings', permissions: ['settings.view'] },
-  { path: '/admin/*', component: 'Admin', permissions: ['admin.view'], roles: ['admin'] }
+  { path: '/', component: 'Dashboard', auth: true },
+  { path: '/login', component: 'Login', auth: false },
+  { path: '/quotes', component: 'Quotes', auth: true, permissions: ['quotes.view_quotes'] },
+  { path: '/quotes/new', component: 'CreateQuote', auth: true, permissions: ['quotes.create_quotes'] },
+  { path: '/quotes/:id', component: 'QuoteDetails', auth: true, permissions: ['quotes.view_quotes'] },
+  { path: '/rate-cards', component: 'RateCards', auth: true, permissions: ['rate_cards.view_rate_cards'] },
+  { path: '/users', component: 'Users', auth: true, permissions: ['users.view_users'] },
+  { path: '/payments', component: 'Payments', auth: true, permissions: ['payments.view_payments'] },
+  { path: '/settings', component: 'Settings', auth: true },
+  { path: '/settings/profile', component: 'Profile', auth: true },
+  { path: '*', component: 'NotFound', auth: false }
 ];
 ```
 
----
+## App Shell Layout
 
-## 🎨 **App Shell Layout Architecture**
+### Layout Components
+```typescript
+// Main application shell
+<AppShell>
+  <AppHeader>
+    <Logo />
+    <Navigation />
+    <UserMenu />
+  </AppHeader>
+  
+  <AppSidebar>
+    <NavigationMenu />
+    <QuickActions />
+  </AppSidebar>
+  
+  <AppMain>
+    <Breadcrumbs />
+    <PageContent />
+  </AppMain>
+  
+  <AppFooter>
+    <SystemStatus />
+    <VersionInfo />
+  </AppFooter>
+</AppShell>
 
-### **Layout Components Structure**
+// Authentication layout
+<AuthLayout>
+  <AuthHeader />
+  <AuthContent />
+  <AuthFooter />
+</AuthLayout>
 ```
-Layout/
-├── AppShell.tsx              # Main application shell
-├── Header/
-│   ├── Header.tsx            # Top navigation bar
-│   ├── UserMenu.tsx          # User dropdown menu
-│   ├── Notifications.tsx     # Notification center
-│   └── SearchBar.tsx         # Global search
-├── Sidebar/
-│   ├── Sidebar.tsx           # Main navigation sidebar
-│   ├── Navigation.tsx        # Navigation menu items
-│   ├── UserProfile.tsx       # User profile section
-│   └── CollapsibleMenu.tsx   # Mobile collapsible menu
-├── Main/
-│   ├── MainContent.tsx       # Main content area
-│   ├── Breadcrumbs.tsx       # Navigation breadcrumbs
-│   └── PageHeader.tsx        # Page-specific headers
-└── Footer/
-    ├── Footer.tsx            # Application footer
-    └── StatusBar.tsx         # System status indicators
-```
 
-### **Responsive Breakpoints**
+### Responsive Breakpoints
 ```css
+/* Mobile-first responsive design */
 :root {
   --breakpoint-sm: 640px;   /* Mobile */
   --breakpoint-md: 768px;   /* Tablet */
   --breakpoint-lg: 1024px;  /* Desktop */
-  --breakpoint-xl: 1280px;  /* Large Desktop */
-  --breakpoint-2xl: 1536px; /* Extra Large */
+  --breakpoint-xl: 1280px;  /* Large desktop */
 }
 ```
 
-### **Layout Behavior**
-- **Mobile (< 768px)**: Collapsible sidebar, full-width content
-- **Tablet (768px - 1024px)**: Fixed sidebar, responsive content
-- **Desktop (> 1024px)**: Fixed sidebar, multi-column layouts
+## Performance Budgets
 
----
+### Bundle Size Targets
+- **Initial Bundle**: ≤ 160KB gzipped
+- **Vendor Chunk**: ≤ 100KB gzipped (React, React-DOM)
+- **Utils Chunk**: ≤ 30KB gzipped (Zustand, utilities)
+- **Route Chunks**: ≤ 50KB gzipped per route
+- **Total Bundle**: ≤ 300KB gzipped
 
-## ⚡ **Performance Budgets**
+### Performance Metrics
+- **Time to Interactive (TTI)**: < 2.5s on mid-tier devices
+- **Largest Contentful Paint (LCP)**: < 2.5s
+- **First Input Delay (FID)**: < 100ms
+- **Cumulative Layout Shift (CLS)**: < 0.1
+- **First Contentful Paint (FCP)**: < 1.8s
 
-### **Core Web Vitals Targets**
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| **LCP (Largest Contentful Paint)** | < 2.5s | 75th percentile |
-| **FID (First Input Delay)** | < 100ms | 75th percentile |
-| **CLS (Cumulative Layout Shift)** | < 0.1 | 75th percentile |
-| **TTI (Time to Interactive)** | < 2.5s | Mid-tier device |
-| **FCP (First Contentful Paint)** | < 1.8s | Mid-tier device |
-
-### **Bundle Size Budgets**
-| Asset Type | Budget | Gzipped |
-|------------|--------|---------|
-| **Initial Bundle** | ≤ 160KB | ≤ 50KB |
-| **Vendor Bundle** | ≤ 200KB | ≤ 60KB |
-| **Route Chunks** | ≤ 100KB | ≤ 30KB |
-| **Total App Size** | ≤ 2MB | ≤ 600KB |
-
-### **Performance Monitoring**
+### Optimization Strategies
 ```typescript
-// Performance monitoring configuration
-const performanceConfig = {
-  budgets: {
-    bundleSize: 160 * 1024, // 160KB
-    gzipSize: 50 * 1024,    // 50KB
-    tti: 2500,              // 2.5s
-    lcp: 2500,              // 2.5s
-    cls: 0.1                // 0.1
-  },
-  monitoring: {
-    enabled: true,
-    sampling: 0.1, // 10% of users
-    endpoints: {
-      metrics: '/api/v1/metrics',
-      errors: '/api/v1/errors'
+// Code splitting by route
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Quotes = lazy(() => import('./pages/Quotes'));
+const Users = lazy(() => import('./pages/Users'));
+
+// Preload critical resources
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/api/v1/me" as="fetch" crossorigin />
+
+// Image optimization
+<img 
+  src="/images/logo.webp" 
+  alt="Pivotal Flow" 
+  loading="lazy"
+  decoding="async"
+/>
+```
+
+## Accessibility Targets
+
+### WCAG AA Compliance
+- **Color Contrast**: Minimum 4.5:1 for normal text, 3:1 for large text
+- **Keyboard Navigation**: Full keyboard accessibility for all interactive elements
+- **Screen Reader Support**: Proper ARIA labels, roles, and descriptions
+- **Focus Management**: Visible focus indicators and logical tab order
+
+### Accessibility Implementation
+```typescript
+// Focus management
+const useFocusManagement = () => {
+  const focusRef = useRef<HTMLElement>(null);
+  
+  useEffect(() => {
+    if (focusRef.current) {
+      focusRef.current.focus();
     }
-  }
+  }, []);
+  
+  return focusRef;
 };
+
+// ARIA attributes
+<button
+  aria-label="Create new quote"
+  aria-describedby="quote-help-text"
+  aria-expanded={isExpanded}
+>
+  Create Quote
+</button>
+
+// Screen reader announcements
+<div aria-live="polite" aria-atomic="true">
+  {announcement}
+</div>
 ```
 
----
+### Keyboard Navigation
+- **Tab Order**: Logical flow through interactive elements
+- **Skip Links**: Jump to main content, navigation
+- **Keyboard Shortcuts**: Common actions (Ctrl+N for new quote)
+- **Focus Rings**: Visible focus indicators on all focusable elements
 
-## ♿ **Accessibility Targets**
+## Folder Structure
 
-### **WCAG 2.1 AA Compliance**
-- **Level**: WCAG 2.1 AA (minimum)
-- **Target**: 100% compliance for all components
-- **Testing**: Automated + manual testing
-
-### **Accessibility Requirements**
-| Requirement | Target | Implementation |
-|-------------|--------|---------------|
-| **Keyboard Navigation** | 100% keyboard accessible | Focus management, tab order |
-| **Screen Reader Support** | Full ARIA support | Semantic HTML, ARIA labels |
-| **Color Contrast** | 4.5:1 minimum | Design token validation |
-| **Focus Indicators** | Visible focus rings | Custom focus styles |
-| **Alternative Text** | All images have alt text | Automated validation |
-
-### **Accessibility Testing Strategy**
-```typescript
-// Accessibility testing configuration
-const a11yConfig = {
-  rules: {
-    'color-contrast': 'error',
-    'keyboard-navigation': 'error',
-    'aria-labels': 'error',
-    'semantic-html': 'error'
-  },
-  tools: [
-    'axe-core',
-    'jest-axe',
-    'playwright-axe',
-    'lighthouse-ci'
-  ],
-  manual: [
-    'Screen reader testing',
-    'Keyboard-only navigation',
-    'Voice control testing'
-  ]
-};
-```
-
----
-
-## 📁 **Folder Structure**
-
-### **Proposed Structure**
 ```
 apps/frontend/src/
-├── app/                     # Application-level components
-│   ├── App.tsx             # Main app component
-│   ├── AppShell.tsx        # Application shell
-│   └── ErrorBoundary.tsx   # Global error boundary
-├── pages/                  # Page components
+├── app/                    # App-level configuration
+│   ├── App.tsx            # Main app component
+│   ├── AppProvider.tsx    # Context providers
+│   └── router.tsx         # Route configuration
+├── pages/                 # Page components
 │   ├── Dashboard/
-│   ├── Projects/
 │   ├── Quotes/
-│   ├── TimeTracking/
 │   ├── Users/
-│   ├── Reports/
 │   ├── Settings/
-│   └── auth/
-├── components/             # Reusable components
-│   ├── ui/                # Base UI components
+│   └── Auth/
+├── components/            # Reusable UI components
+│   ├── ui/               # Base UI components
 │   │   ├── Button/
 │   │   ├── Input/
 │   │   ├── Modal/
-│   │   ├── Table/
-│   │   └── ...
-│   ├── forms/             # Form components
-│   ├── layout/            # Layout components
-│   └── features/          # Feature-specific components
-├── features/              # Feature modules
-│   ├── auth/
-│   ├── projects/
-│   ├── quotes/
-│   └── time-tracking/
-├── lib/                   # Utilities and libraries
-│   ├── api/               # API client and hooks
-│   ├── auth/              # Authentication utilities
-│   ├── validation/        # Form validation schemas
-│   ├── utils/             # General utilities
-│   └── constants/          # Application constants
-├── hooks/                 # Custom React hooks
+│   │   └── Table/
+│   ├── layout/           # Layout components
+│   │   ├── AppShell/
+│   │   ├── AppHeader/
+│   │   └── AppSidebar/
+│   └── forms/            # Form components
+│       ├── QuoteForm/
+│       └── UserForm/
+├── features/             # Feature-specific modules
+│   ├── auth/            # Authentication feature
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types/
+│   ├── quotes/          # Quote management feature
+│   ├── users/           # User management feature
+│   └── payments/        # Payment processing feature
+├── lib/                 # Shared utilities
+│   ├── api/             # API client and services
+│   ├── auth/            # Authentication utilities
+│   ├── validation/      # Form validation schemas
+│   ├── utils/           # General utilities
+│   └── constants/       # Application constants
+├── hooks/               # Custom React hooks
 │   ├── useAuth.ts
-│   ├── useProjects.ts
+│   ├── useApi.ts
 │   └── useLocalStorage.ts
-├── stores/                # State management
-│   ├── authStore.ts
-│   ├── uiStore.ts
-│   └── projectStore.ts
-├── styles/                # Global styles
-│   ├── globals.css
-│   ├── tokens.css
-│   └── components.css
-├── routes/                # Routing configuration
-│   ├── AppRoutes.tsx
-│   ├── ProtectedRoute.tsx
-│   └── PublicRoute.tsx
-├── i18n/                  # Internationalization
-│   ├── locales/
-│   ├── translations/
-│   └── i18n.ts
-└── tests/                 # Test files
+├── styles/              # Global styles and themes
+│   ├── globals.css      # Global styles
+│   ├── tokens.css       # Design tokens
+│   └── components.css   # Component styles
+├── routes/              # Route definitions
+│   ├── index.ts
+│   └── types.ts
+├── i18n/                # Internationalization
+│   ├── en.json
+│   └── index.ts
+└── tests/               # Test files
     ├── __mocks__/
     ├── fixtures/
-    ├── utils/
-    └── setup.ts
+    └── utils/
 ```
 
----
+## Code Standards
 
-## 📏 **Code Standards**
-
-### **ESLint Configuration**
+### ESLint Configuration
 ```javascript
 // eslint.config.js
 export default [
@@ -308,22 +278,16 @@ export default [
         ecmaFeatures: { jsx: true }
       }
     },
-    plugins: {
-      '@typescript-eslint': typescript,
-      'react': react,
-      'react-hooks': reactHooks,
-      'jsx-a11y': jsxA11y,
-      'import': importPlugin
-    },
     rules: {
       // TypeScript rules
       '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       
       // React rules
-      'react/prop-types': 'off',
+      'react/jsx-uses-react': 'off',
       'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       
@@ -335,220 +299,237 @@ export default [
       'jsx-a11y/role-has-required-aria-props': 'error',
       'jsx-a11y/role-supports-aria-props': 'error',
       
-      // Import rules
+      // Import organization
       'import/order': ['error', {
         'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
         'newlines-between': 'always',
         'alphabetize': { 'order': 'asc', 'caseInsensitive': true }
-      }],
-      'import/no-unresolved': 'error',
-      'import/no-cycle': 'error'
+      }]
     }
   }
 ];
 ```
 
-### **File Naming Conventions**
-- **Components**: PascalCase (`Button.tsx`, `UserProfile.tsx`)
-- **Hooks**: camelCase with `use` prefix (`useAuth.ts`, `useLocalStorage.ts`)
-- **Utilities**: camelCase (`formatDate.ts`, `validateEmail.ts`)
-- **Constants**: UPPER_SNAKE_CASE (`API_ENDPOINTS.ts`, `ROUTE_PATHS.ts`)
-- **Types**: PascalCase (`User.ts`, `ProjectTypes.ts`)
-- **Tests**: Same as source with `.test` suffix (`Button.test.tsx`)
-
-### **Import Order**
-```typescript
-// 1. React and React-related imports
-import React from 'react';
-import { useState, useEffect } from 'react';
-
-// 2. Third-party libraries
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
-
-// 3. Internal imports (absolute paths)
-import { Button } from '@/components/ui/Button';
-import { useAuth } from '@/hooks/useAuth';
-
-// 4. Relative imports
-import './Component.css';
-import { ComponentProps } from './types';
+### File Naming Conventions
+```
+Components: PascalCase (Button.tsx, UserForm.tsx)
+Hooks: camelCase with 'use' prefix (useAuth.ts, useLocalStorage.ts)
+Utilities: camelCase (apiClient.ts, validation.ts)
+Types: PascalCase (User.ts, Quote.ts)
+Constants: UPPER_SNAKE_CASE (API_ENDPOINTS.ts, ERROR_MESSAGES.ts)
+Pages: PascalCase (Dashboard.tsx, QuoteDetails.tsx)
 ```
 
----
-
-## 🧪 **Testing Pyramid**
-
-### **Unit Testing (90%+ Coverage)**
+### Import Organization
 ```typescript
-// Component testing with React Testing Library
+// 1. React and external libraries
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// 2. Internal utilities and types
+import { apiClient } from '@/lib/api';
+import { User, Quote } from '@/lib/types';
+
+// 3. Components
+import { Button } from '@/components/ui/Button';
+import { QuoteForm } from '@/components/forms/QuoteForm';
+
+// 4. Hooks
+import { useAuth } from '@/hooks/useAuth';
+
+// 5. Styles
+import './QuotePage.css';
+```
+
+## Testing Pyramid
+
+### Unit Tests (70%)
+```typescript
+// Component testing with Vitest + React Testing Library
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
 describe('Button Component', () => {
   it('renders with correct text', () => {
     render(<Button>Click me</Button>);
-    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
+    expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 
-  it('handles accessibility requirements', () => {
-    const { container } = render(<Button>Click me</Button>);
-    expect(await axe(container)).toHaveNoViolations();
+  it('calls onClick when clicked', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });
 
 // Hook testing
-describe('useAuth', () => {
-  it('returns user data when authenticated', () => {
+import { renderHook, act } from '@testing-library/react';
+import { useAuth } from './useAuth';
+
+describe('useAuth Hook', () => {
+  it('returns initial auth state', () => {
     const { result } = renderHook(() => useAuth());
-    expect(result.current.user).toBeDefined();
-    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.isAuthenticated).toBe(false);
   });
 });
 ```
 
-### **Integration Testing (80%+ Coverage)**
+### Integration Tests (20%)
 ```typescript
 // API integration testing
-describe('Project API Integration', () => {
-  it('fetches projects successfully', async () => {
-    const mockProjects = [{ id: '1', name: 'Test Project' }];
-    server.use(
-      rest.get('/api/v1/projects', (req, res, ctx) => {
-        return res(ctx.json({ data: mockProjects }));
-      })
-    );
+import { apiClient } from '@/lib/api';
 
-    render(<ProjectsPage />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Test Project')).toBeInTheDocument();
-    });
+describe('API Client', () => {
+  it('authenticates user successfully', async () => {
+    const credentials = { email: 'test@example.com', password: 'password' };
+    const response = await apiClient.auth.login(credentials);
+    expect(response.accessToken).toBeDefined();
+  });
+
+  it('handles authentication errors', async () => {
+    const invalidCredentials = { email: 'invalid', password: 'wrong' };
+    await expect(apiClient.auth.login(invalidCredentials)).rejects.toThrow();
   });
 });
 ```
 
-### **E2E Testing (70%+ Coverage)**
+### End-to-End Tests (10%)
 ```typescript
 // Playwright E2E tests
-test('user can create a new project', async ({ page }) => {
-  await page.goto('/projects');
-  await page.click('[data-testid="create-project-button"]');
+import { test, expect } from '@playwright/test';
+
+test('user can create a quote', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('[data-testid="email"]', 'test@example.com');
+  await page.fill('[data-testid="password"]', 'password');
+  await page.click('[data-testid="login-button"]');
   
-  await page.fill('[data-testid="project-name"]', 'New Project');
-  await page.fill('[data-testid="project-description"]', 'Project description');
-  await page.click('[data-testid="save-project"]');
+  await page.goto('/quotes/new');
+  await page.fill('[data-testid="quote-title"]', 'Test Quote');
+  await page.click('[data-testid="create-quote"]');
   
   await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
-  await expect(page).toHaveURL(/\/projects\/\d+/);
 });
 ```
 
-### **Visual Testing**
+### Visual Regression Tests
 ```typescript
-// Visual regression testing with Chromatic/Percy
-describe('Button Visual Tests', () => {
-  it('renders primary button correctly', () => {
-    render(<Button variant="primary">Primary Button</Button>);
-    expect(screen.getByRole('button')).toMatchSnapshot();
-  });
+// Component visual testing
+import { render } from '@testing-library/react';
+import { Button } from './Button';
+
+test('Button visual regression', async () => {
+  const { container } = render(<Button variant="primary">Click me</Button>);
+  await expect(container).toMatchSnapshot();
 });
 ```
 
+### Accessibility Tests
+```typescript
+// Automated accessibility testing
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import { QuoteForm } from './QuoteForm';
+
+expect.extend(toHaveNoViolations);
+
+test('QuoteForm has no accessibility violations', async () => {
+  const { container } = render(<QuoteForm />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+## "Done" Gates
+
+### Pre-commit Gates
+```bash
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
+
+# Unit tests
+npm run test
+
+# Build verification
+npm run build
+```
+
+### Pre-deployment Gates
+```bash
+# Full test suite
+npm run test:coverage
+
+# E2E smoke tests
+npm run test:e2e
+
+# Accessibility audit
+npm run test:a11y
+
+# Bundle size check
+npm run analyze
+```
+
+### Quality Metrics
+- **Type Coverage**: 100% TypeScript coverage
+- **Test Coverage**: ≥ 80% code coverage
+- **Lint Score**: 0 ESLint errors, < 10 warnings
+- **Bundle Size**: Within performance budgets
+- **Accessibility**: 0 WCAG AA violations
+- **E2E Tests**: All critical user journeys passing
+
+## Implementation Phases
+
+### Phase 1: Foundation (Week 1)
+- [ ] Set up folder structure
+- [ ] Configure ESLint and TypeScript
+- [ ] Implement authentication flow
+- [ ] Create base UI components
+- [ ] Set up routing
+
+### Phase 2: Core Features (Week 2-3)
+- [ ] Dashboard implementation
+- [ ] Quote management
+- [ ] User management
+- [ ] Rate card management
+
+### Phase 3: Advanced Features (Week 4)
+- [ ] Payment processing
+- [ ] Settings and preferences
+- [ ] Error handling and loading states
+- [ ] Performance optimization
+
+### Phase 4: Polish (Week 5)
+- [ ] Accessibility improvements
+- [ ] Visual polish and animations
+- [ ] Comprehensive testing
+- [ ] Documentation
+
+## Success Criteria
+
+### Technical Metrics
+- ✅ All "Done" gates passing
+- ✅ Performance budgets met
+- ✅ WCAG AA compliance
+- ✅ 100% TypeScript coverage
+- ✅ Zero ESLint errors
+
+### User Experience Metrics
+- ✅ Intuitive navigation
+- ✅ Responsive design across devices
+- ✅ Fast page loads
+- ✅ Accessible to all users
+- ✅ Error-free user journeys
+
+### Business Metrics
+- ✅ All backend endpoints integrated
+- ✅ Authentication system working
+- ✅ Core business workflows functional
+- ✅ Ready for production deployment
+
 ---
 
-## 🚀 **Implementation Phases**
-
-### **Phase 1: Foundation Setup (Week 1-2)**
-- [ ] **Project Structure**: Set up folder structure and routing
-- [ ] **Design System**: Implement comprehensive design tokens
-- [ ] **Component Library**: Create base UI components (Button, Input, Modal, etc.)
-- [ ] **State Management**: Set up Zustand stores and React Query
-- [ ] **Authentication**: Implement auth flow and protected routes
-
-### **Phase 2: Core Features (Week 3-4)**
-- [ ] **Dashboard**: Create dashboard with analytics widgets
-- [ ] **Projects**: Implement project CRUD operations
-- [ ] **Quotes**: Build quote management interface
-- [ ] **Time Tracking**: Create time entry forms and reports
-- [ ] **User Management**: Build user administration interface
-
-### **Phase 3: Advanced Features (Week 5-6)**
-- [ ] **Reports**: Implement reporting dashboard
-- [ ] **Settings**: Create settings and preferences pages
-- [ ] **Admin Panel**: Build administrative interfaces
-- [ ] **Search**: Implement global search functionality
-- [ ] **Notifications**: Add notification system
-
-### **Phase 4: Polish & Optimization (Week 7-8)**
-- [ ] **Performance**: Optimize bundle size and loading times
-- [ ] **Accessibility**: Complete WCAG 2.1 AA compliance
-- [ ] **Testing**: Achieve target coverage percentages
-- [ ] **Documentation**: Complete component documentation
-- [ ] **Deployment**: Set up production deployment pipeline
-
----
-
-## ✅ **"Done" Gates**
-
-### **Development Gates**
-- [ ] **TypeScript**: No type errors, strict mode enabled
-- [ ] **ESLint**: No linting errors, all rules passing
-- [ ] **Prettier**: Code formatting consistent
-- [ ] **Import Order**: Imports properly organized
-
-### **Testing Gates**
-- [ ] **Unit Tests**: 90%+ coverage for components and utilities
-- [ ] **Integration Tests**: 80%+ coverage for API integrations
-- [ ] **E2E Tests**: 70%+ coverage for critical user journeys
-- [ ] **Accessibility Tests**: All components pass axe-core validation
-- [ ] **Visual Tests**: No visual regressions detected
-
-### **Performance Gates**
-- [ ] **Bundle Size**: Initial bundle ≤ 160KB gzipped
-- [ ] **Core Web Vitals**: LCP < 2.5s, FID < 100ms, CLS < 0.1
-- [ ] **Lighthouse Score**: Performance ≥ 90, Accessibility ≥ 95
-- [ ] **Bundle Analysis**: No duplicate dependencies or unused code
-
-### **Quality Gates**
-- [ ] **Accessibility**: WCAG 2.1 AA compliance verified
-- [ ] **Cross-browser**: Chrome, Firefox, Safari compatibility
-- [ ] **Mobile Responsive**: All breakpoints tested
-- [ ] **Error Handling**: Graceful error states implemented
-- [ ] **Loading States**: Skeleton screens and loading indicators
-
----
-
-## 📊 **Success Metrics**
-
-### **Performance Metrics**
-- **Initial Load Time**: < 2.5s on 3G connection
-- **Time to Interactive**: < 2.5s on mid-tier device
-- **Bundle Size**: < 160KB gzipped initial bundle
-- **Lighthouse Score**: ≥ 90 performance, ≥ 95 accessibility
-
-### **Quality Metrics**
-- **Test Coverage**: 90%+ unit, 80%+ integration, 70%+ E2E
-- **Accessibility**: 100% WCAG 2.1 AA compliance
-- **Type Safety**: 100% TypeScript coverage, no `any` types
-- **Code Quality**: 0 ESLint errors, consistent formatting
-
-### **User Experience Metrics**
-- **Error Rate**: < 1% JavaScript errors
-- **Accessibility**: 100% keyboard navigation support
-- **Mobile Experience**: 100% responsive design
-- **Cross-browser**: 100% compatibility across target browsers
-
----
-
-## 🔄 **Next Steps**
-
-1. **Review & Approval**: Stakeholder review of this foundation plan
-2. **Tool Setup**: Configure development tools and CI/CD pipeline
-3. **Design System**: Implement comprehensive design token system
-4. **Component Library**: Build base UI components with accessibility
-5. **Feature Development**: Begin implementation following the phased approach
-
----
-
-**Document Version**: 1.0  
-**Created**: January 2025  
-**Next Review**: February 2025  
-**Status**: Ready for Implementation
+**Next Steps**: Begin Phase 1 implementation with folder structure setup and authentication integration.

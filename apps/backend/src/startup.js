@@ -26,6 +26,12 @@ async function startServer() {
         await registerRoutes();
         logger.info({}, 'Ensuring plugins are ready');
         await app.ready();
+        logger.info({}, 'Calling app.listen');
+        await app.listen({
+            port: config.server.PORT,
+            host: config.server.HOST,
+        });
+        logger.info({}, 'app.listen completed');
         // Fail loud in dev if boot fails - check after listen
         try {
             if (!app.server || !app.server.listening) {

@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import { register, collectDefaultMetrics } from 'prom-client';
-import { validatorCompiler, serializerCompiler } from 'fastify-type-provider-zod';
 import { logger } from './lib/logger.js';
 // Initialize metrics
 const g = globalThis;
@@ -33,7 +32,4 @@ export const app = Fastify({
     trustProxy: true,
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 });
-// Set Zod-aware compilers
-app.setValidatorCompiler(validatorCompiler);
-app.setSerializerCompiler(serializerCompiler);
 //# sourceMappingURL=server.js.map

@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
               <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            ../Button>
+            </Button>
           </DropdownMenuTrigger>
           
           <DropdownMenuContent align="end" className="w-56">

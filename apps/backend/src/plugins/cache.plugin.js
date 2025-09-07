@@ -1,5 +1,25 @@
+import { z } from 'zod';
 import { CacheService } from '../lib/cache.service.js';
 import { logger } from '../lib/logger.js';
+// Zod schemas for cache responses
+const CacheStatsResponseSchema = z.object({
+    status: z.string(),
+    connected: z.boolean(),
+    keyCount: z.number(),
+    memoryUsage: z.string(),
+    hitRate: z.number(),
+});
+const CacheClearResponseSchema = z.object({
+    message: z.string(),
+});
+const CacheUnavailableResponseSchema = z.object({
+    status: z.string(),
+    connected: z.boolean(),
+    keyCount: z.number(),
+    memoryUsage: z.string(),
+    hitRate: z.number(),
+    error: z.string(),
+});
 /**
  * Cache Plugin for Fastify
  *
@@ -24,16 +44,7 @@ export const cachePlugin = async (fastify, options) => {
                 summary: 'Cache health check',
                 description: 'Check Redis cache connection and status',
                 response: {
-                    200: {
-                        type: 'object',
-                        properties: {
-                            status: { type: 'string' },
-                            connected: { type: 'boolean' },
-                            keyCount: { type: 'number' },
-                            memoryUsage: { type: 'string' },
-                            hitRate: { type: 'number' }
-                        }
-                    }
+                    200: CacheStatsResponseSchema,
                 }
             }
         }, async () => {
@@ -44,10 +55,26 @@ export const cachePlugin = async (fastify, options) => {
             };
         });
         // Add cache management routes (admin only)
-        fastify.get('/admin/cache/stats', async () => {
+        fastify.get('/admin/cache/stats', {
+            schema: {
+                summary: 'Get cache statistics',
+                description: 'Get detailed cache statistics (admin only)',
+                response: {
+                    200: CacheStatsResponseSchema,
+                }
+            }
+        }, async () => {
             return await cacheService.getStats();
         });
-        fastify.post('/admin/cache/clear', async () => {
+        fastify.post('/admin/cache/clear', {
+            schema: {
+                summary: 'Clear cache',
+                description: 'Clear all cache entries (admin only)',
+                response: {
+                    200: CacheClearResponseSchema,
+                }
+            }
+        }, async () => {
             await cacheService.clear();
             return { message: 'Cache cleared successfully' };
         });
@@ -89,7 +116,15 @@ export const cachePlugin = async (fastify, options) => {
         };
         fastify.decorate('cache', fallbackCache);
         // Add health check route that shows cache is unavailable
-        fastify.get('/health/cache', async () => {
+        fastify.get('/health/cache', {
+            schema: {
+                summary: 'Cache health check (fallback)',
+                description: 'Check Redis cache connection and status (fallback when Redis unavailable)',
+                response: {
+                    200: CacheUnavailableResponseSchema,
+                }
+            }
+        }, async () => {
             return {
                 status: 'unavailable',
                 connected: false,

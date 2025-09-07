@@ -5,44 +5,23 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 export declare const PaginationSchema: z.ZodObject<{
-    page: z.ZodDefault<z.ZodNumber>;
-    size: z.ZodDefault<z.ZodNumber>;
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    size: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     sort: z.ZodOptional<z.ZodString>;
     filter: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    size: number;
-    page: number;
-    sort?: string | undefined;
-    filter?: string | undefined;
-}, {
-    size?: number | undefined;
-    sort?: string | undefined;
-    filter?: string | undefined;
-    page?: number | undefined;
-}>;
+}, z.core.$strip>;
 export declare const LegacyPaginationSchema: z.ZodObject<{
-    page: z.ZodDefault<z.ZodNumber>;
-    pageSize: z.ZodDefault<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    page: number;
-    pageSize: number;
-}, {
-    page?: number | undefined;
-    pageSize?: number | undefined;
-}>;
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    pageSize: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strip>;
 export declare const CommonFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    sortBy?: string | undefined;
-}, {
-    search?: string | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-}>;
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+}, z.core.$strip>;
 export interface PaginationEnvelope<T> {
     data: T[];
     meta: {
@@ -121,175 +100,126 @@ export declare function buildPaginationQuery<T extends {
 export declare const UserFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
     role: z.ZodOptional<z.ZodString>;
-    status: z.ZodOptional<z.ZodEnum<["active", "inactive", "suspended"]>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        active: "active";
+        inactive: "inactive";
+        suspended: "suspended";
+    }>>;
     organizationId: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    organizationId?: string | undefined;
-    status?: "active" | "inactive" | "suspended" | undefined;
-    role?: string | undefined;
-    sortBy?: string | undefined;
-}, {
-    search?: string | undefined;
-    organizationId?: string | undefined;
-    status?: "active" | "inactive" | "suspended" | undefined;
-    role?: string | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-}>;
+}, z.core.$strip>;
 export declare const USER_ALLOWED_FILTERS: string[];
 export declare const USER_ALLOWED_SORTS: string[];
 export declare const QuoteFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
-    status: z.ZodOptional<z.ZodEnum<["draft", "pending", "approved", "sent", "accepted", "rejected", "cancelled"]>>;
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        draft: "draft";
+        pending: "pending";
+        sent: "sent";
+        approved: "approved";
+        accepted: "accepted";
+        rejected: "rejected";
+        cancelled: "cancelled";
+    }>>;
     customerId: z.ZodOptional<z.ZodString>;
     projectId: z.ZodOptional<z.ZodString>;
     validFrom: z.ZodOptional<z.ZodString>;
     validUntil: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    status?: "draft" | "pending" | "sent" | "approved" | "accepted" | "rejected" | "cancelled" | undefined;
-    customerId?: string | undefined;
-    projectId?: string | undefined;
-    validFrom?: string | undefined;
-    validUntil?: string | undefined;
-    sortBy?: string | undefined;
-}, {
-    search?: string | undefined;
-    status?: "draft" | "pending" | "sent" | "approved" | "accepted" | "rejected" | "cancelled" | undefined;
-    customerId?: string | undefined;
-    projectId?: string | undefined;
-    validFrom?: string | undefined;
-    validUntil?: string | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-}>;
+}, z.core.$strip>;
 export declare const QUOTE_ALLOWED_FILTERS: string[];
 export declare const QUOTE_ALLOWED_SORTS: string[];
 export declare const ProjectFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
-    status: z.ZodOptional<z.ZodEnum<["planning", "active", "on-hold", "completed", "cancelled"]>>;
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        active: "active";
+        completed: "completed";
+        cancelled: "cancelled";
+        planning: "planning";
+        "on-hold": "on-hold";
+    }>>;
     customerId: z.ZodOptional<z.ZodString>;
     projectManagerId: z.ZodOptional<z.ZodString>;
-    priority: z.ZodOptional<z.ZodEnum<["low", "medium", "high", "urgent"]>>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    status?: "active" | "completed" | "cancelled" | "planning" | "on-hold" | undefined;
-    customerId?: string | undefined;
-    priority?: "urgent" | "high" | "low" | "medium" | undefined;
-    sortBy?: string | undefined;
-    projectManagerId?: string | undefined;
-}, {
-    search?: string | undefined;
-    status?: "active" | "completed" | "cancelled" | "planning" | "on-hold" | undefined;
-    customerId?: string | undefined;
-    priority?: "urgent" | "high" | "low" | "medium" | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    projectManagerId?: string | undefined;
-}>;
+    priority: z.ZodOptional<z.ZodEnum<{
+        urgent: "urgent";
+        high: "high";
+        low: "low";
+        medium: "medium";
+    }>>;
+}, z.core.$strip>;
 export declare const PROJECT_ALLOWED_FILTERS: string[];
 export declare const PROJECT_ALLOWED_SORTS: string[];
 export declare const TimeEntryFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
     userId: z.ZodOptional<z.ZodString>;
     projectId: z.ZodOptional<z.ZodString>;
     taskId: z.ZodOptional<z.ZodString>;
-    status: z.ZodOptional<z.ZodEnum<["pending", "approved", "rejected", "invoiced"]>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        pending: "pending";
+        approved: "approved";
+        rejected: "rejected";
+        invoiced: "invoiced";
+    }>>;
     billable: z.ZodOptional<z.ZodBoolean>;
     dateFrom: z.ZodOptional<z.ZodString>;
     dateTo: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    status?: "pending" | "approved" | "rejected" | "invoiced" | undefined;
-    userId?: string | undefined;
-    projectId?: string | undefined;
-    sortBy?: string | undefined;
-    taskId?: string | undefined;
-    billable?: boolean | undefined;
-    dateFrom?: string | undefined;
-    dateTo?: string | undefined;
-}, {
-    search?: string | undefined;
-    status?: "pending" | "approved" | "rejected" | "invoiced" | undefined;
-    userId?: string | undefined;
-    projectId?: string | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    taskId?: string | undefined;
-    billable?: boolean | undefined;
-    dateFrom?: string | undefined;
-    dateTo?: string | undefined;
-}>;
+}, z.core.$strip>;
 export declare const TIME_ENTRY_ALLOWED_FILTERS: string[];
 export declare const TIME_ENTRY_ALLOWED_SORTS: string[];
 export declare const PaymentFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
-    status: z.ZodOptional<z.ZodEnum<["pending", "completed", "failed", "cancelled"]>>;
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        pending: "pending";
+        failed: "failed";
+        completed: "completed";
+        cancelled: "cancelled";
+    }>>;
     method: z.ZodOptional<z.ZodString>;
     customerId: z.ZodOptional<z.ZodString>;
     amountFrom: z.ZodOptional<z.ZodNumber>;
     amountTo: z.ZodOptional<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    status?: "pending" | "failed" | "completed" | "cancelled" | undefined;
-    customerId?: string | undefined;
-    method?: string | undefined;
-    sortBy?: string | undefined;
-    amountFrom?: number | undefined;
-    amountTo?: number | undefined;
-}, {
-    search?: string | undefined;
-    status?: "pending" | "failed" | "completed" | "cancelled" | undefined;
-    customerId?: string | undefined;
-    method?: string | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    amountFrom?: number | undefined;
-    amountTo?: number | undefined;
-}>;
+}, z.core.$strip>;
 export declare const PAYMENT_ALLOWED_FILTERS: string[];
 export declare const PAYMENT_ALLOWED_SORTS: string[];
 export declare const PortalFilterSchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
-} & {
-    status: z.ZodOptional<z.ZodEnum<["draft", "sent", "accepted", "rejected", "expired"]>>;
+    sortOrder: z.ZodDefault<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        draft: "draft";
+        sent: "sent";
+        accepted: "accepted";
+        rejected: "rejected";
+        expired: "expired";
+    }>>;
     customerId: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    customerId: string;
-    sortOrder: "asc" | "desc";
-    search?: string | undefined;
-    status?: "draft" | "sent" | "accepted" | "rejected" | "expired" | undefined;
-    sortBy?: string | undefined;
-}, {
-    customerId: string;
-    search?: string | undefined;
-    status?: "draft" | "sent" | "accepted" | "rejected" | "expired" | undefined;
-    sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-}>;
+}, z.core.$strip>;
 export declare const PORTAL_ALLOWED_FILTERS: string[];
 export declare const PORTAL_ALLOWED_SORTS: string[];
 /**

@@ -57,13 +57,13 @@ export declare const LineItemSchema: z.ZodObject<{
     discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
     discountValue?: number | undefined;
     taxInclusive?: boolean | undefined;
+    serviceType?: string | undefined;
+    isTaxExempt?: boolean | undefined;
     percentageDiscount?: number | undefined;
     fixedDiscount?: {
         currency: string;
         amount: Decimal;
     } | undefined;
-    serviceType?: string | undefined;
-    isTaxExempt?: boolean | undefined;
 }, {
     description: string;
     quantity: number;
@@ -76,13 +76,13 @@ export declare const LineItemSchema: z.ZodObject<{
     discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
     discountValue?: number | undefined;
     taxInclusive?: boolean | undefined;
+    serviceType?: string | undefined;
+    isTaxExempt?: boolean | undefined;
     percentageDiscount?: number | undefined;
     fixedDiscount?: {
         currency: string;
         amount: Decimal;
     } | undefined;
-    serviceType?: string | undefined;
-    isTaxExempt?: boolean | undefined;
 }>;
 export declare const QuoteDiscountSchema: z.ZodObject<{
     type: z.ZodEnum<["percentage", "fixed_amount", "per_unit"]>;
@@ -141,13 +141,13 @@ export declare const CalculateQuoteInputSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }, {
         description: string;
         quantity: number;
@@ -160,13 +160,13 @@ export declare const CalculateQuoteInputSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }>, "many">;
     quoteDiscount: z.ZodOptional<z.ZodObject<{
         type: z.ZodEnum<["percentage", "fixed_amount", "per_unit"]>;
@@ -196,13 +196,13 @@ export declare const CalculateQuoteInputSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }[];
     quoteDiscount?: {
         type: "percentage" | "fixed_amount" | "per_unit";
@@ -222,13 +222,13 @@ export declare const CalculateQuoteInputSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }[];
     currency?: string | undefined;
     quoteDiscount?: {
@@ -281,13 +281,13 @@ export declare const LineItemCalculationSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }, {
         description: string;
         quantity: number;
@@ -300,13 +300,13 @@ export declare const LineItemCalculationSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     }>;
     quantity: z.ZodNumber;
     unitPrice: z.ZodObject<{
@@ -403,13 +403,13 @@ export declare const LineItemCalculationSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     };
     taxableAmount: {
         currency: string;
@@ -449,13 +449,13 @@ export declare const LineItemCalculationSchema: z.ZodObject<{
         discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
         discountValue?: number | undefined;
         taxInclusive?: boolean | undefined;
+        serviceType?: string | undefined;
+        isTaxExempt?: boolean | undefined;
         percentageDiscount?: number | undefined;
         fixedDiscount?: {
             currency: string;
             amount: Decimal;
         } | undefined;
-        serviceType?: string | undefined;
-        isTaxExempt?: boolean | undefined;
     };
     taxableAmount: {
         currency: string;
@@ -507,13 +507,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         }, {
             description: string;
             quantity: number;
@@ -526,13 +526,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         }>;
         quantity: z.ZodNumber;
         unitPrice: z.ZodObject<{
@@ -629,13 +629,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         };
         taxableAmount: {
             currency: string;
@@ -675,13 +675,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         };
         taxableAmount: {
             currency: string;
@@ -963,13 +963,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         };
         taxableAmount: {
             currency: string;
@@ -1057,13 +1057,13 @@ export declare const QuoteCalculationSchema: z.ZodObject<{
             discountType?: "percentage" | "fixed_amount" | "per_unit" | undefined;
             discountValue?: number | undefined;
             taxInclusive?: boolean | undefined;
+            serviceType?: string | undefined;
+            isTaxExempt?: boolean | undefined;
             percentageDiscount?: number | undefined;
             fixedDiscount?: {
                 currency: string;
                 amount: Decimal;
             } | undefined;
-            serviceType?: string | undefined;
-            isTaxExempt?: boolean | undefined;
         };
         taxableAmount: {
             currency: string;
@@ -1255,14 +1255,14 @@ export declare const LineItemDebugSchema: z.ZodObject<{
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         }, {
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         }>;
     }, "strip", z.ZodTypeAny, {
         calculations: {
@@ -1295,8 +1295,8 @@ export declare const LineItemDebugSchema: z.ZodObject<{
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         };
         input: {
             quantity: number;
@@ -1345,8 +1345,8 @@ export declare const LineItemDebugSchema: z.ZodObject<{
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         };
         input: {
             quantity: number;
@@ -1399,8 +1399,8 @@ export declare const LineItemDebugSchema: z.ZodObject<{
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         };
         input: {
             quantity: number;
@@ -1453,8 +1453,8 @@ export declare const LineItemDebugSchema: z.ZodObject<{
             subtotal: string;
             total: string;
             discount: string;
-            tax: string;
             taxable: string;
+            tax: string;
         };
         input: {
             quantity: number;
@@ -1659,14 +1659,14 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             }, {
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             }>;
         }, "strip", z.ZodTypeAny, {
             calculations: {
@@ -1699,8 +1699,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -1749,8 +1749,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -1803,8 +1803,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -1857,8 +1857,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -2027,16 +2027,16 @@ export declare const QuoteDebugSchema: z.ZodObject<{
             grandTotal: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         }, {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         }>;
     }, "strip", z.ZodTypeAny, {
         calculations: {
@@ -2067,10 +2067,10 @@ export declare const QuoteDebugSchema: z.ZodObject<{
         };
         breakdown: {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         };
         input: {
             lineTotals: {
@@ -2109,10 +2109,10 @@ export declare const QuoteDebugSchema: z.ZodObject<{
         };
         breakdown: {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         };
         input: {
             lineTotals: {
@@ -2204,8 +2204,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -2254,10 +2254,10 @@ export declare const QuoteDebugSchema: z.ZodObject<{
         };
         breakdown: {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         };
         input: {
             lineTotals: {
@@ -2315,8 +2315,8 @@ export declare const QuoteDebugSchema: z.ZodObject<{
                 subtotal: string;
                 total: string;
                 discount: string;
-                tax: string;
                 taxable: string;
+                tax: string;
             };
             input: {
                 quantity: number;
@@ -2365,10 +2365,10 @@ export declare const QuoteDebugSchema: z.ZodObject<{
         };
         breakdown: {
             subtotal: string;
-            discount: string;
-            tax: string;
             grandTotal: string;
+            discount: string;
             taxable: string;
+            tax: string;
         };
         input: {
             lineTotals: {

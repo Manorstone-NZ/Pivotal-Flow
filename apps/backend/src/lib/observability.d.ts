@@ -52,7 +52,7 @@ export declare function healthCheckMiddleware(_request: FastifyRequest, reply: F
  * Structured logging configuration
  */
 export declare const loggingConfig: {
-    level: "debug" | "fatal" | "error" | "warn" | "info" | "trace";
+    level: string;
     serializers: {
         req: (req: unknown) => {
             id: string | undefined;

@@ -3,28 +3,13 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { jsonSchemaTransform } from 'fastify-type-provider-zod';
 import { app } from './server.js';
+// Import auth plugin
+import { authPlugin } from './modules/auth/index.js';
 // C0 Backend Readiness imports
 import { getCorsConfig } from './lib/cors-rate-limit.js';
 import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
-import { requestLoggingMiddleware as observabilityRequestLogging, metricsEndpointMiddleware, healthCheckMiddleware } from './lib/observability.js';
-import { openApiSchema } from './lib/openapi-schema.js';
-// Module imports
-import { filesModule } from './files/index.js';
-import { allocationModule } from './modules/allocations/index.js';
-import { approvalModule } from './modules/approvals/index.js';
-import { portalModule } from './modules/portal/index.js';
-import { reportsModule } from './modules/reports/index.js';
-import { jobsModule } from './modules/jobs/index.js';
-import { referenceDataModule } from './modules/reference-data/index.js';
-import { xeroIntegrationModule } from './modules/integrations/xero/index.js';
-// Plugin imports
-import { cachePlugin } from './plugins/cache.plugin.js';
-import { cacheHeadersPlugin } from './plugins/cache-headers.js';
-import databasePlugin from './plugins/database.js';
-import { idempotencyPlugin } from './plugins/idempotency.js';
-import { payloadGuardPlugin } from './plugins/payloadGuard.js';
+import { requestLoggingMiddleware as observabilityRequestLogging } from './lib/observability.js';
 export async function registerPlugins() {
     // C0 Backend Readiness - Global error handler
     app.setErrorHandler(globalErrorHandler);
@@ -32,6 +17,8 @@ export async function registerPlugins() {
     app.addHook('preHandler', requestIdMiddleware);
     app.addHook('preHandler', requestLoggingMiddleware);
     app.addHook('preHandler', observabilityRequestLogging);
+    // Authentication plugin (includes cookie and JWT support)
+    await app.register(authPlugin);
     // C0 Backend Readiness - CORS configuration
     const corsConfig = getCorsConfig();
     await app.register(cors, corsConfig);
@@ -56,7 +43,7 @@ export async function registerPlugins() {
         })
     });
     // Database plugin (register early for database access)
-    await app.register(databasePlugin);
+    // await app.register(databasePlugin);
     // Swagger/OpenAPI configuration
     await app.register(swagger, {
         openapi: {
@@ -72,7 +59,6 @@ export async function registerPlugins() {
                 },
             ],
         },
-        transform: jsonSchemaTransform,
     });
     // Swagger UI (only if enabled)
     if (process.env['OPENAPI_ENABLE'] === 'true') {
@@ -99,44 +85,44 @@ export async function registerPlugins() {
         });
     }
     // C0 Backend Readiness - OpenAPI documentation
-    app.get('/api/openapi.json', {
-        preHandler: [],
-        config: {
-            // @ts-ignore - skipAuth is a custom property
-            skipAuth: true
-        }
-    }, async () => {
-        return openApiSchema;
-    });
+    // app.get('/api/openapi.json', {
+    //   preHandler: [],
+    //   config: {
+    //     // @ts-ignore - skipAuth is a custom property
+    //     skipAuth: true
+    //   }
+    // }, async () => {
+    //   return openApiSchema;
+    // });
     // C0 Backend Readiness - Health check endpoint
-    app.get('/health', {
-        preHandler: [],
-        config: {
-            // @ts-ignore - skipAuth is a custom property
-            skipAuth: true
-        }
-    }, healthCheckMiddleware);
+    // app.get('/health', {
+    //   preHandler: [],
+    //   config: {
+    //     // @ts-ignore - skipAuth is a custom property
+    //     skipAuth: true
+    //   }
+    // }, healthCheckMiddleware);
     // C0 Backend Readiness - Metrics endpoint
-    app.get('/metrics', {
-        preHandler: [],
-        config: {
-            // @ts-ignore - skipAuth is a custom property
-            skipAuth: true
-        }
-    }, metricsEndpointMiddleware);
+    // app.get('/metrics', {
+    //   preHandler: [],
+    //   config: {
+    //     // @ts-ignore - skipAuth is a custom property
+    //     skipAuth: true
+    //   }
+    // }, metricsEndpointMiddleware);
     // Register core plugins
-    await app.register(cachePlugin);
-    await app.register(cacheHeadersPlugin);
-    await app.register(idempotencyPlugin);
-    await app.register(payloadGuardPlugin);
+    // await app.register(cachePlugin);
+    // await app.register(cacheHeadersPlugin);
+    // await app.register(idempotencyPlugin);
+    // await app.register(payloadGuardPlugin);
     // Register modules
-    await app.register(filesModule);
-    await app.register(jobsModule);
-    await app.register(allocationModule);
-    await app.register(approvalModule);
-    await app.register(portalModule);
-    await app.register(reportsModule);
-    await app.register(referenceDataModule);
-    await app.register(xeroIntegrationModule);
+    // await app.register(filesModule);
+    // await app.register(jobsModule);
+    // await app.register(allocationModule);
+    // await app.register(approvalModule);
+    // await app.register(portalModule);
+    // await app.register(reportsModule);
+    // await app.register(referenceDataModule);
+    // await app.register(xeroIntegrationModule);
 }
 //# sourceMappingURL=plugins.js.map

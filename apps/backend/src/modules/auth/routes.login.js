@@ -1,43 +1,17 @@
 // import { createAuditLogger } from "../../lib/audit-logger.drizzle.js";
 import { config } from "../../config/index.js";
 import { logger } from "../../lib/logger.js";
+import { LoginRequestSchema, LoginResponseSchema, AuthErrorSchema } from "./typeboxSchemas.js";
 import { AuthService } from "./service.drizzle.js";
 export const loginRoute = async (fastify) => {
     // const auditLogger = createAuditLogger(fastify);
     fastify.post("/login", {
         schema: {
-            body: {
-                type: "object",
-                required: ["email", "password"],
-                properties: {
-                    email: { type: "string", format: "email" },
-                    password: { type: "string", minLength: 12 }
-                },
-                additionalProperties: false
-            },
+            body: LoginRequestSchema,
             response: {
-                200: {
-                    type: "object",
-                    required: ["accessToken", "user"],
-                    properties: {
-                        accessToken: { type: "string" },
-                        user: {
-                            type: "object",
-                            required: ["id", "email", "displayName", "roles", "organizationId"],
-                            properties: {
-                                id: { type: "string" },
-                                email: { type: "string" },
-                                displayName: { type: "string" },
-                                roles: { type: "array", items: { type: "string" } },
-                                organizationId: { type: "string" }
-                            },
-                            additionalProperties: false
-                        }
-                    },
-                    additionalProperties: false
-                },
-                401: errorShape(),
-                500: errorShape()
+                200: LoginResponseSchema,
+                401: AuthErrorSchema,
+                500: AuthErrorSchema
             }
         }
     }, async (request, reply) => {
@@ -119,16 +93,4 @@ export const loginRoute = async (fastify) => {
         }
     });
 };
-function errorShape() {
-    return {
-        type: "object",
-        additionalProperties: false,
-        required: ["error", "message", "code"],
-        properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" }
-        }
-    };
-}
 //# sourceMappingURL=routes.login.js.map

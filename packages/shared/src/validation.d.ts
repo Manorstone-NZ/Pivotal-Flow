@@ -12,15 +12,15 @@ export declare const paginationQuerySchema: z.ZodObject<{
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
+    limit: number;
     page: number;
     sortOrder: "asc" | "desc";
-    limit: number;
     sortBy?: string | undefined;
 }, {
+    limit?: number | undefined;
     page?: number | undefined;
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
-    limit?: number | undefined;
 }>;
 export declare const paginationResponseSchema: z.ZodObject<{
     page: z.ZodNumber;
@@ -28,15 +28,15 @@ export declare const paginationResponseSchema: z.ZodObject<{
     total: z.ZodNumber;
     totalPages: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
+    limit: number;
     page: number;
     total: number;
     totalPages: number;
-    limit: number;
 }, {
+    limit: number;
     page: number;
     total: number;
     totalPages: number;
-    limit: number;
 }>;
 export declare const healthCheckSchema: z.ZodObject<{
     status: z.ZodEnum<["ok", "error"]>;
@@ -151,7 +151,6 @@ export declare const healthStatusSchema: z.ZodObject<{
     status: "error" | "ok";
     version: string;
     timestamp: string;
-    uptime: number;
     checks: {
         database: {
             status: "error" | "ok";
@@ -172,11 +171,11 @@ export declare const healthStatusSchema: z.ZodObject<{
             latency?: number | undefined;
         };
     };
+    uptime: number;
 }, {
     status: "error" | "ok";
     version: string;
     timestamp: string;
-    uptime: number;
     checks: {
         database: {
             status: "error" | "ok";
@@ -197,6 +196,7 @@ export declare const healthStatusSchema: z.ZodObject<{
             latency?: number | undefined;
         };
     };
+    uptime: number;
 }>;
 export declare const apiResponseSchema: z.ZodObject<{
     success: z.ZodBoolean;
@@ -234,39 +234,39 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
         total: z.ZodNumber;
         totalPages: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
+        limit: number;
         page: number;
         total: number;
         totalPages: number;
-        limit: number;
     }, {
+        limit: number;
         page: number;
         total: number;
         totalPages: number;
-        limit: number;
     }>;
 }, "strip", z.ZodTypeAny, {
     requestId: string;
     success: boolean;
-    timestamp: string;
     pagination: {
+        limit: number;
         page: number;
         total: number;
         totalPages: number;
-        limit: number;
     };
+    timestamp: string;
     data?: unknown[] | undefined;
     error?: string | undefined;
     message?: string | undefined;
 }, {
     requestId: string;
     success: boolean;
-    timestamp: string;
     pagination: {
+        limit: number;
         page: number;
         total: number;
         totalPages: number;
-        limit: number;
     };
+    timestamp: string;
     data?: unknown[] | undefined;
     error?: string | undefined;
     message?: string | undefined;
@@ -303,16 +303,16 @@ export declare const logEntrySchema: z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
     requestId: string;
-    message: string;
     level: "debug" | "error" | "warn" | "info";
+    message: string;
     timestamp: string;
     metadata?: Record<string, unknown> | undefined;
     route?: string | undefined;
     latency?: number | undefined;
 }, {
     requestId: string;
-    message: string;
     level: "debug" | "error" | "warn" | "info";
+    message: string;
     timestamp: string;
     metadata?: Record<string, unknown> | undefined;
     route?: string | undefined;

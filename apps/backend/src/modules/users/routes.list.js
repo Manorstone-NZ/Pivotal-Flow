@@ -1,107 +1,33 @@
 // List users route with pagination and filters
+import { Type } from '@sinclair/typebox';
 import { logger } from '../../lib/logger.js';
 import { canViewUsers, extractUserContext } from './rbac.js';
-import { paginationSchema, userListFiltersSchema, userListSortSchema } from './schemas.js';
+import { UserListFiltersSchema, UserListSortSchema, UserListResponseSchema, UserErrorSchema } from './typeboxSchemas.js';
 import { listUsers } from './service.drizzle.js';
 export const listUsersRoute = async (fastify) => {
     fastify.get('/v1/users', {
         schema: {
-            querystring: {
-                type: 'object',
-                properties: {
-                    page: { type: 'number', minimum: 1, default: 1, description: 'Page number' },
-                    pageSize: { type: 'number', minimum: 1, maximum: 100, default: 20, description: 'Items per page' },
-                    q: { type: 'string', description: 'Search query for email or display name' },
-                    isActive: { type: 'boolean', description: 'Filter by active status' },
-                    roleId: { type: 'string', description: 'Filter by specific role' },
-                    sortField: { type: 'string', enum: ['email', 'createdAt'], default: 'createdAt', description: 'Sort field' },
-                    sortDirection: { type: 'string', enum: ['asc', 'desc'], default: 'desc', description: 'Sort direction' }
-                },
-                additionalProperties: false
-            },
+            querystring: Type.Object({
+                page: Type.Optional(Type.Number({ minimum: 1 })),
+                pageSize: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
+                q: Type.Optional(Type.String()),
+                isActive: Type.Optional(Type.Boolean()),
+                roleId: Type.Optional(Type.String()),
+                sortField: Type.Optional(Type.Union([
+                    Type.Literal('email'),
+                    Type.Literal('createdAt')
+                ])),
+                sortDirection: Type.Optional(Type.Union([
+                    Type.Literal('asc'),
+                    Type.Literal('desc')
+                ]))
+            }),
             response: {
-                200: {
-                    type: 'object',
-                    required: ['items', 'page', 'pageSize', 'total', 'totalPages'],
-                    properties: {
-                        items: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                required: ['id', 'email', 'isActive', 'mfaEnabled', 'createdAt', 'roles'],
-                                properties: {
-                                    id: { type: 'string' },
-                                    email: { type: 'string' },
-                                    displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
-                                    isActive: { type: 'boolean' },
-                                    mfaEnabled: { type: 'boolean' },
-                                    createdAt: { type: 'string' },
-                                    roles: {
-                                        type: 'array',
-                                        items: {
-                                            type: 'object',
-                                            required: ['id', 'name', 'isSystem', 'isActive'],
-                                            properties: {
-                                                id: { type: 'string' },
-                                                name: { type: 'string' },
-                                                description: { anyOf: [{ type: 'string' }, { type: 'null' }] },
-                                                isSystem: { type: 'boolean' },
-                                                isActive: { type: 'boolean' }
-                                            },
-                                            additionalProperties: false
-                                        }
-                                    }
-                                },
-                                additionalProperties: false
-                            }
-                        },
-                        page: { type: 'number' },
-                        pageSize: { type: 'number' },
-                        total: { type: 'number' },
-                        totalPages: { type: 'number' }
-                    },
-                    additionalProperties: false
-                },
-                400: {
-                    type: 'object',
-                    required: ['error', 'message', 'code'],
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                    },
-                    additionalProperties: false
-                },
-                401: {
-                    type: 'object',
-                    required: ['error', 'message', 'code'],
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                    },
-                    additionalProperties: false
-                },
-                403: {
-                    type: 'object',
-                    required: ['error', 'message', 'code'],
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                    },
-                    additionalProperties: false
-                },
-                429: {
-                    type: 'object',
-                    required: ['error', 'message', 'code'],
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' }
-                    },
-                    additionalProperties: false
-                }
+                200: UserListResponseSchema,
+                400: UserErrorSchema,
+                401: UserErrorSchema,
+                403: UserErrorSchema,
+                429: UserErrorSchema
             }
         }
     }, async (request, reply) => {
@@ -123,23 +49,19 @@ export const listUsersRoute = async (fastify) => {
                     code: 'INSUFFICIENT_PERMISSIONS'
                 });
             }
-            // Parse and validate query parameters
-            const pagination = paginationSchema.parse({
-                page: request.query.page,
-                pageSize: request.query.pageSize
-            });
-            const filters = userListFiltersSchema.parse({
+            // Parse and validate query parameters (TypeBox handles validation automatically)
+            const pagination = {
+                page: request.query.page || 1,
+                pageSize: request.query.pageSize || 20
+            };
+            const filters = {
                 ...(request.query.q !== undefined && { q: request.query.q }),
                 ...(request.query.isActive !== undefined && { isActive: request.query.isActive }),
                 ...(request.query.roleId !== undefined && { roleId: request.query.roleId })
-            });
-            const parsedSort = userListSortSchema.parse({
+            };
+            const sort = {
                 field: request.query.sortField || 'createdAt',
                 direction: request.query.sortDirection || 'desc'
-            });
-            const sort = {
-                field: parsedSort.field || 'createdAt',
-                direction: parsedSort.direction || 'desc'
             };
             // Get users from service
             const result = await listUsers({

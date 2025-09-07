@@ -1,33 +1,15 @@
 import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
+import { RefreshRequestSchema, RefreshResponseSchema, AuthErrorSchema } from './typeboxSchemas.js';
 export const refreshRoute = async (fastify) => {
     const auditLogger = createAuditLogger(fastify);
     fastify.post('/refresh', {
         schema: {
-            body: {
-                type: 'object',
-                properties: {
-                    refreshToken: { type: 'string' },
-                },
-            },
+            body: RefreshRequestSchema,
             response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        accessToken: { type: 'string' },
-                    },
-                    required: ['accessToken'],
-                },
-                401: {
-                    type: 'object',
-                    properties: {
-                        error: { type: 'string' },
-                        message: { type: 'string' },
-                        code: { type: 'string' },
-                    },
-                    required: ['error', 'message', 'code'],
-                },
+                200: RefreshResponseSchema,
+                401: AuthErrorSchema,
             },
         },
     }, async (request, reply) => {

@@ -187,19 +187,19 @@ describe('Contract Tests - API Validation', () => {
             responseData
           );
         
-        expect(validatedResponse).toHaveProperty('data');
-        expect(validatedResponse).toHaveProperty('pagination');
-        expect(Array.isArray(validatedResponse.data)).toBe(true);
-        
-        // Validate each user in the array
-        validatedResponse.data.forEach(user => {
-          expect(user).toHaveProperty('id');
-          expect(user).toHaveProperty('email');
-          expect(user).toHaveProperty('name');
-          expect(user).toHaveProperty('role');
-          expect(user).toHaveProperty('isActive');
-        });
-        
+          expect(validatedResponse).toHaveProperty('data');
+          expect(validatedResponse).toHaveProperty('pagination');
+          expect(Array.isArray(validatedResponse.data)).toBe(true);
+          
+          // Validate each user in the array
+          validatedResponse.data.forEach(user => {
+            expect(user).toHaveProperty('id');
+            expect(user).toHaveProperty('email');
+            expect(user).toHaveProperty('name');
+            expect(user).toHaveProperty('role');
+            expect(user).toHaveProperty('isActive');
+          });
+        }
       } catch (error) {
         console.warn('Backend not available for users list test:', error);
       }

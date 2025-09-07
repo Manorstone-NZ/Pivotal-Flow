@@ -1,0 +1,1 @@
+{"version":3,"file":"typeboxSchemas.d.ts","sourceRoot":"","sources":["typeboxSchemas.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,KAAK,MAAM,EAAE,MAAM,mBAAmB,CAAC;AAGtD,eAAO,MAAM,sBAAsB;;;;;EAKjC,CAAC;AAEH,MAAM,MAAM,gBAAgB,GAAG,MAAM,CAAC,OAAO,sBAAsB,CAAC,CAAC;AAGrE,eAAO,MAAM,mBAAmB;;;;EAI9B,CAAC;AAEH,MAAM,MAAM,aAAa,GAAG,MAAM,CAAC,OAAO,mBAAmB,CAAC,CAAC"}

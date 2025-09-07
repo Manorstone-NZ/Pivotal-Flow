@@ -2,7 +2,6 @@
  * Global Error Handler for C0 Backend Readiness
  * Standardized error responses with request tracking
  */
-import { ZodError } from 'zod';
 import { config } from '../config/index.js';
 /**
  * Create standardized error response
@@ -101,18 +100,13 @@ export function globalErrorHandler(error, request, reply) {
             }
         };
     }
-    else if (error instanceof ZodError) {
-        // Handle Zod validation errors
-        const details = error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-            value: err.input
-        }));
+    else if (error.name === 'ValidationError') {
+        // Handle validation errors (generic)
         errorResponse = {
             error: {
                 code: 'VALIDATION_ERROR',
                 message: 'Request validation failed',
-                details,
+                details: error.message,
                 timestamp: new Date().toISOString(),
                 request_id: requestId
             },
