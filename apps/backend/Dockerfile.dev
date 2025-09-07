@@ -1,0 +1,29 @@
+# Backend Development Dockerfile
+FROM node:20-alpine
+
+# Install pnpm
+RUN npm install -g pnpm@8
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build packages
+RUN pnpm -w build
+
+# Expose port
+EXPOSE 3000
+
+# Default command
+CMD ["pnpm", "dev"]
