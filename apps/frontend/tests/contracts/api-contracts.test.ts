@@ -323,16 +323,16 @@ describe('Contract Tests - API Validation', () => {
         expect(validatedResponse).toHaveProperty('pagination');
         expect(Array.isArray(validatedResponse.data)).toBe(true);
         
-        // Validate each quote in the array
-        validatedResponse.data.forEach(quote => {
-          expect(quote).toHaveProperty('id');
-          expect(quote).toHaveProperty('quoteNumber');
-          expect(quote).toHaveProperty('customerId');
-          expect(quote).toHaveProperty('status');
-          expect(quote).toHaveProperty('totalAmount');
-          expect(quote).toHaveProperty('currency');
-        });
-        
+          // Validate each quote in the array
+          validatedResponse.data.forEach(quote => {
+            expect(quote).toHaveProperty('id');
+            expect(quote).toHaveProperty('quoteNumber');
+            expect(quote).toHaveProperty('customerId');
+            expect(quote).toHaveProperty('status');
+            expect(quote).toHaveProperty('totalAmount');
+            expect(quote).toHaveProperty('currency');
+          });
+        }
       } catch (error) {
         console.warn('Backend not available for quotes list test:', error);
       }
@@ -456,14 +456,14 @@ describe('Contract Tests - API Validation', () => {
         expect(validatedResponse).toHaveProperty('pagination');
         expect(Array.isArray(validatedResponse.data)).toBe(true);
         
-        // Validate each rate card in the array
-        validatedResponse.data.forEach(rateCard => {
-          expect(rateCard).toHaveProperty('id');
-          expect(rateCard).toHaveProperty('name');
-          expect(rateCard).toHaveProperty('isActive');
-          expect(rateCard).toHaveProperty('effectiveFrom');
-        });
-        
+          // Validate each rate card in the array
+          validatedResponse.data.forEach(rateCard => {
+            expect(rateCard).toHaveProperty('id');
+            expect(rateCard).toHaveProperty('name');
+            expect(rateCard).toHaveProperty('isActive');
+            expect(rateCard).toHaveProperty('effectiveFrom');
+          });
+        }
       } catch (error) {
         console.warn('Backend not available for rate cards list test:', error);
       }

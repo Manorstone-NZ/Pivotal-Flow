@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { register, collectDefaultMetrics } from 'prom-client';
 import { logger } from './lib/logger.js';
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 
 // Initialize metrics
 const g = globalThis as any;
@@ -32,4 +33,4 @@ export const app = Fastify({
   },
   trustProxy: true,
   genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-});
+}).withTypeProvider<TypeBoxTypeProvider>();

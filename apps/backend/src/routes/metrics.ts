@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { register } from 'prom-client';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 
 import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';

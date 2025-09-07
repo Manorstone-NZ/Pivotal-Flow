@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { z } from 'zod';
+import type { Type } from '@sinclair/typebox';
 
 import { getDatabase } from '../../lib/db.js';
 

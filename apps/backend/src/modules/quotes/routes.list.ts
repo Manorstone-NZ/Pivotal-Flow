@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
@@ -69,15 +69,6 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
 
       return reply.status(200).send(result);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Bad Request',
-          message: 'Invalid query parameters',
-          code: 'VALIDATION_ERROR',
-          details: error.errors
-        });
-      }
-
       if (error instanceof Error) {
         return reply.status(400).send({
           error: 'Bad Request',

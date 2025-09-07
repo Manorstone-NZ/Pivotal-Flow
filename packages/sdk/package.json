@@ -16,6 +16,11 @@
       "import": "./dist/react-query.js",
       "require": "./dist/react-query.js",
       "types": "./dist/react-query.d.ts"
+    },
+    "./contracts/validation": {
+      "import": "./dist/contracts/validation.js",
+      "require": "./dist/contracts/validation.js",
+      "types": "./dist/contracts/validation.d.ts"
     }
   },
   "files": [

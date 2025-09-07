@@ -1,6 +1,6 @@
 import type { CacheApi } from '@pivotal-flow/shared';
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 
 import { CacheService, type CacheOptions } from '../lib/cache.service.js';
 import { logger } from '../lib/logger.js';

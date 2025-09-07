@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 
 import { logger } from '../lib/logger.js';
 

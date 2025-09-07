@@ -3,7 +3,8 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
-    'react-query': 'src/react-query.ts'
+    'react-query': 'src/react-query.ts',
+    'contracts/validation': 'src/contracts/validation.ts'
   },
   format: ['cjs', 'esm'],
   dts: true,

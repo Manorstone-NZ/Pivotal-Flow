@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 
@@ -46,12 +46,12 @@ export function registerStatusTransitionRoute(fastify: FastifyInstance) {
 
       return reply.status(200).send(quote);
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      // Handle validation errors
+      if (error instanceof Error && error.message.includes('validation')) {
         return reply.status(400).send({
           error: 'Bad Request',
           message: 'Validation failed',
-          code: 'VALIDATION_ERROR',
-          details: error.errors
+          code: 'VALIDATION_ERROR'
         });
       }
 
