@@ -1,45 +1,40 @@
-import React, { Suspense, lazy, useState } from 'react';
-import { useAppStore } from './lib/state/store.js';
-import { Button } from './components/Button.js';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './lib/theme/ThemeProvider';
+import { AppRouter } from './router/AppRouter';
+import { ToastProvider } from './components/ui/Toast';
 
-// Lazy load the health route component
-const HealthRoute = lazy(() => import('./components/HealthRoute.js').then(module => ({ default: module.HealthRoute })));
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error && typeof error === 'object' && 'status' in error) {
+          const status = (error as any).status;
+          if (status >= 400 && status < 500) {
+            return false;
+          }
+        }
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 export const App: React.FC = () => {
-  const count = useAppStore(s => s.count);
-  const inc = useAppStore(s => s.inc);
-  const [currentRoute, setCurrentRoute] = useState<'main' | 'health'>('main');
-
-  const renderRoute = (): JSX.Element => {
-    switch (currentRoute) {
-      case 'health':
-        return (
-          <Suspense fallback={<div>Loading health route...</div>}>
-            <HealthRoute />
-                          </Suspense>
-        );
-      default:
-        return (
-          <div>
-            <h1>Pivotal Flow</h1>
-            <p>Design tokens in use. Try the button.</p>
-            <Button onClick={inc}>Clicked {count} times</Button>
-          </div>
-        );
-    }
-  };
-
   return (
-    <div style={{ padding: '2rem' }}>
-      <div style={{ marginBottom: '2rem', borderBottom: '1px solid #ccc', paddingBottom: '1rem' }}>
-        <Button onClick={() => setCurrentRoute('main')} style={{ marginRight: '1rem' }}>
-          Main Route
-        </Button>
-        <Button onClick={() => setCurrentRoute('health')}>
-          Health Route (Lazy)
-        </Button>
-      </div>
-      {renderRoute()}
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ToastProvider>
+          <AppRouter />
+        </ToastProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };

@@ -1,0 +1,197 @@
+/**
+ * Design Token CSS Custom Properties
+ * Comprehensive design system tokens as CSS variables
+ */
+
+:root {
+  /* Brand Colors */
+  --pf-color-brand-primary: #D15300;
+  --pf-color-brand-secondary: #8B4513;
+  --pf-color-brand-accent: #FF6B35;
+
+  /* Semantic Colors */
+  --pf-color-semantic-success: #10B981;
+  --pf-color-semantic-warning: #F59E0B;
+  --pf-color-semantic-error: #EF4444;
+  --pf-color-semantic-info: #3B82F6;
+
+  /* Neutral Colors */
+  --pf-color-neutral-50: #FAFAFA;
+  --pf-color-neutral-100: #F5F5F5;
+  --pf-color-neutral-200: #E5E5E5;
+  --pf-color-neutral-300: #D4D4D4;
+  --pf-color-neutral-400: #A3A3A3;
+  --pf-color-neutral-500: #737373;
+  --pf-color-neutral-600: #525252;
+  --pf-color-neutral-700: #404040;
+  --pf-color-neutral-800: #262626;
+  --pf-color-neutral-900: #171717;
+  --pf-color-neutral-950: #0A0A0A;
+
+  /* Surface Colors */
+  --pf-color-surface-background: #F5E6CC;
+  --pf-color-surface-card: #FFFFFF;
+  --pf-color-surface-overlay: rgba(0, 0, 0, 0.5);
+  --pf-color-surface-border: #E5E5E5;
+
+  /* Text Colors */
+  --pf-color-text-primary: #222222;
+  --pf-color-text-secondary: #525252;
+  --pf-color-text-disabled: #A3A3A3;
+  --pf-color-text-inverse: #FFFFFF;
+
+  /* Typography */
+  --pf-font-family-sans: 'Inter', system-ui, sans-serif;
+  --pf-font-family-mono: 'JetBrains Mono', Consolas, monospace;
+
+  --pf-font-size-xs: 0.75rem;
+  --pf-font-size-sm: 0.875rem;
+  --pf-font-size-base: 1rem;
+  --pf-font-size-lg: 1.125rem;
+  --pf-font-size-xl: 1.25rem;
+  --pf-font-size-2xl: 1.5rem;
+  --pf-font-size-3xl: 1.875rem;
+  --pf-font-size-4xl: 2.25rem;
+  --pf-font-size-5xl: 3rem;
+  --pf-font-size-6xl: 3.75rem;
+
+  --pf-font-weight-thin: 100;
+  --pf-font-weight-light: 300;
+  --pf-font-weight-normal: 400;
+  --pf-font-weight-medium: 500;
+  --pf-font-weight-semibold: 600;
+  --pf-font-weight-bold: 700;
+  --pf-font-weight-extrabold: 800;
+
+  --pf-line-height-tight: 1.25;
+  --pf-line-height-snug: 1.375;
+  --pf-line-height-normal: 1.5;
+  --pf-line-height-relaxed: 1.625;
+  --pf-line-height-loose: 2;
+
+  --pf-letter-spacing-tighter: -0.05em;
+  --pf-letter-spacing-tight: -0.025em;
+  --pf-letter-spacing-normal: 0em;
+  --pf-letter-spacing-wide: 0.025em;
+  --pf-letter-spacing-wider: 0.05em;
+
+  /* Spacing */
+  --pf-spacing-0: 0;
+  --pf-spacing-1: 0.25rem;
+  --pf-spacing-2: 0.5rem;
+  --pf-spacing-3: 0.75rem;
+  --pf-spacing-4: 1rem;
+  --pf-spacing-5: 1.25rem;
+  --pf-spacing-6: 1.5rem;
+  --pf-spacing-8: 2rem;
+  --pf-spacing-10: 2.5rem;
+  --pf-spacing-12: 3rem;
+  --pf-spacing-16: 4rem;
+  --pf-spacing-20: 5rem;
+  --pf-spacing-24: 6rem;
+  --pf-spacing-32: 8rem;
+  --pf-spacing-40: 10rem;
+  --pf-spacing-48: 12rem;
+  --pf-spacing-56: 14rem;
+  --pf-spacing-64: 16rem;
+
+  /* Borders */
+  --pf-border-width-0: 0;
+  --pf-border-width-1: 1px;
+  --pf-border-width-2: 2px;
+  --pf-border-width-4: 4px;
+  --pf-border-width-8: 8px;
+
+  --pf-border-radius-none: 0;
+  --pf-border-radius-sm: 0.125rem;
+  --pf-border-radius-base: 0.25rem;
+  --pf-border-radius-md: 0.375rem;
+  --pf-border-radius-lg: 0.5rem;
+  --pf-border-radius-xl: 0.75rem;
+  --pf-border-radius-2xl: 1rem;
+  --pf-border-radius-3xl: 1.5rem;
+  --pf-border-radius-full: 9999px;
+
+  --pf-border-style-solid: solid;
+  --pf-border-style-dashed: dashed;
+  --pf-border-style-dotted: dotted;
+  --pf-border-style-none: none;
+
+  /* Shadows */
+  --pf-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --pf-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --pf-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --pf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --pf-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --pf-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --pf-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --pf-shadow-none: none;
+
+  /* Animations */
+  --pf-duration-75: 75ms;
+  --pf-duration-100: 100ms;
+  --pf-duration-150: 150ms;
+  --pf-duration-200: 200ms;
+  --pf-duration-300: 300ms;
+  --pf-duration-500: 500ms;
+  --pf-duration-700: 700ms;
+  --pf-duration-1000: 1000ms;
+
+  --pf-timing-linear: linear;
+  --pf-timing-in: cubic-bezier(0.4, 0, 1, 1);
+  --pf-timing-out: cubic-bezier(0, 0, 0.2, 1);
+  --pf-timing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Breakpoints */
+  --pf-breakpoint-sm: 640px;
+  --pf-breakpoint-md: 768px;
+  --pf-breakpoint-lg: 1024px;
+  --pf-breakpoint-xl: 1280px;
+  --pf-breakpoint-2xl: 1536px;
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] {
+  /* Surface Colors */
+  --pf-color-surface-background: var(--pf-color-neutral-900);
+  --pf-color-surface-card: var(--pf-color-neutral-800);
+  --pf-color-surface-overlay: rgba(0, 0, 0, 0.8);
+  --pf-color-surface-border: var(--pf-color-neutral-700);
+
+  /* Text Colors */
+  --pf-color-text-primary: var(--pf-color-neutral-100);
+  --pf-color-text-secondary: var(--pf-color-neutral-300);
+  --pf-color-text-disabled: var(--pf-color-neutral-500);
+  --pf-color-text-inverse: var(--pf-color-neutral-900);
+}
+
+/* System Theme Detection */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* Surface Colors */
+    --pf-color-surface-background: var(--pf-color-neutral-900);
+    --pf-color-surface-card: var(--pf-color-neutral-800);
+    --pf-color-surface-overlay: rgba(0, 0, 0, 0.8);
+    --pf-color-surface-border: var(--pf-color-neutral-700);
+
+    /* Text Colors */
+    --pf-color-text-primary: var(--pf-color-neutral-100);
+    --pf-color-text-secondary: var(--pf-color-neutral-300);
+    --pf-color-text-disabled: var(--pf-color-neutral-500);
+    --pf-color-text-inverse: var(--pf-color-neutral-900);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pf-duration-75: 0ms;
+    --pf-duration-100: 0ms;
+    --pf-duration-150: 0ms;
+    --pf-duration-200: 0ms;
+    --pf-duration-300: 0ms;
+    --pf-duration-500: 0ms;
+    --pf-duration-700: 0ms;
+    --pf-duration-1000: 0ms;
+  }
+}

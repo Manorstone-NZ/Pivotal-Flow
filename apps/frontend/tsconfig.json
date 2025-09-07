@@ -4,8 +4,10 @@
     "outDir": "dist",
     "allowJs": false,
     "jsx": "react-jsx",
+    "strict": true,
+    "verbatimModuleSyntax": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "types": [
       "vite/client",
       "vitest/globals"
@@ -15,6 +17,10 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "lib": [
       "ES2020",
       "ES2022",
@@ -24,7 +30,8 @@
   },
   "include": [
     "src",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vite-env.d.ts"
   ],
   "exclude": [
     "tests/e2e/**",
