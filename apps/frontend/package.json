@@ -19,7 +19,12 @@
     "analyze:open": "open dist/stats.html",
     "analyze:build": "npm run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "perf:build": "pnpm build && node scripts/bundle-budget-check.js dist/stats.json",
+    "perf:monitor": "node scripts/performance-monitor.js",
+    "perf:budget": "node scripts/bundle-budget-check.js",
+    "perf:report": "pnpm perf:monitor && pnpm perf:budget",
+    "perf:ci": "pnpm build && pnpm perf:budget && pnpm perf:monitor"
   },
   "dependencies": {
     "@pivotal-flow/sdk": "workspace:^",
