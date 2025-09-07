@@ -16,15 +16,15 @@ export const PaginationSchema = Type.Object({
 
 // Legacy pagination schema for backward compatibility during transition
 export const LegacyPaginationSchema = Type.Object({
-  page: Type.coerce.number().int().min(1, 'Page must be at least 1').default(1),
-  pageSize: Type.coerce.number().int().min(1, 'Page size must be at least 1').max(100, 'Page size cannot exceed 100').default(25),
+  page: Type.Number({ minimum: 1, default: 1 }),
+  pageSize: Type.Number({ minimum: 1, maximum: 100, default: 25 }),
 });
 
 // Common filter schema
 export const CommonFilterSchema = Type.Object({
   search: Type.String().optional(),
   sortBy: Type.String().optional(),
-  sortOrder: Type.enum(['asc', 'desc']).default('desc'),
+  sortOrder: Type.Union(['asc', 'desc']).default('desc'),
 });
 
 // Standard pagination envelope type - unified format
@@ -253,7 +253,7 @@ export function buildPaginationQuery<T extends { limit: (n: number) => T; offset
 // User filters
 export const UserFilterSchema = CommonFilterSchema.extend({
   role: Type.String().optional(),
-  status: Type.enum(['active', 'inactive', 'suspended']).optional(),
+  status: Type.Union(['active', 'inactive', 'suspended']).optional(),
   organizationId: Type.String().uuid().optional(),
 });
 
@@ -262,7 +262,7 @@ export const USER_ALLOWED_SORTS = ['createdAt', 'email', 'firstName', 'lastName'
 
 // Quote filters
 export const QuoteFilterSchema = CommonFilterSchema.extend({
-  status: Type.enum(['draft', 'pending', 'approved', 'sent', 'accepted', 'rejected', 'cancelled']).optional(),
+  status: Type.Union(['draft', 'pending', 'approved', 'sent', 'accepted', 'rejected', 'cancelled']).optional(),
   customerId: Type.String().uuid().optional(),
   projectId: Type.String().uuid().optional(),
   validFrom: Type.String().datetime().optional(),
@@ -274,10 +274,10 @@ export const QUOTE_ALLOWED_SORTS = ['createdAt', 'totalAmount', 'validUntil', 's
 
 // Project filters
 export const ProjectFilterSchema = CommonFilterSchema.extend({
-  status: Type.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']).optional(),
+  status: Type.Union(['planning', 'active', 'on-hold', 'completed', 'cancelled']).optional(),
   customerId: Type.String().uuid().optional(),
   projectManagerId: Type.String().uuid().optional(),
-  priority: Type.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  priority: Type.Union(['low', 'medium', 'high', 'urgent']).optional(),
 });
 
 export const PROJECT_ALLOWED_FILTERS = ['status', 'customerId', 'projectManagerId', 'priority'];
@@ -288,7 +288,7 @@ export const TimeEntryFilterSchema = CommonFilterSchema.extend({
   userId: Type.String().uuid().optional(),
   projectId: Type.String().uuid().optional(),
   taskId: Type.String().uuid().optional(),
-  status: Type.enum(['pending', 'approved', 'rejected', 'invoiced']).optional(),
+  status: Type.Union(['pending', 'approved', 'rejected', 'invoiced']).optional(),
   billable: Type.Boolean().optional(),
   dateFrom: Type.String().datetime().optional(),
   dateTo: Type.String().datetime().optional(),
@@ -299,7 +299,7 @@ export const TIME_ENTRY_ALLOWED_SORTS = ['date', 'durationHours', 'createdAt'];
 
 // Payment filters
 export const PaymentFilterSchema = CommonFilterSchema.extend({
-  status: Type.enum(['pending', 'completed', 'failed', 'cancelled']).optional(),
+  status: Type.Union(['pending', 'completed', 'failed', 'cancelled']).optional(),
   method: Type.String().optional(),
   customerId: Type.String().uuid().optional(),
   amountFrom: Type.Number().optional(),
@@ -311,7 +311,7 @@ export const PAYMENT_ALLOWED_SORTS = ['createdAt', 'amount', 'status'];
 
 // Portal filters
 export const PortalFilterSchema = CommonFilterSchema.extend({
-  status: Type.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']).optional(),
+  status: Type.Union(['draft', 'sent', 'accepted', 'rejected', 'expired']).optional(),
   customerId: Type.String().uuid(),
 });
 
