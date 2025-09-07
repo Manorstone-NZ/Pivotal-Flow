@@ -3,79 +3,28 @@
 import { generateId } from '@pivotal-flow/shared';
 import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
-import { ZodError, type infer as ZodInfer } from "zod";
 
 import { logger } from "../../lib/logger.js";
 import { users, auditLogs } from "../../lib/schema.js";
 
 import { canManageUsers, extractUserContext } from "./rbac.js";
-import { userCreateSchema } from "./schemas.js";
+import { UserCreateSchema, UserResponseSchema, UserErrorSchema, type UserCreate, type UserResponse, type UserError } from "./typeboxSchemas.js";
 import { createUser } from "./service.drizzle.js";
 
-type CreateBody = ZodInfer<typeof userCreateSchema>;
-
 export const createUserRoute: FastifyPluginAsync = async fastify => {
-  fastify.post<{ Body: CreateBody }>("/v1/users", {
+  fastify.post<{ 
+    Body: UserCreate; 
+    Reply: UserResponse | UserError 
+  }>("/v1/users", {
     schema: {
-      body: {
-        type: "object",
-        required: ["email", "firstName", "lastName"],
-        additionalProperties: false,
-        properties: {
-          email: { type: "string", format: "email", description: "User email address" },
-          firstName: { type: "string", minLength: 1, maxLength: 100 },
-          lastName: { type: "string", minLength: 1, maxLength: 100 },
-          displayName: { type: "string", maxLength: 200 },
-          phone: { type: "string", maxLength: 20 },
-          timezone: { type: "string", maxLength: 50 },
-          locale: { type: "string", maxLength: 10 }
-        }
-      },
+      body: UserCreateSchema,
       response: {
-        201: {
-          
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "email", "isActive", "mfaEnabled", "createdAt", "roles"],
-          properties: {
-            id: { type: "string" },
-            email: { type: "string", format: "email" },
-            displayName: { anyOf: [{ type: "string" }, { type: "null" }] },
-            isActive: { type: "boolean" },
-            mfaEnabled: { type: "boolean" },
-            createdAt: { type: "string", format: "date-time" },
-            roles: {
-              type: "array",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["id", "name", "isSystem", "isActive"],
-                properties: {
-                  id: { type: "string" },
-                  name: { type: "string" },
-                  description: { anyOf: [{ type: "string" }, { type: "null" }] },
-                  isSystem: { type: "boolean" },
-                  isActive: { type: "boolean" }
-                }
-              }
-            }
-          }
-        },
-        400: {
-          type: "object",
-          additionalProperties: false,
-          required: ["error", "message", "code"],
-          properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" },
-            details: { type: "string" } // now matches handler
-          }
-        },
-        401: errorShape(),
-        403: errorShape(),
-        409: errorShape(),
-        429: errorShape()
+        201: UserResponseSchema,
+        400: UserErrorSchema,
+        401: UserErrorSchema,
+        403: UserErrorSchema,
+        409: UserErrorSchema,
+        429: UserErrorSchema
       }
     }
   }, async (request, reply: FastifyReply) => {
@@ -97,7 +46,7 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
         });
       }
 
-      const data = userCreateSchema.parse(request.body);
+      const data = request.body; // TypeBox handles validation automatically
       const email = data.email.trim().toLowerCase();
 
       // Check if user already exists
@@ -189,15 +138,6 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
 
       return reply.status(201).send(safe);
     } catch (err) {
-      if (err instanceof ZodError) {
-        return reply.status(400).send({
-          error: "Validation Error",
-          message: "Invalid request body",
-          code: "VALIDATION_ERROR",
-          details: err.issues.map(i => i.message).join("; ")
-        });
-      }
-
       logger.error({
         error: err instanceof Error ? err.message : "Unknown error",
         stack: err instanceof Error ? err.stack : undefined,
@@ -213,17 +153,3 @@ export const createUserRoute: FastifyPluginAsync = async fastify => {
     }
   });
 };
-
-// small helper to keep response schemas tidy
-function errorShape() {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required: ["error", "message", "code"],
-    properties: {
-      error: { type: "string" },
-      message: { type: "string" },
-      code: { type: "string" }
-    }
-  } as const;
-}

@@ -33,6 +33,10 @@ const SignedUrlResponseSchema = z.object({
     signedUrl: z.string(),
     expiresIn: z.string(),
 });
+const GenerateFileResponseSchema = z.object({
+    fileId: z.string(),
+    message: z.string(),
+});
 /**
  * Register file routes
  */
@@ -42,13 +46,7 @@ export async function registerFileRoutes(fastify) {
         schema: {
             body: GenerateFileRequestSchema,
             response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        fileId: { type: 'string' },
-                        message: { type: 'string' },
-                    },
-                },
+                200: GenerateFileResponseSchema,
             },
         },
         preHandler: fastify.authenticate,

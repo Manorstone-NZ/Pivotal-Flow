@@ -4,7 +4,7 @@ import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
 
-import type { LogoutResponse } from './schemas.js';
+import { LogoutResponseSchema, type LogoutResponse } from './typeboxSchemas.js';
 
 // Type definitions for authenticated user
 interface AuthenticatedUser {
@@ -25,13 +25,7 @@ export const logoutRoute: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              message: { type: 'string' },
-            },
-            required: ['message'],
-          },
+          200: LogoutResponseSchema,
         },
       },
     },

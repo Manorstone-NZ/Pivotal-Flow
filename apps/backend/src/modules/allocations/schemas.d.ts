@@ -243,8 +243,6 @@ export declare const ListAllocationsResponseSchema: z.ZodObject<{
         isBillable: boolean;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: string;
@@ -260,11 +258,11 @@ export declare const ListAllocationsResponseSchema: z.ZodObject<{
         allocationPercent: number;
         isBillable: boolean;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: string;
@@ -280,6 +278,8 @@ export declare const ListAllocationsResponseSchema: z.ZodObject<{
         allocationPercent: number;
         isBillable: boolean;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }>;

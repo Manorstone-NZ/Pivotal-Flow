@@ -28,7 +28,11 @@ const healthStatusSchema = z.object({
   }),
 });
 
-// Health response schema - removed unused variable
+// Ping response schema
+const pingResponseSchema = z.object({
+  status: z.enum(['ok']),
+  timestamp: z.string(),
+});
 
 // Mock health check functions for now
 async function checkDatabaseHealth() {
@@ -84,7 +88,16 @@ async function checkMetricsHealth() {
 
 export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   // Basic health check
-  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/', {
+    schema: {
+      summary: 'Health Check',
+      description: 'Comprehensive health check for all services',
+      response: {
+        200: healthStatusSchema,
+        500: healthStatusSchema,
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const startTime = Date.now();
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/health' });
@@ -160,7 +173,15 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   });
   
   // Simple health check for load balancers
-  fastify.get('/ping', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/ping', {
+    schema: {
+      summary: 'Ping Health Check',
+      description: 'Simple health check for load balancers',
+      response: {
+        200: pingResponseSchema,
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/health/ping' });
     

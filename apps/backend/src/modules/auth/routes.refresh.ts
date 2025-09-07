@@ -4,7 +4,7 @@ import { config } from '../../config/index.js';
 import { createAuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { logger } from '../../lib/logger.js';
 
-import type { RefreshRequest, RefreshResponse, AuthError } from './schemas.js';
+import { RefreshRequestSchema, RefreshResponseSchema, AuthErrorSchema, type RefreshRequest, type RefreshResponse, type AuthError } from './typeboxSchemas.js';
 
 // Type definitions for request context
 interface RequestWithCookies extends FastifyRequest {
@@ -24,29 +24,10 @@ export const refreshRoute: FastifyPluginAsync = async (fastify) => {
     '/refresh',
     {
       schema: {
-        body: {
-          type: 'object',
-          properties: {
-            refreshToken: { type: 'string' },
-          },
-        },
+        body: RefreshRequestSchema,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              accessToken: { type: 'string' },
-            },
-            required: ['accessToken'],
-          },
-          401: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' },
-              message: { type: 'string' },
-              code: { type: 'string' },
-            },
-            required: ['error', 'message', 'code'],
-          },
+          200: RefreshResponseSchema,
+          401: AuthErrorSchema,
         },
       },
     },

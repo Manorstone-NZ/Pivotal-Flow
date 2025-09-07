@@ -14,7 +14,7 @@ export declare const organizationsRelations: import("drizzle-orm/relations").Rel
     projects: import("drizzle-orm/relations").Many<"projects">;
     rateCards: import("drizzle-orm/relations").Many<"rate_cards">;
     idempotencyKeys: import("drizzle-orm/relations").Many<"idempotency_keys">;
-    quoteVersions: import("drizzle-orm/relations").Many<any>;
+    quoteVersions: import("drizzle-orm/relations").Many<"quote_versions">;
     orgSettings: import("drizzle-orm/relations").Many<"org_settings">;
     orgFeatureFlags: import("drizzle-orm/relations").Many<"org_feature_flags">;
     orgNotificationPrefs: import("drizzle-orm/relations").Many<"org_notification_prefs">;
@@ -31,7 +31,7 @@ export declare const orgSecurityPoliciesRelations: import("drizzle-orm/relations
 }>;
 export declare const customersRelations: import("drizzle-orm/relations").Relations<"customers", {
     organization: import("drizzle-orm/relations").One<"organizations", true>;
-    quoteVersions: import("drizzle-orm/relations").Many<any>;
+    quoteVersions: import("drizzle-orm/relations").Many<"quote_versions">;
 }>;
 export declare const organizationSettingsRelations: import("drizzle-orm/relations").Relations<"organization_settings", {
     organization: import("drizzle-orm/relations").One<"organizations", true>;
@@ -49,8 +49,8 @@ export declare const usersRelations: import("drizzle-orm/relations").Relations<"
     organization: import("drizzle-orm/relations").One<"organizations", true>;
     projects: import("drizzle-orm/relations").Many<"projects">;
     idempotencyKeys: import("drizzle-orm/relations").Many<"idempotency_keys">;
-    quoteVersions_createdBy: import("drizzle-orm/relations").Many<any>;
-    quoteVersions_approvedBy: import("drizzle-orm/relations").Many<any>;
+    quoteVersions_createdBy: import("drizzle-orm/relations").Many<"quote_versions">;
+    quoteVersions_approvedBy: import("drizzle-orm/relations").Many<"quote_versions">;
 }>;
 export declare const auditLogsRelations: import("drizzle-orm/relations").Relations<"audit_logs", {
     organization: import("drizzle-orm/relations").One<"organizations", true>;
@@ -66,7 +66,7 @@ export declare const permissionsRelations: import("drizzle-orm/relations").Relat
 export declare const projectsRelations: import("drizzle-orm/relations").Relations<"projects", {
     organization: import("drizzle-orm/relations").One<"organizations", true>;
     user: import("drizzle-orm/relations").One<"users", false>;
-    quoteVersions: import("drizzle-orm/relations").Many<any>;
+    quoteVersions: import("drizzle-orm/relations").Many<"quote_versions">;
 }>;
 export declare const rateCardsRelations: import("drizzle-orm/relations").Relations<"rate_cards", {
     organization: import("drizzle-orm/relations").One<"organizations", true>;
@@ -92,22 +92,22 @@ export declare const idempotencyKeysRelations: import("drizzle-orm/relations").R
     organization: import("drizzle-orm/relations").One<"organizations", true>;
     user: import("drizzle-orm/relations").One<"users", true>;
 }>;
-export declare const quoteVersionsRelations: import("drizzle-orm/relations").Relations<string, {
-    quote: import("drizzle-orm/relations").One<any, false>;
-    organization: import("drizzle-orm/relations").One<"organizations", false>;
-    customer: import("drizzle-orm/relations").One<"customers", false>;
+export declare const quoteVersionsRelations: import("drizzle-orm/relations").Relations<"quote_versions", {
+    quote: import("drizzle-orm/relations").One<"quotes", true>;
+    organization: import("drizzle-orm/relations").One<"organizations", true>;
+    customer: import("drizzle-orm/relations").One<"customers", true>;
     project: import("drizzle-orm/relations").One<"projects", false>;
-    user_createdBy: import("drizzle-orm/relations").One<"users", false>;
+    user_createdBy: import("drizzle-orm/relations").One<"users", true>;
     user_approvedBy: import("drizzle-orm/relations").One<"users", false>;
     quoteLineItemVersions: import("drizzle-orm/relations").Many<"quote_line_item_versions">;
-    quotes: import("drizzle-orm/relations").Many<any>;
+    quotes: import("drizzle-orm/relations").Many<"quotes">;
 }>;
-export declare const quotesRelations: import("drizzle-orm/relations").Relations<string, {
-    quoteVersions: import("drizzle-orm/relations").Many<any>;
-    quoteVersion: import("drizzle-orm/relations").One<any, false>;
+export declare const quotesRelations: import("drizzle-orm/relations").Relations<"quotes", {
+    quoteVersions: import("drizzle-orm/relations").Many<"quote_versions">;
+    quoteVersion: import("drizzle-orm/relations").One<"quote_versions", false>;
 }>;
 export declare const quoteLineItemVersionsRelations: import("drizzle-orm/relations").Relations<"quote_line_item_versions", {
-    quoteVersion: import("drizzle-orm/relations").One<any, true>;
+    quoteVersion: import("drizzle-orm/relations").One<"quote_versions", true>;
     serviceCategory: import("drizzle-orm/relations").One<"service_categories", false>;
     rateCard: import("drizzle-orm/relations").One<"rate_cards", false>;
 }>;

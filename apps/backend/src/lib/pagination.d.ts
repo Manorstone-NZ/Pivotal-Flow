@@ -156,7 +156,7 @@ export declare const QuoteFilterSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     sortOrder: "asc" | "desc";
     search?: string | undefined;
-    status?: "draft" | "pending" | "approved" | "sent" | "accepted" | "rejected" | "cancelled" | undefined;
+    status?: "draft" | "pending" | "sent" | "approved" | "accepted" | "rejected" | "cancelled" | undefined;
     customerId?: string | undefined;
     projectId?: string | undefined;
     validFrom?: string | undefined;
@@ -164,7 +164,7 @@ export declare const QuoteFilterSchema: z.ZodObject<{
     sortBy?: string | undefined;
 }, {
     search?: string | undefined;
-    status?: "draft" | "pending" | "approved" | "sent" | "accepted" | "rejected" | "cancelled" | undefined;
+    status?: "draft" | "pending" | "sent" | "approved" | "accepted" | "rejected" | "cancelled" | undefined;
     customerId?: string | undefined;
     projectId?: string | undefined;
     validFrom?: string | undefined;

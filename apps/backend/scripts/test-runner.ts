@@ -144,7 +144,7 @@ class TestRunner {
       this.results.push(testResult);
       
       console.log(`  ✅ ${category} tests completed: ${testResult.passed} passed, ${testResult.failed} failed`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const testResult: TestResult = {
         type: 'vitest',
         category,
@@ -155,7 +155,8 @@ class TestRunner {
       };
       
       this.results.push(testResult);
-      console.log(`  ❌ ${category} tests failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(`  ❌ ${category} tests failed: ${errorMessage}`);
     }
   }
 
@@ -166,7 +167,12 @@ class TestRunner {
       if (!lastLine) {
         throw new Error('No output to parse');
       }
-      const result = JSON.parse(lastLine);
+      const result = JSON.parse(lastLine) as {
+        numPassedTests?: number;
+        numFailedTests?: number;
+        numSkippedTests?: number;
+        coverage?: { total?: { statements?: { pct?: number } } };
+      };
 
       return {
         type: 'vitest',

@@ -214,8 +214,6 @@ export declare const userListResponseSchema: z.ZodObject<{
     total: z.ZodNumber;
     totalPages: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: Date;
@@ -231,11 +229,11 @@ export declare const userListResponseSchema: z.ZodObject<{
         displayName: string | null;
         mfaEnabled: boolean;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: Date;
@@ -251,6 +249,8 @@ export declare const userListResponseSchema: z.ZodObject<{
         displayName: string | null;
         mfaEnabled: boolean;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }>;

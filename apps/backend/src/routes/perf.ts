@@ -1,12 +1,60 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
 
 import { logger } from '../lib/logger.js';
 
-// Performance summary schema - removed unused variable
+// Performance summary schemas
+const operationMetricsSchema = z.object({
+  operation: z.string(),
+  avgDuration: z.number(),
+  p50: z.number(),
+  p95: z.number(),
+  p99: z.number(),
+  totalCalls: z.number(),
+});
+
+const performanceSummarySchema = z.object({
+  cache: z.object({
+    hitRate: z.number(),
+    totalRequests: z.number(),
+    metrics: z.object({
+      hits: z.number(),
+      misses: z.number(),
+      sets: z.number(),
+      busts: z.number(),
+      errors: z.number(),
+    }),
+  }),
+  repositories: z.object({
+    topOperations: z.array(operationMetricsSchema),
+    totalOperations: z.number(),
+  }),
+  timestamp: z.string(),
+});
+
+const cacheMetricsSchema = z.object({
+  message: z.string(),
+  metrics: z.object({
+    hits: z.number(),
+    misses: z.number(),
+    sets: z.number(),
+    busts: z.number(),
+    errors: z.number(),
+  }),
+});
 
 export async function performanceRoutes(fastify: FastifyInstance): Promise<void> {
   // Performance summary endpoint
-  fastify.get('/summary', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/summary', {
+    schema: {
+      summary: 'Performance Summary',
+      description: 'Get comprehensive performance metrics and statistics',
+      response: {
+        200: performanceSummarySchema,
+        500: z.object({ error: z.string() }),
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/perf/summary' });
     
@@ -82,7 +130,16 @@ export async function performanceRoutes(fastify: FastifyInstance): Promise<void>
   });
 
   // Cache metrics endpoint
-  fastify.get('/cache', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/cache', {
+    schema: {
+      summary: 'Cache Metrics',
+      description: 'Get detailed cache performance metrics',
+      response: {
+        200: cacheMetricsSchema,
+        500: z.object({ error: z.string() }),
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/perf/cache' });
     

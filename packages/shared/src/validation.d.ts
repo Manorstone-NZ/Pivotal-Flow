@@ -13,14 +13,14 @@ export declare const paginationQuerySchema: z.ZodObject<{
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
     page: number;
-    limit: number;
     sortOrder: "asc" | "desc";
+    limit: number;
     sortBy?: string | undefined;
 }, {
     page?: number | undefined;
-    limit?: number | undefined;
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
+    limit?: number | undefined;
 }>;
 export declare const paginationResponseSchema: z.ZodObject<{
     page: z.ZodNumber;
@@ -29,14 +29,14 @@ export declare const paginationResponseSchema: z.ZodObject<{
     totalPages: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
     page: number;
-    limit: number;
     total: number;
     totalPages: number;
+    limit: number;
 }, {
     page: number;
-    limit: number;
     total: number;
     totalPages: number;
+    limit: number;
 }>;
 export declare const healthCheckSchema: z.ZodObject<{
     status: z.ZodEnum<["ok", "error"]>;
@@ -235,14 +235,14 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
         totalPages: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
     }, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
     }>;
 }, "strip", z.ZodTypeAny, {
     requestId: string;
@@ -250,9 +250,9 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
     timestamp: string;
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
     };
     data?: unknown[] | undefined;
     error?: string | undefined;
@@ -263,9 +263,9 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
     timestamp: string;
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
     };
     data?: unknown[] | undefined;
     error?: string | undefined;
@@ -281,15 +281,15 @@ export declare const requestContextSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     userAgent: string;
     requestId: string;
-    timestamp: Date;
     ip: string;
+    timestamp: Date;
     organizationId?: string | undefined;
     userId?: string | undefined;
 }, {
     userAgent: string;
     requestId: string;
-    timestamp: Date;
     ip: string;
+    timestamp: Date;
     organizationId?: string | undefined;
     userId?: string | undefined;
 }>;

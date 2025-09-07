@@ -5,100 +5,20 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import { logger } from "../../lib/logger.js";
 
 import { canAccessUser, extractUserContext } from "./rbac.js";
+import { userIdParamSchema, userResponseSchema, errorResponseSchema } from "./schemas.js";
 import { getUserById } from "./service.drizzle.js";
 
 export const getUserRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get("/v1/users/:id", {
     schema: {
-      
-      
-      
-      
-
-      // Params must declare required as an array and block extra fields
-      params: {
-        type: "object",
-        properties: {
-          id: { type: "string", description: "User ID" }
-        },
-        required: ["id"],
-        additionalProperties: false
-      },
-
+      params: userIdParamSchema,
       response: {
-        200: {
-          // Use anyOf for nullable fields
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            email: { type: "string", format: "email" },
-            displayName: { anyOf: [{ type: "string" }, { type: "null" }] },
-            isActive: { type: "boolean" },
-            mfaEnabled: { type: "boolean" },
-            createdAt: { type: "string", format: "date-time" },
-            roles: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  name: { type: "string" },
-                  description: { anyOf: [{ type: "string" }, { type: "null" }] },
-                  isSystem: { type: "boolean" },
-                  isActive: { type: "boolean" }
-                },
-                required: ["id", "name", "isSystem", "isActive"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: ["id", "email", "isActive", "mfaEnabled", "createdAt", "roles"],
-          additionalProperties: false
-        },
-
-        401: {
-          type: "object",
-          properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" }
-          },
-          required: ["error", "message", "code"],
-          additionalProperties: false
-        },
-
-        403: {
-          type: "object",
-          properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" }
-          },
-          required: ["error", "message", "code"],
-          additionalProperties: false
-        },
-
-        404: {
-          type: "object",
-          properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" }
-          },
-          required: ["error", "message", "code"],
-          additionalProperties: false
-        },
-
-        429: {
-          type: "object",
-          properties: {
-            error: { type: "string" },
-            message: { type: "string" },
-            code: { type: "string" }
-          },
-          required: ["error", "message", "code"],
-          additionalProperties: false
-        }
+        200: userResponseSchema,
+        400: errorResponseSchema,
+        401: errorResponseSchema,
+        403: errorResponseSchema,
+        404: errorResponseSchema,
+        429: errorResponseSchema
       }
     }
   }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {

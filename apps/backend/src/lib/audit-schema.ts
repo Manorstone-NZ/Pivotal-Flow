@@ -1,101 +1,55 @@
-import { z } from 'zod';
-
-// JSON schema for audit log old/new values
-export const AuditValuesSchema = z.record(z.unknown()).optional();
-
-// JSON schema for audit log metadata
-export const AuditMetadataSchema = z.record(z.unknown()).optional();
-
-// Complete audit log schema
-export const AuditLogSchema = z.object({
-  id: z.string(),
-  organizationId: z.string(),
-  entityType: z.string(),
-  entityId: z.string(),
-  action: z.string(),
-  actorId: z.string().optional(),
-  requestId: z.string().optional(),
-  ipAddress: z.string().optional(),
-  userAgent: z.string().optional(),
-  sessionId: z.string().optional(),
-  oldValues: AuditValuesSchema,
-  newValues: AuditValuesSchema,
-  metadata: AuditMetadataSchema,
-  createdAt: z.date()
-});
-
-// Type for audit log data
-export type AuditLogData = z.infer<typeof AuditLogSchema>;
-
-// Type for audit values
-export type AuditValues = z.infer<typeof AuditValuesSchema>;
-
-// Type for audit metadata
-export type AuditMetadata = z.infer<typeof AuditMetadataSchema>;
-
-// Validation function for audit log data
-export function validateAuditLogData(data: unknown): { isValid: boolean; errors: string[] } {
-  try {
-    AuditLogSchema.parse(data);
-    return { isValid: true, errors: [] };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        isValid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
-      };
-    }
-    return {
-      isValid: false,
-      errors: ['Unknown validation error']
-    };
-  }
+// Type definitions for audit logging
+export interface AuditValues {
+  [key: string]: unknown;
 }
 
-// Validation function specifically for old/new values
-export function validateAuditValues(values: unknown, context: string): { isValid: boolean; errors: string[] } {
-  try {
-    AuditValuesSchema.parse(values);
-    return { isValid: true, errors: [] };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        isValid: false,
-        errors: error.errors.map(err => `${context}.${err.path.join('.')}: ${err.message}`)
-      };
-    }
-    return {
-      isValid: false,
-      errors: [`${context}: Unknown validation error`]
-    };
-  }
+export interface AuditMetadata {
+  [key: string]: unknown;
 }
 
-// Helper function to create audit log data with validation
-export function createAuditLogData(data: {
+export interface AuditLog {
   id: string;
+  userId: string;
   organizationId: string;
-  entityType: string;
-  entityId: string;
   action: string;
-  actorId?: string;
-  requestId?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  sessionId?: string;
+  resourceType: string;
+  resourceId: string;
   oldValues?: AuditValues;
   newValues?: AuditValues;
   metadata?: AuditMetadata;
-}): AuditLogData {
-  const auditData = {
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string;
+}
+
+// Helper functions for audit logging
+export function createAuditLog(data: Omit<AuditLog, 'id' | 'timestamp'>): AuditLog {
+  return {
     ...data,
-    createdAt: new Date()
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
   };
+}
 
-  const validation = validateAuditLogData(auditData);
-  if (!validation.isValid) {
-    throw new Error(`Invalid audit log data: ${validation.errors.join(', ')}`);
+export function validateAuditLog(data: unknown): data is AuditLog {
+  if (typeof data !== 'object' || data === null) {
+    return false;
   }
-
-  return auditData;
+  
+  const auditLog = data as Record<string, unknown>;
+  
+  return (
+    typeof auditLog['id'] === 'string' &&
+    typeof auditLog['userId'] === 'string' &&
+    typeof auditLog['organizationId'] === 'string' &&
+    typeof auditLog['action'] === 'string' &&
+    typeof auditLog['resourceType'] === 'string' &&
+    typeof auditLog['resourceId'] === 'string' &&
+    typeof auditLog['timestamp'] === 'string' &&
+    (auditLog['oldValues'] === undefined || typeof auditLog['oldValues'] === 'object') &&
+    (auditLog['newValues'] === undefined || typeof auditLog['newValues'] === 'object') &&
+    (auditLog['metadata'] === undefined || typeof auditLog['metadata'] === 'object') &&
+    (auditLog['ipAddress'] === undefined || typeof auditLog['ipAddress'] === 'string') &&
+    (auditLog['userAgent'] === undefined || typeof auditLog['userAgent'] === 'string')
+  );
 }

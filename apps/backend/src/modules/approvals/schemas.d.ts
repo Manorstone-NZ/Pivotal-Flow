@@ -176,8 +176,6 @@ export declare const ListApprovalsResponseSchema: z.ZodObject<{
         reason?: string | undefined;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: string;
@@ -193,11 +191,11 @@ export declare const ListApprovalsResponseSchema: z.ZodObject<{
         decidedAt?: string | undefined;
         reason?: string | undefined;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }, {
-    page: number;
-    pageSize: number;
     items: {
         id: string;
         createdAt: string;
@@ -213,6 +211,8 @@ export declare const ListApprovalsResponseSchema: z.ZodObject<{
         decidedAt?: string | undefined;
         reason?: string | undefined;
     }[];
+    page: number;
+    pageSize: number;
     total: number;
     totalPages: number;
 }>;

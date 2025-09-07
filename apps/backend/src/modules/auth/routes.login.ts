@@ -4,48 +4,24 @@ import type { FastifyPluginAsync } from "fastify";
 import { config } from "../../config/index.js";
 import { logger } from "../../lib/logger.js";
 
-import type { LoginRequest, LoginResponse, AuthError } from "./schemas.js";
+import { LoginRequestSchema, LoginResponseSchema, AuthErrorSchema, type LoginRequest, type LoginResponse, type AuthError } from "./typeboxSchemas.js";
 import { AuthService } from "./service.drizzle.js";
 
 export const loginRoute: FastifyPluginAsync = async fastify => {
   // const auditLogger = createAuditLogger(fastify);
 
-  fastify.post<{ Body: LoginRequest; Reply: LoginResponse | AuthError }>(
+  fastify.post<{
+    Body: LoginRequest;
+    Reply: LoginResponse | AuthError;
+  }>(
     "/login",
     {
       schema: {
-        body: {
-          type: "object",
-          required: ["email", "password"],
-          properties: {
-            email: { type: "string", format: "email" },
-            password: { type: "string", minLength: 12 }
-          },
-          additionalProperties: false
-        },
+        body: LoginRequestSchema,
         response: {
-          200: {
-            type: "object",
-            required: ["accessToken", "user"],
-            properties: {
-              accessToken: { type: "string" },
-              user: {
-                type: "object",
-                required: ["id", "email", "displayName", "roles", "organizationId"],
-                properties: {
-                  id: { type: "string" },
-                  email: { type: "string" },
-                  displayName: { type: "string" },
-                  roles: { type: "array", items: { type: "string" } },
-                  organizationId: { type: "string" }
-                },
-                additionalProperties: false
-              }
-            },
-            additionalProperties: false
-          },
-          401: errorShape(),
-          500: errorShape()
+          200: LoginResponseSchema,
+          401: AuthErrorSchema,
+          500: AuthErrorSchema
         }
       }
     },
@@ -138,16 +114,3 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
     }
   );
 };
-
-function errorShape() {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required: ["error", "message", "code"],
-    properties: {
-      error: { type: "string" },
-      message: { type: "string" },
-      code: { type: "string" }
-    }
-  } as const;
-}

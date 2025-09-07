@@ -10,7 +10,7 @@ import { registerGetQuoteVersionsRoute, registerGetQuoteVersionRoute } from './r
 /**
  * Register all quote routes with Fastify
  */
-export function registerQuoteRoutes(fastify: FastifyInstance) {
+export function registerQuoteRoutes(fastify: FastifyInstance<any, any, any, any, any>) {
   // Register individual routes directly
   registerCreateQuoteRoute(fastify);
   registerListQuotesRoute(fastify);

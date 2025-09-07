@@ -53,7 +53,7 @@ describe('D3 Contract Tests - API Surface Stability', () => {
       const response = await fetch(`${baseUrl}/v1/users`);
       
       if (response.status === 401) {
-        const error = await response.json();
+        const error = await response.json() as { error: string; code: string; message: string };
         
         expect(error).toHaveProperty('error');
         expect(error).toHaveProperty('code');
@@ -67,7 +67,7 @@ describe('D3 Contract Tests - API Surface Stability', () => {
       const response = await fetch(`${baseUrl}/v1/nonexistent`);
       
       if (response.status === 404) {
-        const error = await response.json();
+        const error = await response.json() as { error: string; code: string; message: string };
         
         expect(error).toHaveProperty('error');
         expect(error).toHaveProperty('code');
@@ -141,7 +141,7 @@ describe('D3 Contract Tests - API Surface Stability', () => {
       
       // Should return 400 for invalid page size
       if (response.status === 400) {
-        const error = await response.json();
+        const error = await response.json() as { error: { message: string } };
         expect(error.error.message).toContain('Page size');
       }
     });
@@ -154,7 +154,7 @@ describe('D3 Contract Tests - API Surface Stability', () => {
       // Should return 401 for missing authentication
       expect(response.status).toBe(401);
       
-      const error = await response.json();
+      const error = await response.json() as { code: string };
       expect(error.code).toBeTruthy();
     });
 
@@ -229,7 +229,17 @@ describe('D3 Contract Tests - Endpoint Specific', () => {
       const response = await fetch(`${baseUrl}/v1/users?page=1&size=5`);
       
       if (response.status === 200) {
-        const data = await response.json();
+        const data = await response.json() as {
+          data: unknown[];
+          meta: {
+            page: number;
+            size: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrev: boolean;
+          };
+        };
         
         // Should have new pagination format
         expect(data).toHaveProperty('data');

@@ -59,8 +59,9 @@ async function runTests() {
       
       console.log(`  ✅ ${category.name} completed\n`);
       
-    } catch (error: any) {
-      console.log(`  ❌ ${category.name} failed: ${error.message}\n`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(`  ❌ ${category.name} failed: ${errorMessage}\n`);
       totalFailed++;
     }
   }
@@ -83,7 +84,8 @@ async function runTests() {
 }
 
 // Run the tests
-runTests().catch((error) => {
-  console.error('💥 Test execution failed:', error);
+runTests().catch((error: unknown) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('💥 Test execution failed:', errorMessage);
   process.exit(1);
 });

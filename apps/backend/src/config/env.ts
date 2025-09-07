@@ -5,8 +5,6 @@
 
 import { randomBytes } from 'crypto';
 
-import { z } from 'zod';
-
 // Custom error for configuration issues
 export class ConfigError extends Error {
   constructor(
@@ -19,101 +17,108 @@ export class ConfigError extends Error {
   }
 }
 
-// Environment validation schemas
-const NodeEnvSchema = z.enum(['development', 'staging', 'production', 'test']);
-
-const ServerConfigSchema = z.object({
-  PORT: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1024).max(65535)),
-  HOST: z.string().default('0.0.0.0'),
-  CORS_ORIGIN: z.string().refine(
-    (val) => {
-      if (val === '*') return true;
-      return val.startsWith('http://') || val.startsWith('https://');
-    },
-    { message: 'CORS_ORIGIN must be a valid URL or wildcard (*)' }
-  ),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-  NODE_ENV: NodeEnvSchema,
-  LOG_CLOUD_SHIPPING: z.string().transform(val => val === 'true').default('false'),
-});
-
-const AuthConfigSchema = z.object({
-  JWT_SECRET: z.string().min(1, 'JWT_SECRET must not be empty'),
-  ACCESS_TOKEN_TTL: z.string().default('15m'),
-  REFRESH_TOKEN_TTL: z.string().default('7d'),
-  JWT_ISSUER: z.string().default('pivotal-flow-auth'),
-  JWT_AUDIENCE: z.string().default('pivotal-flow-api'),
-  COOKIE_SECRET: z.string().default('pivotal-flow-cookie-secret'),
-  COOKIE_SECURE: z.string().transform(val => val === 'true').default('false'),
-});
-
-const RedisConfigSchema = z.object({
-  REDIS_URL: z.string().refine(
-    (val) => val.startsWith('redis://') || val.startsWith('rediss://'),
-    { message: 'REDIS_URL must start with redis:// or rediss://' }
-  ),
-});
-
-const DatabaseConfigSchema = z.object({
-  DATABASE_URL: z.string().refine(
-    (val) => val.startsWith('postgresql://'),
-    { message: 'DATABASE_URL must start with postgresql://' }
-  ),
-});
-
-const FilesConfigSchema = z.object({
-  FILE_TOKEN_SECRET: z.string().optional(),
-});
-
-const MetricsConfigSchema = z.object({
-  METRICS_ENABLED: z.string().transform(val => val === 'true').default('false'),
-  METRICS_PORT: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1024).max(65535)).default('9091'),
-  METRICS_PATH: z.string().default('/metrics'),
-});
-
-const RateLimitConfigSchema = z.object({
-  RATE_LIMIT_ENABLED: z.string().transform(val => val === 'true').default('true'),
-  RATE_LIMIT_MAX: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('1000'),
-  RATE_LIMIT_WINDOW: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1000)).default('900000'),
-  RATE_LIMIT_UNAUTH_MAX: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('1000'),
-  RATE_LIMIT_AUTH_MAX: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('5000'),
-  RATE_LIMIT_ADMIN_MAX: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('10000'),
-  RATE_LIMIT_LOGIN_MAX: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('100'),
-});
-
-const XeroConfigSchema = z.object({
-  XERO_CLIENT_ID: z.string().optional(),
-  XERO_CLIENT_SECRET: z.string().optional(),
-  XERO_REDIRECT_URI: z.string().optional(),
-  XERO_TENANT_ID: z.string().optional(),
-  XERO_WEBHOOK_KEY: z.string().optional(),
-});
-
-// Main configuration schema
-const ConfigSchema = z.object({
-  server: ServerConfigSchema,
-  auth: AuthConfigSchema,
-  redis: RedisConfigSchema,
-  db: DatabaseConfigSchema,
-  files: FilesConfigSchema,
-  metrics: MetricsConfigSchema,
-  rateLimit: RateLimitConfigSchema,
-  xero: XeroConfigSchema,
-});
-
-export type Config = z.infer<typeof ConfigSchema> & {
-  xero: {
-    enabled: boolean;
-    clientId?: string | undefined;
-    clientSecret?: string | undefined;
-    redirectUri?: string | undefined;
-    tenantId?: string | undefined;
-    webhookKey?: string | undefined;
+// Type definitions for configuration
+export interface Config {
+  server: {
+    PORT: number;
+    HOST: string;
+    CORS_ORIGIN: string;
+    LOG_LEVEL: string;
+    NODE_ENV: string;
+    LOG_CLOUD_SHIPPING: boolean;
+  };
+  auth: {
+    JWT_SECRET: string;
+    ACCESS_TOKEN_TTL: string;
+    REFRESH_TOKEN_TTL: string;
+    JWT_ISSUER: string;
+    JWT_AUDIENCE: string;
+    COOKIE_SECRET: string;
+    COOKIE_SECURE: boolean;
+  };
+  redis: {
+    REDIS_URL: string;
+  };
+  db: {
+    DATABASE_URL: string;
   };
   files: {
     tokenSecret: string;
   };
-};
+  metrics: {
+    METRICS_ENABLED: boolean;
+    METRICS_PORT: number;
+    METRICS_PATH: string;
+  };
+  rateLimit: {
+    RATE_LIMIT_ENABLED: boolean;
+    RATE_LIMIT_MAX: number;
+    RATE_LIMIT_WINDOW: number;
+    RATE_LIMIT_UNAUTH_MAX: number;
+    RATE_LIMIT_AUTH_MAX: number;
+    RATE_LIMIT_ADMIN_MAX: number;
+    RATE_LIMIT_LOGIN_MAX: number;
+  };
+  xero: {
+    enabled: boolean;
+    clientId?: string;
+    clientSecret?: string;
+    redirectUri?: string;
+    tenantId?: string;
+    webhookKey?: string;
+  };
+}
+
+// Validation helpers
+function validatePort(value: string): number {
+  const port = parseInt(value, 10);
+  if (isNaN(port) || port < 1024 || port > 65535) {
+    throw new Error(`Invalid port: ${value}. Must be between 1024 and 65535`);
+  }
+  return port;
+}
+
+function validateBoolean(value: string): boolean {
+  return value === 'true';
+}
+
+function validateCorsOrigin(value: string): string {
+  if (value === '*') return value;
+  if (!value.startsWith('http://') && !value.startsWith('https://')) {
+    throw new Error('CORS_ORIGIN must be a valid URL or wildcard (*)');
+  }
+  return value;
+}
+
+function validateRedisUrl(value: string): string {
+  if (!value.startsWith('redis://') && !value.startsWith('rediss://')) {
+    throw new Error('REDIS_URL must start with redis:// or rediss://');
+  }
+  return value;
+}
+
+function validateDatabaseUrl(value: string): string {
+  if (!value.startsWith('postgresql://')) {
+    throw new Error('DATABASE_URL must start with postgresql://');
+  }
+  return value;
+}
+
+function validateNodeEnv(value: string): string {
+  const validEnvs = ['development', 'staging', 'production', 'test'];
+  if (!validEnvs.includes(value)) {
+    throw new Error(`Invalid NODE_ENV: ${value}. Must be one of: ${validEnvs.join(', ')}`);
+  }
+  return value;
+}
+
+function validateLogLevel(value: string): string {
+  const validLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
+  if (!validLevels.includes(value)) {
+    throw new Error(`Invalid LOG_LEVEL: ${value}. Must be one of: ${validLevels.join(', ')}`);
+  }
+  return value;
+}
 
 /**
  * Load and validate environment configuration
@@ -148,74 +153,72 @@ export function loadConfig(): Config {
   }
 
   try {
-    const rawConfig = {
+    const config: Config = {
       server: {
-        PORT: env['PORT'] || '3000',
-        HOST: env['HOST'],
-        CORS_ORIGIN: env['CORS_ORIGIN'],
-        LOG_LEVEL: env['LOG_LEVEL'],
-        NODE_ENV: nodeEnv,
-        LOG_CLOUD_SHIPPING: env['LOG_CLOUD_SHIPPING'],
+        PORT: validatePort(env['PORT'] || '3000'),
+        HOST: env['HOST'] || '0.0.0.0',
+        CORS_ORIGIN: validateCorsOrigin(env['CORS_ORIGIN'] || 'http://localhost:3000'),
+        LOG_LEVEL: validateLogLevel(env['LOG_LEVEL'] || 'info'),
+        NODE_ENV: validateNodeEnv(nodeEnv),
+        LOG_CLOUD_SHIPPING: validateBoolean(env['LOG_CLOUD_SHIPPING'] || 'false'),
       },
       auth: {
-        JWT_SECRET: env['JWT_SECRET'],
-        ACCESS_TOKEN_TTL: env['ACCESS_TOKEN_TTL'],
-        REFRESH_TOKEN_TTL: env['REFRESH_TOKEN_TTL'],
-        JWT_ISSUER: env['JWT_ISSUER'],
-        JWT_AUDIENCE: env['JWT_AUDIENCE'],
-        COOKIE_SECRET: env['COOKIE_SECRET'],
-        COOKIE_SECURE: env['COOKIE_SECURE'],
+        JWT_SECRET: env['JWT_SECRET'] || (nodeEnv === 'development' ? 'dev-secret-key' : ''),
+        ACCESS_TOKEN_TTL: env['ACCESS_TOKEN_TTL'] || '15m',
+        REFRESH_TOKEN_TTL: env['REFRESH_TOKEN_TTL'] || '7d',
+        JWT_ISSUER: env['JWT_ISSUER'] || 'pivotal-flow-auth',
+        JWT_AUDIENCE: env['JWT_AUDIENCE'] || 'pivotal-flow-api',
+        COOKIE_SECRET: env['COOKIE_SECRET'] || 'pivotal-flow-cookie-secret',
+        COOKIE_SECURE: validateBoolean(env['COOKIE_SECURE'] || 'false'),
       },
       redis: {
-        REDIS_URL: env['REDIS_URL'],
+        REDIS_URL: validateRedisUrl(env['REDIS_URL'] || 'redis://localhost:6379'),
       },
       db: {
-        DATABASE_URL: env['DATABASE_URL'],
+        DATABASE_URL: validateDatabaseUrl(env['DATABASE_URL'] || 'postgresql://localhost:5432/pivotal'),
       },
       files: {
-        FILE_TOKEN_SECRET: env['FILE_TOKEN_SECRET'],
+        tokenSecret: '', // Will be set below
       },
       metrics: {
-        METRICS_ENABLED: env['METRICS_ENABLED'],
-        METRICS_PORT: env['METRICS_PORT'],
-        METRICS_PATH: env['METRICS_PATH'],
+        METRICS_ENABLED: validateBoolean(env['METRICS_ENABLED'] || 'false'),
+        METRICS_PORT: validatePort(env['METRICS_PORT'] || '9091'),
+        METRICS_PATH: env['METRICS_PATH'] || '/metrics',
       },
       rateLimit: {
-        RATE_LIMIT_ENABLED: env['RATE_LIMIT_ENABLED'],
-        RATE_LIMIT_MAX: env['RATE_LIMIT_MAX'],
-        RATE_LIMIT_WINDOW: env['RATE_LIMIT_WINDOW'],
-        RATE_LIMIT_UNAUTH_MAX: env['RATE_LIMIT_UNAUTH_MAX'],
-        RATE_LIMIT_AUTH_MAX: env['RATE_LIMIT_AUTH_MAX'],
-        RATE_LIMIT_ADMIN_MAX: env['RATE_LIMIT_ADMIN_MAX'],
-        RATE_LIMIT_LOGIN_MAX: env['RATE_LIMIT_LOGIN_MAX'],
+        RATE_LIMIT_ENABLED: validateBoolean(env['RATE_LIMIT_ENABLED'] || 'true'),
+        RATE_LIMIT_MAX: parseInt(env['RATE_LIMIT_MAX'] || '1000', 10),
+        RATE_LIMIT_WINDOW: parseInt(env['RATE_LIMIT_WINDOW'] || '900000', 10),
+        RATE_LIMIT_UNAUTH_MAX: parseInt(env['RATE_LIMIT_UNAUTH_MAX'] || '1000', 10),
+        RATE_LIMIT_AUTH_MAX: parseInt(env['RATE_LIMIT_AUTH_MAX'] || '5000', 10),
+        RATE_LIMIT_ADMIN_MAX: parseInt(env['RATE_LIMIT_ADMIN_MAX'] || '10000', 10),
+        RATE_LIMIT_LOGIN_MAX: parseInt(env['RATE_LIMIT_LOGIN_MAX'] || '100', 10),
       },
       xero: {
-        XERO_CLIENT_ID: env['XERO_CLIENT_ID'],
-        XERO_CLIENT_SECRET: env['XERO_CLIENT_SECRET'],
-        XERO_REDIRECT_URI: env['XERO_REDIRECT_URI'],
-        XERO_TENANT_ID: env['XERO_TENANT_ID'],
-        XERO_WEBHOOK_KEY: env['XERO_WEBHOOK_KEY'],
+        enabled: false, // Will be set below
+        ...(env['XERO_CLIENT_ID'] && { clientId: env['XERO_CLIENT_ID'] }),
+        ...(env['XERO_CLIENT_SECRET'] && { clientSecret: env['XERO_CLIENT_SECRET'] }),
+        ...(env['XERO_REDIRECT_URI'] && { redirectUri: env['XERO_REDIRECT_URI'] }),
+        ...(env['XERO_TENANT_ID'] && { tenantId: env['XERO_TENANT_ID'] }),
+        ...(env['XERO_WEBHOOK_KEY'] && { webhookKey: env['XERO_WEBHOOK_KEY'] }),
       },
     };
 
-    const validatedConfig = ConfigSchema.parse(rawConfig);
-
     // Determine Xero enabled status
-    const xeroEnabled = !!(
-      validatedConfig.xero.XERO_CLIENT_ID &&
-      validatedConfig.xero.XERO_CLIENT_SECRET &&
-      validatedConfig.xero.XERO_REDIRECT_URI &&
-      validatedConfig.xero.XERO_TENANT_ID
+    config.xero.enabled = !!(
+      config.xero.clientId &&
+      config.xero.clientSecret &&
+      config.xero.redirectUri &&
+      config.xero.tenantId
     );
 
     // Handle file token secret
-    let fileTokenSecret = validatedConfig.files.FILE_TOKEN_SECRET;
+    let fileTokenSecret = env['FILE_TOKEN_SECRET'];
     
     if (!fileTokenSecret) {
       if (nodeEnv === 'development') {
         // Generate ephemeral secret for development
         fileTokenSecret = randomBytes(32).toString('hex');
-        // Log warning about ephemeral secret (will be logged by caller)
       } else {
         // Required in staging/production
         throw new ConfigError(
@@ -225,34 +228,15 @@ export function loadConfig(): Config {
       }
     }
 
-    const config: Config = {
-      ...validatedConfig,
-      xero: {
-        enabled: xeroEnabled,
-        clientId: validatedConfig.xero.XERO_CLIENT_ID || undefined,
-        clientSecret: validatedConfig.xero.XERO_CLIENT_SECRET || undefined,
-        redirectUri: validatedConfig.xero.XERO_REDIRECT_URI || undefined,
-        tenantId: validatedConfig.xero.XERO_TENANT_ID || undefined,
-        webhookKey: validatedConfig.xero.XERO_WEBHOOK_KEY || undefined,
-      },
-      files: {
-        tokenSecret: fileTokenSecret,
-      },
-    };
+    config.files.tokenSecret = fileTokenSecret;
 
     return Object.freeze(config) as Config;
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const invalidValues: Record<string, string> = {};
-      error.errors.forEach(err => {
-        if (err.path.length > 0) {
-          invalidValues[err.path.join('.')] = err.message;
-        }
-      });
+    if (error instanceof Error) {
       throw new ConfigError(
-        'Invalid environment variable values',
+        `Configuration error: ${error.message}`,
         [],
-        invalidValues
+        { error: error.message }
       );
     }
     throw error;

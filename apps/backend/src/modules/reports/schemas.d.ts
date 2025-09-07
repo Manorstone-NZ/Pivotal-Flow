@@ -443,9 +443,9 @@ export declare const QuoteCycleTimeSummarySchema: z.ZodObject<{
         count: number;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    totalQuotes: number;
     minCycleTimeDays: number;
     maxCycleTimeDays: number;
+    totalQuotes: number;
     averageCycleTimeDays: number;
     medianCycleTimeDays: number;
     quotesByStatus: Record<string, number>;
@@ -456,9 +456,9 @@ export declare const QuoteCycleTimeSummarySchema: z.ZodObject<{
         count: number;
     }[];
 }, {
-    totalQuotes: number;
     minCycleTimeDays: number;
     maxCycleTimeDays: number;
+    totalQuotes: number;
     averageCycleTimeDays: number;
     medianCycleTimeDays: number;
     quotesByStatus: Record<string, number>;
@@ -708,10 +708,10 @@ export declare const TimeApprovalsRowSchema: z.ZodObject<{
     userId: string;
     userName: string;
     projectName: string;
-    hours: number;
     entryId: string;
     submittedAt: string;
     leadTimeHours: number;
+    hours: number;
     approvedAt?: string | undefined;
     rejectedAt?: string | undefined;
 }, {
@@ -720,10 +720,10 @@ export declare const TimeApprovalsRowSchema: z.ZodObject<{
     userId: string;
     userName: string;
     projectName: string;
-    hours: number;
     entryId: string;
     submittedAt: string;
     leadTimeHours: number;
+    hours: number;
     approvedAt?: string | undefined;
     rejectedAt?: string | undefined;
 }>;
@@ -769,16 +769,16 @@ export declare const PaginatedResponseSchema: <T extends z.ZodTypeAny>(itemSchem
         hasPrev: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }>;
@@ -786,9 +786,9 @@ export declare const PaginatedResponseSchema: <T extends z.ZodTypeAny>(itemSchem
     data: T["_output"][];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -796,9 +796,9 @@ export declare const PaginatedResponseSchema: <T extends z.ZodTypeAny>(itemSchem
     data: T["_input"][];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -828,9 +828,9 @@ export declare const ReportSummaryResponseSchema: z.ZodObject<{
             count: number;
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        totalQuotes: number;
         minCycleTimeDays: number;
         maxCycleTimeDays: number;
+        totalQuotes: number;
         averageCycleTimeDays: number;
         medianCycleTimeDays: number;
         quotesByStatus: Record<string, number>;
@@ -841,9 +841,9 @@ export declare const ReportSummaryResponseSchema: z.ZodObject<{
             count: number;
         }[];
     }, {
-        totalQuotes: number;
         minCycleTimeDays: number;
         maxCycleTimeDays: number;
+        totalQuotes: number;
         averageCycleTimeDays: number;
         medianCycleTimeDays: number;
         quotesByStatus: Record<string, number>;
@@ -997,9 +997,9 @@ export declare const ReportSummaryResponseSchema: z.ZodObject<{
     reportType: string;
     filters: Record<string, any>;
     summary: {
-        totalQuotes: number;
         minCycleTimeDays: number;
         maxCycleTimeDays: number;
+        totalQuotes: number;
         averageCycleTimeDays: number;
         medianCycleTimeDays: number;
         quotesByStatus: Record<string, number>;
@@ -1053,9 +1053,9 @@ export declare const ReportSummaryResponseSchema: z.ZodObject<{
     reportType: string;
     filters: Record<string, any>;
     summary: {
-        totalQuotes: number;
         minCycleTimeDays: number;
         maxCycleTimeDays: number;
+        totalQuotes: number;
         averageCycleTimeDays: number;
         medianCycleTimeDays: number;
         quotesByStatus: Record<string, number>;

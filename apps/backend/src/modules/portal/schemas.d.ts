@@ -20,9 +20,9 @@ export declare const PortalQuoteFiltersSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>, {
     page: number;
     limit: number;
@@ -32,9 +32,9 @@ export declare const PortalQuoteFiltersSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>;
 export declare const PortalInvoiceFiltersSchema: z.ZodEffects<z.ZodObject<{
     status: z.ZodOptional<z.ZodUnion<[z.ZodEnum<[string, ...string[]]>, z.ZodArray<z.ZodEnum<[string, ...string[]]>, "many">]>>;
@@ -52,9 +52,9 @@ export declare const PortalInvoiceFiltersSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>, {
     page: number;
     limit: number;
@@ -64,9 +64,9 @@ export declare const PortalInvoiceFiltersSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>;
 export declare const PortalTimeEntryFiltersSchema: z.ZodEffects<z.ZodObject<{
     projectId: z.ZodOptional<z.ZodString>;
@@ -110,15 +110,15 @@ export declare const PortalQuoteQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>;
 export declare const PortalInvoiceQuerySchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodUnion<[z.ZodEnum<[string, ...string[]]>, z.ZodArray<z.ZodEnum<[string, ...string[]]>, "many">]>>;
@@ -130,15 +130,15 @@ export declare const PortalInvoiceQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }, {
     status?: string | string[] | undefined;
     page?: number | undefined;
-    limit?: number | undefined;
     fromDate?: string | undefined;
     toDate?: string | undefined;
+    limit?: number | undefined;
 }>;
 export declare const PortalTimeEntryQuerySchema: z.ZodObject<{
     projectId: z.ZodOptional<z.ZodString>;
@@ -727,16 +727,16 @@ export declare const PortalQuoteListResponseSchema: z.ZodObject<{
         hasPrev: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }>;
@@ -765,9 +765,9 @@ export declare const PortalQuoteListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -796,9 +796,9 @@ export declare const PortalQuoteListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -871,16 +871,16 @@ export declare const PortalInvoiceListResponseSchema: z.ZodObject<{
         hasPrev: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }>;
@@ -907,9 +907,9 @@ export declare const PortalInvoiceListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -936,9 +936,9 @@ export declare const PortalInvoiceListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -975,16 +975,16 @@ export declare const PortalTimeEntryListResponseSchema: z.ZodObject<{
         hasPrev: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }, {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     }>;
@@ -999,9 +999,9 @@ export declare const PortalTimeEntryListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };
@@ -1016,9 +1016,9 @@ export declare const PortalTimeEntryListResponseSchema: z.ZodObject<{
     }[];
     pagination: {
         page: number;
-        limit: number;
         total: number;
         totalPages: number;
+        limit: number;
         hasNext: boolean;
         hasPrev: boolean;
     };

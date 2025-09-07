@@ -109,7 +109,8 @@ class TestRunner {
                 duration: Date.now() - startTime
             };
             this.results.push(testResult);
-            console.log(`  ❌ ${category} tests failed: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.log(`  ❌ ${category} tests failed: ${errorMessage}`);
         }
     }
     parseTestOutput(output, category, startTime) {

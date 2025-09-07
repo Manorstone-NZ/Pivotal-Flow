@@ -1,10 +1,32 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { register } from 'prom-client';
+import { z } from 'zod';
 
 import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';
 
-// Default metrics are already collected in main index.ts
+// Metrics response schemas
+const metricsInfoSchema = z.object({
+  enabled: z.boolean(),
+  path: z.string(),
+  defaultMetrics: z.boolean(),
+  customMetrics: z.array(z.string()),
+});
+
+const metricsHealthSchema = z.object({
+  status: z.enum(['healthy', 'unhealthy']),
+  timestamp: z.string(),
+  metrics: z.object({
+    enabled: z.boolean(),
+    registryWorking: z.boolean(),
+    contentType: z.string(),
+  }),
+});
+
+const metricsErrorSchema = z.object({
+  status: z.enum(['unhealthy']),
+  error: z.string(),
+});
 
 export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
   // Metrics endpoint
@@ -44,7 +66,16 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
   });
   
   // Metrics info endpoint
-  fastify.get('/info', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/info', {
+    schema: {
+      summary: 'Metrics Information',
+      description: 'Get metrics configuration and available metrics',
+      response: {
+        200: metricsInfoSchema,
+        500: z.object({ error: z.string() }),
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/metrics/info' });
     
@@ -80,7 +111,16 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // Health check endpoint for metrics
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/health', {
+    schema: {
+      summary: 'Metrics Health Check',
+      description: 'Check if metrics registry is working properly',
+      response: {
+        200: metricsHealthSchema,
+        500: metricsErrorSchema,
+      }
+    }
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const requestId = (request as any).requestId ?? 'unknown';
     const requestLogger = logger.child({ requestId, route: '/metrics/health' });
     

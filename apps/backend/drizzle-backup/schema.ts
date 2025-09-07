@@ -522,7 +522,7 @@ export const idempotencyKeys = pgTable("idempotency_keys", {
 	unique("idempotency_keys_organization_id_user_id_route_request_hash_key").on(table.organizationId, table.userId, table.route, table.requestHash),
 ]);
 
-export const quoteVersions: any = pgTable("quote_versions", {
+export const quoteVersions = pgTable("quote_versions", {
 	id: text().primaryKey().notNull(),
 	quoteId: text("quote_id").notNull(),
 	versionNumber: integer("version_number").notNull(),
@@ -636,7 +636,7 @@ export const quoteLineItemVersions = pgTable("quote_line_item_versions", {
 	unique("quote_line_item_versions_quote_version_id_line_number_key").on(table.quoteVersionId, table.lineNumber),
 ]);
 
-export const quotes: any = pgTable("quotes", {
+export const quotes = pgTable("quotes", {
 	id: text().primaryKey().notNull(),
 	organizationId: text("organization_id").notNull(),
 	quoteNumber: varchar("quote_number", { length: 50 }).notNull(),
