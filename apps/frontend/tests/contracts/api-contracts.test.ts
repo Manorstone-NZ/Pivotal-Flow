@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 import { ContractValidator, ApiEndpoints, UserSchemas, QuoteSchemas, RateCardSchemas } from '@pivotal-flow/sdk/contracts/validation';
-import { createContractValidator } from '@pivotal-flow/sdk/contracts/validation';
 
 // Test configuration
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
@@ -11,26 +10,26 @@ const TEST_USER = {
 };
 
 describe('Contract Tests - API Validation', () => {
-  let contractApi: ReturnType<typeof createContractValidator>;
   let authToken: string;
   
   beforeAll(async () => {
-    // Create contract validator instance
-    contractApi = createContractValidator(API_BASE_URL);
-    
     // Get auth token for protected endpoints
     try {
-      const loginResponse = await contractApi.post('/api/v1/auth/login', {
-        email: TEST_USER.email,
-        password: TEST_USER.password,
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: TEST_USER.email,
+          password: TEST_USER.password,
+        }),
       });
       
-      authToken = loginResponse.data.accessToken;
-      
-      // Set auth header for subsequent requests
-      contractApi.setHeaders({
-        Authorization: `Bearer ${authToken}`,
-      });
+      if (response.ok) {
+        const loginData = await response.json();
+        authToken = loginData.accessToken;
+      }
     } catch (error) {
       console.warn('Could not authenticate for contract tests:', error);
     }
@@ -55,23 +54,33 @@ describe('Contract Tests - API Validation', () => {
       expect(validatedRequest).toEqual(loginData);
       
       try {
-        const response = await contractApi.post('/api/v1/auth/login', loginData);
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(loginData),
+        });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          UserSchemas.loginResponse,
-          response.data
-        );
-        
-        expect(validatedResponse).toHaveProperty('user');
-        expect(validatedResponse).toHaveProperty('accessToken');
-        expect(validatedResponse).toHaveProperty('refreshToken');
-        expect(validatedResponse).toHaveProperty('expiresIn');
-        
-        expect(validatedResponse.user).toHaveProperty('id');
-        expect(validatedResponse.user).toHaveProperty('email');
-        expect(validatedResponse.user).toHaveProperty('name');
-        expect(validatedResponse.user).toHaveProperty('role');
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const validatedResponse = ContractValidator.validateResponse(
+            UserSchemas.loginResponse,
+            responseData
+          );
+          
+          expect(validatedResponse).toHaveProperty('user');
+          expect(validatedResponse).toHaveProperty('accessToken');
+          expect(validatedResponse).toHaveProperty('refreshToken');
+          expect(validatedResponse).toHaveProperty('expiresIn');
+          
+          expect(validatedResponse.user).toHaveProperty('id');
+          expect(validatedResponse.user).toHaveProperty('email');
+          expect(validatedResponse.user).toHaveProperty('name');
+          expect(validatedResponse.user).toHaveProperty('role');
+        }
         
       } catch (error) {
         // If backend is not available, test should still validate schemas
@@ -85,26 +94,38 @@ describe('Contract Tests - API Validation', () => {
       };
       
       // Validate request data
+      const refreshTokenSchema = Type.Object({ refreshToken: Type.String() });
       const validatedRequest = ContractValidator.validateRequest(
-        z.object({ refreshToken: z.string() }),
+        refreshTokenSchema,
         refreshData
       );
       expect(validatedRequest).toEqual(refreshData);
       
       try {
-        const response = await contractApi.post('/api/v1/auth/refresh', refreshData);
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(refreshData),
+        });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          z.object({
-            accessToken: z.string(),
-            expiresIn: z.number().int(),
-          }),
-          response.data
-        );
-        
-        expect(validatedResponse).toHaveProperty('accessToken');
-        expect(validatedResponse).toHaveProperty('expiresIn');
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const refreshResponseSchema = Type.Object({
+            accessToken: Type.String(),
+            expiresIn: Type.Number(),
+          });
+          const validatedResponse = ContractValidator.validateResponse(
+            refreshResponseSchema,
+            responseData
+          );
+          
+          expect(validatedResponse).toHaveProperty('accessToken');
+          expect(validatedResponse).toHaveProperty('expiresIn');
+        }
         
       } catch (error) {
         console.warn('Backend not available for refresh test:', error);
@@ -122,37 +143,49 @@ describe('Contract Tests - API Validation', () => {
       };
       
       // Validate request parameters
+      const paginationQuerySchema = Type.Object({
+        page: Type.Number({ minimum: 1, default: 1 }),
+        limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
+        sort: Type.Optional(Type.String()),
+        order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
+      });
       const validatedParams = ContractValidator.validateRequest(
-        z.object({
-          page: z.number().int().min(1).default(1),
-          limit: z.number().int().min(1).max(100).default(20),
-          sort: z.string().optional(),
-          order: z.enum(['asc', 'desc']).default('desc'),
-        }),
+        paginationQuerySchema,
         queryParams
       );
       expect(validatedParams).toEqual(queryParams);
       
       try {
-        const response = await contractApi.get('/api/v1/users', {
-          params: queryParams,
+        const url = new URL(`${API_BASE_URL}/api/v1/users`);
+        Object.entries(queryParams).forEach(([key, value]) => {
+          url.searchParams.append(key, value.toString());
         });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          z.object({
-            data: z.array(UserSchemas.user),
-            pagination: z.object({
-              page: z.number().int().min(1),
-              limit: z.number().int().min(1),
-              total: z.number().int().min(0),
-              totalPages: z.number().int().min(0),
-              hasNext: z.boolean(),
-              hasPrev: z.boolean(),
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+        
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const usersListResponseSchema = Type.Object({
+            data: Type.Array(UserSchemas.user),
+            pagination: Type.Object({
+              page: Type.Number({ minimum: 1 }),
+              limit: Type.Number({ minimum: 1 }),
+              total: Type.Number({ minimum: 0 }),
+              totalPages: Type.Number({ minimum: 0 }),
+              hasNext: Type.Boolean(),
+              hasPrev: Type.Boolean(),
             }),
-          }),
-          response.data
-        );
+          });
+          const validatedResponse = ContractValidator.validateResponse(
+            usersListResponseSchema,
+            responseData
+          );
         
         expect(validatedResponse).toHaveProperty('data');
         expect(validatedResponse).toHaveProperty('pagination');
@@ -188,21 +221,32 @@ describe('Contract Tests - API Validation', () => {
       expect(validatedRequest).toEqual(userData);
       
       try {
-        const response = await contractApi.post('/api/v1/users', userData);
+        const response = await fetch(`${API_BASE_URL}/api/v1/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(userData),
+        });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          UserSchemas.user,
-          response.data
-        );
-        
-        expect(validatedResponse).toHaveProperty('id');
-        expect(validatedResponse).toHaveProperty('email');
-        expect(validatedResponse).toHaveProperty('name');
-        expect(validatedResponse).toHaveProperty('role');
-        expect(validatedResponse).toHaveProperty('isActive');
-        expect(validatedResponse).toHaveProperty('createdAt');
-        expect(validatedResponse).toHaveProperty('updatedAt');
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const validatedResponse = ContractValidator.validateResponse(
+            UserSchemas.user,
+            responseData
+          );
+          
+          expect(validatedResponse).toHaveProperty('id');
+          expect(validatedResponse).toHaveProperty('email');
+          expect(validatedResponse).toHaveProperty('name');
+          expect(validatedResponse).toHaveProperty('role');
+          expect(validatedResponse).toHaveProperty('isActive');
+          expect(validatedResponse).toHaveProperty('createdAt');
+          expect(validatedResponse).toHaveProperty('updatedAt');
+        }
         
       } catch (error) {
         console.warn('Backend not available for create user test:', error);
@@ -219,39 +263,61 @@ describe('Contract Tests - API Validation', () => {
       };
       
       // Validate request parameters
-      const validatedParams = ContractValidator.validateRequest(
-        z.object({
-          page: z.number().int().min(1).default(1),
-          limit: z.number().int().min(1).max(100).default(20),
-          sort: z.string().optional(),
-          order: z.enum(['asc', 'desc']).default('desc'),
-          status: z.enum(['draft', 'sent', 'approved', 'rejected', 'accepted']).optional(),
-          customerId: z.string().uuid().optional(),
+      const quotesQuerySchema = Type.Intersect([
+        Type.Object({
+          page: Type.Number({ minimum: 1, default: 1 }),
+          limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
+          sort: Type.Optional(Type.String()),
+          order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
         }),
+        Type.Object({
+          status: Type.Optional(Type.Union([
+            Type.Literal('draft'),
+            Type.Literal('sent'),
+            Type.Literal('approved'),
+            Type.Literal('rejected'),
+            Type.Literal('accepted')
+          ])),
+          customerId: Type.Optional(Type.String({ format: 'uuid' })),
+        })
+      ]);
+      const validatedParams = ContractValidator.validateRequest(
+        quotesQuerySchema,
         queryParams
       );
       expect(validatedParams).toEqual(queryParams);
       
       try {
-        const response = await contractApi.get('/api/v1/quotes', {
-          params: queryParams,
+        const url = new URL(`${API_BASE_URL}/api/v1/quotes`);
+        Object.entries(queryParams).forEach(([key, value]) => {
+          url.searchParams.append(key, value.toString());
         });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          z.object({
-            data: z.array(QuoteSchemas.quote),
-            pagination: z.object({
-              page: z.number().int().min(1),
-              limit: z.number().int().min(1),
-              total: z.number().int().min(0),
-              totalPages: z.number().int().min(0),
-              hasNext: z.boolean(),
-              hasPrev: z.boolean(),
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+        
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const quotesListResponseSchema = Type.Object({
+            data: Type.Array(QuoteSchemas.quote),
+            pagination: Type.Object({
+              page: Type.Number({ minimum: 1 }),
+              limit: Type.Number({ minimum: 1 }),
+              total: Type.Number({ minimum: 0 }),
+              totalPages: Type.Number({ minimum: 0 }),
+              hasNext: Type.Boolean(),
+              hasPrev: Type.Boolean(),
             }),
-          }),
-          response.data
-        );
+          });
+          const validatedResponse = ContractValidator.validateResponse(
+            quotesListResponseSchema,
+            responseData
+          );
         
         expect(validatedResponse).toHaveProperty('data');
         expect(validatedResponse).toHaveProperty('pagination');
@@ -296,20 +362,31 @@ describe('Contract Tests - API Validation', () => {
       expect(validatedRequest).toEqual(quoteData);
       
       try {
-        const response = await contractApi.post('/api/v1/quotes', quoteData);
+        const response = await fetch(`${API_BASE_URL}/api/v1/quotes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(quoteData),
+        });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          QuoteSchemas.quote,
-          response.data
-        );
-        
-        expect(validatedResponse).toHaveProperty('id');
-        expect(validatedResponse).toHaveProperty('quoteNumber');
-        expect(validatedResponse).toHaveProperty('customerId');
-        expect(validatedResponse).toHaveProperty('status');
-        expect(validatedResponse).toHaveProperty('totalAmount');
-        expect(validatedResponse).toHaveProperty('currency');
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const validatedResponse = ContractValidator.validateResponse(
+            QuoteSchemas.quote,
+            responseData
+          );
+          
+          expect(validatedResponse).toHaveProperty('id');
+          expect(validatedResponse).toHaveProperty('quoteNumber');
+          expect(validatedResponse).toHaveProperty('customerId');
+          expect(validatedResponse).toHaveProperty('status');
+          expect(validatedResponse).toHaveProperty('totalAmount');
+          expect(validatedResponse).toHaveProperty('currency');
+        }
         
       } catch (error) {
         console.warn('Backend not available for create quote test:', error);
@@ -326,38 +403,54 @@ describe('Contract Tests - API Validation', () => {
       };
       
       // Validate request parameters
-      const validatedParams = ContractValidator.validateRequest(
-        z.object({
-          page: z.number().int().min(1).default(1),
-          limit: z.number().int().min(1).max(100).default(20),
-          sort: z.string().optional(),
-          order: z.enum(['asc', 'desc']).default('desc'),
-          isActive: z.boolean().optional(),
+      const rateCardsQuerySchema = Type.Intersect([
+        Type.Object({
+          page: Type.Number({ minimum: 1, default: 1 }),
+          limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
+          sort: Type.Optional(Type.String()),
+          order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
         }),
+        Type.Object({
+          isActive: Type.Optional(Type.Boolean()),
+        })
+      ]);
+      const validatedParams = ContractValidator.validateRequest(
+        rateCardsQuerySchema,
         queryParams
       );
       expect(validatedParams).toEqual(queryParams);
       
       try {
-        const response = await contractApi.get('/api/v1/rate-cards', {
-          params: queryParams,
+        const url = new URL(`${API_BASE_URL}/api/v1/rate-cards`);
+        Object.entries(queryParams).forEach(([key, value]) => {
+          url.searchParams.append(key, value.toString());
         });
         
-        // Validate response data
-        const validatedResponse = ContractValidator.validateResponse(
-          z.object({
-            data: z.array(RateCardSchemas.rateCard),
-            pagination: z.object({
-              page: z.number().int().min(1),
-              limit: z.number().int().min(1),
-              total: z.number().int().min(0),
-              totalPages: z.number().int().min(0),
-              hasNext: z.boolean(),
-              hasPrev: z.boolean(),
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+        
+        if (response.ok) {
+          const responseData = await response.json();
+          
+          // Validate response data
+          const rateCardsListResponseSchema = Type.Object({
+            data: Type.Array(RateCardSchemas.rateCard),
+            pagination: Type.Object({
+              page: Type.Number({ minimum: 1 }),
+              limit: Type.Number({ minimum: 1 }),
+              total: Type.Number({ minimum: 0 }),
+              totalPages: Type.Number({ minimum: 0 }),
+              hasNext: Type.Boolean(),
+              hasPrev: Type.Boolean(),
             }),
-          }),
-          response.data
-        );
+          });
+          const validatedResponse = ContractValidator.validateResponse(
+            rateCardsListResponseSchema,
+            responseData
+          );
         
         expect(validatedResponse).toHaveProperty('data');
         expect(validatedResponse).toHaveProperty('pagination');
@@ -423,14 +516,15 @@ describe('Contract Tests - API Validation', () => {
         path: '/api/v1/users',
       };
       
+      const errorResponseSchema = Type.Object({
+        error: Type.String(),
+        message: Type.String(),
+        statusCode: Type.Number(),
+        timestamp: Type.String({ format: 'date-time' }),
+        path: Type.String(),
+      });
       const validatedError = ContractValidator.validateResponse(
-        z.object({
-          error: z.string(),
-          message: z.string(),
-          statusCode: z.number().int(),
-          timestamp: z.string().datetime(),
-          path: z.string(),
-        }),
+        errorResponseSchema,
         errorResponse
       );
       

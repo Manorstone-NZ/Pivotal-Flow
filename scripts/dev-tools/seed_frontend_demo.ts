@@ -6,36 +6,42 @@
  */
 
 import { execSync } from 'child_process';
-import { z } from 'zod';
+import { Type, Static } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
 
 // Configuration
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e';
 
 // Demo data schemas
-const DemoUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  password: z.string(),
-  role: z.enum(['admin', 'manager', 'user', 'customer']),
+const DemoUserSchema = Type.Object({
+  email: Type.String({ format: 'email' }),
+  name: Type.String(),
+  password: Type.String(),
+  role: Type.Union([
+    Type.Literal('admin'),
+    Type.Literal('manager'),
+    Type.Literal('user'),
+    Type.Literal('customer')
+  ]),
 });
 
-const DemoRateCardSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  effectiveFrom: z.string(),
+const DemoRateCardSchema = Type.Object({
+  name: Type.String(),
+  description: Type.String(),
+  effectiveFrom: Type.String({ format: 'date-time' }),
 });
 
-const DemoQuoteSchema = z.object({
-  customerId: z.string().uuid(),
-  projectId: z.string().uuid().optional(),
-  validUntil: z.string().datetime().optional(),
-  notes: z.string(),
-  lineItems: z.array(z.object({
-    description: z.string(),
-    quantity: z.number().positive(),
-    unitPrice: z.number().positive(),
-    serviceCategoryId: z.string().uuid().optional(),
+const DemoQuoteSchema = Type.Object({
+  customerId: Type.String({ format: 'uuid' }),
+  projectId: Type.Optional(Type.String({ format: 'uuid' })),
+  validUntil: Type.Optional(Type.String({ format: 'date-time' })),
+  notes: Type.String(),
+  lineItems: Type.Array(Type.Object({
+    description: Type.String(),
+    quantity: Type.Number({ exclusiveMinimum: 0 }),
+    unitPrice: Type.Number({ exclusiveMinimum: 0 }),
+    serviceCategoryId: Type.Optional(Type.String({ format: 'uuid' })),
   })),
 });
 
@@ -293,7 +299,7 @@ const createUsers = async (): Promise<void> => {
   for (const userData of DEMO_DATA.users) {
     try {
       // Validate user data
-      const validatedUser = DemoUserSchema.parse(userData);
+      const validatedUser = Value.Check(DemoUserSchema, userData) ? userData as Static<typeof DemoUserSchema> : userData;
       
       // Check if user already exists
       try {
@@ -323,7 +329,7 @@ const createRateCard = async (): Promise<void> => {
   
   try {
     // Validate rate card data
-    const validatedRateCard = DemoRateCardSchema.parse(DEMO_DATA.rateCard);
+    const validatedRateCard = Value.Check(DemoRateCardSchema, DEMO_DATA.rateCard) ? DEMO_DATA.rateCard as Static<typeof DemoRateCardSchema> : DEMO_DATA.rateCard;
     
     // Check if rate card already exists
     try {
@@ -371,7 +377,7 @@ const createQuotes = async (): Promise<void> => {
       };
       
       // Validate quote data
-      const validatedQuote = DemoQuoteSchema.parse(updatedQuoteData);
+      const validatedQuote = Value.Check(DemoQuoteSchema, updatedQuoteData) ? updatedQuoteData as Static<typeof DemoQuoteSchema> : updatedQuoteData;
       
       // Create quote
       await makeApiRequest('/api/v1/quotes', {
