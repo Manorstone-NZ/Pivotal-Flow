@@ -93,7 +93,7 @@ export function DataTable<TData>({
     const headers = columns.map(col => col.header as string).join(',');
     const rows = data.map(row => 
       columns.map(col => {
-        const cellValue = (col as any).accessorKey ? (row as any)[(col as any).accessorKey] : '';
+        const cellValue = (col as { accessorKey?: string }).accessorKey ? (row as Record<string, unknown>)[(col as { accessorKey: string }).accessorKey] : '';
         return `"${cellValue || ''}"`;
       }).join(',')
     );

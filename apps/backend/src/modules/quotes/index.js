@@ -1,4 +1,4 @@
-import { registerCreateQuoteRoute } from './routes.create.js';
+import { createQuoteRoute } from './routes.create.js';
 import { registerGetQuoteRoute } from './routes.get.js';
 import { registerListQuotesRoute } from './routes.list.js';
 import { registerStatusTransitionRoute } from './routes.status.js';
@@ -9,7 +9,7 @@ import { registerGetQuoteVersionsRoute, registerGetQuoteVersionRoute } from './r
  */
 export function registerQuoteRoutes(fastify) {
     // Register individual routes directly
-    registerCreateQuoteRoute(fastify);
+    createQuoteRoute(fastify);
     registerListQuotesRoute(fastify);
     registerGetQuoteRoute(fastify);
     registerUpdateQuoteRoute(fastify);

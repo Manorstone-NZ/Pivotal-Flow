@@ -1,16 +1,16 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { Type } from '@sinclair/typebox';
 
 import { getDatabase } from '../../lib/db.js';
 
 import { 
-  CreateApprovalRequestSchema,
-  ApproveRequestSchema,
-  RejectRequestSchema,
-  CancelRequestSchema,
   ApprovalFiltersSchema,
   ListApprovalsResponseSchema,
-  createApprovalsPagingResponse
+  createApprovalsPagingResponse,
+  type CreateApprovalRequest,
+  type ApproveRequest,
+  type RejectRequest,
+  type CancelRequest,
+  type ApprovalFilters
 } from './schemas.js';
 import { ApprovalService } from './service.js';
 
@@ -67,9 +67,9 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Body: z.infer<typeof CreateApprovalRequestSchema> }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Body: CreateApprovalRequest }>, reply: FastifyReply) => {
     try {
-      const body = CreateApprovalRequestSchema.parse(request.body);
+      const body = request.body as CreateApprovalRequest;
       
       const authenticatedRequest = request as AuthenticatedRequest;
       
@@ -141,9 +141,9 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof ApproveRequestSchema> }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: ApproveRequest }>, reply: FastifyReply) => {
     try {
-      const body = ApproveRequestSchema.parse(request.body);
+      const body = request.body as ApproveRequest;
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -217,9 +217,9 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof RejectRequestSchema> }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: RejectRequest }>, reply: FastifyReply) => {
     try {
-      const body = RejectRequestSchema.parse(request.body);
+      const body = request.body as RejectRequest;
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -292,9 +292,9 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof CancelRequestSchema> }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: CancelRequest }>, reply: FastifyReply) => {
     try {
-      const body = CancelRequestSchema.parse(request.body);
+      const body = request.body as CancelRequest;
       const { id } = request.params;
       
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -338,9 +338,9 @@ export async function approvalRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Querystring: z.infer<typeof ApprovalFiltersSchema> }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Querystring: ApprovalFilters }>, reply: FastifyReply) => {
     try {
-      const query = ApprovalFiltersSchema.parse(request.query);
+      const query = request.query as ApprovalFilters;
       
       const authenticatedRequest = request as AuthenticatedRequest;
       

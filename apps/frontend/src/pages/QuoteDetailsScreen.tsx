@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuoteDetail, useUpdateQuote, useUpdateQuoteStatus } from '@/lib/api/queries';
-import { DataTable } from '../../components/ui/DataTable';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { TextArea } from '../../components/ui/TextArea';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { useToast } from '../../components/ui/Toast';
+import { useQuoteDetail, useUpdateQuote, useUpdateQuoteStatus } from '../lib/api/queries';
+import { DataTable } from '../components/ui/DataTable';
+import { Button } from '../components/Button';
+import { Input } from '../components/ui/Input';
+import { TextArea } from '../components/ui/TextArea';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { useToast } from '../components/ui/Toast';
 
 interface LineItem {
   id: string;
@@ -152,7 +152,7 @@ export const QuoteDetailsScreen: React.FC = () => {
   const handleEdit = () => {
     setEditedQuote({
       title: currentQuote.title,
-      description: currentQuote.description,
+      description: currentQuote.description || '',
       validFrom: currentQuote.validFrom,
       validUntil: currentQuote.validUntil,
     });
@@ -161,6 +161,7 @@ export const QuoteDetailsScreen: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      if (!currentQuote.id) return;
       await updateQuoteMutation.mutateAsync({
         id: currentQuote.id,
         ...editedQuote,
@@ -168,7 +169,7 @@ export const QuoteDetailsScreen: React.FC = () => {
       setIsEditing(false);
       setEditedQuote({});
       success('Quote updated successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to update quote');
     }
   };
@@ -180,12 +181,13 @@ export const QuoteDetailsScreen: React.FC = () => {
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      if (!currentQuote.id) return;
       await updateStatusMutation.mutateAsync({
         id: currentQuote.id,
         status: newStatus,
       });
       success('Quote status updated successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to update quote status');
     }
   };
@@ -481,13 +483,13 @@ export const QuoteDetailsScreen: React.FC = () => {
               <div className="text-sm">
                 <div className="text-text-secondary">Created:</div>
                 <div className="text-text-primary">
-                  {new Date(displayQuote.createdAt).toLocaleString()}
+                  {displayQuote.createdAt ? new Date(displayQuote.createdAt).toLocaleString() : 'N/A'}
                 </div>
               </div>
               <div className="text-sm">
                 <div className="text-text-secondary">Last Updated:</div>
                 <div className="text-text-primary">
-                  {new Date(displayQuote.updatedAt).toLocaleString()}
+                  {displayQuote.updatedAt ? new Date(displayQuote.updatedAt).toLocaleString() : 'N/A'}
                 </div>
               </div>
             </CardContent>

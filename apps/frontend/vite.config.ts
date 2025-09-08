@@ -38,15 +38,15 @@ export default defineConfig({
           'utils': ['axios', 'clsx'],
         },
         // Optimize chunk names
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+        chunkFileNames: () => {
+          // const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
           return `js/[name]-[hash].js`;
         },
         entryFileNames: 'js/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.');
+          const info = assetInfo.name?.split('.') || ['asset'];
           const ext = info[info.length - 1];
-          if (/\.(css)$/.test(assetInfo.name)) {
+          if (assetInfo.name && /\.(css)$/.test(assetInfo.name)) {
             return `css/[name]-[hash].${ext}`;
           }
           return `assets/[name]-[hash].${ext}`;
@@ -87,6 +87,6 @@ export default defineConfig({
   },
   // Define environment variables
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+    __APP_VERSION__: JSON.stringify(process.env['npm_package_version'] || '1.0.0'),
   },
 });

@@ -271,7 +271,8 @@ export async function portalRoutes(fastify) {
                     },
                     401: PortalErrorResponseSchema,
                     403: PortalErrorResponseSchema,
-                    429: PortalErrorResponseSchema
+                    429: PortalErrorResponseSchema,
+                    500: PortalErrorResponseSchema
                 }
             }
         }, async (request, reply) => {

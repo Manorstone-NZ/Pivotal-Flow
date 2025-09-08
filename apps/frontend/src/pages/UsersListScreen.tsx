@@ -4,14 +4,14 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useUsersList, useCreateUser } from '@/lib/api/queries';
-import { DataTable } from '../../components/ui/DataTable';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { useToast } from '../../components/ui/Toast';
+import { useUsersList, useCreateUser } from '../lib/api/queries';
+import { DataTable } from '../components/ui/DataTable';
+import { Button } from '../components/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { useToast } from '../components/ui/Toast';
 
 interface User {
   id: string;
@@ -21,6 +21,20 @@ interface User {
   status: 'active' | 'inactive' | 'pending';
   createdAt: string;
   lastLoginAt?: string;
+}
+
+interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+interface UsersListResponse {
+  data: User[];
+  pagination: PaginationInfo;
 }
 
 interface ColumnPreferences {
@@ -58,8 +72,8 @@ export const UsersListScreen: React.FC = () => {
   // API queries
   const { data: usersData, isLoading, error } = useUsersList({
     search: searchTerm,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    role: roleFilter !== 'all' ? roleFilter : undefined,
+    ...(statusFilter !== 'all' && { status: statusFilter }),
+    ...(roleFilter !== 'all' && { role: roleFilter }),
     sort: sortBy,
     order: sortOrder,
     page,
@@ -69,8 +83,8 @@ export const UsersListScreen: React.FC = () => {
   const createUserMutation = useCreateUser();
 
   // Computed values
-  const users = usersData?.data || [];
-  const pagination = usersData?.pagination;
+  const users = (usersData as UsersListResponse)?.data || [];
+  const pagination = (usersData as UsersListResponse)?.pagination;
   const totalUsers = pagination?.total || 0;
 
   // Column definitions
@@ -195,7 +209,7 @@ export const UsersListScreen: React.FC = () => {
         status: 'pending',
       });
       success('User created successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to create user');
     }
   };

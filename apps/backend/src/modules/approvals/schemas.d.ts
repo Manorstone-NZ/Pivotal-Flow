@@ -1,234 +1,101 @@
-import { z } from 'zod';
-export declare const CreateApprovalRequestSchema: z.ZodObject<{
-    entityType: z.ZodEnum<[string, ...string[]]>;
-    entityId: z.ZodString;
-    approverId: z.ZodString;
-    reason: z.ZodOptional<z.ZodString>;
-    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-}, "strip", z.ZodTypeAny, {
-    entityType: string;
-    entityId: string;
-    approverId: string;
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
-}, {
-    entityType: string;
-    entityId: string;
-    approverId: string;
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
+import type { Static } from '@sinclair/typebox';
+export declare const CreateApprovalRequestSchema: import("@sinclair/typebox").TObject<{
+    entityType: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"quote">, import("@sinclair/typebox").TLiteral<"invoice">, import("@sinclair/typebox").TLiteral<"project">]>;
+    entityId: import("@sinclair/typebox").TString;
+    approverId: import("@sinclair/typebox").TString;
+    reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    notes: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>>;
 }>;
-export declare const ApproveRequestSchema: z.ZodObject<{
-    reason: z.ZodOptional<z.ZodString>;
-    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-}, "strip", z.ZodTypeAny, {
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
-}, {
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
+export declare const ApproveRequestSchema: import("@sinclair/typebox").TObject<{
+    reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    notes: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>>;
 }>;
-export declare const RejectRequestSchema: z.ZodObject<{
-    reason: z.ZodString;
-    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-}, "strip", z.ZodTypeAny, {
-    reason: string;
-    notes?: Record<string, any> | undefined;
-}, {
-    reason: string;
-    notes?: Record<string, any> | undefined;
+export declare const RejectRequestSchema: import("@sinclair/typebox").TObject<{
+    reason: import("@sinclair/typebox").TString;
+    notes: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>>;
 }>;
-export declare const CancelRequestSchema: z.ZodObject<{
-    reason: z.ZodOptional<z.ZodString>;
-    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-}, "strip", z.ZodTypeAny, {
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
-}, {
-    notes?: Record<string, any> | undefined;
-    reason?: string | undefined;
+export declare const CancelRequestSchema: import("@sinclair/typebox").TObject<{
+    reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    notes: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>>;
 }>;
-export declare const ApprovalFiltersSchema: z.ZodObject<{
-    entityType: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
-    status: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
-    approverId: z.ZodOptional<z.ZodString>;
-    requestedBy: z.ZodOptional<z.ZodString>;
-    page: z.ZodDefault<z.ZodNumber>;
-    pageSize: z.ZodDefault<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    page: number;
-    pageSize: number;
-    status?: string | undefined;
-    entityType?: string | undefined;
-    requestedBy?: string | undefined;
-    approverId?: string | undefined;
-}, {
-    status?: string | undefined;
-    entityType?: string | undefined;
-    requestedBy?: string | undefined;
-    approverId?: string | undefined;
-    page?: number | undefined;
-    pageSize?: number | undefined;
+export declare const ApprovalFiltersSchema: import("@sinclair/typebox").TObject<{
+    entityType: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"quote">, import("@sinclair/typebox").TLiteral<"invoice">, import("@sinclair/typebox").TLiteral<"project">]>>;
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
+    approverId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    requestedBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    page: import("@sinclair/typebox").TNumber;
+    pageSize: import("@sinclair/typebox").TNumber;
 }>;
-export declare const ApprovalRequestResponseSchema: z.ZodObject<{
-    id: z.ZodString;
-    organizationId: z.ZodString;
-    entityType: z.ZodEnum<[string, ...string[]]>;
-    entityId: z.ZodString;
-    requestedBy: z.ZodString;
-    approverId: z.ZodString;
-    status: z.ZodEnum<[string, ...string[]]>;
-    requestedAt: z.ZodString;
-    decidedAt: z.ZodOptional<z.ZodString>;
-    reason: z.ZodOptional<z.ZodString>;
-    notes: z.ZodRecord<z.ZodString, z.ZodAny>;
-    createdAt: z.ZodString;
-    updatedAt: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    organizationId: string;
-    status: string;
-    entityType: string;
-    entityId: string;
-    notes: Record<string, any>;
-    requestedBy: string;
-    approverId: string;
-    requestedAt: string;
-    decidedAt?: string | undefined;
-    reason?: string | undefined;
-}, {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    organizationId: string;
-    status: string;
-    entityType: string;
-    entityId: string;
-    notes: Record<string, any>;
-    requestedBy: string;
-    approverId: string;
-    requestedAt: string;
-    decidedAt?: string | undefined;
-    reason?: string | undefined;
+export declare const ApprovalRequestResponseSchema: import("@sinclair/typebox").TObject<{
+    id: import("@sinclair/typebox").TString;
+    organizationId: import("@sinclair/typebox").TString;
+    entityType: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"quote">, import("@sinclair/typebox").TLiteral<"invoice">, import("@sinclair/typebox").TLiteral<"project">]>;
+    entityId: import("@sinclair/typebox").TString;
+    requestedBy: import("@sinclair/typebox").TString;
+    approverId: import("@sinclair/typebox").TString;
+    status: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>;
+    requestedAt: import("@sinclair/typebox").TString;
+    decidedAt: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    notes: import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>;
+    createdAt: import("@sinclair/typebox").TString;
+    updatedAt: import("@sinclair/typebox").TString;
 }>;
-export declare const ApprovalPolicyResponseSchema: z.ZodObject<{
-    quoteSendRequiresApproval: z.ZodBoolean;
-    invoiceIssueRequiresApproval: z.ZodBoolean;
-    projectCloseRequiresApproval: z.ZodBoolean;
-}, "strip", z.ZodTypeAny, {
-    quoteSendRequiresApproval: boolean;
-    invoiceIssueRequiresApproval: boolean;
-    projectCloseRequiresApproval: boolean;
-}, {
-    quoteSendRequiresApproval: boolean;
-    invoiceIssueRequiresApproval: boolean;
-    projectCloseRequiresApproval: boolean;
+export declare const ApprovalPolicyResponseSchema: import("@sinclair/typebox").TObject<{
+    quoteSendRequiresApproval: import("@sinclair/typebox").TBoolean;
+    invoiceIssueRequiresApproval: import("@sinclair/typebox").TBoolean;
+    projectCloseRequiresApproval: import("@sinclair/typebox").TBoolean;
 }>;
-export declare const ListApprovalsResponseSchema: z.ZodObject<{
-    page: z.ZodNumber;
-    pageSize: z.ZodNumber;
-    total: z.ZodNumber;
-    totalPages: z.ZodNumber;
-} & {
-    items: z.ZodArray<z.ZodObject<{
-        id: z.ZodString;
-        organizationId: z.ZodString;
-        entityType: z.ZodEnum<[string, ...string[]]>;
-        entityId: z.ZodString;
-        requestedBy: z.ZodString;
-        approverId: z.ZodString;
-        status: z.ZodEnum<[string, ...string[]]>;
-        requestedAt: z.ZodString;
-        decidedAt: z.ZodOptional<z.ZodString>;
-        reason: z.ZodOptional<z.ZodString>;
-        notes: z.ZodRecord<z.ZodString, z.ZodAny>;
-        createdAt: z.ZodString;
-        updatedAt: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        organizationId: string;
-        status: string;
-        entityType: string;
-        entityId: string;
-        notes: Record<string, any>;
-        requestedBy: string;
-        approverId: string;
-        requestedAt: string;
-        decidedAt?: string | undefined;
-        reason?: string | undefined;
-    }, {
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        organizationId: string;
-        status: string;
-        entityType: string;
-        entityId: string;
-        notes: Record<string, any>;
-        requestedBy: string;
-        approverId: string;
-        requestedAt: string;
-        decidedAt?: string | undefined;
-        reason?: string | undefined;
-    }>, "many">;
-}, "strip", z.ZodTypeAny, {
-    items: {
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        organizationId: string;
-        status: string;
-        entityType: string;
-        entityId: string;
-        notes: Record<string, any>;
-        requestedBy: string;
-        approverId: string;
-        requestedAt: string;
-        decidedAt?: string | undefined;
-        reason?: string | undefined;
-    }[];
+export declare const ListApprovalsResponseSchema: import("@sinclair/typebox").TObject<{
+    page: import("@sinclair/typebox").TNumber;
+    pageSize: import("@sinclair/typebox").TNumber;
+    total: import("@sinclair/typebox").TNumber;
+    totalPages: import("@sinclair/typebox").TNumber;
+    items: import("@sinclair/typebox").TArray<import("@sinclair/typebox").TObject<{
+        id: import("@sinclair/typebox").TString;
+        organizationId: import("@sinclair/typebox").TString;
+        entityType: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"quote">, import("@sinclair/typebox").TLiteral<"invoice">, import("@sinclair/typebox").TLiteral<"project">]>;
+        entityId: import("@sinclair/typebox").TString;
+        requestedBy: import("@sinclair/typebox").TString;
+        approverId: import("@sinclair/typebox").TString;
+        status: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>;
+        requestedAt: import("@sinclair/typebox").TString;
+        decidedAt: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+        reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+        notes: import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TAny>;
+        createdAt: import("@sinclair/typebox").TString;
+        updatedAt: import("@sinclair/typebox").TString;
+    }>>;
+}>;
+export type CreateApprovalRequest = Static<typeof CreateApprovalRequestSchema>;
+export type ApproveRequest = Static<typeof ApproveRequestSchema>;
+export type RejectRequest = Static<typeof RejectRequestSchema>;
+export type CancelRequest = Static<typeof CancelRequestSchema>;
+export type ApprovalFilters = Static<typeof ApprovalFiltersSchema>;
+export type ApprovalRequestResponse = Static<typeof ApprovalRequestResponseSchema>;
+export type ApprovalPolicyResponse = Static<typeof ApprovalPolicyResponseSchema>;
+export type ListApprovalsResponse = Static<typeof ListApprovalsResponseSchema>;
+export declare function createApprovalsPagingResponse(approvals: ApprovalRequestResponse[], page: number, pageSize: number, total: number): {
     page: number;
     pageSize: number;
     total: number;
     totalPages: number;
-}, {
     items: {
+        decidedAt?: string;
+        reason?: string;
         id: string;
         createdAt: string;
         updatedAt: string;
         organizationId: string;
-        status: string;
-        entityType: string;
+        status: "pending" | "approved" | "rejected" | "cancelled";
+        entityType: "project" | "quote" | "invoice";
         entityId: string;
-        notes: Record<string, any>;
+        notes: {
+            [x: string]: any;
+        };
         requestedBy: string;
         approverId: string;
         requestedAt: string;
-        decidedAt?: string | undefined;
-        reason?: string | undefined;
     }[];
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-}>;
-export declare const createApprovalsPagingResponse: (approvals: z.infer<typeof ApprovalRequestResponseSchema>[], page: number, pageSize: number, total: number) => import("@pivotal-flow/shared").PagingResponse<{
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    organizationId: string;
-    status: string;
-    entityType: string;
-    entityId: string;
-    notes: Record<string, any>;
-    requestedBy: string;
-    approverId: string;
-    requestedAt: string;
-    decidedAt?: string | undefined;
-    reason?: string | undefined;
-}>;
+};
 //# sourceMappingURL=schemas.d.ts.map

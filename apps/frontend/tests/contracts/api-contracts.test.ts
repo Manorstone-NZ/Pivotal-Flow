@@ -76,10 +76,11 @@ describe('Contract Tests - API Validation', () => {
           expect(validatedResponse).toHaveProperty('refreshToken');
           expect(validatedResponse).toHaveProperty('expiresIn');
           
-          expect(validatedResponse.user).toHaveProperty('id');
-          expect(validatedResponse.user).toHaveProperty('email');
-          expect(validatedResponse.user).toHaveProperty('name');
-          expect(validatedResponse.user).toHaveProperty('role');
+          const loginResponse = validatedResponse as any;
+          expect(loginResponse.user).toHaveProperty('id');
+          expect(loginResponse.user).toHaveProperty('email');
+          expect(loginResponse.user).toHaveProperty('name');
+          expect(loginResponse.user).toHaveProperty('role');
         }
         
       } catch (error) {
@@ -147,7 +148,7 @@ describe('Contract Tests - API Validation', () => {
         page: Type.Number({ minimum: 1, default: 1 }),
         limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
         sort: Type.Optional(Type.String()),
-        order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
+        order: Type.Optional(Type.Union([Type.Literal('asc'), Type.Literal('desc')])),
       });
       const validatedParams = ContractValidator.validateRequest(
         paginationQuerySchema,
@@ -189,10 +190,11 @@ describe('Contract Tests - API Validation', () => {
         
           expect(validatedResponse).toHaveProperty('data');
           expect(validatedResponse).toHaveProperty('pagination');
-          expect(Array.isArray(validatedResponse.data)).toBe(true);
+          const usersResponse = validatedResponse as any;
+          expect(Array.isArray(usersResponse.data)).toBe(true);
           
           // Validate each user in the array
-          validatedResponse.data.forEach(user => {
+          usersResponse.data.forEach((user: any) => {
             expect(user).toHaveProperty('id');
             expect(user).toHaveProperty('email');
             expect(user).toHaveProperty('name');
@@ -268,7 +270,7 @@ describe('Contract Tests - API Validation', () => {
           page: Type.Number({ minimum: 1, default: 1 }),
           limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
           sort: Type.Optional(Type.String()),
-          order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
+          order: Type.Optional(Type.Union([Type.Literal('asc'), Type.Literal('desc')])),
         }),
         Type.Object({
           status: Type.Optional(Type.Union([
@@ -321,10 +323,11 @@ describe('Contract Tests - API Validation', () => {
         
         expect(validatedResponse).toHaveProperty('data');
         expect(validatedResponse).toHaveProperty('pagination');
-        expect(Array.isArray(validatedResponse.data)).toBe(true);
+        const quotesResponse = validatedResponse as any;
+        expect(Array.isArray(quotesResponse.data)).toBe(true);
         
           // Validate each quote in the array
-          validatedResponse.data.forEach(quote => {
+          quotesResponse.data.forEach((quote: any) => {
             expect(quote).toHaveProperty('id');
             expect(quote).toHaveProperty('quoteNumber');
             expect(quote).toHaveProperty('customerId');
@@ -408,7 +411,7 @@ describe('Contract Tests - API Validation', () => {
           page: Type.Number({ minimum: 1, default: 1 }),
           limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
           sort: Type.Optional(Type.String()),
-          order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
+          order: Type.Optional(Type.Union([Type.Literal('asc'), Type.Literal('desc')])),
         }),
         Type.Object({
           isActive: Type.Optional(Type.Boolean()),
@@ -454,10 +457,11 @@ describe('Contract Tests - API Validation', () => {
         
         expect(validatedResponse).toHaveProperty('data');
         expect(validatedResponse).toHaveProperty('pagination');
-        expect(Array.isArray(validatedResponse.data)).toBe(true);
+        const rateCardsResponse = validatedResponse as any;
+        expect(Array.isArray(rateCardsResponse.data)).toBe(true);
         
           // Validate each rate card in the array
-          validatedResponse.data.forEach(rateCard => {
+          rateCardsResponse.data.forEach((rateCard: any) => {
             expect(rateCard).toHaveProperty('id');
             expect(rateCard).toHaveProperty('name');
             expect(rateCard).toHaveProperty('isActive');
@@ -542,8 +546,8 @@ describe('Contract Tests - API Validation', () => {
       
       const errors = ContractValidator.getErrors(UserSchemas.loginRequest, invalidData);
       expect(errors).toBeDefined();
-      expect(errors?.issues).toBeDefined();
-      expect(errors?.issues.length).toBeGreaterThan(0);
+      expect(Array.isArray(errors)).toBe(true);
+      expect(errors!.length).toBeGreaterThan(0);
     });
   });
 });

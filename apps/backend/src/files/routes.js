@@ -2,40 +2,50 @@
  * File routes
  * API endpoints for file generation and access
  */
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 import { AuditLogger } from '../modules/audit/logger.js';
 import { PermissionService } from '../modules/permissions/service.js';
 import { FILE_ERRORS } from './constants.js';
 import { FileService } from './service.js';
 // Request schemas
-const GenerateFileRequestSchema = z.object({
-    fileType: z.enum(['exports', 'pdfs', 'templates', 'assets']),
-    mimeType: z.string(),
-    content: z.string(),
-    description: z.string().min(1).max(255),
+const GenerateFileRequestSchema = Type.Object({
+    fileType: Type.Union([
+        Type.Literal('exports'),
+        Type.Literal('pdfs'),
+        Type.Literal('templates'),
+        Type.Literal('assets')
+    ]),
+    mimeType: Type.String(),
+    content: Type.String(),
+    description: Type.String({ minLength: 1, maxLength: 255 }),
 });
-const GetSignedUrlRequestSchema = z.object({
-    fileId: z.string().uuid(),
-    fileType: z.enum(['exports', 'pdfs', 'templates', 'assets']).optional(),
+const GetSignedUrlRequestSchema = Type.Object({
+    fileId: Type.String({ format: 'uuid' }),
+    fileType: Type.Optional(Type.Union([
+        Type.Literal('exports'),
+        Type.Literal('pdfs'),
+        Type.Literal('templates'),
+        Type.Literal('assets')
+    ])),
 });
 // Response schemas
-const FileInfoResponseSchema = z.object({
-    id: z.string(),
-    organizationId: z.string(),
-    fileType: z.string(),
-    mimeType: z.string(),
-    size: z.number(),
-    description: z.string(),
-    createdAt: z.string(),
+const FileInfoResponseSchema = Type.Object({
+    id: Type.String(),
+    organizationId: Type.String(),
+    fileType: Type.String(),
+    mimeType: Type.String(),
+    size: Type.Number(),
+    description: Type.String(),
+    createdAt: Type.String(),
 });
-const SignedUrlResponseSchema = z.object({
-    fileId: z.string(),
-    signedUrl: z.string(),
-    expiresIn: z.string(),
+const SignedUrlResponseSchema = Type.Object({
+    fileId: Type.String(),
+    signedUrl: Type.String(),
+    expiresIn: Type.String(),
 });
-const GenerateFileResponseSchema = z.object({
-    fileId: z.string(),
-    message: z.string(),
+const GenerateFileResponseSchema = Type.Object({
+    fileId: Type.String(),
+    message: Type.String(),
 });
 /**
  * Register file routes

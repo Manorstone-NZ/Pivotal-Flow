@@ -1,15 +1,78 @@
-import { z } from 'zod';
 import { logger } from '../../lib/logger.js';
-import { UpdateQuoteSchema } from './schemas.js';
+import { UpdateQuoteSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 /**
  * Register the update quote route
  */
 export function registerUpdateQuoteRoute(fastify) {
-    fastify.patch('/v1/quotes/:id', async (request, reply) => {
+    fastify.patch('/v1/quotes/:id', {
+        schema: {
+            params: {
+                type: 'object',
+                properties: {
+                    id: { type: 'string', format: 'uuid' }
+                },
+                required: ['id']
+            },
+            body: UpdateQuoteSchema,
+            response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string' },
+                        clientId: { type: 'string' },
+                        title: { type: 'string' },
+                        status: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' }
+                    }
+                },
+                400: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                    }
+                },
+                403: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                    }
+                },
+                404: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                    }
+                },
+                409: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                    }
+                },
+                500: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        code: { type: 'string' }
+                    }
+                }
+            }
+        }
+    }, async (request, reply) => {
         try {
-            // Validate request body
-            const validatedData = UpdateQuoteSchema.parse(request.body);
+            // TypeBox handles validation automatically, so request.body is already validated
+            const validatedData = request.body;
             // Get user context
             const user = request.user;
             if (!user) {
@@ -21,7 +84,7 @@ export function registerUpdateQuoteRoute(fastify) {
             }
             const { id } = request.params;
             // Create quote service
-            const quoteService = new QuoteService(fastify.db, {
+            const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
             });
@@ -30,12 +93,12 @@ export function registerUpdateQuoteRoute(fastify) {
             return reply.status(200).send(quote);
         }
         catch (error) {
-            if (error instanceof z.ZodError) {
+            // Handle validation errors
+            if (error instanceof Error && error.message.includes('validation')) {
                 return reply.status(400).send({
                     error: 'Bad Request',
                     message: 'Validation failed',
-                    code: 'VALIDATION_ERROR',
-                    details: error.errors
+                    code: 'VALIDATION_ERROR'
                 });
             }
             if (error instanceof Error) {

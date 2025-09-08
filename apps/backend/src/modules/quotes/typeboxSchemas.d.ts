@@ -56,6 +56,11 @@ export declare const QuoteResponseSchema: import("@sinclair/typebox").TObject<{
         totalPrice: import("@sinclair/typebox").TNumber;
         metadata: import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TUnknown>;
     }>>;
+    subtotal: import("@sinclair/typebox").TNumber;
+    taxAmount: import("@sinclair/typebox").TNumber;
+    totalAmount: import("@sinclair/typebox").TNumber;
+    createdBy: import("@sinclair/typebox").TString;
+    quoteNumber: import("@sinclair/typebox").TString;
 }>;
 export type QuoteResponse = Static<typeof QuoteResponseSchema>;
 export declare const QuoteErrorSchema: import("@sinclair/typebox").TObject<{

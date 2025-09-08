@@ -143,7 +143,7 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
       };
       
       // Validate response
-      const validatedResponse = healthStatusSchema.parse(response);
+      const validatedResponse = healthStatusSchema['parse'](response);
       
       requestLogger.info({
         message: 'Health check completed',

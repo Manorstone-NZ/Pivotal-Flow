@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../../components/ui/Card';
-import { Button } from '../../components/Button';
-import { useAuth } from '../../features/auth/store';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../components/ui/Card';
+import { Button } from '../components/Button';
+import { useAuth } from '../features/auth/store';
 
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();

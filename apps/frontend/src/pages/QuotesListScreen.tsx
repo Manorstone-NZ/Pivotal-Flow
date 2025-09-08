@@ -4,15 +4,15 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useQuotesList, useCreateQuote, useDeleteQuote, useUpdateQuoteStatus } from '@/lib/api/queries';
-import { DataTable } from '../../components/ui/DataTable';
-import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { useToast } from '../../components/ui/Toast';
-import { cn } from '../../lib/utils';
+import { useQuotesList, useCreateQuote, useDeleteQuote, useUpdateQuoteStatus } from '../lib/api/queries';
+import { DataTable } from '../components/ui/DataTable';
+import { Button } from '../components/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Card, CardContent } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { useToast } from '../components/ui/Toast';
+import { cn } from '../lib/utils';
 
 interface Quote {
   id: string;
@@ -32,7 +32,7 @@ interface Quote {
   updatedAt: string;
 }
 
-const statusColors = {
+const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
   draft: 'secondary',
   pending: 'warning',
   approved: 'info',
@@ -66,9 +66,9 @@ export const QuotesListScreen: React.FC = () => {
   // API queries
   const { data: quotesData, isLoading, error } = useQuotesList({
     search: searchTerm,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    customer: customerFilter || undefined,
-    dateRange: dateRange !== 'all' ? dateRange : undefined,
+    ...(statusFilter !== 'all' && { status: statusFilter }),
+    ...(customerFilter && { customer: customerFilter }),
+    ...(dateRange !== 'all' && { dateRange }),
     sort: sortBy,
     order: sortOrder,
     page,
@@ -80,8 +80,8 @@ export const QuotesListScreen: React.FC = () => {
   void { deleteQuoteMutation: useDeleteQuote(), updateStatusMutation: useUpdateQuoteStatus() };
 
   // Computed values
-  const quotes = quotesData?.data || [];
-  const pagination = quotesData?.pagination;
+  const quotes = (quotesData as { data?: Quote[] })?.data || [];
+  const pagination = (quotesData as { pagination?: { total: number; hasPrev: boolean; hasNext: boolean; totalPages: number } })?.pagination;
   const totalQuotes = pagination?.total || 0;
 
   // Calculate totals
@@ -130,7 +130,7 @@ export const QuotesListScreen: React.FC = () => {
       cell: ({ row }: { row: { original: Quote } }) => {
         const status = row.original.status;
         return (
-          <Badge variant={statusColors[status] as any} className="text-xs">
+          <Badge variant={statusColors[status] || 'default'} className="text-xs">
             {statusLabels[status]}
           </Badge>
         );
@@ -221,12 +221,13 @@ export const QuotesListScreen: React.FC = () => {
         title: 'New Quote',
         customerId: 'customer-123',
         currency: 'USD',
+        status: 'draft',
         validFrom: new Date().toISOString(),
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         lineItems: [],
       });
       success('Quote created successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to create quote');
     }
   };

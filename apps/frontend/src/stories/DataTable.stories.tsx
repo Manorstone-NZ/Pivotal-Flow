@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { DataTable } from '../components/ui/DataTable';
-import { createColumnHelper } from '@tanstack/react-table';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 
 interface User {
   id: string;
@@ -56,7 +56,7 @@ const sampleData: User[] = [
 
 const columnHelper = createColumnHelper<User>();
 
-const columns = [
+const columns: ColumnDef<User>[] = [
   columnHelper.accessor('name', {
     header: 'Name',
     cell: (info) => info.getValue(),
@@ -135,14 +135,14 @@ type Story = StoryObj<typeof DataTable>;
 export const Default: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
   },
 };
 
 export const Compact: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     density: 'compact',
   },
 };
@@ -150,7 +150,7 @@ export const Compact: Story = {
 export const Comfortable: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     density: 'comfortable',
   },
 };
@@ -158,7 +158,7 @@ export const Comfortable: Story = {
 export const NoSearch: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     searchable: false,
   },
 };
@@ -166,7 +166,7 @@ export const NoSearch: Story = {
 export const NoSorting: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     sortable: false,
   },
 };
@@ -174,7 +174,7 @@ export const NoSorting: Story = {
 export const NoPagination: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     pagination: false,
   },
 };
@@ -182,7 +182,7 @@ export const NoPagination: Story = {
 export const NoExport: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
+    columns: columns,
     exportable: false,
   },
 };
@@ -190,8 +190,8 @@ export const NoExport: Story = {
 export const WithRowClick: Story = {
   args: {
     data: sampleData,
-    columns: columns as any,
-    onRowClick: (row: any) => alert(`Clicked on ${row.name}`),
+    columns: columns,
+    onRowClick: (row: User) => alert(`Clicked on ${row.name}`),
   },
 };
 
@@ -205,7 +205,7 @@ export const LargeDataset: Story = {
       status: ['active', 'inactive'][i % 2] as 'active' | 'inactive',
       lastLogin: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     })),
-    columns: columns as any,
+    columns: columns,
     pageSize: 5,
   },
 };

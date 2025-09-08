@@ -5,7 +5,6 @@ import { RateCardService } from '../service.js';
 
 describe('RateCardService Integration Tests', () => {
   let rateCardService: RateCardService;
-  let auditLogger: any; // Using any type since AuditLogger is not available
   let testOrg: any;
   let testUser: any;
   let testServiceCategory: any;
@@ -52,14 +51,11 @@ describe('RateCardService Integration Tests', () => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `, [testRateCard.id, testRateCard.organizationId, testRateCard.name, testRateCard.description, testRateCard.currency, testRateCard.effectiveFrom.toISOString().split('T')[0], testRateCard.effectiveUntil?.toISOString().split('T')[0] || null, testRateCard.isDefault, testRateCard.isActive, testRateCard.createdAt.toISOString(), testRateCard.updatedAt.toISOString()]);
 
-    // Create audit logger
-    auditLogger = {} as any; // Mock audit logger since it's not available
-
     // Create rate card service with real database
     rateCardService = new RateCardService(testDb, {
       organizationId: testOrg.id,
       userId: testUser.id
-    }, auditLogger);
+    });
   });
 
   afterEach(async () => {
@@ -169,7 +165,7 @@ describe('RateCardService Integration Tests', () => {
       const result = await rateCardService.resolvePricing(lineItems);
 
       expect(result.success).toBe(false);
-      expect(result.errors).toContainEqual({
+      expect((result as any).errors).toContainEqual({
         lineNumber: 1,
         description: 'Unknown service',
         reason: 'No matching rate found for item code or description'

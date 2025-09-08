@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { Button } from './Button';
+import { axe } from 'jest-axe';
+import { Button } from '@/components/Button';
 
 describe('Button', () => {
   it('renders with default props', () => {
@@ -102,20 +102,20 @@ describe('Button', () => {
   });
 
   it('has no accessibility violations', async () => {
-    render(<Button>Accessible Button</Button>);
-    const results = { violations: [] };
-    expect(results).toHaveNoViolations();
+    const { container } = render(<Button>Accessible Button</Button>);
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
   });
 
   it('has no accessibility violations when disabled', async () => {
-    render(<Button disabled>Disabled Button</Button>);
-    const results = { violations: [] };
-    expect(results).toHaveNoViolations();
+    const { container } = render(<Button disabled>Disabled Button</Button>);
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
   });
 
   it('has no accessibility violations when loading', async () => {
-    render(<Button loading>Loading Button</Button>);
-    const results = { violations: [] };
-    expect(results).toHaveNoViolations();
+    const { container } = render(<Button loading>Loading Button</Button>);
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
   });
 });

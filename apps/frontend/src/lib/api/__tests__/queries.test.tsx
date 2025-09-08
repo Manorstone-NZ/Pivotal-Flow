@@ -153,7 +153,7 @@ describe('API Queries', () => {
             name: 'Invalid User',
             role: 'user',
           });
-        } catch (error) {
+        } catch {
           // Expected to throw
         }
       });

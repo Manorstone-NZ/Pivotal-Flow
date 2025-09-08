@@ -3,7 +3,6 @@ import { testDb, testUtils } from '../../../__tests__/setup.js';
 import { RateCardService } from '../service.js';
 describe('RateCardService Integration Tests', () => {
     let rateCardService;
-    let auditLogger; // Using any type since AuditLogger is not available
     let testOrg;
     let testUser;
     let testServiceCategory;
@@ -45,13 +44,11 @@ describe('RateCardService Integration Tests', () => {
       INSERT INTO rate_cards (id, organization_id, name, description, currency, effective_from, effective_until, is_default, is_active, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `, [testRateCard.id, testRateCard.organizationId, testRateCard.name, testRateCard.description, testRateCard.currency, testRateCard.effectiveFrom.toISOString().split('T')[0], testRateCard.effectiveUntil?.toISOString().split('T')[0] || null, testRateCard.isDefault, testRateCard.isActive, testRateCard.createdAt.toISOString(), testRateCard.updatedAt.toISOString()]);
-        // Create audit logger
-        auditLogger = {}; // Mock audit logger since it's not available
         // Create rate card service with real database
         rateCardService = new RateCardService(testDb, {
             organizationId: testOrg.id,
             userId: testUser.id
-        }, auditLogger);
+        });
     });
     afterEach(async () => {
         // Clean up test data

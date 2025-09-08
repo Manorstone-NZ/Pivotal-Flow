@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { Type } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
@@ -59,7 +58,7 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
       });
 
       // Create quote service
-      const quoteService = new QuoteService((fastify as any).db, {
+      const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
       });

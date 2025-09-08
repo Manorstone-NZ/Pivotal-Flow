@@ -1,5 +1,24 @@
 import React, { useEffect, useRef } from 'react';
 
+// Browser API type definitions
+interface FirstInputEntry {
+  name: string;
+  startTime: number;
+  duration: number;
+  entryType: string;
+  processingStart: number;
+  processingEnd: number;
+}
+
+interface LayoutShiftEntry {
+  name: string;
+  startTime: number;
+  duration: number;
+  entryType: string;
+  value: number;
+  hadRecentInput: boolean;
+}
+
 interface PerformanceMarksProps {
   routeName: string;
   children: React.ReactNode;
@@ -9,7 +28,6 @@ export const PerformanceMarks: React.FC<PerformanceMarksProps> = ({
   routeName, 
   children 
 }) => {
-  const startTimeRef = useRef<number>(0);
   const routeStartRef = useRef<number>(0);
 
   useEffect(() => {
@@ -39,7 +57,7 @@ export const PerformanceMarks: React.FC<PerformanceMarksProps> = ({
         ttfbProxy: Math.round(ttfbProxy),
         timestamp: Date.now(),
         userAgent: navigator.userAgent.substring(0, 50), // Truncated for privacy
-        connectionType: (navigator as any).connection?.effectiveType || 'unknown',
+        connectionType: (navigator as { connection?: { effectiveType?: string } }).connection?.effectiveType || 'unknown',
       };
       
       // Send to analytics (placeholder for Sentry/OpenTelemetry)
@@ -52,7 +70,7 @@ export const PerformanceMarks: React.FC<PerformanceMarksProps> = ({
       }
       
       // Log to console in development
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.log(`🚀 Route Performance [${routeName}]:`, metrics);
       }
       
@@ -122,7 +140,7 @@ export const usePerformanceMeasure = (componentName: string) => {
         `${componentName}-mount-end`
       );
       
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.log(`⚡ Component Mount [${componentName}]:`, Math.round(duration), 'ms');
       }
     };
@@ -164,7 +182,7 @@ export const PerformanceMonitor = {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
-        console.log('🎯 LCP:', Math.round(lastEntry.startTime), 'ms');
+        console.log('🎯 LCP:', Math.round(lastEntry?.startTime || 0), 'ms');
       });
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
       
@@ -172,7 +190,7 @@ export const PerformanceMonitor = {
       const fidObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach(entry => {
-          console.log('👆 FID:', Math.round(entry.processingStart - entry.startTime), 'ms');
+          console.log('👆 FID:', Math.round((entry as unknown as FirstInputEntry).processingStart - entry.startTime), 'ms');
         });
       });
       fidObserver.observe({ entryTypes: ['first-input'] });
@@ -182,8 +200,9 @@ export const PerformanceMonitor = {
       const clsObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach(entry => {
-          if (!(entry as any).hadRecentInput) {
-            clsValue += (entry as any).value;
+          const layoutShiftEntry = entry as unknown as LayoutShiftEntry;
+          if (!layoutShiftEntry.hadRecentInput) {
+            clsValue += layoutShiftEntry.value;
           }
         });
         console.log('📐 CLS:', Math.round(clsValue * 1000) / 1000);

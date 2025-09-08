@@ -6,26 +6,26 @@ import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';
 
 // Metrics response schemas
-const metricsInfoSchema = z.object({
-  enabled: z.boolean(),
-  path: z.string(),
-  defaultMetrics: z.boolean(),
-  customMetrics: z.array(z.string()),
+const metricsInfoSchema = Type.Object({
+  enabled: Type.Boolean(),
+  path: Type.String(),
+  defaultMetrics: Type.Boolean(),
+  customMetrics: Type.Array(Type.String()),
 });
 
-const metricsHealthSchema = z.object({
-  status: z.enum(['healthy', 'unhealthy']),
-  timestamp: z.string(),
-  metrics: z.object({
-    enabled: z.boolean(),
-    registryWorking: z.boolean(),
-    contentType: z.string(),
+const metricsHealthSchema = Type.Object({
+  status: Type.Union([Type.Literal('healthy'), Type.Literal('unhealthy')]),
+  timestamp: Type.String(),
+  metrics: Type.Object({
+    enabled: Type.Boolean(),
+    registryWorking: Type.Boolean(),
+    contentType: Type.String(),
   }),
 });
 
-const metricsErrorSchema = z.object({
-  status: z.enum(['unhealthy']),
-  error: z.string(),
+const metricsErrorSchema = Type.Object({
+  status: Type.Literal('unhealthy'),
+  error: Type.String(),
 });
 
 export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
@@ -72,7 +72,7 @@ export async function metricsRoutes(fastify: FastifyInstance): Promise<void> {
       description: 'Get metrics configuration and available metrics',
       response: {
         200: metricsInfoSchema,
-        500: z.object({ error: z.string() }),
+        500: Type.Object({ error: Type.String() }),
       }
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {

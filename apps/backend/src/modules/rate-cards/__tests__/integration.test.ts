@@ -48,34 +48,38 @@ describe('Rate Card Resolution Integration', () => {
 
   describe('Quote Creation with Rate Card Resolution', () => {
     const mockActiveRateCard = {
-      id: 'rate-card-123',
+      id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Standard Rates 2025',
       currency: 'NZD',
       effectiveFrom: '2025-01-01',
       effectiveUntil: null,
       isDefault: true,
-      isActive: true
+      isActive: true,
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T00:00:00Z'
     };
 
     const mockRateCardItems = [
       {
-        id: 'item-123',
-        rateCardId: 'rate-card-123',
-        serviceCategoryId: 'service-123',
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        rateCardId: '550e8400-e29b-41d4-a716-446655440000',
+        serviceCategoryId: '550e8400-e29b-41d4-a716-446655440002',
         itemCode: 'DEV-HOURLY',
         unit: 'hour',
         baseRate: '150.00',
         currency: 'NZD',
         taxClass: 'standard',
-        isActive: true
+        isActive: true,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
       }
     ];
 
     beforeEach(() => {
       // Mock rate card service methods
-      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard);
-      vi.spyOn(rateCardService, 'getRateCardItems').mockResolvedValue(mockRateCardItems);
-      vi.spyOn(rateCardService, 'getRateCardItemByCode').mockResolvedValue(mockRateCardItems[0]);
+      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard as any);
+      vi.spyOn(rateCardService, 'getRateCardItems').mockResolvedValue(mockRateCardItems as any);
+      vi.spyOn(rateCardService, 'getRateCardItemByCode').mockResolvedValue(mockRateCardItems[0]! as any);
       
       // Mock permission service
       vi.spyOn(permissionService, 'canCurrentUserOverrideQuotePrice').mockResolvedValue({
@@ -146,7 +150,7 @@ describe('Rate Card Resolution Integration', () => {
         ]
       };
 
-      vi.spyOn(rateCardService, 'resolvePricing').mockResolvedValue(mockPricingResolution);
+      vi.spyOn(rateCardService, 'resolvePricing').mockResolvedValue(mockPricingResolution as any);
 
       // This would be the actual quote creation call
       // const result = await quoteService.createQuote(quoteData);
@@ -200,7 +204,7 @@ describe('Rate Card Resolution Integration', () => {
         ]
       };
 
-      vi.spyOn(rateCardService, 'resolvePricing').mockResolvedValue(mockFailedResolution);
+      vi.spyOn(rateCardService, 'resolvePricing').mockResolvedValue(mockFailedResolution as any);
 
       // Verify that the quote service would reject this
       expect(rateCardService.resolvePricing).toHaveBeenCalledWith(
@@ -277,12 +281,18 @@ describe('Rate Card Resolution Integration', () => {
       });
 
       const mockActiveRateCard = {
-        id: 'rate-card-123',
+        id: '550e8400-e29b-41d4-a716-446655440003',
         name: 'Standard Rates',
-        isActive: true
+        currency: 'NZD',
+        effectiveFrom: '2025-01-01',
+        effectiveUntil: null,
+        isDefault: true,
+        isActive: true,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
       };
 
-      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard);
+      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard as any);
 
       const result = await rateCardService.resolvePricing(lineItems, true);
 
@@ -308,23 +318,36 @@ describe('Rate Card Resolution Integration', () => {
       });
 
       const mockActiveRateCard = {
-        id: 'rate-card-123',
+        id: '550e8400-e29b-41d4-a716-446655440004',
         name: 'Standard Rates',
-        isActive: true
+        currency: 'NZD',
+        effectiveFrom: '2025-01-01',
+        effectiveUntil: null,
+        isDefault: true,
+        isActive: true,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
       };
 
       const mockRateCardItems = [
         {
-          id: 'item-123',
+          id: '550e8400-e29b-41d4-a716-446655440005',
+          rateCardId: '550e8400-e29b-41d4-a716-446655440004',
+          serviceCategoryId: '550e8400-e29b-41d4-a716-446655440006',
+          itemCode: 'DEV-HOURLY',
+          unit: 'hour',
           baseRate: '150.00',
+          currency: 'NZD',
           taxClass: 'standard',
-          isActive: true
+          isActive: true,
+          createdAt: '2025-01-01T00:00:00Z',
+          updatedAt: '2025-01-01T00:00:00Z'
         }
       ];
 
-      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard);
-      vi.spyOn(rateCardService, 'getRateCardItems').mockResolvedValue(mockRateCardItems);
-      vi.spyOn(rateCardService, 'getRateCardItemByCode').mockResolvedValue(mockRateCardItems[0]);
+      vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard as any);
+      vi.spyOn(rateCardService, 'getRateCardItems').mockResolvedValue(mockRateCardItems as any);
+      vi.spyOn(rateCardService, 'getRateCardItemByCode').mockResolvedValue(mockRateCardItems[0]! as any);
 
       const result = await rateCardService.resolvePricing(lineItems, false);
 

@@ -1,40 +1,40 @@
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 import { logger } from '../lib/logger.js';
 // Performance summary schemas
-const operationMetricsSchema = z.object({
-    operation: z.string(),
-    avgDuration: z.number(),
-    p50: z.number(),
-    p95: z.number(),
-    p99: z.number(),
-    totalCalls: z.number(),
+const operationMetricsSchema = Type.Object({
+    operation: Type.String(),
+    avgDuration: Type.Number(),
+    p50: Type.Number(),
+    p95: Type.Number(),
+    p99: Type.Number(),
+    totalCalls: Type.Number(),
 });
-const performanceSummarySchema = z.object({
-    cache: z.object({
-        hitRate: z.number(),
-        totalRequests: z.number(),
-        metrics: z.object({
-            hits: z.number(),
-            misses: z.number(),
-            sets: z.number(),
-            busts: z.number(),
-            errors: z.number(),
+const performanceSummarySchema = Type.Object({
+    cache: Type.Object({
+        hitRate: Type.Number(),
+        totalRequests: Type.Number(),
+        metrics: Type.Object({
+            hits: Type.Number(),
+            misses: Type.Number(),
+            sets: Type.Number(),
+            busts: Type.Number(),
+            errors: Type.Number(),
         }),
     }),
-    repositories: z.object({
-        topOperations: z.array(operationMetricsSchema),
-        totalOperations: z.number(),
+    repositories: Type.Object({
+        topOperations: Type.Array(operationMetricsSchema),
+        totalOperations: Type.Number(),
     }),
-    timestamp: z.string(),
+    timestamp: Type.String(),
 });
-const cacheMetricsSchema = z.object({
-    message: z.string(),
-    metrics: z.object({
-        hits: z.number(),
-        misses: z.number(),
-        sets: z.number(),
-        busts: z.number(),
-        errors: z.number(),
+const cacheMetricsSchema = Type.Object({
+    message: Type.String(),
+    metrics: Type.Object({
+        hits: Type.Number(),
+        misses: Type.Number(),
+        sets: Type.Number(),
+        busts: Type.Number(),
+        errors: Type.Number(),
     }),
 });
 export async function performanceRoutes(fastify) {
@@ -45,7 +45,7 @@ export async function performanceRoutes(fastify) {
             description: 'Get comprehensive performance metrics and statistics',
             response: {
                 200: performanceSummarySchema,
-                500: z.object({ error: z.string() }),
+                500: Type.Object({ error: Type.String() }),
             }
         }
     }, async (request, reply) => {
@@ -124,7 +124,7 @@ export async function performanceRoutes(fastify) {
             description: 'Get detailed cache performance metrics',
             response: {
                 200: cacheMetricsSchema,
-                500: z.object({ error: z.string() }),
+                500: Type.Object({ error: Type.String() }),
             }
         }
     }, async (request, reply) => {

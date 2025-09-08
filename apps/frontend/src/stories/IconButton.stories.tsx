@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { IconButton } from '../../components/ui/IconButton';
+import { IconButton, type IconButtonProps } from '../../components/ui/IconButton';
 
 // Simple icon components for demonstration
 const PlusIcon = () => (
@@ -105,7 +105,7 @@ export const WithDescription: Story = {
     'aria-label': 'Add new item',
     'aria-describedby': 'add-description',
   },
-  render: (args) => (
+  render: (args: IconButtonProps) => (
     <div>
       <IconButton {...args} />
       <p id="add-description" className="mt-2 text-sm text-gray-600">

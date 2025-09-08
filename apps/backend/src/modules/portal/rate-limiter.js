@@ -76,7 +76,7 @@ export async function portalRateLimit(request, reply) {
         return;
     }
     // Get endpoint path for rate limiting granularity
-    const endpoint = request.routeConfig?.method + ' ' + request.routeConfig?.url || 'unknown';
+    const endpoint = request.method + ' ' + request.url || 'unknown';
     // Check rate limit
     const result = checkRateLimit(userContext, endpoint);
     // Set rate limit headers

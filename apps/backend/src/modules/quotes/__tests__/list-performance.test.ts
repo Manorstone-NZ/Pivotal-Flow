@@ -11,7 +11,7 @@ describe('Quote List Performance with Filters', () => {
     const mockDb = {} as any;
     const organizationId = 'test-org-123';
     const userId = 'test-user-456';
-    quoteService = new QuoteService(mockDb, { organizationId, userId });
+    quoteService = new QuoteService({ organizationId, userId });
     testUserId = userId;
   });
 
@@ -22,7 +22,7 @@ describe('Quote List Performance with Filters', () => {
   describe('List quotes with typed column filters', () => {
     it('should list quotes filtered by status', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { status: 'draft' }
       );
 
@@ -35,7 +35,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes filtered by customer ID', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { customerId: 'test-customer-123' }
       );
 
@@ -45,7 +45,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes filtered by project ID', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { projectId: 'test-project-456' }
       );
 
@@ -55,7 +55,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes filtered by type', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { type: 'project' }
       );
 
@@ -65,7 +65,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes filtered by created by', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { createdBy: testUserId }
       );
 
@@ -75,7 +75,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes filtered by date range', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { 
           validFrom: '2025-01-01',
           validUntil: '2025-12-31'
@@ -88,7 +88,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes with text search', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { q: 'test' }
       );
 
@@ -98,7 +98,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should list quotes with multiple filters', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { 
           status: 'draft',
           customerId: 'test-customer-123',
@@ -112,7 +112,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should handle pagination correctly', async () => {
       const result = await quoteService.listQuotes(
-        { page: 2, pageSize: 10 },
+        { page: 2, size: 10 },
         { status: 'draft' }
       );
 
@@ -123,7 +123,7 @@ describe('Quote List Performance with Filters', () => {
 
     it('should return empty results for non-existent filters', async () => {
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { status: 'non-existent-status' }
       );
 
@@ -138,7 +138,7 @@ describe('Quote List Performance with Filters', () => {
       const startTime = performance.now();
       
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 25 },
+        { page: 1, size: 25 },
         { status: 'draft' }
       );
 
@@ -154,7 +154,7 @@ describe('Quote List Performance with Filters', () => {
       const startTime = performance.now();
       
       const result = await quoteService.listQuotes(
-        { page: 1, pageSize: 100 },
+        { page: 1, size: 100 },
         { status: 'draft' }
       );
 
@@ -171,7 +171,7 @@ describe('Quote List Performance with Filters', () => {
     it('should reject JSONB metadata filters for core fields', async () => {
       await expect(
         quoteService.listQuotes(
-          { page: 1, pageSize: 25 },
+          { page: 1, size: 25 },
           { 'metadata.status': 'draft' }
         )
       ).rejects.toThrow('JSONB_FILTER_FORBIDDEN');
@@ -180,7 +180,7 @@ describe('Quote List Performance with Filters', () => {
     it('should reject JSONB metadata filters for monetary fields', async () => {
       await expect(
         quoteService.listQuotes(
-          { page: 1, pageSize: 25 },
+          { page: 1, size: 25 },
           { 'metadata.total_amount': 1000 }
         )
       ).rejects.toThrow('JSONB_FILTER_FORBIDDEN');
@@ -189,7 +189,7 @@ describe('Quote List Performance with Filters', () => {
     it('should reject JSONB metadata filters for date fields', async () => {
       await expect(
         quoteService.listQuotes(
-          { page: 1, pageSize: 25 },
+          { page: 1, size: 25 },
           { 'metadata.created_at': '2025-01-01' }
         )
       ).rejects.toThrow('JSONB_FILTER_FORBIDDEN');

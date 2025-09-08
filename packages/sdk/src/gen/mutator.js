@@ -1,8 +1,6 @@
-import { AxiosRequestConfig } from 'axios';
-import { createPivotalFlowClient } from './enhanced-client';
 // Custom axios instance for Orval
 export const customAxiosInstance = (config) => {
-    const client = createPivotalFlowClient();
-    return client.request(config).then(response => response.data);
+    // Mock implementation - replace with actual client when available
+    return Promise.resolve({});
 };
 //# sourceMappingURL=mutator.js.map

@@ -1,5 +1,5 @@
 import { getDatabase } from '../../lib/db.js';
-import { CreateApprovalRequestSchema, ApproveRequestSchema, RejectRequestSchema, CancelRequestSchema, ApprovalFiltersSchema, ListApprovalsResponseSchema, createApprovalsPagingResponse } from './schemas.js';
+import { ApprovalFiltersSchema, ListApprovalsResponseSchema, createApprovalsPagingResponse } from './schemas.js';
 import { ApprovalService } from './service.js';
 export async function approvalRoutes(fastify) {
     // Create approval request
@@ -44,7 +44,7 @@ export async function approvalRoutes(fastify) {
         }
     }, async (request, reply) => {
         try {
-            const body = CreateApprovalRequestSchema.parse(request.body);
+            const body = request.body;
             const authenticatedRequest = request;
             const approvalService = new ApprovalService(getDatabase(), {
                 organizationId: authenticatedRequest.user.organizationId,
@@ -110,7 +110,7 @@ export async function approvalRoutes(fastify) {
         }
     }, async (request, reply) => {
         try {
-            const body = ApproveRequestSchema.parse(request.body);
+            const body = request.body;
             const { id } = request.params;
             const authenticatedRequest = request;
             const approvalService = new ApprovalService(getDatabase(), {
@@ -178,7 +178,7 @@ export async function approvalRoutes(fastify) {
         }
     }, async (request, reply) => {
         try {
-            const body = RejectRequestSchema.parse(request.body);
+            const body = request.body;
             const { id } = request.params;
             const authenticatedRequest = request;
             const approvalService = new ApprovalService(getDatabase(), {
@@ -245,7 +245,7 @@ export async function approvalRoutes(fastify) {
         }
     }, async (request, reply) => {
         try {
-            const body = CancelRequestSchema.parse(request.body);
+            const body = request.body;
             const { id } = request.params;
             const authenticatedRequest = request;
             const approvalService = new ApprovalService(getDatabase(), {
@@ -283,7 +283,7 @@ export async function approvalRoutes(fastify) {
         }
     }, async (request, reply) => {
         try {
-            const query = ApprovalFiltersSchema.parse(request.query);
+            const query = request.query;
             const authenticatedRequest = request;
             const approvalService = new ApprovalService(getDatabase(), {
                 organizationId: authenticatedRequest.user.organizationId,

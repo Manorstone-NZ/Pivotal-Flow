@@ -1,9 +1,46 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+
+// Extend Window interface for OpenTelemetry
+// Browser API type definitions
+interface OpenTelemetrySpan {
+  setAttributes: (attrs: Record<string, string | number | boolean>) => void;
+  addEvent: (name: string, attributes?: Record<string, unknown>) => void;
+  recordException: (error: Error) => void;
+}
+
+interface SentryScope {
+  setTag: (key: string, value: string) => void;
+  setContext: (key: string, context: Record<string, unknown>) => void;
+  setLevel: (level: string) => void;
+}
+
+declare global {
+  interface Window {
+    otel?: {
+      trace: {
+        getActiveSpan: () => OpenTelemetrySpan | undefined;
+      };
+    };
+    Sentry?: {
+      withScope: (callback: (scope: SentryScope) => void) => void;
+      captureException: (error: Error) => void;
+      captureMessage: (message: string, level?: string) => void;
+    };
+  }
+}
+
+interface ErrorContext {
+  error: Error;
+  errorInfo: ErrorInfo;
+  userId?: string;
+  sessionId?: string;
+  timestamp: string;
+}
 
 interface ErrorBoundaryState {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
+  error?: Error | undefined;
+  errorInfo?: ErrorInfo | undefined;
   errorId?: string;
 }
 
@@ -47,27 +84,29 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   private reportError = (error: Error, errorInfo: ErrorInfo, errorId: string) => {
     // Collect error context (no PII)
-    const errorContext = {
-      errorId,
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href,
+    const errorContext: ErrorContext = {
+      error: error,
+      errorInfo: errorInfo,
       userId: this.getUserId(), // Non-PII user identifier
       sessionId: this.getSessionId(),
-      buildVersion: process.env.REACT_APP_VERSION || 'unknown',
-      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
     };
 
     // Send to Sentry (if configured)
     if (window.Sentry) {
-      window.Sentry.withScope((scope: any) => {
+      window.Sentry.withScope((scope: SentryScope) => {
         scope.setTag('errorId', errorId);
-        scope.setContext('errorBoundary', errorContext);
+        scope.setContext('errorBoundary', {
+          errorId,
+          message: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+          timestamp: errorContext.timestamp,
+          userId: errorContext.userId,
+          sessionId: errorContext.sessionId,
+        });
         scope.setLevel('error');
-        window.Sentry.captureException(error);
+        window.Sentry?.captureException(error);
       });
     }
 
@@ -79,7 +118,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         span.setAttributes({
           'error.id': errorId,
           'error.message': error.message,
-          'error.component_stack': errorInfo.componentStack,
+          'error.component_stack': errorInfo.componentStack || 'unknown',
         });
       }
     }
@@ -91,13 +130,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         fatal: false,
         custom_map: {
           error_id: errorId,
-          error_component: errorInfo.componentStack.split('\n')[0] || 'unknown',
+          error_component: errorInfo.componentStack?.split('\n')[0] || 'unknown',
         },
       });
     }
 
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       console.group('🚨 Error Boundary Caught Error');
       console.error('Error:', error);
       console.error('Error Info:', errorInfo);
@@ -106,7 +145,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     // Store error locally for debugging (development only)
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       this.storeErrorLocally(errorContext);
     }
   };
@@ -119,7 +158,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         const parsed = JSON.parse(authData);
         return parsed.userId ? `user_${parsed.userId.slice(-8)}` : 'anonymous';
       }
-    } catch (error) {
+    } catch {
       // Ignore parsing errors
     }
     return 'anonymous';
@@ -135,7 +174,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return sessionId;
   };
 
-  private storeErrorLocally = (errorContext: any) => {
+  private storeErrorLocally = (errorContext: ErrorContext) => {
     try {
       const errors = JSON.parse(localStorage.getItem('errorLog') || '[]');
       errors.push(errorContext);
@@ -146,7 +185,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
       
       localStorage.setItem('errorLog', JSON.stringify(errors));
-    } catch (error) {
+    } catch {
       // Ignore storage errors
     }
   };
@@ -182,7 +221,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </p>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env['NODE_ENV'] === 'development' && this.state.error && (
               <div className="mb-4 p-3 bg-error-light rounded text-left">
                 <details className="text-sm">
                   <summary className="cursor-pointer font-medium text-error-dark mb-2">
@@ -221,7 +260,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </button>
             </div>
 
-            {process.env.NODE_ENV === 'development' && (
+            {process.env['NODE_ENV'] === 'development' && (
               <div className="mt-4 text-xs text-text-tertiary">
                 Error ID: {this.state.errorId}
               </div>
@@ -275,13 +314,13 @@ export const setupGlobalErrorHandling = () => {
 // Error reporting utilities
 export const ErrorReporter = {
   // Report custom errors
-  reportError: (error: Error, context?: Record<string, any>) => {
+  reportError: (error: Error, context?: Record<string, unknown>) => {
     if (window.Sentry) {
-      window.Sentry.withScope((scope: any) => {
+      window.Sentry.withScope((scope: SentryScope) => {
         if (context) {
           scope.setContext('custom', context);
         }
-        window.Sentry.captureException(error);
+        window.Sentry?.captureException(error);
       });
     }
   },
@@ -295,10 +334,10 @@ export const ErrorReporter = {
 
   // Get stored errors (development only)
   getStoredErrors: () => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       try {
         return JSON.parse(localStorage.getItem('errorLog') || '[]');
-      } catch (error) {
+      } catch {
         return [];
       }
     }
@@ -307,7 +346,7 @@ export const ErrorReporter = {
 
   // Clear stored errors
   clearStoredErrors: () => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       localStorage.removeItem('errorLog');
     }
   },

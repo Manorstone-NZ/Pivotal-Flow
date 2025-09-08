@@ -49,7 +49,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children, open, onOp
           return React.cloneElement(child, { 
             isOpen, 
             onOpenChange: handleOpenChange 
-          } as any);
+          } as { isOpen: boolean; onOpenChange: (open: boolean) => void });
         }
         return child;
       })}

@@ -17,7 +17,7 @@ export function registerGetQuoteVersionsRoute(fastify) {
             }
             const { id } = request.params;
             // Create quote service
-            const quoteService = new QuoteService(fastify.db, {
+            const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
             });
@@ -63,7 +63,7 @@ export function registerGetQuoteVersionRoute(fastify) {
             }
             const { id, versionId } = request.params;
             // Create quote service
-            const quoteService = new QuoteService(fastify.db, {
+            const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
             });

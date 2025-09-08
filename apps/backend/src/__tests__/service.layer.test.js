@@ -11,7 +11,7 @@ describe('Service Layer Tests', () => {
             const org = await testUtils.createTestOrganization();
             testUser = await testUtils.createTestUser({ organizationId: org.id });
             testCustomer = await testUtils.createTestCustomer(org.id);
-            quoteService = new QuoteService({}, {
+            quoteService = new QuoteService({
                 organizationId: org.id,
                 userId: testUser.id
             });

@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox';
 import { RateCardService } from './service.js';
-import { CreateRateCardSchema, UpdateRateCardSchema, CreateRateCardItemSchema, UpdateRateCardItemSchema, RateCardResponseSchema, RateCardItemResponseSchema, RateCardErrorSchema } from './typeboxSchemas.js';
+import { CreateRateCardSchema, CreateRateCardItemSchema, RateCardResponseSchema, RateCardItemResponseSchema, RateCardErrorSchema } from './typeboxSchemas.js';
 export async function rateCardRoutes(fastify) {
     // Create a new rate card
     fastify.post('/rate-cards', {

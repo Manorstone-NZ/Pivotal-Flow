@@ -21,7 +21,7 @@ export const apiClient: AxiosInstance = axios.create({
 export interface ApiError {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   requestId: string;
   timestamp: string;
   status: number;
@@ -32,11 +32,19 @@ export function normalizeApiError(error: AxiosError): ApiError {
   const response = error.response;
   
   if (response?.data && typeof response.data === 'object' && 'error' in response.data) {
-    const errorData = response.data as any;
+    const errorData = response.data as { 
+      error: { 
+        code?: string; 
+        message?: string; 
+        details?: Record<string, unknown>;
+        request_id?: string;
+        timestamp?: string;
+      } 
+    };
     return {
       code: errorData.error.code || 'UNKNOWN_ERROR',
       message: errorData.error.message || 'An unknown error occurred',
-      details: errorData.error.details,
+      details: errorData.error.details || {},
       requestId: errorData.error.request_id || 'unknown',
       timestamp: errorData.error.timestamp || new Date().toISOString(),
       status: response.status,

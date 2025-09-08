@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { Input } from './ui/Input';
+import { Input } from '@/components/ui/Input';
 
 expect.extend(toHaveNoViolations);
 

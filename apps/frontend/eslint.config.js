@@ -16,12 +16,56 @@ export default [
         }
       },
       globals: {
+        // Browser globals
         document: 'readonly',
         window: 'readonly',
         console: 'readonly',
         JSX: 'readonly',
         localStorage: 'readonly',
-        fetch: 'readonly'
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        alert: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestIdleCallback: 'readonly',
+        performance: 'readonly',
+        navigator: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        Blob: 'readonly',
+        
+        // DOM types
+        HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLSelectElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        KeyboardEvent: 'readonly',
+        FocusEvent: 'readonly',
+        PerformanceObserver: 'readonly',
+        PerformanceNavigationTiming: 'readonly',
+        
+        // Node.js globals
+        process: 'readonly',
+        NodeJS: 'readonly',
+        global: 'readonly',
+        
+        // React globals
+        React: 'readonly',
+        
+        // Test globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly'
       }
     },
     plugins: {

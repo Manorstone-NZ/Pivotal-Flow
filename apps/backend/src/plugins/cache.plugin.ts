@@ -15,26 +15,26 @@ export interface CachePluginOptions extends CacheOptions {
   enabled?: boolean;
 }
 
-// Zod schemas for cache responses
-const CacheStatsResponseSchema = z.object({
-  status: z.string(),
-  connected: z.boolean(),
-  keyCount: z.number(),
-  memoryUsage: z.string(),
-  hitRate: z.number(),
+// TypeBox schemas for cache responses
+const CacheStatsResponseSchema = Type.Object({
+  status: Type.String(),
+  connected: Type.Boolean(),
+  keyCount: Type.Number(),
+  memoryUsage: Type.String(),
+  hitRate: Type.Number(),
 });
 
-const CacheClearResponseSchema = z.object({
-  message: z.string(),
+const CacheClearResponseSchema = Type.Object({
+  message: Type.String(),
 });
 
-const CacheUnavailableResponseSchema = z.object({
-  status: z.string(),
-  connected: z.boolean(),
-  keyCount: z.number(),
-  memoryUsage: z.string(),
-  hitRate: z.number(),
-  error: z.string(),
+const CacheUnavailableResponseSchema = Type.Object({
+  status: Type.String(),
+  connected: Type.Boolean(),
+  keyCount: Type.Number(),
+  memoryUsage: Type.String(),
+  hitRate: Type.Number(),
+  error: Type.String(),
 });
 
 /**

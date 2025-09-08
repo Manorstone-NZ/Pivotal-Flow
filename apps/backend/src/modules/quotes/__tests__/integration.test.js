@@ -1,8 +1,8 @@
-import { randomUUID } from 'crypto';
 import { Decimal } from 'decimal.js';
 import { eq, and } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
+import { AuditLogger } from '../../../lib/audit-logger.drizzle.js';
 import { quotes, quoteLineItems, organizations, customers, users, auditLogs, serviceCategories } from '../../../lib/schema.js';
 import { QuoteStatus } from '../schemas.js';
 import { QuoteService } from '../service.js';
@@ -121,31 +121,16 @@ describe('Quote Integration Tests', () => {
         await testDb.insert(users).values([testUser1, testUser2]).onConflictDoNothing();
         // Insert test service categories
         await testDb.insert(serviceCategories).values([testServiceCategory1, testServiceCategory2]).onConflictDoNothing();
-        // Create a test audit logger that actually inserts into the database
-        auditLogger = {
-            logEvent: async (event) => {
-                await testDb.insert(auditLogs).values({
-                    id: randomUUID(),
-                    action: event.action,
-                    entityType: event.entityType,
-                    entityId: event.entityId,
-                    organizationId: event.organizationId,
-                    userId: event.userId,
-                    ipAddress: null,
-                    userAgent: null,
-                    sessionId: null,
-                    oldValues: event.oldValues,
-                    newValues: event.newValues,
-                    metadata: event.metadata || {},
-                    createdAt: new Date()
-                });
-            },
-            logAuthEvent: async () => {
-                // Mock implementation - do nothing
+        // Create a test audit logger
+        const mockFastify = {
+            log: {
+                info: () => { },
+                error: () => { }
             }
         };
+        auditLogger = new AuditLogger(mockFastify);
         // Initialize services
-        quoteService = new QuoteService(testDb, {
+        quoteService = new QuoteService({
             organizationId: 'test-org-1',
             userId: 'test-user-1'
         }, auditLogger);
@@ -159,7 +144,7 @@ describe('Quote Integration Tests', () => {
     describe('Multi-Tenancy Tests', () => {
         it('should isolate quotes by organization', async () => {
             // Create quote for org 1
-            const quoteService1 = new QuoteService(testDb, {
+            const quoteService1 = new QuoteService({
                 organizationId: 'test-org-1',
                 userId: 'test-user-1'
             }, auditLogger);
@@ -198,7 +183,7 @@ describe('Quote Integration Tests', () => {
             };
             const quote1 = await quoteService1.createQuote(quoteData1);
             // Create quote for org 2
-            const quoteService2 = new QuoteService(testDb, {
+            const quoteService2 = new QuoteService({
                 organizationId: 'test-org-2',
                 userId: 'test-user-2'
             }, auditLogger);
@@ -239,18 +224,18 @@ describe('Quote Integration Tests', () => {
             // Verify quotes are isolated
             const org1Quotes = await quoteService1.listQuotes({
                 page: 1,
-                pageSize: 10
+                size: 10
             });
             const org2Quotes = await quoteService2.listQuotes({
                 page: 1,
-                pageSize: 10
+                size: 10
             });
             expect(org1Quotes.quotes).toHaveLength(1);
-            expect(org1Quotes.quotes[0].organizationId).toBe('test-org-1');
-            expect(org1Quotes.quotes[0].title).toBe('Test Quote 1');
+            expect(org1Quotes.quotes[0]?.organizationId).toBe('test-org-1');
+            expect(org1Quotes.quotes[0]?.title).toBe('Test Quote 1');
             expect(org2Quotes.quotes).toHaveLength(1);
-            expect(org2Quotes.quotes[0].organizationId).toBe('test-org-2');
-            expect(org2Quotes.quotes[0].title).toBe('Test Quote Org 2');
+            expect(org2Quotes.quotes[0]?.organizationId).toBe('test-org-2');
+            expect(org2Quotes.quotes[0]?.title).toBe('Test Quote Org 2');
             // Verify cross-organization access is prevented
             const org1QuoteFromOrg2 = await quoteService2.getQuoteById(quote1.id);
             expect(org1QuoteFromOrg2).toBeNull();
@@ -359,9 +344,9 @@ describe('Quote Integration Tests', () => {
             expect(quote.organizationId).toBe('test-org-1');
             expect(quote.createdBy).toBe('test-user-1');
             // Verify calculations
-            expect(parseFloat(quote.subtotal)).toBe(8000.00); // 40 * 150 + 20 * 100
-            expect(parseFloat(quote.taxAmount)).toBe(1200.00); // 8000 * 0.15
-            expect(parseFloat(quote.totalAmount)).toBe(9200.00); // 8000 + 1200
+            expect(quote.subtotal).toBe(8000.00); // 40 * 150 + 20 * 100
+            expect(quote.taxAmount).toBe(1200.00); // 8000 * 0.15
+            expect(quote.totalAmount).toBe(9200.00); // 8000 + 1200
             // Verify line items
             const lineItems = await testDb.select().from(quoteLineItems).where(eq(quoteLineItems.quoteId, quote.id));
             expect(lineItems).toHaveLength(2);
@@ -408,17 +393,17 @@ describe('Quote Integration Tests', () => {
             const quote = await quoteService.createQuote(quoteData);
             // Test valid transitions
             const updatedQuote1 = await quoteService.transitionStatus(quote.id, { status: QuoteStatus.PENDING });
-            expect(updatedQuote1.status).toBe(QuoteStatus.PENDING);
+            expect(updatedQuote1?.status).toBe(QuoteStatus.PENDING);
             const updatedQuote2 = await quoteService.transitionStatus(quote.id, { status: QuoteStatus.APPROVED });
-            expect(updatedQuote2.status).toBe(QuoteStatus.APPROVED);
-            expect(updatedQuote2.approvedBy).toBe('test-user-1');
-            expect(updatedQuote2.approvedAt).toBeDefined();
+            expect(updatedQuote2?.status).toBe(QuoteStatus.APPROVED);
+            expect(updatedQuote2?.approvedBy).toBe('test-user-1');
+            expect(updatedQuote2?.approvedAt).toBeDefined();
             const updatedQuote3 = await quoteService.transitionStatus(quote.id, { status: QuoteStatus.SENT });
-            expect(updatedQuote3.status).toBe(QuoteStatus.SENT);
-            expect(updatedQuote3.sentAt).toBeDefined();
+            expect(updatedQuote3?.status).toBe(QuoteStatus.SENT);
+            expect(updatedQuote3?.sentAt).toBeDefined();
             const updatedQuote4 = await quoteService.transitionStatus(quote.id, { status: QuoteStatus.ACCEPTED });
-            expect(updatedQuote4.status).toBe(QuoteStatus.ACCEPTED);
-            expect(updatedQuote4.acceptedAt).toBeDefined();
+            expect(updatedQuote4?.status).toBe(QuoteStatus.ACCEPTED);
+            expect(updatedQuote4?.acceptedAt).toBeDefined();
         });
         it('should reject invalid status transitions', async () => {
             // Create a quote
@@ -503,7 +488,7 @@ describe('Quote Integration Tests', () => {
                 ]
             };
             const quote = await quoteService.createQuote(quoteData);
-            expect(parseFloat(quote.totalAmount)).toBe(1150.00); // 1000 + 150 tax
+            expect(quote.totalAmount).toBe(1150.00); // 1000 + 150 tax
             // Update line item
             const updatedData = {
                 ...quoteData,
@@ -631,9 +616,9 @@ describe('Quote Integration Tests', () => {
             const quote2 = await quoteService.createQuote(quoteData);
             const quote3 = await quoteService.createQuote(quoteData);
             // Verify sequential numbering
-            const number1 = parseInt(quote1.quoteNumber.split('-')[2]);
-            const number2 = parseInt(quote2.quoteNumber.split('-')[2]);
-            const number3 = parseInt(quote3.quoteNumber.split('-')[2]);
+            const number1 = parseInt(quote1.quoteNumber.split('-')[2] || '0');
+            const number2 = parseInt(quote2.quoteNumber.split('-')[2] || '0');
+            const number3 = parseInt(quote3.quoteNumber.split('-')[2] || '0');
             expect(number2).toBe(number1 + 1);
             expect(number3).toBe(number2 + 1);
             // Verify uniqueness

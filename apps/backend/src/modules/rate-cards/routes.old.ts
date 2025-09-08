@@ -7,14 +7,9 @@ import {
   CreateRateCardItemSchema, 
   UpdateRateCardItemSchema,
   RateCardResponseSchema,
-  RateCardItemResponseSchema,
   RateCardErrorSchema,
   type CreateRateCard,
-  type UpdateRateCard,
-  type CreateRateCardItem,
-  type UpdateRateCardItem,
   type RateCardResponse,
-  type RateCardItemResponse,
   type RateCardError
 } from './typeboxSchemas.js';
 
@@ -69,6 +64,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
     } catch (error) {
       (fastify.log as any).error(error as Error, 'Error creating rate card');
       reply.status(500).send({ 
+        code: 'INTERNAL_SERVER_ERROR',
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -258,7 +254,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
   }, async (request: FastifyRequest<{ Params: { id: string }; Body: { name?: string; description?: string; currency?: string; effectiveFrom?: string; effectiveUntil?: string; isDefault?: boolean; isActive?: boolean; metadata?: Record<string, any> } }>, reply) => {
     try {
       const { id } = request.params;
-      const validatedData = UpdateRateCardSchema.parse(request.body);
+      const validatedData = UpdateRateCardSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const rateCardService = new RateCardService(fastify.db, {
@@ -329,7 +325,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
   }, async (request: FastifyRequest<{ Params: { id: string }; Body: { serviceCategoryId: string; roleId?: string; baseRate: number; currency?: string; effectiveFrom: string; effectiveUntil?: string; metadata?: Record<string, any> } }>, reply) => {
     try {
       const { id: rateCardId } = request.params;
-      const validatedData = CreateRateCardItemSchema.parse(request.body);
+      const validatedData = CreateRateCardItemSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const rateCardService = new RateCardService(fastify.db, {
@@ -400,7 +396,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
   }, async (request: FastifyRequest<{ Params: { id: string; itemId: string }; Body: { serviceCategoryId?: string; roleId?: string; baseRate?: number; currency?: string; effectiveFrom?: string; effectiveUntil?: string; isActive?: boolean; metadata?: Record<string, any> } }>, reply) => {
     try {
       const { itemId } = request.params;
-      const validatedData = UpdateRateCardItemSchema.parse(request.body);
+      const validatedData = UpdateRateCardItemSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
       const rateCardService = new RateCardService(fastify.db, {
@@ -532,15 +528,14 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       
       const result = await rateCardService.resolvePricing(
         body.lineItems,
-        body.userHasOverridePermission || false,
-        body.effectiveDate ? new Date(body.effectiveDate) : new Date()
+        body.userHasOverridePermission || false
       );
       
-      if (!result.success && result.errors) {
+      if (!result.success && (result as any).errors) {
         return reply.status(422).send({
           error: 'Pricing resolution failed',
           message: 'Some line items could not be priced',
-          details: result.errors
+          details: (result as any).errors
         });
       }
       

@@ -7,8 +7,6 @@ import { logger } from '../../lib/logger.js';
 
 import { canViewUsers, extractUserContext } from './rbac.js';
 import { 
-  UserListFiltersSchema,
-  UserListSortSchema,
   UserListResponseSchema,
   UserErrorSchema,
   type UserListFilters,

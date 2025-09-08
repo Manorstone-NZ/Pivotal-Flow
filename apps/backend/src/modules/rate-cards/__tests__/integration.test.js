@@ -41,25 +41,29 @@ describe('Rate Card Resolution Integration', () => {
     });
     describe('Quote Creation with Rate Card Resolution', () => {
         const mockActiveRateCard = {
-            id: 'rate-card-123',
+            id: '550e8400-e29b-41d4-a716-446655440000',
             name: 'Standard Rates 2025',
             currency: 'NZD',
             effectiveFrom: '2025-01-01',
             effectiveUntil: null,
             isDefault: true,
-            isActive: true
+            isActive: true,
+            createdAt: '2025-01-01T00:00:00Z',
+            updatedAt: '2025-01-01T00:00:00Z'
         };
         const mockRateCardItems = [
             {
-                id: 'item-123',
-                rateCardId: 'rate-card-123',
-                serviceCategoryId: 'service-123',
+                id: '550e8400-e29b-41d4-a716-446655440001',
+                rateCardId: '550e8400-e29b-41d4-a716-446655440000',
+                serviceCategoryId: '550e8400-e29b-41d4-a716-446655440002',
                 itemCode: 'DEV-HOURLY',
                 unit: 'hour',
                 baseRate: '150.00',
                 currency: 'NZD',
                 taxClass: 'standard',
-                isActive: true
+                isActive: true,
+                createdAt: '2025-01-01T00:00:00Z',
+                updatedAt: '2025-01-01T00:00:00Z'
             }
         ];
         beforeEach(() => {
@@ -233,9 +237,15 @@ describe('Rate Card Resolution Integration', () => {
                 reason: 'User has override permission'
             });
             const mockActiveRateCard = {
-                id: 'rate-card-123',
+                id: '550e8400-e29b-41d4-a716-446655440003',
                 name: 'Standard Rates',
-                isActive: true
+                currency: 'NZD',
+                effectiveFrom: '2025-01-01',
+                effectiveUntil: null,
+                isDefault: true,
+                isActive: true,
+                createdAt: '2025-01-01T00:00:00Z',
+                updatedAt: '2025-01-01T00:00:00Z'
             };
             vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard);
             const result = await rateCardService.resolvePricing(lineItems, true);
@@ -258,16 +268,29 @@ describe('Rate Card Resolution Integration', () => {
                 reason: 'User lacks override permission'
             });
             const mockActiveRateCard = {
-                id: 'rate-card-123',
+                id: '550e8400-e29b-41d4-a716-446655440004',
                 name: 'Standard Rates',
-                isActive: true
+                currency: 'NZD',
+                effectiveFrom: '2025-01-01',
+                effectiveUntil: null,
+                isDefault: true,
+                isActive: true,
+                createdAt: '2025-01-01T00:00:00Z',
+                updatedAt: '2025-01-01T00:00:00Z'
             };
             const mockRateCardItems = [
                 {
-                    id: 'item-123',
+                    id: '550e8400-e29b-41d4-a716-446655440005',
+                    rateCardId: '550e8400-e29b-41d4-a716-446655440004',
+                    serviceCategoryId: '550e8400-e29b-41d4-a716-446655440006',
+                    itemCode: 'DEV-HOURLY',
+                    unit: 'hour',
                     baseRate: '150.00',
+                    currency: 'NZD',
                     taxClass: 'standard',
-                    isActive: true
+                    isActive: true,
+                    createdAt: '2025-01-01T00:00:00Z',
+                    updatedAt: '2025-01-01T00:00:00Z'
                 }
             ];
             vi.spyOn(rateCardService, 'getActiveRateCard').mockResolvedValue(mockActiveRateCard);

@@ -74,7 +74,12 @@ export const QuoteResponseSchema = Type.Object({
     unitPrice: Type.Number(),
     totalPrice: Type.Number(),
     metadata: Type.Record(Type.String(), Type.Unknown())
-  }))
+  })),
+  subtotal: Type.Number(),
+  taxAmount: Type.Number(),
+  totalAmount: Type.Number(),
+  createdBy: Type.String(),
+  quoteNumber: Type.String()
 });
 
 export type QuoteResponse = Static<typeof QuoteResponseSchema>;

@@ -4,11 +4,9 @@ import { Type } from '@sinclair/typebox';
 import { QuoteService } from './service.js';
 import { 
   CreateQuoteSchema, 
-  UpdateQuoteSchema,
   QuoteResponseSchema,
   QuoteErrorSchema,
   type CreateQuote,
-  type UpdateQuote,
   type QuoteResponse,
   type QuoteError
 } from './typeboxSchemas.js';
@@ -46,7 +44,7 @@ export async function quoteRoutes(fastify: FastifyInstance) {
       const validatedData = request.body; // TypeBox handles validation automatically
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const quoteService = new QuoteService(fastify.db, {
+      const quoteService = new QuoteService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -82,7 +80,7 @@ export async function quoteRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const quoteService = new QuoteService(fastify.db, {
+      const quoteService = new QuoteService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -119,7 +117,7 @@ export async function quoteRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const quoteService = new QuoteService(fastify.db, {
+      const quoteService = new QuoteService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });

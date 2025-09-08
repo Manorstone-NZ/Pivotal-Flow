@@ -151,6 +151,7 @@ export declare const healthStatusSchema: z.ZodObject<{
     status: "error" | "ok";
     version: string;
     timestamp: string;
+    uptime: number;
     checks: {
         database: {
             status: "error" | "ok";
@@ -171,11 +172,11 @@ export declare const healthStatusSchema: z.ZodObject<{
             latency?: number | undefined;
         };
     };
-    uptime: number;
 }, {
     status: "error" | "ok";
     version: string;
     timestamp: string;
+    uptime: number;
     checks: {
         database: {
             status: "error" | "ok";
@@ -196,7 +197,6 @@ export declare const healthStatusSchema: z.ZodObject<{
             latency?: number | undefined;
         };
     };
-    uptime: number;
 }>;
 export declare const apiResponseSchema: z.ZodObject<{
     success: z.ZodBoolean;

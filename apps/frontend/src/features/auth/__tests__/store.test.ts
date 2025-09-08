@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { useAuth, useAuthStore } from '../../features/auth/store';
+import { useAuth, useAuthStore } from '@/features/auth/store';
 
 // Mock the SDK with proper PivotalFlowClient export
 vi.mock('@pivotal-flow/sdk', () => ({
@@ -118,7 +118,7 @@ describe('useAuth', () => {
     await act(async () => {
       try {
         await result.current.login('invalid@example.com', 'wrongpassword');
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
     });
@@ -206,7 +206,7 @@ describe('useAuth', () => {
     await act(async () => {
       try {
         await result.current.refreshAccessToken();
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
     });

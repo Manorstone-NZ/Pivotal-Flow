@@ -1,33 +1,33 @@
-import { z } from 'zod';
+import { Type } from '@sinclair/typebox';
 import { logger } from '../lib/logger.js';
 // Health check response schema
-const healthStatusSchema = z.object({
-    status: z.enum(['ok', 'error']),
-    timestamp: z.string(),
-    uptime: z.number(),
-    version: z.string(),
-    checks: z.object({
-        database: z.object({
-            status: z.enum(['ok', 'error']),
-            message: z.string(),
-            timestamp: z.string(),
+const healthStatusSchema = Type.Object({
+    status: Type.Union([Type.Literal('ok'), Type.Literal('error')]),
+    timestamp: Type.String(),
+    uptime: Type.Number(),
+    version: Type.String(),
+    checks: Type.Object({
+        database: Type.Object({
+            status: Type.Union([Type.Literal('ok'), Type.Literal('error')]),
+            message: Type.String(),
+            timestamp: Type.String(),
         }),
-        redis: z.object({
-            status: z.enum(['ok', 'error']),
-            message: z.string(),
-            timestamp: z.string(),
+        redis: Type.Object({
+            status: Type.Union([Type.Literal('ok'), Type.Literal('error')]),
+            message: Type.String(),
+            timestamp: Type.String(),
         }),
-        metrics: z.object({
-            status: z.enum(['ok', 'error']),
-            message: z.string(),
-            timestamp: z.string(),
+        metrics: Type.Object({
+            status: Type.Union([Type.Literal('ok'), Type.Literal('error')]),
+            message: Type.String(),
+            timestamp: Type.String(),
         }),
     }),
 });
 // Ping response schema
-const pingResponseSchema = z.object({
-    status: z.enum(['ok']),
-    timestamp: z.string(),
+const pingResponseSchema = Type.Object({
+    status: Type.Literal('ok'),
+    timestamp: Type.String(),
 });
 // Mock health check functions for now
 async function checkDatabaseHealth() {
@@ -132,7 +132,7 @@ export async function healthRoutes(fastify) {
                 checks,
             };
             // Validate response
-            const validatedResponse = healthStatusSchema.parse(response);
+            const validatedResponse = healthStatusSchema['parse'](response);
             requestLogger.info({
                 message: 'Health check completed',
                 status: overallStatus,

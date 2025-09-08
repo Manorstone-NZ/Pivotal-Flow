@@ -1,9 +1,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 
-import { UpdateQuoteSchema } from './schemas.js';
+import { UpdateQuoteSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 // import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
@@ -11,17 +11,81 @@ interface UpdateQuoteRequest {
   Params: {
     id: string;
   };
-  Body: z.infer<typeof UpdateQuoteSchema>;
+  Body: Static<typeof UpdateQuoteSchema>;
 }
 
 /**
  * Register the update quote route
  */
 export function registerUpdateQuoteRoute(fastify: FastifyInstance) {
-  fastify.patch('/v1/quotes/:id', async (request: FastifyRequest<UpdateQuoteRequest>, reply: FastifyReply) => {
+  fastify.patch('/v1/quotes/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' }
+        },
+        required: ['id']
+      },
+      body: UpdateQuoteSchema,
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            clientId: { type: 'string' },
+            title: { type: 'string' },
+            status: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            code: { type: 'string' }
+          }
+        },
+        403: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            code: { type: 'string' }
+          }
+        },
+        404: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            code: { type: 'string' }
+          }
+        },
+        409: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            code: { type: 'string' }
+          }
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+            code: { type: 'string' }
+          }
+        }
+      }
+    }
+  }, async (request: FastifyRequest<UpdateQuoteRequest>, reply: FastifyReply) => {
     try {
-      // Validate request body
-      const validatedData = UpdateQuoteSchema.parse(request.body);
+      // TypeBox handles validation automatically, so request.body is already validated
+      const validatedData = request.body;
 
       // Get user context
       const user = (request as any).user;
@@ -36,7 +100,7 @@ export function registerUpdateQuoteRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create quote service
-      const quoteService = new QuoteService((fastify as any).db, {
+      const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
       });

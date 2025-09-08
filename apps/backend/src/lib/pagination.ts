@@ -22,9 +22,9 @@ export const LegacyPaginationSchema = Type.Object({
 
 // Common filter schema
 export const CommonFilterSchema = Type.Object({
-  search: Type.String().optional(),
-  sortBy: Type.String().optional(),
-  sortOrder: Type.Union(['asc', 'desc']).default('desc'),
+  search: Type.Optional(Type.String()),
+  sortBy: Type.Optional(Type.String()),
+  sortOrder: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
 });
 
 // Standard pagination envelope type - unified format
@@ -251,69 +251,122 @@ export function buildPaginationQuery<T extends { limit: (n: number) => T; offset
  */
 
 // User filters
-export const UserFilterSchema = CommonFilterSchema.extend({
-  role: Type.String().optional(),
-  status: Type.Union(['active', 'inactive', 'suspended']).optional(),
-  organizationId: Type.String().uuid().optional(),
-});
+export const UserFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    role: Type.Optional(Type.String()),
+    status: Type.Optional(Type.Union([Type.Literal('active'), Type.Literal('inactive'), Type.Literal('suspended')])),
+    organizationId: Type.Optional(Type.String({ format: 'uuid' })),
+  })
+]);
 
 export const USER_ALLOWED_FILTERS = ['role', 'status', 'organizationId'];
 export const USER_ALLOWED_SORTS = ['createdAt', 'email', 'firstName', 'lastName'];
 
 // Quote filters
-export const QuoteFilterSchema = CommonFilterSchema.extend({
-  status: Type.Union(['draft', 'pending', 'approved', 'sent', 'accepted', 'rejected', 'cancelled']).optional(),
-  customerId: Type.String().uuid().optional(),
-  projectId: Type.String().uuid().optional(),
-  validFrom: Type.String().datetime().optional(),
-  validUntil: Type.String().datetime().optional(),
-});
+export const QuoteFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    status: Type.Optional(Type.Union([
+      Type.Literal('draft'), 
+      Type.Literal('pending'), 
+      Type.Literal('approved'), 
+      Type.Literal('sent'), 
+      Type.Literal('accepted'), 
+      Type.Literal('rejected'), 
+      Type.Literal('cancelled')
+    ])),
+    customerId: Type.Optional(Type.String({ format: 'uuid' })),
+    projectId: Type.Optional(Type.String({ format: 'uuid' })),
+    validFrom: Type.Optional(Type.String({ format: 'date-time' })),
+    validUntil: Type.Optional(Type.String({ format: 'date-time' })),
+  })
+]);
 
 export const QUOTE_ALLOWED_FILTERS = ['status', 'customerId', 'projectId', 'validFrom', 'validUntil'];
 export const QUOTE_ALLOWED_SORTS = ['createdAt', 'totalAmount', 'validUntil', 'status'];
 
 // Project filters
-export const ProjectFilterSchema = CommonFilterSchema.extend({
-  status: Type.Union(['planning', 'active', 'on-hold', 'completed', 'cancelled']).optional(),
-  customerId: Type.String().uuid().optional(),
-  projectManagerId: Type.String().uuid().optional(),
-  priority: Type.Union(['low', 'medium', 'high', 'urgent']).optional(),
-});
+export const ProjectFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    status: Type.Optional(Type.Union([
+      Type.Literal('planning'), 
+      Type.Literal('active'), 
+      Type.Literal('on-hold'), 
+      Type.Literal('completed'), 
+      Type.Literal('cancelled')
+    ])),
+    customerId: Type.Optional(Type.String({ format: 'uuid' })),
+    projectManagerId: Type.Optional(Type.String({ format: 'uuid' })),
+    priority: Type.Optional(Type.Union([
+      Type.Literal('low'), 
+      Type.Literal('medium'), 
+      Type.Literal('high'), 
+      Type.Literal('urgent')
+    ])),
+  })
+]);
 
 export const PROJECT_ALLOWED_FILTERS = ['status', 'customerId', 'projectManagerId', 'priority'];
 export const PROJECT_ALLOWED_SORTS = ['createdAt', 'startDate', 'endDate', 'priority'];
 
 // Time entry filters
-export const TimeEntryFilterSchema = CommonFilterSchema.extend({
-  userId: Type.String().uuid().optional(),
-  projectId: Type.String().uuid().optional(),
-  taskId: Type.String().uuid().optional(),
-  status: Type.Union(['pending', 'approved', 'rejected', 'invoiced']).optional(),
-  billable: Type.Boolean().optional(),
-  dateFrom: Type.String().datetime().optional(),
-  dateTo: Type.String().datetime().optional(),
-});
+export const TimeEntryFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    userId: Type.Optional(Type.String({ format: 'uuid' })),
+    projectId: Type.Optional(Type.String({ format: 'uuid' })),
+    taskId: Type.Optional(Type.String({ format: 'uuid' })),
+    status: Type.Optional(Type.Union([
+      Type.Literal('pending'), 
+      Type.Literal('approved'), 
+      Type.Literal('rejected'), 
+      Type.Literal('invoiced')
+    ])),
+    billable: Type.Optional(Type.Boolean()),
+    dateFrom: Type.Optional(Type.String({ format: 'date-time' })),
+    dateTo: Type.Optional(Type.String({ format: 'date-time' })),
+  })
+]);
 
 export const TIME_ENTRY_ALLOWED_FILTERS = ['userId', 'projectId', 'taskId', 'status', 'billable', 'dateFrom', 'dateTo'];
 export const TIME_ENTRY_ALLOWED_SORTS = ['date', 'durationHours', 'createdAt'];
 
 // Payment filters
-export const PaymentFilterSchema = CommonFilterSchema.extend({
-  status: Type.Union(['pending', 'completed', 'failed', 'cancelled']).optional(),
-  method: Type.String().optional(),
-  customerId: Type.String().uuid().optional(),
-  amountFrom: Type.Number().optional(),
-  amountTo: Type.Number().optional(),
-});
+export const PaymentFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    status: Type.Optional(Type.Union([
+      Type.Literal('pending'), 
+      Type.Literal('completed'), 
+      Type.Literal('failed'), 
+      Type.Literal('cancelled')
+    ])),
+    method: Type.Optional(Type.String()),
+    customerId: Type.Optional(Type.String({ format: 'uuid' })),
+    amountFrom: Type.Optional(Type.Number()),
+    amountTo: Type.Optional(Type.Number()),
+  })
+]);
 
 export const PAYMENT_ALLOWED_FILTERS = ['status', 'method', 'customerId', 'amountFrom', 'amountTo'];
 export const PAYMENT_ALLOWED_SORTS = ['createdAt', 'amount', 'status'];
 
 // Portal filters
-export const PortalFilterSchema = CommonFilterSchema.extend({
-  status: Type.Union(['draft', 'sent', 'accepted', 'rejected', 'expired']).optional(),
-  customerId: Type.String().uuid(),
-});
+export const PortalFilterSchema = Type.Intersect([
+  CommonFilterSchema,
+  Type.Object({
+    status: Type.Optional(Type.Union([
+      Type.Literal('draft'), 
+      Type.Literal('sent'), 
+      Type.Literal('accepted'), 
+      Type.Literal('rejected'), 
+      Type.Literal('expired')
+    ])),
+    customerId: Type.String({ format: 'uuid' }),
+  })
+]);
 
 export const PORTAL_ALLOWED_FILTERS = ['status', 'customerId'];
 export const PORTAL_ALLOWED_SORTS = ['createdAt', 'totalAmount', 'status'];

@@ -1,9 +1,4 @@
-import { expect } from 'vitest';
 import '@testing-library/jest-dom';
-import { toHaveNoViolations } from 'jest-axe';
-
-// Extend Vitest's expect with jest-axe matchers
-expect.extend(toHaveNoViolations);
 
 // Mock global objects for testing
 Object.defineProperty(window, 'matchMedia', {
@@ -50,23 +45,23 @@ Object.defineProperty(process, 'env', {
   writable: true,
 });
 
-// Extend the expect interface
+// Extend the expect interface for jest-axe
 declare module 'vitest' {
-  interface Assertion<T = any> {
-    toHaveNoViolations(): T;
+  interface Assertion {
+    toHaveNoViolations(): void;
   }
 }
 
 // Mock jest for compatibility
 declare global {
   var jest: {
-    fn: (implementation?: (...args: any[]) => any) => any;
+    fn: (implementation?: (...args: unknown[]) => unknown) => unknown;
   };
 }
 
 global.jest = {
-  fn: (implementation?: (...args: any[]) => any) => {
-    const mockFn = (...args: any[]) => {
+  fn: (implementation?: (...args: unknown[]) => unknown) => {
+    const mockFn = (...args: unknown[]) => {
       mockFn.mock.calls.push(args);
       if (implementation) {
         return implementation(...args);
@@ -75,16 +70,16 @@ global.jest = {
     };
     
     mockFn.mock = {
-      calls: [] as any[],
-      results: [] as any[],
+      calls: [] as unknown[][],
+      results: [] as { type: string; value: unknown }[],
     };
     
-    mockFn.mockReturnValue = (value: any) => {
+    mockFn.mockReturnValue = (value: unknown) => {
       mockFn.mock.results.push({ type: 'return', value });
       return mockFn;
     };
     
-    mockFn.mockImplementation = (imp: (...args: any[]) => any) => {
+    mockFn.mockImplementation = (imp: (...args: unknown[]) => unknown) => {
       implementation = imp;
       return mockFn;
     };

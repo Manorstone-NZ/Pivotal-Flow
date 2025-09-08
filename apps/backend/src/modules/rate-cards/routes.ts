@@ -4,16 +4,12 @@ import { Type } from '@sinclair/typebox';
 import { RateCardService } from './service.js';
 import { 
   CreateRateCardSchema, 
-  UpdateRateCardSchema, 
   CreateRateCardItemSchema, 
-  UpdateRateCardItemSchema,
   RateCardResponseSchema,
   RateCardItemResponseSchema,
   RateCardErrorSchema,
   type CreateRateCard,
-  type UpdateRateCard,
   type CreateRateCardItem,
-  type UpdateRateCardItem,
   type RateCardResponse,
   type RateCardItemResponse,
   type RateCardError

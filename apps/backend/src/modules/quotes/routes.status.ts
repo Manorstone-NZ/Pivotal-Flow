@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 
@@ -11,7 +11,7 @@ interface StatusTransitionRequest {
   Params: {
     id: string;
   };
-  Body: z.infer<typeof QuoteStatusTransitionSchema>;
+  Body: Static<typeof QuoteStatusTransitionSchema>;
 }
 
 /**

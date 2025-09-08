@@ -2,7 +2,7 @@
 import { Type } from '@sinclair/typebox';
 import { logger } from '../../lib/logger.js';
 import { canViewUsers, extractUserContext } from './rbac.js';
-import { UserListFiltersSchema, UserListSortSchema, UserListResponseSchema, UserErrorSchema } from './typeboxSchemas.js';
+import { UserListResponseSchema, UserErrorSchema } from './typeboxSchemas.js';
 import { listUsers } from './service.drizzle.js';
 export const listUsersRoute = async (fastify) => {
     fastify.get('/v1/users', {

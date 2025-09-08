@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { logger } from '../../lib/logger.js';
 import { QuoteStatusTransitionSchema } from './schemas.js';
 import { QuoteService } from './service.js';
@@ -30,12 +29,12 @@ export function registerStatusTransitionRoute(fastify) {
             return reply.status(200).send(quote);
         }
         catch (error) {
-            if (error instanceof z.ZodError) {
+            // Handle validation errors
+            if (error instanceof Error && error.message.includes('validation')) {
                 return reply.status(400).send({
                     error: 'Bad Request',
                     message: 'Validation failed',
-                    code: 'VALIDATION_ERROR',
-                    details: error.errors
+                    code: 'VALIDATION_ERROR'
                 });
             }
             if (error instanceof Error) {

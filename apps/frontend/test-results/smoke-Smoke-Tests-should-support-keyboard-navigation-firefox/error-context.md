@@ -1,12 +1,14 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e1]:
-  - heading "Directory listing for /" [level=1] [ref=e2]
-  - separator [ref=e3]
-  - list [ref=e4]:
-    - listitem [ref=e5]:
-      - link "e2e-test.html" [active] [ref=e6] [cursor=pointer]:
-        - /url: e2e-test.html
-  - separator [ref=e7]
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Unable to connect" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Firefox can’t establish a connection to the server at localhost:5173.
+    - paragraph
+    - list [ref=e8]:
+      - listitem [ref=e9]: The site could be temporarily unavailable or too busy. Try again in a few moments.
+      - listitem [ref=e10]: If you are unable to load any pages, check your computer’s network connection.
+      - listitem [ref=e11]: If your computer or network is protected by a firewall or proxy, make sure that Nightly is permitted to access the web.
+  - button "Try Again" [active] [ref=e13]
 ```

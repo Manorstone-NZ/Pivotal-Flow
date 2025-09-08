@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface RoutePrefetchProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ const prefetchedRoutes = new Set<string>();
 
 export const RoutePrefetch: React.FC<RoutePrefetchProps> = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const idleTimeoutRef = useRef<NodeJS.Timeout>();
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -42,23 +42,23 @@ export const RoutePrefetch: React.FC<RoutePrefetchProps> = ({ children }) => {
       performance.mark(`prefetch-${route}-start`);
       
       // Import the route component (this will be cached by webpack)
-      let componentPromise: Promise<any>;
+      let componentPromise: Promise<unknown>;
       
       switch (route) {
         case '/quotes':
-          componentPromise = import('../pages/QuotesPage');
+          componentPromise = import('../../pages/QuotesPage');
           break;
         case '/users':
-          componentPromise = import('../pages/UsersPage');
+          componentPromise = import('../../pages/UsersPage');
           break;
         case '/rate-cards':
-          componentPromise = import('../pages/RateCardsPage');
+          componentPromise = import('../../pages/RateCardsPage');
           break;
         case '/payments':
-          componentPromise = import('../pages/PaymentsPage');
+          componentPromise = import('../../pages/PaymentsPage');
           break;
         case '/settings':
-          componentPromise = import('../pages/SettingsPage');
+          componentPromise = import('../../pages/SettingsPage');
           break;
         default:
           return;
@@ -72,7 +72,7 @@ export const RoutePrefetch: React.FC<RoutePrefetchProps> = ({ children }) => {
       
       prefetchedRoutes.add(route);
       
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.log(`🚀 Prefetched route: ${route}`);
       }
       
@@ -155,16 +155,16 @@ export const RoutePrefetch: React.FC<RoutePrefetchProps> = ({ children }) => {
     };
   }, [prefetchOnIdle]);
 
-  // Enhanced navigation with prefetching
-  const enhancedNavigate = useCallback((to: string) => {
-    // Prefetch the target route if not already prefetched
-    if (!prefetchedRoutes.has(to)) {
-      prefetchRoute(to);
-    }
-    
-    // Navigate
-    navigate(to);
-  }, [navigate, prefetchRoute]);
+  // Enhanced navigation with prefetching (commented out as unused)
+  // const enhancedNavigate = useCallback((to: string) => {
+  //   // Prefetch the target route if not already prefetched
+  //   if (!prefetchedRoutes.has(to)) {
+  //     prefetchRoute(to);
+  //   }
+  //   
+  //   // Navigate
+  //   navigate(to);
+  // }, [navigate, prefetchRoute]);
 
   // Expose enhanced navigation to child components
   useEffect(() => {
@@ -205,23 +205,23 @@ export const useRoutePrefetch = () => {
     }
 
     try {
-      let componentPromise: Promise<any>;
+      let componentPromise: Promise<unknown>;
       
       switch (route) {
         case '/quotes':
-          componentPromise = import('../pages/QuotesPage');
+          componentPromise = import('../../pages/QuotesPage');
           break;
         case '/users':
-          componentPromise = import('../pages/UsersPage');
+          componentPromise = import('../../pages/UsersPage');
           break;
         case '/rate-cards':
-          componentPromise = import('../pages/RateCardsPage');
+          componentPromise = import('../../pages/RateCardsPage');
           break;
         case '/payments':
-          componentPromise = import('../pages/PaymentsPage');
+          componentPromise = import('../../pages/PaymentsPage');
           break;
         case '/settings':
-          componentPromise = import('../pages/SettingsPage');
+          componentPromise = import('../../pages/SettingsPage');
           break;
         default:
           return false;

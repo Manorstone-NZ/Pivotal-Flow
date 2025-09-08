@@ -31,5 +31,5 @@ export const app = Fastify({
     },
     trustProxy: true,
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-});
+}).withTypeProvider();
 //# sourceMappingURL=server.js.map

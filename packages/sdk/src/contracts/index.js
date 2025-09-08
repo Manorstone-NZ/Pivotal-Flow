@@ -1,3 +1,3 @@
-export * from './validation';
-export { default as ContractValidator } from './validation';
+export * from './validation.js';
+export { default as ContractValidator } from './validation.js';
 //# sourceMappingURL=index.js.map

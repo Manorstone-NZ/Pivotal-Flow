@@ -3,25 +3,21 @@
  * Standard envelope with pagination and filtering validation
  */
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-export declare const PaginationSchema: z.ZodObject<{
-    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-    size: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-    sort: z.ZodOptional<z.ZodString>;
-    filter: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
-export declare const LegacyPaginationSchema: z.ZodObject<{
-    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-    pageSize: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-}, z.core.$strip>;
-export declare const CommonFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-}, z.core.$strip>;
+export declare const PaginationSchema: import("@sinclair/typebox").TObject<{
+    page: import("@sinclair/typebox").TNumber;
+    size: import("@sinclair/typebox").TNumber;
+    sort: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    filter: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>;
+export declare const LegacyPaginationSchema: import("@sinclair/typebox").TObject<{
+    page: import("@sinclair/typebox").TNumber;
+    pageSize: import("@sinclair/typebox").TNumber;
+}>;
+export declare const CommonFilterSchema: import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>;
 export interface PaginationEnvelope<T> {
     data: T[];
     meta: {
@@ -97,129 +93,78 @@ export declare function buildPaginationQuery<T extends {
 /**
  * Resource-specific filter schemas
  */
-export declare const UserFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    role: z.ZodOptional<z.ZodString>;
-    status: z.ZodOptional<z.ZodEnum<{
-        active: "active";
-        inactive: "inactive";
-        suspended: "suspended";
-    }>>;
-    organizationId: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+export declare const UserFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    role: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"active">, import("@sinclair/typebox").TLiteral<"inactive">, import("@sinclair/typebox").TLiteral<"suspended">]>>;
+    organizationId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>]>;
 export declare const USER_ALLOWED_FILTERS: string[];
 export declare const USER_ALLOWED_SORTS: string[];
-export declare const QuoteFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    status: z.ZodOptional<z.ZodEnum<{
-        draft: "draft";
-        pending: "pending";
-        sent: "sent";
-        approved: "approved";
-        accepted: "accepted";
-        rejected: "rejected";
-        cancelled: "cancelled";
-    }>>;
-    customerId: z.ZodOptional<z.ZodString>;
-    projectId: z.ZodOptional<z.ZodString>;
-    validFrom: z.ZodOptional<z.ZodString>;
-    validUntil: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+export declare const QuoteFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
+    customerId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    projectId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    validFrom: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    validUntil: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>]>;
 export declare const QUOTE_ALLOWED_FILTERS: string[];
 export declare const QUOTE_ALLOWED_SORTS: string[];
-export declare const ProjectFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    status: z.ZodOptional<z.ZodEnum<{
-        active: "active";
-        completed: "completed";
-        cancelled: "cancelled";
-        planning: "planning";
-        "on-hold": "on-hold";
-    }>>;
-    customerId: z.ZodOptional<z.ZodString>;
-    projectManagerId: z.ZodOptional<z.ZodString>;
-    priority: z.ZodOptional<z.ZodEnum<{
-        urgent: "urgent";
-        high: "high";
-        low: "low";
-        medium: "medium";
-    }>>;
-}, z.core.$strip>;
+export declare const ProjectFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"planning">, import("@sinclair/typebox").TLiteral<"active">, import("@sinclair/typebox").TLiteral<"on-hold">, import("@sinclair/typebox").TLiteral<"completed">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
+    customerId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    projectManagerId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    priority: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"low">, import("@sinclair/typebox").TLiteral<"medium">, import("@sinclair/typebox").TLiteral<"high">, import("@sinclair/typebox").TLiteral<"urgent">]>>;
+}>]>;
 export declare const PROJECT_ALLOWED_FILTERS: string[];
 export declare const PROJECT_ALLOWED_SORTS: string[];
-export declare const TimeEntryFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    userId: z.ZodOptional<z.ZodString>;
-    projectId: z.ZodOptional<z.ZodString>;
-    taskId: z.ZodOptional<z.ZodString>;
-    status: z.ZodOptional<z.ZodEnum<{
-        pending: "pending";
-        approved: "approved";
-        rejected: "rejected";
-        invoiced: "invoiced";
-    }>>;
-    billable: z.ZodOptional<z.ZodBoolean>;
-    dateFrom: z.ZodOptional<z.ZodString>;
-    dateTo: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+export declare const TimeEntryFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    userId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    projectId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    taskId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"invoiced">]>>;
+    billable: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TBoolean>;
+    dateFrom: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    dateTo: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>]>;
 export declare const TIME_ENTRY_ALLOWED_FILTERS: string[];
 export declare const TIME_ENTRY_ALLOWED_SORTS: string[];
-export declare const PaymentFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    status: z.ZodOptional<z.ZodEnum<{
-        pending: "pending";
-        failed: "failed";
-        completed: "completed";
-        cancelled: "cancelled";
-    }>>;
-    method: z.ZodOptional<z.ZodString>;
-    customerId: z.ZodOptional<z.ZodString>;
-    amountFrom: z.ZodOptional<z.ZodNumber>;
-    amountTo: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>;
+export declare const PaymentFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"completed">, import("@sinclair/typebox").TLiteral<"failed">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
+    method: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    customerId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    amountFrom: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TNumber>;
+    amountTo: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TNumber>;
+}>]>;
 export declare const PAYMENT_ALLOWED_FILTERS: string[];
 export declare const PAYMENT_ALLOWED_SORTS: string[];
-export declare const PortalFilterSchema: z.ZodObject<{
-    search: z.ZodOptional<z.ZodString>;
-    sortBy: z.ZodOptional<z.ZodString>;
-    sortOrder: z.ZodDefault<z.ZodEnum<{
-        asc: "asc";
-        desc: "desc";
-    }>>;
-    status: z.ZodOptional<z.ZodEnum<{
-        draft: "draft";
-        sent: "sent";
-        accepted: "accepted";
-        rejected: "rejected";
-        expired: "expired";
-    }>>;
-    customerId: z.ZodString;
-}, z.core.$strip>;
+export declare const PortalFilterSchema: import("@sinclair/typebox").TIntersect<[import("@sinclair/typebox").TObject<{
+    search: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    sortOrder: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"asc">, import("@sinclair/typebox").TLiteral<"desc">]>;
+}>, import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"expired">]>>;
+    customerId: import("@sinclair/typebox").TString;
+}>]>;
 export declare const PORTAL_ALLOWED_FILTERS: string[];
 export declare const PORTAL_ALLOWED_SORTS: string[];
 /**

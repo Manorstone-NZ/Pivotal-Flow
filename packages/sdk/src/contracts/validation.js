@@ -1,163 +1,242 @@
-import { z } from 'zod';
-import { Zodios } from '@zodios/core';
-import { ZodiosPlugin } from '@zodios/core';
+import { Type, FormatRegistry } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
+// Configure TypeBox format validators
+FormatRegistry.Set('uuid', (value) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return typeof value === 'string' && uuidRegex.test(value);
+});
+FormatRegistry.Set('email', (value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return typeof value === 'string' && emailRegex.test(value);
+});
+FormatRegistry.Set('date-time', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const date = new Date(value);
+    if (isNaN(date.getTime()))
+        return false;
+    // Check if it's a valid ISO 8601 date-time string
+    // Accept formats like: 2024-12-31T23:59:59Z, 2024-12-31T23:59:59.000Z, 2024-12-31T23:59:59+00:00
+    const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?$/;
+    return iso8601Regex.test(value);
+});
+FormatRegistry.Set('date', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const date = new Date(value);
+    return !isNaN(date.getTime()) && value === date.toISOString().split('T')[0];
+});
+FormatRegistry.Set('time', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{3})?$/;
+    return timeRegex.test(value);
+});
+FormatRegistry.Set('uri', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    try {
+        new URL(value);
+        return true;
+    }
+    catch {
+        return false;
+    }
+});
+FormatRegistry.Set('hostname', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return hostnameRegex.test(value) && value.length <= 253;
+});
+FormatRegistry.Set('ipv4', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const ipv4Regex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return ipv4Regex.test(value);
+});
+FormatRegistry.Set('ipv6', (value) => {
+    if (typeof value !== 'string')
+        return false;
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    return ipv6Regex.test(value);
+});
 // Base schemas for common types
 export const BaseSchemas = {
     // Common field schemas
-    id: z.string().uuid(),
-    email: z.string().email(),
-    password: z.string().min(8),
-    name: z.string().min(1),
-    description: z.string().optional(),
+    id: Type.String({ format: 'uuid' }),
+    email: Type.String({ format: 'email' }),
+    password: Type.String({ minLength: 8 }),
+    name: Type.String({ minLength: 1 }),
+    description: Type.Optional(Type.String()),
     // Timestamp schemas
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    createdAt: Type.String({ format: 'date-time' }),
+    updatedAt: Type.String({ format: 'date-time' }),
     // Pagination schemas
-    paginationQuery: z.object({
-        page: z.number().int().min(1).default(1),
-        limit: z.number().int().min(1).max(100).default(20),
-        sort: z.string().optional(),
-        order: z.enum(['asc', 'desc']).default('desc'),
+    paginationQuery: Type.Object({
+        page: Type.Number({ minimum: 1, default: 1 }),
+        limit: Type.Number({ minimum: 1, maximum: 100, default: 20 }),
+        sort: Type.Optional(Type.String()),
+        order: Type.Union([Type.Literal('asc'), Type.Literal('desc')], { default: 'desc' }),
     }),
-    paginationResponse: z.object({
-        page: z.number().int().min(1),
-        limit: z.number().int().min(1),
-        total: z.number().int().min(0),
-        totalPages: z.number().int().min(0),
-        hasNext: z.boolean(),
-        hasPrev: z.boolean(),
+    paginationResponse: Type.Object({
+        page: Type.Number({ minimum: 1 }),
+        limit: Type.Number({ minimum: 1 }),
+        total: Type.Number({ minimum: 0 }),
+        totalPages: Type.Number({ minimum: 0 }),
+        hasNext: Type.Boolean(),
+        hasPrev: Type.Boolean(),
     }),
     // Error response schema
-    errorResponse: z.object({
-        error: z.string(),
-        message: z.string(),
-        statusCode: z.number().int(),
-        timestamp: z.string().datetime(),
-        path: z.string(),
+    errorResponse: Type.Object({
+        error: Type.String(),
+        message: Type.String(),
+        statusCode: Type.Number(),
+        timestamp: Type.String({ format: 'date-time' }),
+        path: Type.String(),
     }),
 };
 // User schemas
+const UserRoleSchema = Type.Union([
+    Type.Literal('admin'),
+    Type.Literal('manager'),
+    Type.Literal('user'),
+    Type.Literal('customer')
+]);
+const UserSchema = Type.Object({
+    id: BaseSchemas.id,
+    email: BaseSchemas.email,
+    name: BaseSchemas.name,
+    role: UserRoleSchema,
+    isActive: Type.Boolean(),
+    createdAt: BaseSchemas.createdAt,
+    updatedAt: BaseSchemas.updatedAt,
+});
 export const UserSchemas = {
-    user: z.object({
-        id: BaseSchemas.id,
-        email: BaseSchemas.email,
-        name: BaseSchemas.name,
-        role: z.enum(['admin', 'manager', 'user', 'customer']),
-        isActive: z.boolean(),
-        createdAt: BaseSchemas.createdAt,
-        updatedAt: BaseSchemas.updatedAt,
-    }),
-    createUser: z.object({
+    user: UserSchema,
+    createUser: Type.Object({
         email: BaseSchemas.email,
         name: BaseSchemas.name,
         password: BaseSchemas.password,
-        role: z.enum(['admin', 'manager', 'user', 'customer']).default('user'),
+        role: Type.Union([UserRoleSchema], { default: 'user' }),
     }),
-    updateUser: z.object({
-        name: BaseSchemas.name.optional(),
-        email: BaseSchemas.email.optional(),
-        role: z.enum(['admin', 'manager', 'user', 'customer']).optional(),
-        isActive: z.boolean().optional(),
+    updateUser: Type.Object({
+        name: Type.Optional(BaseSchemas.name),
+        email: Type.Optional(BaseSchemas.email),
+        role: Type.Optional(UserRoleSchema),
+        isActive: Type.Optional(Type.Boolean()),
     }),
-    loginRequest: z.object({
+    loginRequest: Type.Object({
         email: BaseSchemas.email,
         password: BaseSchemas.password,
     }),
-    loginResponse: z.object({
-        user: UserSchemas.user,
-        accessToken: z.string(),
-        refreshToken: z.string(),
-        expiresIn: z.number().int(),
+    loginResponse: Type.Object({
+        user: UserSchema,
+        accessToken: Type.String(),
+        refreshToken: Type.String(),
+        expiresIn: Type.Number(),
     }),
 };
 // Quote schemas
 export const QuoteSchemas = {
-    quote: z.object({
+    quote: Type.Object({
         id: BaseSchemas.id,
-        quoteNumber: z.string(),
+        quoteNumber: Type.String(),
         customerId: BaseSchemas.id,
-        projectId: BaseSchemas.id.optional(),
-        status: z.enum(['draft', 'sent', 'approved', 'rejected', 'accepted']),
-        totalAmount: z.number().positive(),
-        currency: z.string().length(3).default('USD'),
-        validUntil: z.string().datetime().optional(),
+        projectId: Type.Optional(BaseSchemas.id),
+        status: Type.Union([
+            Type.Literal('draft'),
+            Type.Literal('sent'),
+            Type.Literal('approved'),
+            Type.Literal('rejected'),
+            Type.Literal('accepted')
+        ]),
+        totalAmount: Type.Number({ exclusiveMinimum: 0 }),
+        currency: Type.String({ minLength: 3, maxLength: 3, default: 'USD' }),
+        validUntil: Type.Optional(Type.String({ format: 'date-time' })),
         notes: BaseSchemas.description,
         createdAt: BaseSchemas.createdAt,
         updatedAt: BaseSchemas.updatedAt,
     }),
-    quoteLineItem: z.object({
+    quoteLineItem: Type.Object({
         id: BaseSchemas.id,
         quoteId: BaseSchemas.id,
-        description: z.string().min(1),
-        quantity: z.number().positive(),
-        unitPrice: z.number().positive(),
-        totalPrice: z.number().positive(),
-        serviceCategoryId: BaseSchemas.id.optional(),
+        description: Type.String({ minLength: 1 }),
+        quantity: Type.Number({ exclusiveMinimum: 0 }),
+        unitPrice: Type.Number({ exclusiveMinimum: 0 }),
+        totalPrice: Type.Number({ exclusiveMinimum: 0 }),
+        serviceCategoryId: Type.Optional(BaseSchemas.id),
         createdAt: BaseSchemas.createdAt,
         updatedAt: BaseSchemas.updatedAt,
     }),
-    createQuote: z.object({
+    createQuote: Type.Object({
         customerId: BaseSchemas.id,
-        projectId: BaseSchemas.id.optional(),
-        validUntil: z.string().datetime().optional(),
+        projectId: Type.Optional(BaseSchemas.id),
+        validUntil: Type.Optional(Type.String({ format: 'date-time' })),
         notes: BaseSchemas.description,
-        lineItems: z.array(z.object({
-            description: z.string().min(1),
-            quantity: z.number().positive(),
-            unitPrice: z.number().positive(),
-            serviceCategoryId: BaseSchemas.id.optional(),
-        })).min(1),
+        lineItems: Type.Array(Type.Object({
+            description: Type.String({ minLength: 1 }),
+            quantity: Type.Number({ exclusiveMinimum: 0 }),
+            unitPrice: Type.Number({ exclusiveMinimum: 0 }),
+            serviceCategoryId: Type.Optional(BaseSchemas.id),
+        }), { minItems: 1 }),
     }),
-    updateQuote: z.object({
-        status: z.enum(['draft', 'sent', 'approved', 'rejected', 'accepted']).optional(),
-        validUntil: z.string().datetime().optional(),
-        notes: BaseSchemas.description.optional(),
+    updateQuote: Type.Object({
+        status: Type.Optional(Type.Union([
+            Type.Literal('draft'),
+            Type.Literal('sent'),
+            Type.Literal('approved'),
+            Type.Literal('rejected'),
+            Type.Literal('accepted')
+        ])),
+        validUntil: Type.Optional(Type.String({ format: 'date-time' })),
+        notes: Type.Optional(BaseSchemas.description),
     }),
 };
 // Rate Card schemas
 export const RateCardSchemas = {
-    rateCard: z.object({
+    rateCard: Type.Object({
         id: BaseSchemas.id,
-        name: z.string().min(1),
+        name: Type.String({ minLength: 1 }),
         description: BaseSchemas.description,
-        isActive: z.boolean(),
-        effectiveFrom: z.string().datetime(),
-        effectiveUntil: z.string().datetime().optional(),
+        isActive: Type.Boolean(),
+        effectiveFrom: Type.String({ format: 'date-time' }),
+        effectiveUntil: Type.Optional(Type.String({ format: 'date-time' })),
         createdAt: BaseSchemas.createdAt,
         updatedAt: BaseSchemas.updatedAt,
     }),
-    rateCardItem: z.object({
+    rateCardItem: Type.Object({
         id: BaseSchemas.id,
         rateCardId: BaseSchemas.id,
         serviceCategoryId: BaseSchemas.id,
-        itemCode: z.string().min(1),
-        unit: z.string().min(1),
-        baseRate: z.number().positive(),
-        currency: z.string().length(3).default('USD'),
-        taxClass: z.string().default('standard'),
-        isActive: z.boolean(),
+        itemCode: Type.String({ minLength: 1 }),
+        unit: Type.String({ minLength: 1 }),
+        baseRate: Type.Number({ exclusiveMinimum: 0 }),
+        currency: Type.String({ minLength: 3, maxLength: 3, default: 'USD' }),
+        taxClass: Type.String({ default: 'standard' }),
+        isActive: Type.Boolean(),
         createdAt: BaseSchemas.createdAt,
         updatedAt: BaseSchemas.updatedAt,
     }),
-    createRateCard: z.object({
-        name: z.string().min(1),
+    createRateCard: Type.Object({
+        name: Type.String({ minLength: 1 }),
         description: BaseSchemas.description,
-        effectiveFrom: z.string().datetime(),
-        effectiveUntil: z.string().datetime().optional(),
+        effectiveFrom: Type.String({ format: 'date-time' }),
+        effectiveUntil: Type.Optional(Type.String({ format: 'date-time' })),
     }),
 };
 // Service Category schemas
 export const ServiceCategorySchemas = {
-    serviceCategory: z.object({
+    serviceCategory: Type.Object({
         id: BaseSchemas.id,
-        name: z.string().min(1),
+        name: Type.String({ minLength: 1 }),
         description: BaseSchemas.description,
-        isActive: z.boolean(),
+        isActive: Type.Boolean(),
         createdAt: BaseSchemas.createdAt,
         updatedAt: BaseSchemas.updatedAt,
     }),
-    createServiceCategory: z.object({
-        name: z.string().min(1),
+    createServiceCategory: Type.Object({
+        name: Type.String({ minLength: 1 }),
         description: BaseSchemas.description,
     }),
 };
@@ -175,22 +254,22 @@ export const ApiEndpoints = [
         method: 'post',
         path: '/api/v1/auth/refresh',
         parameters: [],
-        response: z.object({
-            accessToken: z.string(),
-            expiresIn: z.number().int(),
+        response: Type.Object({
+            accessToken: Type.String(),
+            expiresIn: Type.Number(),
         }),
-        body: z.object({
-            refreshToken: z.string(),
+        body: Type.Object({
+            refreshToken: Type.String(),
         }),
     },
     {
         method: 'post',
         path: '/api/v1/auth/logout',
         parameters: [],
-        response: z.object({
-            message: z.string(),
+        response: Type.Object({
+            message: Type.String(),
         }),
-        body: z.object({}),
+        body: Type.Object({}),
     },
     // User endpoints
     {
@@ -202,8 +281,8 @@ export const ApiEndpoints = [
                 schema: BaseSchemas.paginationQuery,
             },
         ],
-        response: z.object({
-            data: z.array(UserSchemas.user),
+        response: Type.Object({
+            data: Type.Array(UserSchemas.user),
             pagination: BaseSchemas.paginationResponse,
         }),
     },
@@ -244,14 +323,23 @@ export const ApiEndpoints = [
         parameters: [
             {
                 name: 'query',
-                schema: BaseSchemas.paginationQuery.extend({
-                    status: z.enum(['draft', 'sent', 'approved', 'rejected', 'accepted']).optional(),
-                    customerId: BaseSchemas.id.optional(),
-                }),
+                schema: Type.Intersect([
+                    BaseSchemas.paginationQuery,
+                    Type.Object({
+                        status: Type.Optional(Type.Union([
+                            Type.Literal('draft'),
+                            Type.Literal('sent'),
+                            Type.Literal('approved'),
+                            Type.Literal('rejected'),
+                            Type.Literal('accepted')
+                        ])),
+                        customerId: Type.Optional(BaseSchemas.id),
+                    })
+                ]),
             },
         ],
-        response: z.object({
-            data: z.array(QuoteSchemas.quote),
+        response: Type.Object({
+            data: Type.Array(QuoteSchemas.quote),
             pagination: BaseSchemas.paginationResponse,
         }),
     },
@@ -264,9 +352,12 @@ export const ApiEndpoints = [
                 schema: BaseSchemas.id,
             },
         ],
-        response: QuoteSchemas.quote.extend({
-            lineItems: z.array(QuoteSchemas.quoteLineItem),
-        }),
+        response: Type.Intersect([
+            QuoteSchemas.quote,
+            Type.Object({
+                lineItems: Type.Array(QuoteSchemas.quoteLineItem),
+            })
+        ]),
     },
     {
         method: 'post',
@@ -294,13 +385,16 @@ export const ApiEndpoints = [
         parameters: [
             {
                 name: 'query',
-                schema: BaseSchemas.paginationQuery.extend({
-                    isActive: z.boolean().optional(),
-                }),
+                schema: Type.Intersect([
+                    BaseSchemas.paginationQuery,
+                    Type.Object({
+                        isActive: Type.Optional(Type.Boolean()),
+                    })
+                ]),
             },
         ],
-        response: z.object({
-            data: z.array(RateCardSchemas.rateCard),
+        response: Type.Object({
+            data: Type.Array(RateCardSchemas.rateCard),
             pagination: BaseSchemas.paginationResponse,
         }),
     },
@@ -313,9 +407,12 @@ export const ApiEndpoints = [
                 schema: BaseSchemas.id,
             },
         ],
-        response: RateCardSchemas.rateCard.extend({
-            items: z.array(RateCardSchemas.rateCardItem),
-        }),
+        response: Type.Intersect([
+            RateCardSchemas.rateCard,
+            Type.Object({
+                items: Type.Array(RateCardSchemas.rateCardItem),
+            })
+        ]),
     },
     // Service Category endpoints
     {
@@ -324,86 +421,55 @@ export const ApiEndpoints = [
         parameters: [
             {
                 name: 'query',
-                schema: BaseSchemas.paginationQuery.extend({
-                    isActive: z.boolean().optional(),
-                }),
+                schema: Type.Intersect([
+                    BaseSchemas.paginationQuery,
+                    Type.Object({
+                        isActive: Type.Optional(Type.Boolean()),
+                    })
+                ]),
             },
         ],
-        response: z.object({
-            data: z.array(ServiceCategorySchemas.serviceCategory),
+        response: Type.Object({
+            data: Type.Array(ServiceCategorySchemas.serviceCategory),
             pagination: BaseSchemas.paginationResponse,
         }),
     },
 ];
-// Create Zodios instance for contract validation
-export const createContractValidator = (baseURL) => {
-    const api = new Zodios(baseURL, ApiEndpoints);
-    // Add validation plugin
-    const validationPlugin = {
-        name: 'contract-validation',
-        request: async (config, next) => {
-            // Validate request parameters and body
-            try {
-                const endpoint = api.findEndpoint(config.method, config.url);
-                if (endpoint) {
-                    // Validate parameters
-                    if (endpoint.parameters) {
-                        for (const param of endpoint.parameters) {
-                            if (param.schema) {
-                                param.schema.parse(config.params?.[param.name]);
-                            }
-                        }
-                    }
-                    // Validate body
-                    if (endpoint.body && config.data) {
-                        endpoint.body.parse(config.data);
-                    }
-                }
-            }
-            catch (error) {
-                throw new Error(`Contract validation failed for request: ${error}`);
-            }
-            return next(config);
-        },
-        response: async (config, response, next) => {
-            // Validate response
-            try {
-                const endpoint = api.findEndpoint(config.method, config.url);
-                if (endpoint && endpoint.response) {
-                    endpoint.response.parse(response.data);
-                }
-            }
-            catch (error) {
-                console.warn(`Contract validation failed for response: ${error}`);
-                // Don't throw in production, just log warning
-                if (process.env.NODE_ENV === 'development') {
-                    throw new Error(`Contract validation failed for response: ${error}`);
-                }
-            }
-            return next(config, response);
-        },
-    };
-    api.use(validationPlugin);
-    return api;
-};
 // Contract validation utilities
 export const ContractValidator = {
     // Validate a single API response
     validateResponse: (schema, data) => {
-        return schema.parse(data);
+        const result = Value.Check(schema, data);
+        if (!result) {
+            const errors = [...Value.Errors(schema, data)];
+            throw new Error(`Contract validation failed: ${errors.map(e => e.message).join(', ')}`);
+        }
+        return data;
     },
     // Validate a single API request
     validateRequest: (schema, data) => {
-        return schema.parse(data);
+        const result = Value.Check(schema, data);
+        if (!result) {
+            const errors = [...Value.Errors(schema, data)];
+            throw new Error(`Contract validation failed: ${errors.map(e => e.message).join(', ')}`);
+        }
+        return data;
     },
     // Check if data matches schema (non-throwing)
     isValid: (schema, data) => {
-        return schema.safeParse(data).success;
+        return Value.Check(schema, data);
     },
     // Get validation errors (non-throwing)
     getErrors: (schema, data) => {
-        const result = schema.safeParse(data);
-        return result.success ? null : result.error;
+        const result = Value.Check(schema, data);
+        if (result)
+            return null;
+        const errors = [...Value.Errors(schema, data)];
+        return errors.map(e => e.message);
+    },
+    // Convert TypeBox schema to JSON Schema
+    toJsonSchema: (schema) => {
+        return Value.Create(schema);
     },
 };
 export default ContractValidator;
