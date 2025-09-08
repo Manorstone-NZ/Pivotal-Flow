@@ -208,9 +208,7 @@ export function getCorsConfig() {
         'X-Request-ID',
         'Idempotency-Key',
         'X-Organization-ID',
-      'X-CSRF-Token',
-        'X-Organization-ID',
-      'X-CSRF-Token'
+        'X-CSRF-Token'
       ],
       exposedHeaders: [
         'X-Request-ID',
@@ -218,7 +216,7 @@ export function getCorsConfig() {
         'X-RateLimit-Remaining',
         'X-RateLimit-Reset',
         'X-Organization-ID',
-      'X-CSRF-Token',
+        'X-CSRF-Token',
         'X-API-Version'
       ]
     };

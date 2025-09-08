@@ -23,7 +23,12 @@ export const LoginPage: React.FC = () => {
     handleSubmit,
     formState: { errors },
     setError,
-  } = useForm<LoginFormData>();
+  } = useForm<LoginFormData>({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   // Get redirect path from location state or search params
   const redirectTo = (location.state as { redirectTo?: string })?.redirectTo || 

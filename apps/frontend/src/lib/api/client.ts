@@ -6,7 +6,7 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env['VITE_API_URL'] || 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env['VITE_API_URL'] || 'http://localhost:3000/api/v1';
 
 // Create the enhanced client instance
 export const apiClient: AxiosInstance = axios.create({

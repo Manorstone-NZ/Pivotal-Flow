@@ -70,7 +70,7 @@ export const PerformanceMarks: React.FC<PerformanceMarksProps> = ({
       }
       
       // Log to console in development
-      if (process.env['NODE_ENV'] === 'development') {
+      if (import.meta.env['DEV']) {
         console.log(`🚀 Route Performance [${routeName}]:`, metrics);
       }
       
@@ -140,7 +140,7 @@ export const usePerformanceMeasure = (componentName: string) => {
         `${componentName}-mount-end`
       );
       
-      if (process.env['NODE_ENV'] === 'development') {
+      if (import.meta.env['DEV']) {
         console.log(`⚡ Component Mount [${componentName}]:`, Math.round(duration), 'ms');
       }
     };

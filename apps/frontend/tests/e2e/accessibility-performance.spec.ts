@@ -25,7 +25,7 @@ test.describe('Accessibility and Performance E2E Tests', () => {
     const h3 = page.locator('h3');
     
     // Should have at least one h1
-    await expect(h1).toHaveCount({ min: 1 });
+    expect(await h1.count()).toBeGreaterThanOrEqual(1);
     
     // Check if headings are visible
     if (await h1.count() > 0) {

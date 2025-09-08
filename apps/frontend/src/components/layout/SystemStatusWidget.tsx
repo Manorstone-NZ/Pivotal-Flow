@@ -32,7 +32,7 @@ export const SystemStatusWidget: React.FC<SystemStatusWidgetProps> = ({
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/v1/health', {
+      const response = await fetch('http://localhost:3000/api/v1/health', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -12,6 +12,7 @@
 
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { hash } from '@pivotal-flow/shared';
 import { organizations, users } from '../src/lib/schema.js';
 
 // Database connection
@@ -68,7 +69,7 @@ async function seedDatabase() {
       email: 'admin@pivotalflow.com',
       firstName: 'Admin',
       lastName: 'User',
-      passwordHash: '$argon2id$v=19$m=65536,t=3,p=4$salt123456789012345678901234567890$hash123456789012345678901234567890123456789012345678901234567890',
+      passwordHash: await hash('password123!extra', 10),
       isActive: true,
       emailVerified: true,
       locale: 'en-NZ',
@@ -89,7 +90,7 @@ async function seedDatabase() {
 
     console.log('\n🔑 Test credentials:');
     console.log('   • admin@pivotalflow.com');
-    console.log('   • Password: password123');
+    console.log('   • Password: password123!extra');
 
   } catch (error) {
     console.error('❌ Database seeding failed:', error);

@@ -279,35 +279,6 @@ export const ModalWithFocusTrap: StoryObj = {
   },
 };
 
-// AccessibilityAudit Stories
-const AccessibilityAuditMeta: Meta<typeof AccessibilityAudit> = {
-  title: 'Accessibility/AccessibilityAudit',
-  component: AccessibilityAudit,
-  parameters: {
-    layout: 'fullscreen',
-    docs: {
-      description: {
-        component: 'Comprehensive accessibility audit tool using axe-core for WCAG 2.1 AA compliance testing.',
-      },
-    },
-  },
-  tags: ['autodocs'],
-};
-
-export const AccessibilityAuditDefault: StoryObj = {
-  render: () => <AccessibilityAudit />,
-};
-
-export const AccessibilityAuditWithCallback: StoryObj = {
-  render: () => (
-    <AccessibilityAudit 
-      onAuditComplete={(results) => {
-        console.log('Audit completed:', results);
-      }}
-    />
-  ),
-};
-
 // AccessibilityTest Stories
 const AccessibilityTestMeta: Meta<typeof AccessibilityTest> = {
   title: 'Accessibility/AccessibilityTest',

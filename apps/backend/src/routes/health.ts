@@ -142,16 +142,14 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
         checks,
       };
       
-      // Validate response
-      const validatedResponse = healthStatusSchema['parse'](response);
-      
+      // Return response directly (TypeBox validation is handled by Fastify)
       requestLogger.info({
         message: 'Health check completed',
         status: overallStatus,
         duration: Date.now() - startTime,
       });
       
-      return reply.status(200).send(validatedResponse);
+      return reply.status(200).send(response);
     } catch (error) {
       requestLogger.error({
         message: 'Health check failed',

@@ -70,7 +70,7 @@ export const LiveStatus: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/v1/health', {
+      const response = await fetch('http://localhost:3000/api/v1/health', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

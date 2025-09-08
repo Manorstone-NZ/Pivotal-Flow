@@ -72,7 +72,7 @@ export const RoutePrefetch: React.FC<RoutePrefetchProps> = ({ children }) => {
       
       prefetchedRoutes.add(route);
       
-      if (process.env['NODE_ENV'] === 'development') {
+      if (import.meta.env['DEV']) {
         console.log(`🚀 Prefetched route: ${route}`);
       }
       
