@@ -7,6 +7,7 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 import { PerformanceMarks, RoutePrefetch, ErrorBoundary, setupGlobalErrorHandling } from '../components/performance';
 
 // Lazy load all page components for code splitting
+const LandingPage = lazy(() => import('../pages/Landing/Landing').then(m => ({ default: m.LandingPage })));
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const QuotesPage = lazy(() => import('../pages/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const QuoteDetailPage = lazy(() => import('../pages/QuoteDetailPage').then(m => ({ default: m.QuoteDetailPage })));
@@ -44,6 +45,15 @@ export const AppRouter: React.FC = () => {
             <Routes>
               {/* Public Routes */}
               <Route 
+                path="/" 
+                element={
+                  <PerformanceMarks routeName="landing">
+                    <LandingPage />
+                  </PerformanceMarks>
+                } 
+              />
+              
+              <Route 
                 path="/login" 
                 element={
                   <PerformanceMarks routeName="login">
@@ -54,7 +64,7 @@ export const AppRouter: React.FC = () => {
               
               {/* Protected Routes with Layout */}
               <Route
-                path="/"
+                path="/dashboard"
                 element={
                   <RequireAuth>
                     <AppLayout>
@@ -145,7 +155,7 @@ export const AppRouter: React.FC = () => {
               />
               
               {/* Catch-all route - redirect to dashboard */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>
         </RoutePrefetch>
