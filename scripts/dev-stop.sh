@@ -93,7 +93,8 @@ main() {
     print_success "All services stopped successfully!"
     echo ""
     echo "To start services again, run:"
-    echo "  ./scripts/dev-start.sh"
+    echo "  ./scripts/start-all.sh"
+    echo "  ./scripts/quick-start.sh"
 }
 
 # Run main function

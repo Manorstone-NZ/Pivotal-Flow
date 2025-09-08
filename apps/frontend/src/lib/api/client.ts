@@ -17,6 +17,29 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Add request interceptor to include auth token
+apiClient.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage (where Zustand persists it)
+    const authData = localStorage.getItem('pivotal-flow-auth');
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData);
+        const accessToken = parsed.state?.accessToken;
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+      } catch (error) {
+        console.warn('Failed to parse auth data from localStorage:', error);
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Error normalization interface
 export interface ApiError {
   code: string;

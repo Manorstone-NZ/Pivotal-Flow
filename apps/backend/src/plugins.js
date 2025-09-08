@@ -6,6 +6,10 @@ import swaggerUi from '@fastify/swagger-ui';
 import { app } from './server.js';
 // Import auth plugin
 import { authPlugin } from './modules/auth/index.js';
+// Import database plugin
+import databasePlugin from './plugins/database.js';
+// Import cache plugin
+import { cachePlugin } from './plugins/cache.plugin.js';
 // C0 Backend Readiness imports
 import { getCorsConfig } from './lib/cors-rate-limit.js';
 import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
@@ -17,11 +21,19 @@ export async function registerPlugins() {
     app.addHook('preHandler', requestIdMiddleware);
     app.addHook('preHandler', requestLoggingMiddleware);
     app.addHook('preHandler', observabilityRequestLogging);
+    // C0 Backend Readiness - CORS configuration (register before auth)
+    const corsConfig = getCorsConfig();
+    // Try a simple CORS config for testing
+    const simpleCorsConfig = {
+        origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'], // Allow frontend ports
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        exposedHeaders: ['X-Request-ID']
+    };
+    await app.register(cors, simpleCorsConfig);
     // Authentication plugin (includes cookie and JWT support)
     await app.register(authPlugin);
-    // C0 Backend Readiness - CORS configuration
-    const corsConfig = getCorsConfig();
-    await app.register(cors, corsConfig);
     // C0 Backend Readiness - Security headers
     await app.register(helmet, {
         contentSecurityPolicy: false, // ok for development
@@ -43,7 +55,7 @@ export async function registerPlugins() {
         })
     });
     // Database plugin (register early for database access)
-    // await app.register(databasePlugin);
+    await app.register(databasePlugin);
     // Swagger/OpenAPI configuration
     await app.register(swagger, {
         openapi: {

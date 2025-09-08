@@ -1,170 +1,147 @@
 # Pivotal Flow Development Scripts
 
-This directory contains scripts to help developers work with the Pivotal Flow project.
+This directory contains scripts to manage the Pivotal Flow development environment.
 
-## 🚀 Quick Start
+## Available Scripts
 
-### For New Developers
+### 🚀 `start-all.sh` - Complete Startup (Recommended)
+**Full startup with all checks and validation**
+
 ```bash
-# Set up the entire development environment
-./scripts/dev/setup-dev.sh
-
-# Start all services quickly
-./scripts/dev/quick-start.sh
+./scripts/start-all.sh
 ```
 
-### For Testing
+**What it does:**
+1. ✅ Checks all prerequisites (Docker, pnpm, curl)
+2. 🐳 Starts Docker services (PostgreSQL, Redis)
+3. 🗄️ Sets up database (schema push + seeding with roles)
+4. 🔧 Starts backend server
+5. 🎨 Starts frontend server
+6. 🏥 Runs health checks
+7. 🔑 Tests login functionality
+8. 📊 Displays final status
+
+**Use when:** First time setup, after system restart, or when you want full validation
+
+---
+
+### ⚡ `quick-start.sh` - Fast Startup
+**Quick startup without extensive checks**
+
 ```bash
-# Test the authentication system
-./scripts/dev/test-auth.sh
+./scripts/quick-start.sh
 ```
 
-## 📁 Script Directory Structure
+**What it does:**
+1. 🐳 Starts Docker services
+2. 🗄️ Quick database setup (push + seed)
+3. 🔧 Starts backend server
+4. 🎨 Starts frontend server
+5. ✅ Basic status display
 
-```
-scripts/
-├── dev/                    # Development scripts
-│   ├── setup-dev.sh       # Complete dev environment setup
-│   ├── quick-start.sh     # Quick service startup
-│   └── test-auth.sh       # Authentication system testing
-├── deploy/                 # Deployment scripts
-│   └── production-setup.sh # Production environment setup
-└── README.md              # This file
-```
+**Use when:** You know everything is set up and just want to start services quickly
 
-## 🔧 Development Scripts
+---
 
-### `setup-dev.sh`
-**Purpose**: Complete development environment setup for new developers
+### 🛑 `dev-stop.sh` - Stop All Services
+**Stops all development services**
 
-**What it does**:
-- Installs pnpm if not present
-- Starts Docker services
-- Installs project dependencies
-- Sets up environment files
-- Configures database and seeds data
-- Sets up frontend (if exists)
-
-**Usage**:
 ```bash
-./scripts/dev/setup-dev.sh
+./scripts/dev-stop.sh
 ```
 
-### `quick-start.sh`
-**Purpose**: Quickly start all services for development
+**What it does:**
+1. 🛑 Stops frontend server (port 5173)
+2. 🛑 Stops backend server (port 3000)
+3. 🐳 Stops Docker containers
+4. 🧹 Cleans up PID files and processes
 
-**What it does**:
-- Starts Docker services (PostgreSQL, Redis)
-- Starts backend development server
-- Waits for services to be ready
-- Performs health checks
-- Provides service URLs and test commands
+---
 
-**Usage**:
+## Service URLs
+
+After starting services, you can access:
+
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3000
+- **Health Check**: http://localhost:3000/api/v1/health
+- **API Documentation**: http://localhost:3000/api/docs
+
+## Login Credentials
+
+- **Email**: admin@pivotalflow.com
+- **Password**: password123!extra
+
+## Logs
+
+- **Backend Logs**: `tail -f logs/backend.log`
+- **Frontend Logs**: `tail -f logs/frontend.log`
+
+## Troubleshooting
+
+### Port Already in Use
+If you get "port already in use" errors:
 ```bash
-./scripts/dev/quick-start.sh
+# Kill processes on specific ports
+lsof -ti :3000 | xargs kill -9  # Backend
+lsof -ti :5173 | xargs kill -9  # Frontend
 ```
 
-### `test-auth.sh`
-**Purpose**: Comprehensive testing of the authentication system
-
-**What it tests**:
-- Public endpoints (health, metrics, docs)
-- Rate limiting functionality
-- Login rate limiting (10 attempts max)
-- Successful authentication flow
-- Protected endpoints
-- Logout functionality
-
-**Usage**:
+### Docker Issues
+If Docker containers fail to start:
 ```bash
-./scripts/dev/test-auth.sh
+# Clean restart Docker
+cd infra/docker
+docker-compose down -v
+docker-compose up -d
+cd ../..
 ```
 
-## 🚀 Deployment Scripts
-
-### `production-setup.sh`
-**Purpose**: Set up production environment configuration
-
-**What it does**:
-- Creates production environment file
-- Generates strong secrets
-- Provides deployment guidance
-- Sets up security configurations
-
-**Usage**:
+### Database Issues
+If database setup fails:
 ```bash
-./scripts/deploy/production-setup.sh
+# Reset database
+cd infra/docker
+docker-compose down -v
+docker-compose up -d
+cd ../..
+pnpm -w drizzle:push
+pnpm -w seed:demo
 ```
 
-## 📋 Prerequisites
-
-Before running these scripts, ensure you have:
-
-- **Linux/macOS** (scripts are bash-based)
-- **Git** for version control
-- **Docker** and **Docker Compose** for services
-- **Node.js** (version 18 or higher)
-- **pnpm** (will be installed if missing)
-
-## 🧪 Test Credentials
-
-After running `setup-dev.sh`, you'll have these test accounts:
-
-- **Admin User**: `admin@test.example.com` / `AdminPassword123!`
-- **Regular User**: `user@test.example.com` / `UserPassword123!`
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**Docker not running**:
+### Frontend Not Loading
+If frontend shows old design or errors:
 ```bash
-sudo systemctl start docker
-sudo usermod -aG docker $USER
-# Log out and back in
+# Restart frontend
+cd apps/frontend
+pnpm dev
 ```
 
-**Port 3000 already in use**:
-```bash
-lsof -i :3000 | awk 'NR>1 {print $2}' | xargs kill
-```
+## Development Workflow
 
-**Database connection issues**:
-```bash
-cd apps/backend
-pnpm prisma generate
-pnpm prisma db push
-```
+1. **Start everything**: `./scripts/start-all.sh`
+2. **Develop your features**
+3. **Stop when done**: `./scripts/dev-stop.sh`
 
-**Rate limiting issues**:
-```bash
-# Clear Redis rate limit keys
-redis-cli keys "login:*" | xargs redis-cli del
-redis-cli keys "user:*" | xargs redis-cli del
-```
+For quick iterations during development:
+1. **Quick start**: `./scripts/quick-start.sh`
+2. **Make changes**
+3. **Restart specific service** (frontend/backend)
 
-## 📚 Related Documentation
+## Prerequisites
 
-- **API Documentation**: http://localhost:3000/docs
-- **Epic A3 Report**: `plans/17_epic_a3_auth_report.md`
-- **Project README**: `README.md`
+Make sure you have installed:
+- Docker & Docker Compose
+- pnpm
+- curl
+- Node.js (for pnpm)
 
-## 🤝 Contributing
+## Environment Variables
 
-When adding new scripts:
-
-1. Follow the existing naming convention
-2. Add proper error handling
-3. Include usage examples in this README
-4. Test the script thoroughly
-5. Make scripts executable: `chmod +x scripts/new-script.sh`
-
-## ✅ Status
-
-All scripts are tested and working with:
-- ✅ Backend authentication system
-- ✅ Rate limiting and security features
-- ✅ Production configuration
-- ✅ Development environment setup
-- ✅ Comprehensive testing suite
+The scripts automatically set these environment variables:
+- `DATABASE_URL`: PostgreSQL connection
+- `REDIS_URL`: Redis connection  
+- `JWT_SECRET`: Authentication secret
+- `CORS_ORIGIN`: Allowed origins
+- `OPENAPI_ENABLE`: Enable API docs
+- `NODE_ENV`: Development mode

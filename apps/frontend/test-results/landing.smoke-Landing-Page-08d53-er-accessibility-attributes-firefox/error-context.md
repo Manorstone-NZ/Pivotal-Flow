@@ -1,0 +1,116 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - main [ref=e4]:
+    - region "Pivotal Flow" [ref=e5]:
+      - generic [ref=e8]:
+        - heading "Pivotal Flow" [level=1] [ref=e9]:
+          - generic [ref=e10]: Pivotal Flow
+        - paragraph [ref=e11]: Streamline your business workflow from quotes to payments with our comprehensive suite of professional tools.
+        - button "Sign In" [ref=e13] [cursor=pointer]
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Pivotal Flow streamlines your business workflow from quotes to payments
+          - paragraph [ref=e16]: Sign in to access your Pivotal Flow account
+        - generic [ref=e17]:
+          - paragraph [ref=e18]: Trusted by businesses worldwide
+          - generic [ref=e19]:
+            - generic [ref=e20]: Security First
+            - generic [ref=e22]: 99.9% Uptime
+            - generic [ref=e24]: 24/7 Support
+    - region "Everything you need to manage your business" [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - heading "Everything you need to manage your business" [level=2] [ref=e28]
+          - paragraph [ref=e29]: Streamline your workflow from quotes to payments with our comprehensive suite of professional tools designed for modern businesses.
+        - generic [ref=e30]:
+          - article [ref=e31] [cursor=pointer]:
+            - img [ref=e33] [cursor=pointer]
+            - heading "Quotes" [level=3] [ref=e35] [cursor=pointer]
+            - paragraph [ref=e36] [cursor=pointer]: Create, manage, and track quotes from start to finish with professional templates.
+            - generic [ref=e37] [cursor=pointer]:
+              - generic [ref=e38] [cursor=pointer]: Sign In Required
+              - img [ref=e39] [cursor=pointer]
+            - paragraph [ref=e42] [cursor=pointer]: Sign in to access Quotes features
+          - article [ref=e43] [cursor=pointer]:
+            - img [ref=e45] [cursor=pointer]
+            - heading "Rate Cards" [level=3] [ref=e47] [cursor=pointer]
+            - paragraph [ref=e48] [cursor=pointer]: Define pricing structures and rate cards for consistent, professional quoting.
+            - generic [ref=e49] [cursor=pointer]:
+              - generic [ref=e50] [cursor=pointer]: Sign In Required
+              - img [ref=e51] [cursor=pointer]
+            - paragraph [ref=e54] [cursor=pointer]: Sign in to access Rate Cards features
+          - article [ref=e55] [cursor=pointer]:
+            - img [ref=e57] [cursor=pointer]
+            - heading "Invoices" [level=3] [ref=e59] [cursor=pointer]
+            - paragraph [ref=e60] [cursor=pointer]: Generate professional invoices and track payment status with automated reminders.
+            - generic [ref=e61] [cursor=pointer]:
+              - generic [ref=e62] [cursor=pointer]: Sign In Required
+              - img [ref=e63] [cursor=pointer]
+            - paragraph [ref=e66] [cursor=pointer]: Sign in to access Invoices features
+          - article [ref=e67] [cursor=pointer]:
+            - img [ref=e69] [cursor=pointer]
+            - heading "Time & Approvals" [level=3] [ref=e71] [cursor=pointer]
+            - paragraph [ref=e72] [cursor=pointer]: Track time, manage approvals, and streamline workflows with intelligent automation.
+            - generic [ref=e73] [cursor=pointer]:
+              - generic [ref=e74] [cursor=pointer]: Sign In Required
+              - img [ref=e75] [cursor=pointer]
+            - paragraph [ref=e78] [cursor=pointer]: Sign in to access Time & Approvals features
+          - article [ref=e79] [cursor=pointer]:
+            - img [ref=e81] [cursor=pointer]
+            - heading "Users" [level=3] [ref=e83] [cursor=pointer]
+            - paragraph [ref=e84] [cursor=pointer]: Manage team members, roles, and permissions with granular access controls.
+            - generic [ref=e85] [cursor=pointer]:
+              - generic [ref=e86] [cursor=pointer]: Sign In Required
+              - img [ref=e87] [cursor=pointer]
+            - paragraph [ref=e90] [cursor=pointer]: Sign in to access Users features
+        - generic [ref=e91]:
+          - paragraph [ref=e92]: Ready to streamline your business workflow?
+          - button "Get Started Free" [ref=e93] [cursor=pointer]
+    - region "System Status" [ref=e94]:
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - heading "System Status" [level=2] [ref=e98]
+          - button "Show Details" [ref=e99] [cursor=pointer]
+        - generic [ref=e100]:
+          - generic [ref=e101]: Checking...
+          - button "Refreshing..." [disabled] [ref=e102]
+        - status [ref=e103]
+  - contentinfo [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - heading "Pivotal Flow" [level=3] [ref=e108]
+          - paragraph [ref=e109]: Streamline your business workflow from quotes to payments.
+        - generic [ref=e110]:
+          - heading "Resources" [level=4] [ref=e111]
+          - navigation "Footer navigation" [ref=e112]:
+            - list [ref=e113]:
+              - listitem [ref=e114]:
+                - link "Documentation" [ref=e115] [cursor=pointer]:
+                  - /url: /docs
+                - generic [ref=e116]: View API documentation and guides
+              - listitem [ref=e117]:
+                - link "Changelog" [ref=e118] [cursor=pointer]:
+                  - /url: /changelog
+                - generic [ref=e119]: View recent updates and changes
+              - listitem [ref=e120]:
+                - link "Status" [ref=e121] [cursor=pointer]:
+                  - /url: /status
+                - generic [ref=e122]: Check system status and uptime
+        - generic [ref=e123]:
+          - heading "Version Info" [level=4] [ref=e124]
+          - generic [ref=e125]:
+            - paragraph [ref=e126]:
+              - generic [ref=e127]: "Version:"
+              - text: 0.1.0
+            - paragraph [ref=e128]:
+              - generic [ref=e129]: "Build:"
+              - text: development
+            - paragraph [ref=e130]:
+              - generic [ref=e131]: "Environment:"
+              - text: development
+      - generic [ref=e133]:
+        - paragraph [ref=e134]: © 2025 Pivotal Flow. All rights reserved.
+        - generic [ref=e136]: Built with ❤️ for modern businesses
+```

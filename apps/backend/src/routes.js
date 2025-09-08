@@ -18,6 +18,10 @@ import { permissionRoutes } from './modules/permissions/routes.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
 // Import payment route modules
 import { paymentRoutes } from './modules/payments/routes.js';
+// Import project route modules
+// import { projectsModule } from './modules/projects/index.js';
+// Import health route modules
+import { healthRoutes } from './routes/health.js';
 // Simple response schema for testing
 const RootResponseSchema = Type.Object({
     message: Type.String(),
@@ -40,10 +44,10 @@ export async function registerRoutes() {
         };
     });
     // Register auth route modules
-    await app.register(loginRoute);
-    await app.register(refreshRoute);
-    await app.register(logoutRoute);
-    await app.register(meRoute);
+    await app.register(loginRoute, { prefix: '/api/v1/auth' });
+    await app.register(refreshRoute, { prefix: '/api/v1/auth' });
+    await app.register(logoutRoute, { prefix: '/api/v1/auth' });
+    await app.register(meRoute, { prefix: '/api/v1/auth' });
     // Register user route modules
     await app.register(listUsersRoute);
     await app.register(createUserRoute);
@@ -57,5 +61,9 @@ export async function registerRoutes() {
     await app.register(currencyRoutes);
     // Register payment route modules
     await app.register(paymentRoutes);
+    // Register project route modules
+    // await app.register(projectsModule);
+    // Register health route modules
+    await app.register(healthRoutes, { prefix: '/api/v1/health' });
 }
 //# sourceMappingURL=routes.js.map

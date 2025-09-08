@@ -11,6 +11,8 @@ const LandingPage = lazy(() => import('../pages/Landing/Landing').then(m => ({ d
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const QuotesPage = lazy(() => import('../pages/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const QuoteDetailPage = lazy(() => import('../pages/QuoteDetailPage').then(m => ({ default: m.QuoteDetailPage })));
+const ProjectsPage = lazy(() => import('../pages/Projects/List').then(m => ({ default: m.ProjectsListPage })));
+const ProjectDetailPage = lazy(() => import('../pages/Projects/Details').then(m => ({ default: m.ProjectDetailPage })));
 const RateCardsPage = lazy(() => import('../pages/RateCardsPage').then(m => ({ default: m.RateCardsPage })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then(m => ({ default: m.UsersPage })));
 const PaymentsPage = lazy(() => import('../pages/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
@@ -96,6 +98,32 @@ export const AppRouter: React.FC = () => {
                     <AppLayout>
                       <PerformanceMarks routeName="quote-detail">
                         <QuoteDetailPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/projects"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="projects">
+                        <ProjectsPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/projects/:id"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="project-detail">
+                        <ProjectDetailPage />
                       </PerformanceMarks>
                     </AppLayout>
                   </RequireAuth>

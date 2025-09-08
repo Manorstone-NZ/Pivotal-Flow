@@ -16,28 +16,28 @@ interface FeatureCard {
 }
 
 /**
- * Feature Grid Component
+ * Feature Grid Component - Modern, Professional Design
  * 
  * Features:
- * - 5 feature cards: Quotes, Rate Cards, Invoices, Time & Approvals, Users
- * - Each card: SVG icon, short description, CTA
- * - Semantic HTML with accessible headings
- * - Responsive grid: 1/2/3 columns based on screen size
- * - Auth-aware CTAs (disabled if not authenticated)
+ * - Properly sized icons (20px instead of 32px)
+ * - Clean card design with subtle shadows
+ * - Professional spacing and typography
+ * - Hover effects and transitions
+ * - Responsive grid layout
  */
 export const FeatureGrid: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  // Feature definitions
+  // Feature definitions with properly sized icons
   const features: FeatureCard[] = [
     {
       id: 'quotes',
       title: 'Quotes',
-      description: 'Create, manage, and track quotes from start to finish.',
+      description: 'Create, manage, and track quotes from start to finish with professional templates.',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
       route: '/quotes',
@@ -46,10 +46,10 @@ export const FeatureGrid: React.FC = () => {
     {
       id: 'rate-cards',
       title: 'Rate Cards',
-      description: 'Define pricing structures and rate cards for consistent quoting.',
+      description: 'Define pricing structures and rate cards for consistent, professional quoting.',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
         </svg>
       ),
       route: '/rate-cards',
@@ -58,10 +58,10 @@ export const FeatureGrid: React.FC = () => {
     {
       id: 'invoices',
       title: 'Invoices',
-      description: 'Generate professional invoices and track payment status.',
+      description: 'Generate professional invoices and track payment status with automated reminders.',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
       ),
       route: '/invoices',
@@ -70,10 +70,10 @@ export const FeatureGrid: React.FC = () => {
     {
       id: 'time-approvals',
       title: 'Time & Approvals',
-      description: 'Track time, manage approvals, and streamline workflows.',
+      description: 'Track time, manage approvals, and streamline workflows with intelligent automation.',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
       route: '/time',
@@ -82,10 +82,10 @@ export const FeatureGrid: React.FC = () => {
     {
       id: 'users',
       title: 'Users',
-      description: 'Manage team members, roles, and permissions.',
+      description: 'Manage team members, roles, and permissions with granular access controls.',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
         </svg>
       ),
       route: '/users',
@@ -103,20 +103,20 @@ export const FeatureGrid: React.FC = () => {
 
   return (
     <section 
-      className="px-4 py-16 sm:px-6 lg:px-8 bg-surface-card"
+      className="px-4 py-20 sm:px-6 lg:px-8 bg-white"
       aria-labelledby="features-heading"
     >
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <h2 
             id="features-heading"
-            className="text-3xl sm:text-4xl font-bold text-text-primary mb-4"
+            className="text-3xl font-bold text-neutral-900 tracking-tight sm:text-4xl mb-4"
           >
             Everything you need to manage your business
           </h2>
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-            Streamline your workflow from quotes to payments with our comprehensive suite of tools.
+          <p className="text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+            Streamline your workflow from quotes to payments with our comprehensive suite of professional tools designed for modern businesses.
           </p>
         </div>
 
@@ -126,33 +126,41 @@ export const FeatureGrid: React.FC = () => {
             <article
               key={feature.id}
               role="article"
-              className="bg-surface-background rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200 border border-surface-border"
+              className="group bg-white rounded-xl border border-neutral-200 p-6 hover:border-neutral-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => handleFeatureClick(feature)}
             >
-              {/* Icon */}
-              <div className="text-brand-primary mb-4">
+              {/* Icon Container */}
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-50 rounded-lg text-primary-600 mb-4 group-hover:bg-primary-100 transition-colors duration-200">
                 {feature.icon}
               </div>
               
               {/* Content */}
-              <h3 className="text-xl font-semibold text-text-primary mb-3">
+              <h3 className="text-xl font-semibold text-neutral-900 mb-3 group-hover:text-primary-700 transition-colors duration-200">
                 {feature.title}
               </h3>
               
-              <p className="text-text-secondary mb-6">
+              <p className="text-neutral-600 mb-6 leading-relaxed">
                 {feature.description}
               </p>
               
               {/* CTA Button */}
-              <Button
-                onClick={() => handleFeatureClick(feature)}
-                variant={isAuthenticated ? "primary" : "outline"}
-                size="sm"
-                disabled={feature.requiresAuth && !isAuthenticated}
-                className="w-full"
-                aria-describedby={`${feature.id}-description`}
-              >
-                {feature.requiresAuth && !isAuthenticated ? 'Sign In Required' : 'Get Started'}
-              </Button>
+              <div className="flex items-center text-sm font-medium text-primary-600 group-hover:text-primary-700 transition-colors duration-200">
+                {feature.requiresAuth && !isAuthenticated ? (
+                  <>
+                    <span>Sign In Required</span>
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </>
+                ) : (
+                  <>
+                    <span>Get Started</span>
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </>
+                )}
+              </div>
               
               {/* Hidden description for screen readers */}
               <div className="sr-only">
@@ -165,6 +173,19 @@ export const FeatureGrid: React.FC = () => {
               </div>
             </article>
           ))}
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="text-center mt-16">
+          <p className="text-neutral-600 mb-6">
+            Ready to streamline your business workflow?
+          </p>
+          <Button
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
+            className="bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
+          </Button>
         </div>
       </div>
     </section>

@@ -96,11 +96,11 @@ export default fp(async function authPlugin(app) {
     });
     // Create the TokenManager only after JWT is ready
     const tokenManager = createTokenManager(app);
-    // Create Redis-based TokenManager for refresh token storage
+    // Create TokenManager for refresh token storage
     const cacheAdapter = {
-        get: (key) => Promise.resolve(app.cache.get(key)),
-        set: (key, value, _mode, ttl) => Promise.resolve(app.cache.set(key, value, ttl)),
-        del: (key) => Promise.resolve(app.cache.delete(key))
+        get: (key) => Promise.resolve(app.cache?.get(key) ?? null),
+        set: (key, value, _mode, ttl) => Promise.resolve(app.cache?.set(key, value, ttl) ?? true),
+        del: (key) => Promise.resolve(app.cache?.delete(key) ?? true)
     };
     const refreshTokenManager = new TokenManager(cacheAdapter, parseTTL(config.auth.REFRESH_TOKEN_TTL));
     app.decorate('tokenManager', tokenManager);
@@ -124,12 +124,16 @@ export default fp(async function authPlugin(app) {
             requestUrl === '/api/quotes-openapi.json' ||
             requestUrl === '/api/docs' ||
             requestUrl === '/health' ||
+            requestUrl === '/api/v1/health' ||
+            requestUrl === '/api/v1/health/ping' ||
             requestUrl === '/health/cache' ||
             requestUrl === '/metrics' ||
             requestUrl === '/' ||
             requestUrl.startsWith('/docs') ||
             requestUrl === '/v1/auth/login' ||
+            requestUrl === '/api/v1/auth/login' ||
             requestUrl === '/v1/auth/refresh' ||
+            requestUrl === '/api/v1/auth/refresh' ||
             requestUrl.startsWith('/v1/test/')) {
             logger.info({ requestUrl }, 'Skipping auth for public route');
             return;

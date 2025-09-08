@@ -3,8 +3,10 @@
  * Base styles, resets, and global utilities for Pivotal Flow
  */
 
-/* Import design tokens */
-@import './tokens.css';
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* CSS Reset */
 *,

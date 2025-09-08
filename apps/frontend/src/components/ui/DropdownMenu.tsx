@@ -30,6 +30,7 @@ interface DropdownMenuSeparatorProps {
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children, open, onOpenChange }) => {
   const [isOpen, setIsOpen] = React.useState(open || false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (open !== undefined) {
@@ -37,13 +38,30 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children, open, onOp
     }
   }, [open]);
 
+  // Handle click outside to close dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        handleOpenChange(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   const handleOpenChange = (newOpen: boolean) => {
     setIsOpen(newOpen);
     onOpenChange?.(newOpen);
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child, { 

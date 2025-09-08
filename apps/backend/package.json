@@ -9,7 +9,7 @@
     "package.json"
   ],
   "scripts": {
-    "dev": "NODE_ENV=development PORT=3000 HOST=localhost DATABASE_URL=postgresql://pivotal:pivotal@localhost:5433/pivotal REDIS_URL=redis://localhost:6379 JWT_SECRET=your-super-secret-jwt-key-that-is-at-least-32-characters-long CORS_ORIGIN=http://localhost:3000 OPENAPI_ENABLE=true tsx watch src/index.ts",
+    "dev": "NODE_ENV=development PORT=3000 HOST=localhost DATABASE_URL=postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e REDIS_URL=redis://localhost:6379 JWT_SECRET=your-super-secret-jwt-key-that-is-at-least-32-characters-long CORS_ORIGIN=http://localhost:3000 OPENAPI_ENABLE=true tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",

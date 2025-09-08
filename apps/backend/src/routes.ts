@@ -26,6 +26,9 @@ import { currencyRoutes } from './modules/currencies/routes.js';
 // Import payment route modules
 import { paymentRoutes } from './modules/payments/routes.js';
 
+// Import project route modules
+import { projectsModule } from './modules/projects/index.js';
+
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 
@@ -76,6 +79,9 @@ export async function registerRoutes() {
 
   // Register payment route modules
   await app.register(paymentRoutes);
+
+  // Register project route modules
+  await app.register(projectsModule);
 
   // Register health route modules
   await app.register(healthRoutes, { prefix: '/api/v1/health' });

@@ -76,6 +76,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         type={type}
         placeholder={placeholder}
         value={value ?? ''}
+        defaultValue={defaultValue}
         onChange={handleChange}
         onBlur={onBlur}
         onFocus={onFocus}
