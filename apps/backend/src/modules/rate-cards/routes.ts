@@ -310,4 +310,51 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  // Update a rate card item by ID
+  fastify.put<{
+    Params: { itemId: string };
+    Body: Partial<CreateRateCardItem>;
+    Reply: RateCardItemResponse | RateCardError;
+  }>('/rate-card-items/:itemId', {
+    schema: {
+      body: UpdateRateCardItemSchema,
+      response: {
+        200: RateCardItemResponseSchema,
+        404: RateCardErrorSchema,
+        401: RateCardErrorSchema,
+        403: RateCardErrorSchema,
+        500: RateCardErrorSchema
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { itemId } = request.params as { itemId: string };
+      const updateData = request.body;
+      const authenticatedRequest = request as AuthenticatedRequest;
+      
+      const rateCardService = new RateCardService({
+        organizationId: authenticatedRequest.user.organizationId,
+        userId: authenticatedRequest.user.userId
+      });
+      
+      const result = await rateCardService.updateRateCardItem(itemId, updateData);
+      
+      if (!result) {
+        return reply.status(404).send({
+          error: 'Not Found',
+          message: 'Rate card item not found',
+          code: 'RATE_CARD_ITEM_NOT_FOUND'
+        });
+      }
+      
+      return reply.status(200).send(result);
+    } catch (error) {
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to update rate card item',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  });
 }

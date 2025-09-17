@@ -240,10 +240,20 @@ export class RateCardService {
     await this.db
       .update(rateCardItems)
       .set(updateData)
-      .where(and(
-        eq(rateCardItems.id, itemId),
-        eq(rateCardItems.organizationId, this.context.organizationId)
-      ));
+      .where(eq(rateCardItems.id, itemId));
+
+    // Get the updated item
+    const updatedItem = await this.db
+      .select()
+      .from(rateCardItems)
+      .where(eq(rateCardItems.id, itemId))
+      .limit(1);
+
+    if (!updatedItem.length) {
+      return null;
+    }
+
+    const item = updatedItem[0];
 
     // Log audit event
     if (this.auditLogger) {
@@ -257,7 +267,15 @@ export class RateCardService {
       });
     }
 
-    return await this.getRateCardItemById(itemId);
+    // Return formatted response
+    return {
+      ...item,
+      baseRate: item.baseRate.toString(),
+      effectiveFrom: item.effectiveFrom?.toString() || '',
+      effectiveUntil: item.effectiveUntil?.toString() || null,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    };
   }
 
   async getRateCardItemById(itemId: string) {
