@@ -3,7 +3,7 @@ import { generateId } from '@pivotal-flow/shared';
 
 import type { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { getDatabase } from '../../lib/db.js';
-import { quotes, quoteVersions, quoteLineItems } from '../../lib/schema.js';
+import { quotes, quoteVersions, quoteLineItems, customers } from '../../lib/schema.js';
 
 export interface QuoteContext {
   organizationId: string;
@@ -262,5 +262,101 @@ export class QuoteService {
 
     const nextNumber = parseInt(match[1], 10) + 1;
     return `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
+  }
+
+  async createQuote(data: {
+    clientId: string;
+    title: string;
+    description?: string;
+    type: string;
+    status: string;
+    validUntil?: string;
+    metadata: Record<string, any>;
+  }) {
+    const quoteId = generateId();
+    const quoteNumber = await this.generateQuoteNumber();
+    
+    // Ensure customer exists, create if it doesn't
+    const existingCustomer = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, data.clientId))
+      .limit(1);
+    
+    if (existingCustomer.length === 0) {
+      // Create a basic customer record
+      await this.db.insert(customers).values({
+        id: data.clientId,
+        organizationId: this.context.organizationId,
+        customerNumber: `CUST-${Date.now()}`,
+        companyName: `Customer ${data.clientId}`,
+        status: 'active',
+        customerType: 'business',
+        email: `${data.clientId}@example.com`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+    
+    const quoteData = {
+      id: quoteId,
+      organizationId: this.context.organizationId,
+      customerId: data.clientId, // Map clientId to customerId for database
+      quoteNumber,
+      title: data.title,
+      description: data.description || null,
+      type: data.type,
+      status: data.status,
+      validFrom: new Date().toISOString().split('T')[0], // Required field
+      validUntil: data.validUntil ? data.validUntil.split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 30 days
+      currency: 'NZD',
+      exchangeRate: '1.000000',
+      subtotal: '0.00',
+      taxRate: '0.1500',
+      taxAmount: '0.00',
+      discountType: 'percentage',
+      discountValue: '0.0000',
+      discountAmount: '0.00',
+      totalAmount: '0.00',
+      metadata: data.metadata,
+      createdBy: this.context.userId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    await this.db.insert(quotes).values(quoteData);
+
+    // Log audit event
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        entityType: 'quote',
+        entityId: quoteId,
+        action: 'create',
+        changes: quoteData,
+        userId: this.context.userId,
+        organizationId: this.context.organizationId
+      });
+    }
+
+    // Return formatted response
+    return {
+      id: quoteData.id,
+      clientId: quoteData.customerId, // Map back to clientId for API response
+      title: quoteData.title,
+      description: quoteData.description,
+      type: quoteData.type,
+      status: quoteData.status,
+      validUntil: quoteData.validUntil ? `${quoteData.validUntil}T23:59:59Z` : null, // Convert date to datetime string
+      metadata: quoteData.metadata,
+      organizationId: quoteData.organizationId,
+      createdAt: quoteData.createdAt.toISOString(),
+      updatedAt: quoteData.updatedAt.toISOString(),
+      lineItems: [],
+      subtotal: parseFloat(quoteData.subtotal),
+      taxAmount: parseFloat(quoteData.taxAmount),
+      totalAmount: parseFloat(quoteData.totalAmount),
+      createdBy: quoteData.createdBy,
+      quoteNumber: quoteData.quoteNumber,
+    };
   }
 }

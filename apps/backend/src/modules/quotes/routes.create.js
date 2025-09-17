@@ -23,7 +23,7 @@ const QuoteResponseSchema = Type.Object({
     updatedAt: Type.String({ format: 'date-time' })
 });
 export async function createQuoteRoute(fastify) {
-    fastify.post('/quotes', {
+    fastify.post('/v1/quotes', {
         schema: {
             body: CreateQuoteSchema,
             response: {

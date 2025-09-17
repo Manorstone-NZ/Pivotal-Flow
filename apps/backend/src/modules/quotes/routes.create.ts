@@ -2,59 +2,24 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Type } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
+import { QuoteService } from './service.js';
 
-// TypeBox schemas for quotes
-const CreateQuoteSchema = Type.Object({
-  customerId: Type.String({ format: 'uuid' }),
-  projectName: Type.String({ minLength: 1, maxLength: 255 }),
-  description: Type.Optional(Type.String()),
-  lineItems: Type.Array(Type.Object({
-    description: Type.String({ minLength: 1 }),
-    quantity: Type.Number({ minimum: 0 }),
-    unitPrice: Type.Number({ minimum: 0 }),
-    taxRate: Type.Optional(Type.Number({ minimum: 0, maximum: 1 }))
-  }))
-});
+// Import schemas from shared typeboxSchemas
+import { CreateQuoteSchema, QuoteResponseSchema } from './typeboxSchemas.js';
 
-const QuoteResponseSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
-  customerId: Type.String({ format: 'uuid' }),
-  projectName: Type.String(),
-  description: Type.Union([Type.String(), Type.Null()]),
-  status: Type.String(),
-  totalAmount: Type.Number(),
-  createdAt: Type.String({ format: 'date-time' }),
-  updatedAt: Type.String({ format: 'date-time' })
-});
+// QuoteResponseSchema imported above
 
-interface CreateQuoteRequest {
-  customerId: string;
-  projectName: string;
-  description?: string;
-  lineItems: Array<{
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    taxRate?: number;
-  }>;
-}
+// Use the imported CreateQuote type from typeboxSchemas
+import type { CreateQuote } from './typeboxSchemas.js';
 
-interface QuoteResponse {
-  id: string;
-  customerId: string;
-  projectName: string;
-  description: string | null;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// QuoteResponse type imported from typeboxSchemas
+import type { QuoteResponse } from './typeboxSchemas.js';
 
 export async function createQuoteRoute(fastify: FastifyInstance) {
   fastify.post<{
-    Body: CreateQuoteRequest;
+    Body: CreateQuote;
     Reply: QuoteResponse;
-  }>('/quotes', {
+  }>('/v1/quotes', {
     schema: {
       body: CreateQuoteSchema,
       response: {
@@ -77,29 +42,35 @@ export async function createQuoteRoute(fastify: FastifyInstance) {
         })
       }
     }
-  }, async (request: FastifyRequest<{ Body: CreateQuoteRequest }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Body: CreateQuote }>, reply: FastifyReply) => {
     try {
       const quoteData = request.body; // TypeBox handles validation automatically
+      const authenticatedRequest = request as any;
       
-      // Mock quote creation for now
-      const mockQuote: QuoteResponse = {
-        id: crypto.randomUUID(),
-        customerId: quoteData.customerId,
-        projectName: quoteData.projectName,
-        description: quoteData.description || null,
-        status: 'draft',
-        totalAmount: quoteData.lineItems.reduce((sum, item) => {
-          const itemTotal = item.quantity * item.unitPrice;
-          const taxAmount = itemTotal * (item.taxRate || 0);
-          return sum + itemTotal + taxAmount;
-        }, 0),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Get user context
+      const user = authenticatedRequest.user;
+      if (!user) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Authentication required',
+          code: 'TENANT_ACCESS_DENIED'
+        });
+      }
+      
+      // Create quote service
+      const quoteService = new QuoteService({
+        organizationId: user.organizationId,
+        userId: user.userId
+      });
+      
+      const result = await quoteService.createQuote({
+        ...quoteData,
+        metadata: quoteData.metadata || {}
+      });
 
-      logger.info('Quote created successfully', { quoteId: mockQuote.id });
+      logger.info('Quote created successfully', { quoteId: result.id });
       
-      return reply.status(201).send(mockQuote);
+      return reply.status(201).send(result);
     } catch (error) {
       if (error instanceof Error) {
         logger.error('Error creating quote:', error);
