@@ -73,7 +73,45 @@ export class QuoteService {
       ))
       .limit(1);
 
-    return result[0] || null;
+    const quote = result[0];
+    if (!quote) {
+      return null;
+    }
+
+    // Get line items for this quote
+    const lineItems = await this.db
+      .select()
+      .from(quoteLineItems)
+      .where(eq(quoteLineItems.quoteId, id))
+      .orderBy(quoteLineItems.sortOrder);
+
+    // Format the response to match API expectations
+    return {
+      id: quote.id,
+      clientId: quote.customerId, // Map customerId back to clientId
+      title: quote.title,
+      description: quote.description,
+      type: quote.type,
+      status: quote.status,
+      validUntil: quote.validUntil ? `${quote.validUntil}T23:59:59Z` : null,
+      metadata: quote.metadata || {},
+      organizationId: quote.organizationId,
+      createdAt: quote.createdAt.toISOString(),
+      updatedAt: quote.updatedAt.toISOString(),
+      lineItems: lineItems.map(item => ({
+        id: item.id,
+        description: item.description,
+        quantity: parseFloat(item.quantity.toString()),
+        unitPrice: parseFloat(item.unitPrice.toString()),
+        totalPrice: parseFloat(item.totalPrice.toString()),
+        metadata: item.metadata || {}
+      })),
+      subtotal: parseFloat(quote.subtotal.toString()),
+      taxAmount: parseFloat(quote.taxAmount.toString()),
+      totalAmount: parseFloat(quote.totalAmount.toString()),
+      createdBy: quote.createdBy,
+      quoteNumber: quote.quoteNumber,
+    };
   }
 
   async createQuote(data: any) {

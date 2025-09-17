@@ -71,7 +71,7 @@ export const QuoteSummaryCard: React.FC<QuoteSummaryCardProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Line Items:</span>
-              <span className="text-text-primary">{quote.lineItems.length} items</span>
+              <span className="text-text-primary">{quote.lineItems?.length || 0} items</span>
             </div>
             {quote.validUntil && (
               <div className="flex justify-between">
