@@ -22,16 +22,16 @@ export interface RateCard {
 export interface RateCardItem {
   id: string;
   rateCardId: string;
-  organizationId: string;
-  serviceCategoryId?: string | undefined;
-  roleId?: string | undefined;
-  itemCode: string;
+  serviceCategoryId: string;
+  roleId?: string | null;
+  itemCode?: string | null;
   unit: string;               // "hour", "day", "fixed", etc.
   baseRate: string;           // Stored as string for precision
   currency: string;           // ISO 4217
   taxClass: string;           // "standard", "exempt", etc.
+  tieringModelId?: string | null;
   effectiveFrom: string;
-  effectiveUntil?: string | undefined;
+  effectiveUntil?: string | null;
   isActive: boolean;
   metadata: Record<string, any>;
   createdAt: string;
@@ -62,28 +62,31 @@ export interface UpdateRateCard {
 }
 
 export interface CreateRateCardItem {
-  serviceCategoryId?: string;
-  roleId?: string;
-  itemCode: string;
+  serviceCategoryId: string;
+  roleId?: string | null;
+  itemCode?: string | null;
   unit: string;
   baseRate: string;
   currency: string;
-  taxClass?: string;
-  effectiveFrom?: string;
-  effectiveUntil?: string;
+  taxClass: string;
+  tieringModelId?: string | null;
+  effectiveFrom: string;
+  effectiveUntil?: string | null;
+  isActive?: boolean;
   metadata?: Record<string, any>;
 }
 
 export interface UpdateRateCardItem {
   serviceCategoryId?: string;
-  roleId?: string;
-  itemCode?: string;
+  roleId?: string | null;
+  itemCode?: string | null;
   unit?: string;
   baseRate?: string;
   currency?: string;
   taxClass?: string;
+  tieringModelId?: string | null;
   effectiveFrom?: string;
-  effectiveUntil?: string;
+  effectiveUntil?: string | null;
   isActive?: boolean;
   metadata?: Record<string, any>;
 }

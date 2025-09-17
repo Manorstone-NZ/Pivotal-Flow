@@ -158,6 +158,7 @@ export class RateCardService {
     // Format dates for API response
     return results.map(item => ({
       ...item,
+      baseRate: item.baseRate?.toString() || '0',
       effectiveFrom: item.effectiveFrom?.toString() || '',
       effectiveUntil: item.effectiveUntil?.toString() || null,
       createdAt: item.createdAt?.toISOString() || '',

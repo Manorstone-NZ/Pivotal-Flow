@@ -59,14 +59,14 @@ export type RateCardResponse = Static<typeof RateCardResponseSchema>;
 export const RateCardItemResponseSchema = Type.Object({
   id: Type.String(),
   rateCardId: Type.String(),
-  organizationId: Type.String(),
-  serviceCategoryId: Type.Union([Type.String(), Type.Null()]),
+  serviceCategoryId: Type.String(),
   roleId: Type.Union([Type.String(), Type.Null()]),
-  itemCode: Type.String(),
+  itemCode: Type.Union([Type.String(), Type.Null()]),
   unit: Type.String(),
   baseRate: Type.String(), // Stored as string for precision
   currency: Type.String(),
   taxClass: Type.String(),
+  tieringModelId: Type.Union([Type.String(), Type.Null()]),
   effectiveFrom: Type.String(),
   effectiveUntil: Type.Union([Type.String(), Type.Null()]),
   isActive: Type.Boolean(),
