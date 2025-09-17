@@ -146,6 +146,52 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Update a specific rate card
+  fastify.put<{
+    Params: { id: string };
+    Body: Partial<CreateRateCard>;
+    Reply: RateCardResponse | RateCardError;
+  }>('/rate-cards/:id', {
+    schema: {
+      response: {
+        200: RateCardResponseSchema,
+        404: RateCardErrorSchema,
+        401: RateCardErrorSchema,
+        403: RateCardErrorSchema,
+        500: RateCardErrorSchema
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const updateData = request.body;
+      const authenticatedRequest = request as AuthenticatedRequest;
+      
+      const rateCardService = new RateCardService({
+        organizationId: authenticatedRequest.user.organizationId,
+        userId: authenticatedRequest.user.userId
+      });
+      
+      const result = await rateCardService.updateRateCard(id, updateData);
+      
+      if (!result) {
+        return reply.status(404).send({
+          error: 'Not Found',
+          message: 'Rate card not found',
+          code: 'RATE_CARD_NOT_FOUND'
+        });
+      }
+      
+      return reply.status(200).send(result);
+    } catch (error) {
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to update rate card',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  });
+
   // Get rate card items for a specific rate card
   fastify.get<{
     Params: { id: string };

@@ -149,14 +149,20 @@ export class RateCardService {
   }
 
   async getRateCardItems(rateCardId: string): Promise<any[]> {
-    return await this.db
+    const results = await this.db
       .select()
       .from(rateCardItems)
-      .where(and(
-        eq(rateCardItems.rateCardId, rateCardId),
-        eq(rateCardItems.organizationId, this.context.organizationId)
-      ))
+      .where(eq(rateCardItems.rateCardId, rateCardId))
       .orderBy(rateCardItems.itemCode);
+
+    // Format dates for API response
+    return results.map(item => ({
+      ...item,
+      effectiveFrom: item.effectiveFrom?.toString() || '',
+      effectiveUntil: item.effectiveUntil?.toString() || null,
+      createdAt: item.createdAt?.toISOString() || '',
+      updatedAt: item.updatedAt?.toISOString() || '',
+    }));
   }
 
   async getRateCardItemByCode(code: string) {
