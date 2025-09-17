@@ -83,7 +83,7 @@ export class QuoteService {
       .select()
       .from(quoteLineItems)
       .where(eq(quoteLineItems.quoteId, id))
-      .orderBy(quoteLineItems.sortOrder);
+      .orderBy(quoteLineItems.lineNumber);
 
     // Format the response to match API expectations
     return {
@@ -103,7 +103,7 @@ export class QuoteService {
         description: item.description,
         quantity: parseFloat(item.quantity.toString()),
         unitPrice: parseFloat(item.unitPrice.toString()),
-        totalPrice: parseFloat(item.totalPrice.toString()),
+        totalPrice: parseFloat(item.totalAmount.toString()), // Database uses totalAmount not totalPrice
         metadata: item.metadata || {}
       })),
       subtotal: parseFloat(quote.subtotal.toString()),
