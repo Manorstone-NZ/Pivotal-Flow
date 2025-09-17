@@ -141,6 +141,12 @@ export const useCurrencyFormatter = () => {
     }
 
     try {
+      // Check if original input contains valid numeric characters
+      const hasValidNumbers = /\d/.test(input);
+      if (!hasValidNumbers) {
+        return { isValid: false, error: 'Invalid number format' };
+      }
+
       const cleanValue = parseCurrencyInput(input, currency);
       const numericValue = parseFloat(cleanValue);
       

@@ -40,30 +40,18 @@ export type UpdateRateCardItem = Static<typeof UpdateRateCardItemSchema>;
 // Response Schemas
 export const RateCardResponseSchema = Type.Object({
   id: Type.String(),
+  organizationId: Type.String(),
   name: Type.String(),
-  description: Type.Optional(Type.String()),
+  version: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
   currency: Type.String(),
   effectiveFrom: Type.String(),
-  effectiveUntil: Type.Optional(Type.String()),
+  effectiveUntil: Type.Union([Type.String(), Type.Null()]),
   isDefault: Type.Boolean(),
   isActive: Type.Boolean(),
   metadata: Type.Record(Type.String(), Type.Unknown()),
-  organizationId: Type.String(),
-  createdAt: Type.String({ format: 'date-time' }),
-  updatedAt: Type.String({ format: 'date-time' }),
-  items: Type.Array(Type.Object({
-    id: Type.String(),
-    serviceCategoryId: Type.String(),
-    roleId: Type.Optional(Type.String()),
-    baseRate: Type.Number(),
-    currency: Type.String(),
-    effectiveFrom: Type.String(),
-    effectiveUntil: Type.Optional(Type.String()),
-    isActive: Type.Boolean(),
-    metadata: Type.Record(Type.String(), Type.Unknown()),
-    createdAt: Type.String({ format: 'date-time' }),
-    updatedAt: Type.String({ format: 'date-time' })
-  }))
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
 });
 
 export type RateCardResponse = Static<typeof RateCardResponseSchema>;
@@ -71,17 +59,20 @@ export type RateCardResponse = Static<typeof RateCardResponseSchema>;
 export const RateCardItemResponseSchema = Type.Object({
   id: Type.String(),
   rateCardId: Type.String(),
-  serviceCategoryId: Type.String(),
-  roleId: Type.Optional(Type.String()),
-  baseRate: Type.Number(),
+  organizationId: Type.String(),
+  serviceCategoryId: Type.Union([Type.String(), Type.Null()]),
+  roleId: Type.Union([Type.String(), Type.Null()]),
+  itemCode: Type.String(),
+  unit: Type.String(),
+  baseRate: Type.String(), // Stored as string for precision
   currency: Type.String(),
+  taxClass: Type.String(),
   effectiveFrom: Type.String(),
-  effectiveUntil: Type.Optional(Type.String()),
+  effectiveUntil: Type.Union([Type.String(), Type.Null()]),
   isActive: Type.Boolean(),
   metadata: Type.Record(Type.String(), Type.Unknown()),
-  organizationId: Type.String(),
-  createdAt: Type.String({ format: 'date-time' }),
-  updatedAt: Type.String({ format: 'date-time' })
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
 });
 
 export type RateCardItemResponse = Static<typeof RateCardItemResponseSchema>;

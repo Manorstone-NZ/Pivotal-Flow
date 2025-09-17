@@ -19,11 +19,20 @@ export class RateCardService {
   ) {}
 
   async getAllRateCards() {
-    return await this.db
+    const results = await this.db
       .select()
       .from(rateCards)
       .where(eq(rateCards.organizationId, this.context.organizationId))
       .orderBy(desc(rateCards.createdAt));
+
+    // Format dates for API response
+    return results.map(rateCard => ({
+      ...rateCard,
+      effectiveFrom: rateCard.effectiveFrom || '',
+      effectiveUntil: rateCard.effectiveUntil || null,
+      createdAt: rateCard.createdAt.toISOString(),
+      updatedAt: rateCard.updatedAt.toISOString(),
+    }));
   }
 
   async getActiveRateCard(date?: Date) {
@@ -77,7 +86,14 @@ export class RateCardService {
       });
     }
 
-    return rateCardData;
+    // Return formatted response
+    return {
+      ...rateCardData,
+      effectiveFrom: rateCardData.effectiveFrom.toISOString().split('T')[0],
+      effectiveUntil: rateCardData.effectiveUntil?.toISOString().split('T')[0] || null,
+      createdAt: rateCardData.createdAt.toISOString(),
+      updatedAt: rateCardData.updatedAt.toISOString(),
+    };
   }
 
   async updateRateCard(id: string, data: any) {
@@ -119,7 +135,17 @@ export class RateCardService {
       ))
       .limit(1);
 
-    return result[0] || null;
+    const rateCard = result[0];
+    if (!rateCard) return null;
+
+    // Format dates for API response
+    return {
+      ...rateCard,
+      effectiveFrom: rateCard.effectiveFrom || '',
+      effectiveUntil: rateCard.effectiveUntil || null,
+      createdAt: rateCard.createdAt.toISOString(),
+      updatedAt: rateCard.updatedAt.toISOString(),
+    };
   }
 
   async getRateCardItems(rateCardId: string): Promise<any[]> {

@@ -1,0 +1,171 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e9]: PF
+          - generic [ref=e10]: Pivotal Flow
+        - button "Close sidebar" [ref=e11] [cursor=pointer]:
+          - img [ref=e12] [cursor=pointer]
+      - navigation [ref=e14]:
+        - link "Dashboard" [ref=e15] [cursor=pointer]:
+          - /url: /
+          - img [ref=e17] [cursor=pointer]
+          - generic [ref=e20] [cursor=pointer]: Dashboard
+        - link "Quotes 3" [ref=e21] [cursor=pointer]:
+          - /url: /quotes
+          - img [ref=e23] [cursor=pointer]
+          - generic [ref=e25] [cursor=pointer]: Quotes
+          - generic [ref=e26] [cursor=pointer]: "3"
+        - link "Projects" [ref=e27] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e29] [cursor=pointer]
+          - generic [ref=e31] [cursor=pointer]: Projects
+        - link "Rate Cards" [ref=e32] [cursor=pointer]:
+          - /url: /rate-cards
+          - img [ref=e34] [cursor=pointer]
+          - generic [ref=e36] [cursor=pointer]: Rate Cards
+        - link "Users" [ref=e37] [cursor=pointer]:
+          - /url: /users
+          - img [ref=e39] [cursor=pointer]
+          - generic [ref=e41] [cursor=pointer]: Users
+        - link "Payments" [ref=e42] [cursor=pointer]:
+          - /url: /payments
+          - img [ref=e44] [cursor=pointer]
+          - generic [ref=e46] [cursor=pointer]: Payments
+        - link "Settings" [ref=e47] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e49] [cursor=pointer]
+          - generic [ref=e52] [cursor=pointer]: Settings
+      - generic [ref=e54]:
+        - generic [ref=e57]: System operational
+        - generic [ref=e58]:
+          - button "Quick Quote" [ref=e59] [cursor=pointer]:
+            - img [ref=e60] [cursor=pointer]
+            - text: Quick Quote
+          - button "Schedule Meeting" [ref=e62] [cursor=pointer]:
+            - img [ref=e63] [cursor=pointer]
+            - text: Schedule Meeting
+  - generic [ref=e65]:
+    - banner [ref=e66]:
+      - generic [ref=e67]:
+        - button "Toggle sidebar" [ref=e68] [cursor=pointer]:
+          - img [ref=e70] [cursor=pointer]
+        - generic [ref=e74]: PF
+      - generic [ref=e75]:
+        - button "Switch to light theme" [ref=e76] [cursor=pointer]:
+          - img [ref=e77] [cursor=pointer]
+        - button "a" [ref=e81] [cursor=pointer]:
+          - generic [ref=e83] [cursor=pointer]: a
+          - img [ref=e84] [cursor=pointer]
+    - main [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e91]: All systems operational
+        - generic [ref=e92]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - heading "Rate Cards" [level=1] [ref=e97]
+              - paragraph [ref=e98]: Manage pricing structures and rate items
+            - button "Create Rate Card" [active] [ref=e99] [cursor=pointer]
+          - generic [ref=e100]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - heading "Rate Cards" [level=2] [ref=e104]
+                - generic [ref=e105]:
+                  - textbox "Search rate cards..." [ref=e107]
+                  - generic [ref=e108]:
+                    - generic [ref=e110]:
+                      - combobox [ref=e111]:
+                        - option "Select an option..." [disabled]
+                        - option "All Status" [selected]
+                        - option "Active"
+                        - option "Inactive"
+                      - generic:
+                        - img
+                    - generic [ref=e113]:
+                      - combobox [ref=e114]:
+                        - option "Select an option..." [disabled] [selected]
+                        - option "All Currencies"
+                        - option "NZD"
+                        - option "USD"
+                        - option "EUR"
+                        - option "GBP"
+                        - option "JPY"
+                        - option "AUD"
+                      - generic:
+                        - img
+              - generic [ref=e118] [cursor=pointer]:
+                - generic [ref=e119] [cursor=pointer]:
+                  - generic [ref=e120] [cursor=pointer]:
+                    - heading "Standard Rates" [level=3] [ref=e121] [cursor=pointer]
+                    - paragraph [ref=e122] [cursor=pointer]: Version 1.0 • NZD
+                  - generic [ref=e123] [cursor=pointer]:
+                    - generic [ref=e124] [cursor=pointer]: Default
+                    - generic [ref=e125] [cursor=pointer]: Active
+                - generic [ref=e126] [cursor=pointer]:
+                  - generic [ref=e127] [cursor=pointer]: "Effective: 1/1/2024"
+                  - generic [ref=e128] [cursor=pointer]: Updated 9/17/2025
+            - generic [ref=e130]:
+              - generic [ref=e132]:
+                - heading "Create Rate Card" [level=2] [ref=e133]
+                - button [ref=e134] [cursor=pointer]:
+                  - img [ref=e135] [cursor=pointer]
+              - generic [ref=e139]:
+                - heading "Basic Information" [level=3] [ref=e140]
+                - generic [ref=e141]:
+                  - generic [ref=e142]:
+                    - generic [ref=e143]:
+                      - text: Name
+                      - generic [ref=e144]: "*"
+                    - textbox "Name*" [ref=e145]
+                  - generic [ref=e146]:
+                    - generic [ref=e147]:
+                      - generic [ref=e148]: Version
+                      - textbox "Version" [ref=e149]: "1.0"
+                    - generic [ref=e150]:
+                      - generic [ref=e151]:
+                        - text: Currency
+                        - generic [ref=e152]: "*"
+                      - generic [ref=e153]:
+                        - combobox "Currency*" [ref=e154]:
+                          - option "Select an option..." [disabled]
+                          - option "NZD" [selected]
+                          - option "USD"
+                          - option "EUR"
+                          - option "GBP"
+                          - option "JPY"
+                          - option "AUD"
+                        - generic:
+                          - img
+                  - generic [ref=e155]:
+                    - generic [ref=e156]: Description
+                    - textbox "Description" [ref=e157]
+                  - generic [ref=e158]:
+                    - generic [ref=e159]:
+                      - generic [ref=e160]:
+                        - text: Effective From
+                        - generic [ref=e161]: "*"
+                      - textbox "Effective From*" [ref=e162]: 2025-09-17
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: Effective Until
+                      - textbox "Effective Until" [ref=e165]
+                  - generic [ref=e166]:
+                    - checkbox "Set as default rate card" [ref=e167]
+                    - generic [ref=e168]: Set as default rate card
+                  - generic [ref=e169]:
+                    - button "Create Rate Card" [ref=e170] [cursor=pointer]
+                    - button "Cancel" [ref=e171] [cursor=pointer]
+    - contentinfo [ref=e172]:
+      - generic [ref=e173]:
+        - generic [ref=e175]: © 2024 Pivotal Flow. All rights reserved.
+        - generic [ref=e177]:
+          - link "Privacy Policy" [ref=e178] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=e179] [cursor=pointer]:
+            - /url: "#"
+          - link "Support" [ref=e180] [cursor=pointer]:
+            - /url: "#"
+```
