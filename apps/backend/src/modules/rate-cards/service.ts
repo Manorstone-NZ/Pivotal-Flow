@@ -63,8 +63,8 @@ export class RateCardService {
       version: data.version || '1.0',
       description: data.description || null,
       currency: data.currency || 'NZD',
-      effectiveFrom: new Date(data.effectiveFrom || new Date()),
-      effectiveUntil: data.effectiveUntil ? new Date(data.effectiveUntil) : null,
+      effectiveFrom: data.effectiveFrom || new Date().toISOString().split('T')[0],
+      effectiveUntil: data.effectiveUntil || null,
       isDefault: data.isDefault || false,
       isActive: data.isActive !== false, // Default to true
       metadata: data.metadata || {},
@@ -89,8 +89,8 @@ export class RateCardService {
     // Return formatted response
     return {
       ...rateCardData,
-      effectiveFrom: rateCardData.effectiveFrom.toISOString().split('T')[0],
-      effectiveUntil: rateCardData.effectiveUntil?.toISOString().split('T')[0] || null,
+      effectiveFrom: rateCardData.effectiveFrom || '',
+      effectiveUntil: rateCardData.effectiveUntil || null,
       createdAt: rateCardData.createdAt.toISOString(),
       updatedAt: rateCardData.updatedAt.toISOString(),
     };
