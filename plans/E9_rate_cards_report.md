@@ -16,7 +16,7 @@ The E9 Rate Cards UI epic has been **substantially implemented** with a comprehe
 
 ### **2. API Hooks & Integration (100%)**
 - ✅ **React Query**: Full integration with caching and optimistic updates
-- ✅ **Zod Validation**: Complete schema validation for all API calls
+- ✅ **TypeBox Validation**: Backend schema validation with TypeScript types
 - ✅ **CRUD Operations**: Create, Read, Update, Delete for rate cards and items
 - ✅ **Error Handling**: Comprehensive error states and user feedback
 - ✅ **Type Safety**: Full TypeScript integration with backend contracts
@@ -123,7 +123,7 @@ const CURRENCY_CONFIGS: Record<string, CurrencyConfig> = {
 ### **Bundle Analysis:**
 - **Route Chunk**: 2.97KB gzipped (well under 50KB budget ✅)
 - **Lazy Loading**: All components properly code-split
-- **Dependencies**: Minimal external dependencies added (zod)
+- **Dependencies**: No additional external dependencies (uses existing TypeBox)
 
 ### **Accessibility Score:**
 - **Keyboard Navigation**: Full support

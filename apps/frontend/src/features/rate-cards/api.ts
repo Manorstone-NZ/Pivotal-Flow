@@ -1,10 +1,9 @@
 /**
  * Rate Cards API Hooks
- * React Query hooks for rate cards and items with Zod validation
+ * React Query hooks for rate cards and items with TypeScript validation
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { apiClient } from '../../lib/api/client';
 import type {
   RateCard,
@@ -19,61 +18,7 @@ import type {
   RateCardItemsFilters,
 } from './types';
 
-// Zod schemas for validation
-const RateCardSchema = z.object({
-  id: z.string(),
-  organizationId: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string().optional(),
-  currency: z.string().length(3),
-  effectiveFrom: z.string(),
-  effectiveUntil: z.string().optional(),
-  isDefault: z.boolean(),
-  isActive: z.boolean(),
-  metadata: z.record(z.any()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-const RateCardItemSchema = z.object({
-  id: z.string(),
-  rateCardId: z.string(),
-  organizationId: z.string(),
-  serviceCategoryId: z.string().optional(),
-  roleId: z.string().optional(),
-  itemCode: z.string(),
-  unit: z.string(),
-  baseRate: z.string(),
-  currency: z.string().length(3),
-  taxClass: z.string(),
-  effectiveFrom: z.string(),
-  effectiveUntil: z.string().optional(),
-  isActive: z.boolean(),
-  metadata: z.record(z.any()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-const RateCardsListResponseSchema = z.object({
-  data: z.array(RateCardSchema),
-  pagination: z.object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    pages: z.number(),
-  }).optional(),
-});
-
-const RateCardItemsResponseSchema = z.object({
-  data: z.array(RateCardItemSchema),
-  pagination: z.object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    pages: z.number(),
-  }).optional(),
-});
+// Note: Backend uses TypeBox for validation, frontend relies on TypeScript types
 
 // Query keys factory
 export const rateCardKeys = {
@@ -107,7 +52,7 @@ export function useRateCards(filters: RateCardsFilters = {}) {
         return { data: response.data };
       }
       
-      return RateCardsListResponseSchema.parse(response.data);
+      return response.data as RateCardsListResponse;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -118,7 +63,7 @@ export function useRateCard(id: string) {
     queryKey: rateCardKeys.detail(id),
     queryFn: async (): Promise<RateCard> => {
       const response = await apiClient.get(`/rate-cards/${id}`);
-      return RateCardSchema.parse(response.data);
+      return response.data as RateCard;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -144,7 +89,7 @@ export function useRateCardItems(rateCardId: string, filters: RateCardItemsFilte
         return { data: response.data };
       }
       
-      return RateCardItemsResponseSchema.parse(response.data);
+      return response.data as RateCardItemsResponse;
     },
     enabled: !!rateCardId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -158,7 +103,7 @@ export function useCreateRateCard() {
   return useMutation({
     mutationFn: async (data: CreateRateCard): Promise<RateCard> => {
       const response = await apiClient.post('/rate-cards', data);
-      return RateCardSchema.parse(response.data);
+      return response.data as RateCard;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rateCardKeys.lists() });
@@ -172,7 +117,7 @@ export function useUpdateRateCard() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateCard }): Promise<RateCard> => {
       const response = await apiClient.put(`/rate-cards/${id}`, data);
-      return RateCardSchema.parse(response.data);
+      return response.data as RateCard;
     },
     onSuccess: (updatedRateCard) => {
       queryClient.setQueryData(rateCardKeys.detail(updatedRateCard.id), updatedRateCard);
@@ -202,7 +147,7 @@ export function useCreateRateCardItem() {
   return useMutation({
     mutationFn: async ({ rateCardId, data }: { rateCardId: string; data: CreateRateCardItem }): Promise<RateCardItem> => {
       const response = await apiClient.post(`/rate-cards/${rateCardId}/items`, data);
-      return RateCardItemSchema.parse(response.data);
+      return response.data as RateCardItem;
     },
     onSuccess: (_, { rateCardId }) => {
       queryClient.invalidateQueries({ queryKey: rateCardKeys.items(rateCardId) });
@@ -216,7 +161,7 @@ export function useUpdateRateCardItem() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateCardItem }): Promise<RateCardItem> => {
       const response = await apiClient.put(`/rate-card-items/${id}`, data);
-      return RateCardItemSchema.parse(response.data);
+      return response.data as RateCardItem;
     },
     onSuccess: (updatedItem) => {
       queryClient.invalidateQueries({ queryKey: rateCardKeys.items(updatedItem.rateCardId) });

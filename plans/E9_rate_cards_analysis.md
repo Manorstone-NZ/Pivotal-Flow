@@ -184,7 +184,8 @@ interface CurrencyConfig {
 - **Debounced search** with 300ms delay
 
 ### **Validation:**
-- **Zod schemas** for all API calls
+- **TypeBox schemas** for backend API validation
+- **TypeScript types** for frontend type safety
 - **Client-side** validation for UX
 - **Server-side** validation for security
 - **Currency precision** validation
@@ -224,7 +225,7 @@ test('Rate Cards Workflow', async ({ page }) => {
 ```
 
 ### **Contract Tests:**
-- **API response** validation with Zod
+- **API response** validation with TypeBox (backend)
 - **Currency formatting** edge cases
 - **Pagination** boundary conditions
 
@@ -241,7 +242,7 @@ test('Rate Cards Workflow', async ({ page }) => {
 
 ### **Technical:**
 - ✅ Route chunk ≤ 50KB gzipped
-- ✅ All API calls use Zod validation
+- ✅ All API calls use TypeBox validation (backend)
 - ✅ Currency formatting handles edge cases
 - ✅ Contract tests pass for all endpoints
 

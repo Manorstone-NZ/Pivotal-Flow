@@ -68,7 +68,6 @@
     "@sinclair/typebox": "^0.34.41",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
-    "postgres": "^3.4.7",
-    "zod": "^3.22.4"
+    "postgres": "^3.4.7"
   }
 }
