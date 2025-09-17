@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useQuotesList, useCreateQuote, useDeleteQuote, useUpdateQuoteStatus } from '../lib/api/queries';
+import { useNavigate } from 'react-router-dom';
+import { useQuotes, useCreateQuote } from '../features/quotes/api';
+import type { Quote } from '../features/quotes/api';
 import { DataTable } from '../components/ui/DataTable';
 import { Button } from '../components/Button';
 import { Input } from '../components/ui/Input';
@@ -14,23 +16,7 @@ import { Badge } from '../components/ui/Badge';
 import { useToast } from '../components/ui/Toast';
 import { cn } from '../lib/utils';
 
-interface Quote {
-  id: string;
-  quoteNumber: string;
-  title: string;
-  customerId: string;
-  customerName: string;
-  status: 'draft' | 'pending' | 'approved' | 'sent' | 'accepted' | 'rejected';
-  currency: string;
-  subtotal: number;
-  tax: number;
-  discount: number;
-  total: number;
-  validFrom: string;
-  validUntil: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Quote interface now imported from features/quotes/api
 
 const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
   draft: 'secondary',
@@ -51,6 +37,7 @@ const statusLabels = {
 } as const;
 
 export const QuotesListScreen: React.FC = () => {
+  const navigate = useNavigate();
   const { success, error: showError } = useToast();
   
   // State management
@@ -64,33 +51,31 @@ export const QuotesListScreen: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
 
   // API queries
-  const { data: quotesData, isLoading, error } = useQuotesList({
+  const { data: quotesData, isLoading, error } = useQuotes({
     search: searchTerm,
     ...(statusFilter !== 'all' && { status: statusFilter }),
-    ...(customerFilter && { customer: customerFilter }),
+    ...(customerFilter && { customerId: customerFilter }),
     ...(dateRange !== 'all' && { dateRange }),
     sort: sortBy,
-    order: sortOrder,
+    sortOrder: sortOrder,
     page,
     limit: pageSize,
   });
 
   const createQuoteMutation = useCreateQuote();
-  // Use mutations to avoid unused variable warnings
-  void { deleteQuoteMutation: useDeleteQuote(), updateStatusMutation: useUpdateQuoteStatus() };
 
   // Computed values
-  const quotes = (quotesData as { data?: Quote[] })?.data || [];
-  const pagination = (quotesData as { pagination?: { total: number; hasPrev: boolean; hasNext: boolean; totalPages: number } })?.pagination;
+  const quotes = quotesData?.data || [];
+  const pagination = quotesData?.pagination;
   const totalQuotes = pagination?.total || 0;
 
   // Calculate totals
   const totals = useMemo(() => {
     return quotes.reduce((acc: { subtotal: number; tax: number; discount: number; total: number }, quote: Quote) => {
       acc.subtotal += quote.subtotal;
-      acc.tax += quote.tax;
-      acc.discount += quote.discount;
-      acc.total += quote.total;
+      acc.tax += quote.taxAmount;
+      acc.discount += parseFloat(quote.metadata['discountAmount'] as string) || 0;
+      acc.total += quote.totalAmount;
       return acc;
     }, { subtotal: 0, tax: 0, discount: 0, total: 0 });
   }, [quotes]);
@@ -116,11 +101,11 @@ export const QuotesListScreen: React.FC = () => {
       ),
     },
     {
-      accessorKey: 'customerName',
+      accessorKey: 'clientId',
       header: 'Customer',
       cell: ({ row }: { row: { original: Quote } }) => (
         <div className="text-text-primary">
-          {row.original.customerName}
+          {row.original.clientId}
         </div>
       ),
     },
@@ -131,17 +116,17 @@ export const QuotesListScreen: React.FC = () => {
         const status = row.original.status;
         return (
           <Badge variant={statusColors[status] || 'default'} className="text-xs">
-            {statusLabels[status]}
+            {statusLabels[status as keyof typeof statusLabels] || status}
           </Badge>
         );
       },
     },
     {
-      accessorKey: 'total',
+      accessorKey: 'totalAmount',
       header: 'Total',
       cell: ({ row }: { row: { original: Quote } }) => (
         <div className="text-text-primary font-medium">
-          {row.original.currency} {row.original.total.toLocaleString()}
+          {(row.original.metadata['currency'] as string) || 'NZD'} {row.original.totalAmount.toLocaleString()}
         </div>
       ),
     },
@@ -149,6 +134,10 @@ export const QuotesListScreen: React.FC = () => {
       accessorKey: 'validUntil',
       header: 'Valid Until',
       cell: ({ row }: { row: { original: Quote } }) => {
+        if (!row.original.validUntil) {
+          return <div className="text-text-secondary text-sm">No expiry</div>;
+        }
+        
         const validUntil = new Date(row.original.validUntil);
         const isExpired = validUntil < new Date();
         const isExpiringSoon = validUntil < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -217,16 +206,17 @@ export const QuotesListScreen: React.FC = () => {
 
   const handleCreateQuote = async () => {
     try {
-      await createQuoteMutation.mutateAsync({
+      const newQuote = await createQuoteMutation.mutateAsync({
+        clientId: 'customer-1', // Default to first customer
         title: 'New Quote',
-        customerId: 'customer-123',
-        currency: 'USD',
+        type: 'project',
         status: 'draft',
-        validFrom: new Date().toISOString(),
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        lineItems: [],
+        metadata: {},
       });
       success('Quote created successfully');
+      // Navigate to the new quote details page
+      navigate(`/quotes/${newQuote.id}`);
     } catch {
       showError('Failed to create quote');
     }
@@ -388,6 +378,7 @@ export const QuotesListScreen: React.FC = () => {
             onSort={handleSort}
             sortBy={sortBy}
             sortOrder={sortOrder}
+            onRowClick={(quote: Quote) => navigate(`/quotes/${quote.id}`)}
           />
         </CardContent>
       </Card>

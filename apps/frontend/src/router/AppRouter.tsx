@@ -10,7 +10,7 @@ import { PerformanceMarks, RoutePrefetch, ErrorBoundary, setupGlobalErrorHandlin
 const LandingPage = lazy(() => import('../pages/Landing/Landing').then(m => ({ default: m.LandingPage })));
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const QuotesPage = lazy(() => import('../pages/QuotesPage').then(m => ({ default: m.QuotesPage })));
-const QuoteDetailPage = lazy(() => import('../pages/QuoteDetailPage').then(m => ({ default: m.QuoteDetailPage })));
+const QuoteDetailPage = lazy(() => import('../pages/Quotes/Details').then(m => ({ default: m.QuoteDetailsPage })));
 const ProjectsPage = lazy(() => import('../pages/Projects/List').then(m => ({ default: m.ProjectsListPage })));
 const ProjectDetailPage = lazy(() => import('../pages/Projects/Details').then(m => ({ default: m.ProjectDetailPage })));
 const RateCardsPage = lazy(() => import('../pages/RateCards/List').then(m => ({ default: m.RateCardsListPage })));
