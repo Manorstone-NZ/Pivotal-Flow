@@ -64,7 +64,7 @@ export const ProjectsListPage: React.FC = () => {
       ...prev,
       ownerId: ownerId || undefined,
       page: 1,
-    }));
+    }) as ProjectFilters);
   }, []);
 
   const handleCustomerFilter = useCallback((customerId: string) => {
@@ -72,16 +72,9 @@ export const ProjectsListPage: React.FC = () => {
       ...prev,
       customerId: customerId || undefined,
       page: 1,
-    }));
+    }) as ProjectFilters);
   }, []);
 
-  const handleServiceCategoryFilter = useCallback((serviceCategoryId: string) => {
-    setFilters(prev => ({
-      ...prev,
-      serviceCategoryId: serviceCategoryId || undefined,
-      page: 1,
-    }));
-  }, []);
 
   const handlePageChange = useCallback((page: number) => {
     setFilters(prev => ({ ...prev, page }));

@@ -48,7 +48,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = request.body; // TypeBox handles validation automatically
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService((fastify as any).db || {}, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -86,7 +86,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService((fastify as any).db || {}, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -122,7 +122,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = request.body; // TypeBox handles validation automatically
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService((fastify as any).db || {}, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });

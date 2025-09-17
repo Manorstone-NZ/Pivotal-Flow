@@ -66,7 +66,7 @@ export async function registerRoutes() {
   await app.register(createUserRoute);
 
   // Register rate card route modules
-  await app.register(rateCardRoutes);
+  await app.register(rateCardRoutes, { prefix: '/api/v1' });
 
   // Register quote route modules
   await app.register(quoteRoutes);
