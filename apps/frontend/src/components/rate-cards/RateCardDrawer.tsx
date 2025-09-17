@@ -57,11 +57,13 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
   });
   const [showAddItemForm, setShowAddItemForm] = useState(false);
   const [newItemData, setNewItemData] = useState<CreateRateCardItem>({
+    serviceCategoryId: 'service-dev', // Default service category
     itemCode: '',
     unit: 'hour',
     baseRate: '',
     currency: 'NZD',
     taxClass: 'standard',
+    effectiveFrom: new Date().toISOString().split('T')[0], // Today's date
   });
 
   const createMutation = useCreateRateCard();
@@ -162,11 +164,13 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
       });
       
       setNewItemData({
+        serviceCategoryId: 'service-dev',
         itemCode: '',
         unit: 'hour',
         baseRate: '',
         currency: rateCard.currency,
         taxClass: 'standard',
+        effectiveFrom: new Date().toISOString().split('T')[0],
       });
       setShowAddItemForm(false);
       refetchItems();
