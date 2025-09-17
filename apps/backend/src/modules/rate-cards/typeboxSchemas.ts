@@ -20,15 +20,18 @@ export type UpdateRateCard = Static<typeof UpdateRateCardSchema>;
 
 // Rate Card Item Schemas
 export const CreateRateCardItemSchema = Type.Object({
-  rateCardId: Type.String({ format: 'uuid' }),
-  serviceCategoryId: Type.String({ format: 'uuid' }),
-  roleId: Type.Optional(Type.String({ format: 'uuid' })),
-  baseRate: Type.Number({ minimum: 0, maximum: 999999.9999 }),
+  serviceCategoryId: Type.String(),
+  roleId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  itemCode: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  unit: Type.String({ default: 'hour' }),
+  baseRate: Type.String(), // Accept as string for precision
   currency: Type.String({ minLength: 3, maxLength: 3, default: 'NZD' }),
-  effectiveFrom: Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
-  effectiveUntil: Type.Optional(Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' })),
-  isActive: Type.Boolean({ default: true }),
-  metadata: Type.Record(Type.String(), Type.Unknown(), { default: {} })
+  taxClass: Type.String({ default: 'standard' }),
+  tieringModelId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  effectiveFrom: Type.String(),
+  effectiveUntil: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  isActive: Type.Optional(Type.Boolean({ default: true })),
+  metadata: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { default: {} }))
 });
 
 export type CreateRateCardItem = Static<typeof CreateRateCardItemSchema>;

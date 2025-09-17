@@ -186,16 +186,16 @@ export class RateCardService {
     const itemData = {
       id: itemId,
       rateCardId,
-      organizationId: this.context.organizationId,
       serviceCategoryId: data.serviceCategoryId,
       roleId: data.roleId || null,
-      itemCode: data.itemCode,
+      itemCode: data.itemCode || null,
       unit: data.unit || 'hour',
-      baseRate: data.baseRate.toString(),
+      baseRate: data.baseRate?.toString() || '0',
       currency: data.currency || 'NZD',
       taxClass: data.taxClass || 'standard',
-      effectiveFrom: new Date(data.effectiveFrom || new Date()),
-      effectiveUntil: data.effectiveUntil ? new Date(data.effectiveUntil) : null,
+      tieringModelId: data.tieringModelId || null,
+      effectiveFrom: data.effectiveFrom || new Date().toISOString().split('T')[0],
+      effectiveUntil: data.effectiveUntil || null,
       isActive: data.isActive !== false, // Default to true
       metadata: data.metadata || {},
       createdAt: new Date(),
@@ -220,7 +220,15 @@ export class RateCardService {
       });
     }
 
-    return itemData;
+    // Return formatted response
+    return {
+      ...itemData,
+      baseRate: itemData.baseRate.toString(),
+      effectiveFrom: itemData.effectiveFrom.toString(),
+      effectiveUntil: itemData.effectiveUntil?.toString() || null,
+      createdAt: itemData.createdAt.toISOString(),
+      updatedAt: itemData.updatedAt.toISOString(),
+    };
   }
 
   async updateRateCardItem(itemId: string, data: any) {
