@@ -16,22 +16,22 @@ interface StatusChipProps {
 const statusConfig = {
   active: {
     label: 'Active',
-    className: 'bg-green-100 text-green-800 border-green-200',
+    className: 'bg-semantic-success/10 text-semantic-success border-semantic-success/20',
     ariaLabel: 'Project is currently active and in progress'
   },
   completed: {
     label: 'Completed',
-    className: 'bg-blue-100 text-blue-800 border-blue-200',
+    className: 'bg-semantic-info/10 text-semantic-info border-semantic-info/20',
     ariaLabel: 'Project has been completed successfully'
   },
   'on-hold': {
     label: 'On Hold',
-    className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    className: 'bg-semantic-warning/10 text-semantic-warning border-semantic-warning/20',
     ariaLabel: 'Project is temporarily paused or on hold'
   },
   cancelled: {
     label: 'Cancelled',
-    className: 'bg-red-100 text-red-800 border-red-200',
+    className: 'bg-semantic-error/10 text-semantic-error border-semantic-error/20',
     ariaLabel: 'Project has been cancelled or terminated'
   }
 };

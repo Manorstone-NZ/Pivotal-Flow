@@ -28,9 +28,9 @@ export const Button: React.FC<ButtonProps> = ({
   
   const variantClasses = {
     primary: 'bg-brand-primary text-text-inverse hover:bg-brand-secondary focus:ring-brand-primary',
-    secondary: 'bg-neutral-200 text-text-primary hover:bg-neutral-300 focus:ring-neutral-500',
-    outline: 'border border-surface-border bg-transparent text-text-primary hover:bg-neutral-50 focus:ring-brand-primary',
-    ghost: 'bg-transparent text-text-primary hover:bg-neutral-100 focus:ring-brand-primary',
+    secondary: 'bg-surface-header text-text-primary hover:bg-surface-border focus:ring-brand-primary',
+    outline: 'border border-surface-border bg-transparent text-text-primary hover:bg-surface-header focus:ring-brand-primary',
+    ghost: 'bg-transparent text-text-primary hover:bg-surface-header focus:ring-brand-primary',
   };
   
   const sizeClasses = {

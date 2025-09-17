@@ -172,8 +172,8 @@ export class ProjectService {
       description: project.description,
       status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled',
       ownerId: project.ownerId,
-      startDate: project.startDate?.toISOString().split('T')[0] || null,
-      endDate: project.endDate?.toISOString().split('T')[0] || null,
+      startDate: project.startDate || null,
+      endDate: project.endDate || null,
       metadata: project.metadata || {},
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
@@ -198,8 +198,8 @@ export class ProjectService {
       description: data.description || null,
       status: data.status || 'active',
       ownerId: data.ownerId || null,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
+      startDate: data.startDate || null,
+      endDate: data.endDate || null,
       metadata: data.metadata || {},
       createdAt: now,
       updatedAt: now,
@@ -231,8 +231,8 @@ export class ProjectService {
       description: projectData.description,
       status: projectData.status as 'active' | 'completed' | 'on-hold' | 'cancelled',
       ownerId: projectData.ownerId,
-      startDate: projectData.startDate?.toISOString().split('T')[0] || null,
-      endDate: projectData.endDate?.toISOString().split('T')[0] || null,
+      startDate: projectData.startDate || null,
+      endDate: projectData.endDate || null,
       metadata: projectData.metadata,
       createdAt: projectData.createdAt.toISOString(),
       updatedAt: projectData.updatedAt.toISOString(),
@@ -268,8 +268,8 @@ export class ProjectService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.ownerId !== undefined) updateData.ownerId = data.ownerId;
-    if (data.startDate !== undefined) updateData.startDate = data.startDate ? new Date(data.startDate) : null;
-    if (data.endDate !== undefined) updateData.endDate = data.endDate ? new Date(data.endDate) : null;
+    if (data.startDate !== undefined) updateData.startDate = data.startDate || null;
+    if (data.endDate !== undefined) updateData.endDate = data.endDate || null;
     if (data.metadata !== undefined) updateData.metadata = data.metadata;
 
     await db
@@ -309,8 +309,8 @@ export class ProjectService {
       description: project.description,
       status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled',
       ownerId: project.ownerId,
-      startDate: project.startDate?.toISOString().split('T')[0] || null,
-      endDate: project.endDate?.toISOString().split('T')[0] || null,
+      startDate: project.startDate || null,
+      endDate: project.endDate || null,
       metadata: project.metadata || {},
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),

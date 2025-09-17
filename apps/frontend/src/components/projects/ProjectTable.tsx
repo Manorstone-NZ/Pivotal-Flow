@@ -47,7 +47,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
 
   return (
     <th
-      className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded"
+      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -88,25 +88,25 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
   if (isLoading) {
     return (
-      <div className={cn('bg-white rounded-lg border border-neutral-200 overflow-hidden', className)}>
+      <div className={cn('bg-surface-card rounded-lg border border-surface-border overflow-hidden', className)}>
         <div className="animate-pulse">
-          <div className="px-6 py-3 bg-neutral-50 border-b border-neutral-200">
+          <div className="px-6 py-3 bg-surface-header border-b border-surface-border">
             <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-4 h-4 bg-neutral-200 rounded"></div>
-              <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-              <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-              <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-              <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
+              <div className="col-span-4 h-4 bg-surface-border rounded"></div>
+              <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+              <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+              <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+              <div className="col-span-2 h-4 bg-surface-border rounded"></div>
             </div>
           </div>
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="px-6 py-4 border-b border-neutral-200">
+            <div key={i} className="px-6 py-4 border-b border-surface-border">
               <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-4 h-4 bg-neutral-200 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-200 rounded"></div>
+                <div className="col-span-4 h-4 bg-surface-border rounded"></div>
+                <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+                <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+                <div className="col-span-2 h-4 bg-surface-border rounded"></div>
+                <div className="col-span-2 h-4 bg-surface-border rounded"></div>
               </div>
             </div>
           ))}
@@ -116,10 +116,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   }
 
   return (
-    <div className={cn('bg-white rounded-lg border border-neutral-200 overflow-hidden', className)}>
+    <div className={cn('bg-surface-card rounded-lg border border-surface-border overflow-hidden', className)}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-200" role="table" aria-label="Projects table">
-          <thead className="bg-neutral-50">
+        <table className="min-w-full divide-y divide-surface-border" role="table" aria-label="Projects table">
+          <thead className="bg-surface-header">
             <tr role="row">
               <SortableHeader
                 field="name"
@@ -158,11 +158,11 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
               />
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-neutral-200" role="rowgroup">
+          <tbody className="bg-surface-card divide-y divide-surface-border" role="rowgroup">
             {projects.map((project) => (
               <tr
                 key={project.id}
-                className="hover:bg-neutral-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+                className="hover:bg-surface-background cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-inset"
                 onClick={() => handleProjectClick(project)}
                 onKeyDown={(e) => handleProjectKeyDown(e, project)}
                 tabIndex={0}
@@ -171,11 +171,11 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
               >
                 <td className="px-6 py-4 whitespace-nowrap" role="gridcell">
                   <div className="flex flex-col">
-                    <div className="text-sm font-medium text-neutral-900 truncate max-w-xs">
+                    <div className="text-sm font-medium text-text-primary truncate max-w-xs">
                       {project.name}
                     </div>
                     {project.code && (
-                      <div className="text-sm text-neutral-500 truncate max-w-xs">
+                      <div className="text-sm text-text-secondary truncate max-w-xs">
                         {project.code}
                       </div>
                     )}
@@ -184,13 +184,13 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap" role="gridcell">
                   <StatusChip status={project.status} size="sm" />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600" role="gridcell">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary" role="gridcell">
                   {project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600" role="gridcell">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary" role="gridcell">
                   {project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600" role="gridcell">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary" role="gridcell">
                   {new Date(project.createdAt).toLocaleDateString()}
                 </td>
               </tr>

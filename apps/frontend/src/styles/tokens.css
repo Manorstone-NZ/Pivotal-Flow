@@ -29,10 +29,11 @@
   --pf-color-neutral-950: #0A0A0A;
 
   /* Surface Colors */
-  --pf-color-surface-background: #F5E6CC;
+  --pf-color-surface-background: #FAFAFA;
   --pf-color-surface-card: #FFFFFF;
   --pf-color-surface-overlay: rgba(0, 0, 0, 0.5);
   --pf-color-surface-border: #E5E5E5;
+  --pf-color-surface-header: #F0F0F0;
 
   /* Text Colors */
   --pf-color-text-primary: #222222;
@@ -153,32 +154,56 @@
 /* Dark Theme Overrides */
 [data-theme="dark"] {
   /* Surface Colors */
-  --pf-color-surface-background: var(--pf-color-neutral-900);
-  --pf-color-surface-card: var(--pf-color-neutral-800);
-  --pf-color-surface-overlay: rgba(0, 0, 0, 0.8);
-  --pf-color-surface-border: var(--pf-color-neutral-700);
+  --pf-color-surface-background: #0A0A0A;
+  --pf-color-surface-card: #171717;
+  --pf-color-surface-overlay: rgba(0, 0, 0, 0.9);
+  --pf-color-surface-border: #404040;
+  --pf-color-surface-header: #2A2A2A;
 
   /* Text Colors */
   --pf-color-text-primary: var(--pf-color-neutral-100);
   --pf-color-text-secondary: var(--pf-color-neutral-300);
   --pf-color-text-disabled: var(--pf-color-neutral-500);
   --pf-color-text-inverse: var(--pf-color-neutral-900);
+
+  /* Override common neutral colors for dark mode */
+  --pf-color-neutral-50: var(--pf-color-neutral-900);
+  --pf-color-neutral-100: var(--pf-color-neutral-800);
+  --pf-color-neutral-200: var(--pf-color-neutral-700);
+  --pf-color-neutral-300: var(--pf-color-neutral-600);
+  /* Keep middle grays as-is for proper contrast */
+  --pf-color-neutral-600: var(--pf-color-neutral-400);
+  --pf-color-neutral-700: var(--pf-color-neutral-300);
+  --pf-color-neutral-800: var(--pf-color-neutral-200);
+  --pf-color-neutral-900: var(--pf-color-neutral-100);
 }
 
 /* System Theme Detection */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     /* Surface Colors */
-    --pf-color-surface-background: var(--pf-color-neutral-900);
-    --pf-color-surface-card: var(--pf-color-neutral-800);
-    --pf-color-surface-overlay: rgba(0, 0, 0, 0.8);
-    --pf-color-surface-border: var(--pf-color-neutral-700);
+    --pf-color-surface-background: #0A0A0A;
+    --pf-color-surface-card: #171717;
+    --pf-color-surface-overlay: rgba(0, 0, 0, 0.9);
+    --pf-color-surface-border: #404040;
+    --pf-color-surface-header: #2A2A2A;
 
     /* Text Colors */
     --pf-color-text-primary: var(--pf-color-neutral-100);
     --pf-color-text-secondary: var(--pf-color-neutral-300);
     --pf-color-text-disabled: var(--pf-color-neutral-500);
     --pf-color-text-inverse: var(--pf-color-neutral-900);
+
+    /* Override common neutral colors for dark mode */
+    --pf-color-neutral-50: var(--pf-color-neutral-900);
+    --pf-color-neutral-100: var(--pf-color-neutral-800);
+    --pf-color-neutral-200: var(--pf-color-neutral-700);
+    --pf-color-neutral-300: var(--pf-color-neutral-600);
+    /* Keep middle grays as-is for proper contrast */
+    --pf-color-neutral-600: var(--pf-color-neutral-400);
+    --pf-color-neutral-700: var(--pf-color-neutral-300);
+    --pf-color-neutral-800: var(--pf-color-neutral-200);
+    --pf-color-neutral-900: var(--pf-color-neutral-100);
   }
 }
 

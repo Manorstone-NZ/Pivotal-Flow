@@ -3,7 +3,7 @@ import { ProjectService } from './service.js';
 import { CreateProjectSchema, UpdateProjectSchema, ProjectFiltersSchema, ProjectDetailResponseSchema, ProjectsListResponseSchema, ProjectErrorSchema } from './typeboxSchemas.js';
 export async function projectRoutes(fastify) {
     // List projects with filters and pagination
-    fastify.get('/v1/projects', {
+    fastify.get('/api/v1/projects', {
         schema: {
             tags: ['Projects'],
             summary: 'List projects',
@@ -25,7 +25,7 @@ export async function projectRoutes(fastify) {
             return reply.code(200).send(result);
         }
         catch (error) {
-            fastify.log.error(error);
+            fastify.log.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Projects list error');
             return reply.code(500).send({
                 error: 'Internal Server Error',
                 message: 'Failed to list projects',
@@ -34,7 +34,7 @@ export async function projectRoutes(fastify) {
         }
     });
     // Get project by ID
-    fastify.get('/v1/projects/:id', {
+    fastify.get('/api/v1/projects/:id', {
         schema: {
             tags: ['Projects'],
             summary: 'Get project by ID',
@@ -74,7 +74,7 @@ export async function projectRoutes(fastify) {
         }
     });
     // Create new project
-    fastify.post('/v1/projects', {
+    fastify.post('/api/v1/projects', {
         schema: {
             tags: ['Projects'],
             summary: 'Create project',
@@ -105,7 +105,7 @@ export async function projectRoutes(fastify) {
         }
     });
     // Update project
-    fastify.patch('/v1/projects/:id', {
+    fastify.patch('/api/v1/projects/:id', {
         schema: {
             tags: ['Projects'],
             summary: 'Update project',
@@ -148,7 +148,7 @@ export async function projectRoutes(fastify) {
         }
     });
     // Delete project (soft delete)
-    fastify.delete('/v1/projects/:id', {
+    fastify.delete('/api/v1/projects/:id', {
         schema: {
             tags: ['Projects'],
             summary: 'Delete project',

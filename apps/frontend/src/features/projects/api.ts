@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api/client';
 import type {
   ProjectFilters,
-  Project,
   ProjectsListResponse,
   ProjectDetailResponse,
   CreateProject,
@@ -68,7 +67,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateProject): Promise<Project> => {
+    mutationFn: async (data: CreateProject): Promise<ProjectDetailResponse> => {
       const response = await apiClient.post('/projects', data);
       return response.data;
     },
@@ -84,7 +83,7 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateProject }): Promise<Project> => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateProject }): Promise<ProjectDetailResponse> => {
       const response = await apiClient.patch(`/projects/${id}`, data);
       return response.data;
     },

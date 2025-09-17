@@ -87,7 +87,7 @@ export declare function createApprovalsPagingResponse(approvals: ApprovalRequest
         createdAt: string;
         updatedAt: string;
         organizationId: string;
-        status: "pending" | "approved" | "rejected" | "cancelled";
+        status: "pending" | "cancelled" | "approved" | "rejected";
         entityType: "project" | "quote" | "invoice";
         entityId: string;
         notes: {

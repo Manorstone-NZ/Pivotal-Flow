@@ -45,13 +45,13 @@ export const Card: React.FC<CardProps> = ({
   const getVariantClasses = () => {
     switch (variant) {
       case 'outlined':
-        return 'border border-gray-200 bg-white';
+        return 'border border-surface-border bg-surface-card';
       case 'elevated':
-        return 'bg-white shadow-lg';
+        return 'bg-surface-card shadow-lg';
       case 'flat':
-        return 'bg-gray-50';
+        return 'bg-surface-background';
       default:
-        return 'bg-white border border-gray-200';
+        return 'bg-surface-card border border-surface-border';
     }
   };
 
@@ -117,7 +117,7 @@ export const CardContent: React.FC<CardContentProps> = ({
 }) => {
   return (
     <div
-      className={cn('text-gray-600', className)}
+      className={cn('text-text-secondary', className)}
       data-testid={testId}
     >
       {children}
@@ -132,7 +132,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({
 }) => {
   return (
     <div
-      className={cn('mt-4 pt-4 border-t border-gray-200', className)}
+      className={cn('mt-4 pt-4 border-t border-surface-border', className)}
       data-testid={testId}
     >
       {children}
@@ -148,7 +148,7 @@ export const CardTitle: React.FC<CardTitleProps> = ({
 }) => {
   return (
     <Component
-      className={cn('text-lg font-semibold text-gray-900 mb-2', className)}
+      className={cn('text-lg font-semibold text-text-primary mb-2', className)}
       data-testid={testId}
     >
       {children}
@@ -163,7 +163,7 @@ export const CardDescription: React.FC<CardDescriptionProps> = ({
 }) => {
   return (
     <p
-      className={cn('text-sm text-gray-600', className)}
+      className={cn('text-sm text-text-secondary', className)}
       data-testid={testId}
     >
       {children}

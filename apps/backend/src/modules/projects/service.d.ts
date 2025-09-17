@@ -7,7 +7,6 @@ export interface ProjectContext {
 export declare class ProjectService {
     private context;
     private auditLogger?;
-    private db;
     constructor(context: ProjectContext, auditLogger?: AuditLogger | undefined);
     listProjects(filters?: ProjectFilters): Promise<ProjectsListResponse>;
     getProjectById(id: string): Promise<ProjectDetailResponse | null>;

@@ -134,6 +134,7 @@ export default fp(async function authPlugin(app) {
             requestUrl === '/api/v1/auth/login' ||
             requestUrl === '/v1/auth/refresh' ||
             requestUrl === '/api/v1/auth/refresh' ||
+            requestUrl === '/api/v1/auth/debug-db' ||
             requestUrl.startsWith('/v1/test/')) {
             logger.info({ requestUrl }, 'Skipping auth for public route');
             return;

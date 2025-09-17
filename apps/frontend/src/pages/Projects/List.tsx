@@ -10,17 +10,18 @@ import type { ProjectFilters } from '../../features/projects/types';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/ui/Input';
 import { MemoizedProjectTable } from '../../components/projects/optimizations';
+import { ProjectCreateDialog } from '../../components/projects/ProjectCreateDialog';
 
 // Empty state component
-const EmptyState: React.FC = () => (
+const EmptyState: React.FC<{ onCreateClick: () => void }> = ({ onCreateClick }) => (
   <div className="text-center py-12" role="region" aria-labelledby="empty-state-heading">
-    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="mx-auto h-12 w-12 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
-    <h3 id="empty-state-heading" className="mt-2 text-sm font-medium text-gray-900">No projects</h3>
-    <p className="mt-1 text-sm text-gray-500">Get started by creating a new project.</p>
+    <h3 id="empty-state-heading" className="mt-2 text-sm font-medium text-text-primary">No projects</h3>
+    <p className="mt-1 text-sm text-text-secondary">Get started by creating a new project.</p>
     <div className="mt-6">
-      <Button className="bg-primary-600 text-white hover:bg-primary-700" aria-describedby="empty-state-heading">
+      <Button className="bg-primary-600 text-white hover:bg-primary-700" aria-describedby="empty-state-heading" onClick={onCreateClick}>
         Create Project
       </Button>
     </div>
@@ -37,6 +38,7 @@ export const ProjectsListPage: React.FC = () => {
     sortOrder: 'desc',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data, isLoading, error } = useProjects(filters);
 
@@ -73,11 +75,20 @@ export const ProjectsListPage: React.FC = () => {
     navigate(`/projects/${project.id}`);
   }, [navigate]);
 
+  const handleCreateClick = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateSuccess = () => {
+    // The useCreateProject mutation will automatically invalidate the projects list
+    setIsCreateDialogOpen(false);
+  };
+
   if (error) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Projects</h2>
-        <p className="text-gray-600 mb-6">There was a problem loading the projects. Please try again.</p>
+        <h2 className="text-2xl font-bold text-text-primary mb-4">Error Loading Projects</h2>
+        <p className="text-text-secondary mb-6">There was a problem loading the projects. Please try again.</p>
         <Button onClick={() => window.location.reload()}>
           Retry
         </Button>
@@ -89,12 +100,12 @@ export const ProjectsListPage: React.FC = () => {
     <div>
       {/* Header */}
       <header className="mb-6">
-        <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Projects</h1>
-        <p className="text-neutral-600 mt-2">Manage and track your projects</p>
+        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Projects</h1>
+        <p className="text-text-secondary mt-2">Manage and track your projects</p>
       </header>
 
       {/* Filters and Search */}
-      <section className="bg-white rounded-lg border border-neutral-200 p-4 mb-4" aria-labelledby="filters-heading">
+      <section className="bg-surface-card rounded-lg border border-surface-border p-4 mb-4" aria-labelledby="filters-heading">
         <h2 id="filters-heading" className="sr-only">Search and Filter Projects</h2>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -116,7 +127,7 @@ export const ProjectsListPage: React.FC = () => {
               id="status-filter"
               value={filters.status || ''}
               onChange={(e) => handleStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="px-3 py-2 border border-surface-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-surface-card text-text-primary"
               aria-label="Filter projects by status"
             >
               <option value="">All Status</option>
@@ -125,7 +136,7 @@ export const ProjectsListPage: React.FC = () => {
               <option value="on-hold">On Hold</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            <Button className="bg-primary-600 text-white hover:bg-primary-700" aria-label="Create a new project">
+            <Button className="bg-primary-600 text-white hover:bg-primary-700" aria-label="Create a new project" onClick={handleCreateClick}>
               Create Project
             </Button>
           </div>
@@ -134,7 +145,7 @@ export const ProjectsListPage: React.FC = () => {
 
       {/* Projects Table */}
       {!data?.data.length && !isLoading ? (
-        <EmptyState />
+        <EmptyState onCreateClick={handleCreateClick} />
       ) : (
         <>
           <MemoizedProjectTable
@@ -147,9 +158,9 @@ export const ProjectsListPage: React.FC = () => {
           
           {/* Pagination */}
           {data && data.meta.totalPages > 1 && (
-            <nav className="bg-white rounded-lg border border-neutral-200 px-6 py-3 mt-4" aria-label="Projects pagination">
+            <nav className="bg-surface-card rounded-lg border border-surface-border px-6 py-3 mt-4" aria-label="Projects pagination">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-neutral-700" aria-live="polite">
+                <div className="text-sm text-text-secondary" aria-live="polite">
                   Showing {((data.meta.page - 1) * data.meta.size) + 1} to{' '}
                   {Math.min(data.meta.page * data.meta.size, data.meta.total)} of{' '}
                   {data.meta.total} results
@@ -177,6 +188,13 @@ export const ProjectsListPage: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Create Dialog */}
+      <ProjectCreateDialog
+        open={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 };

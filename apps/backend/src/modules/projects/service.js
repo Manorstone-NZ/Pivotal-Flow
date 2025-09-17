@@ -5,78 +5,93 @@ import { projects, users, serviceCategories } from '../../lib/schema.js';
 export class ProjectService {
     context;
     auditLogger;
-    db = getDatabase();
     constructor(context, auditLogger) {
         this.context = context;
         this.auditLogger = auditLogger;
     }
     async listProjects(filters) {
-        const page = filters?.page || 1;
-        const pageSize = filters?.size || 25;
-        const offset = (page - 1) * pageSize;
-        // Build where conditions
-        const whereConditions = [
-            eq(projects.organizationId, this.context.organizationId),
-            isNull(projects.deletedAt)
-        ];
-        if (filters?.status) {
-            whereConditions.push(eq(projects.status, filters.status));
+        try {
+            const db = getDatabase();
+            const page = filters?.page || 1;
+            const pageSize = filters?.size || 25;
+            const offset = (page - 1) * pageSize;
+            // Build where conditions
+            const whereConditions = [
+                eq(projects.organizationId, this.context.organizationId),
+                isNull(projects.deletedAt)
+            ];
+            if (filters?.status) {
+                whereConditions.push(eq(projects.status, filters.status));
+            }
+            if (filters?.ownerId) {
+                whereConditions.push(eq(projects.ownerId, filters.ownerId));
+            }
+            if (filters?.search) {
+                whereConditions.push(sql `(${projects.name} ILIKE ${`%${filters.search}%`} OR ${projects.code} ILIKE ${`%${filters.search}%`})`);
+            }
+            // Build order by
+            const sortField = filters?.sort || 'createdAt';
+            const sortOrder = filters?.sortOrder || 'desc';
+            // Map sort field to actual column
+            const sortColumnMap = {
+                'createdAt': projects.createdAt,
+                'updatedAt': projects.updatedAt,
+                'name': projects.name,
+                'status': projects.status,
+                'startDate': projects.startDate,
+                'endDate': projects.endDate
+            };
+            const sortColumn = sortColumnMap[sortField] || projects.createdAt;
+            const orderBy = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
+            // Get total count
+            const totalResult = await db
+                .select({ count: sql `count(*)` })
+                .from(projects)
+                .where(and(...whereConditions));
+            const total = totalResult[0]?.count || 0;
+            const totalPages = Math.ceil(total / pageSize);
+            // Get projects
+            const projectsList = await db
+                .select()
+                .from(projects)
+                .where(and(...whereConditions))
+                .orderBy(orderBy)
+                .limit(pageSize)
+                .offset(offset);
+            // Transform to response format
+            const data = projectsList.map(project => ({
+                id: project.id,
+                organizationId: project.organizationId,
+                name: project.name,
+                code: project.code,
+                description: project.description,
+                status: project.status,
+                ownerId: project.ownerId,
+                startDate: project.startDate || null, // startDate is already a string from date column
+                endDate: project.endDate || null, // endDate is already a string from date column
+                metadata: project.metadata || {},
+                createdAt: project.createdAt.toISOString(),
+                updatedAt: project.updatedAt.toISOString(),
+                deletedAt: project.deletedAt?.toISOString() || null
+            }));
+            const meta = {
+                page,
+                size: pageSize,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            };
+            return { data, meta };
         }
-        if (filters?.ownerId) {
-            whereConditions.push(eq(projects.ownerId, filters.ownerId));
+        catch (error) {
+            console.error('ProjectService.listProjects error:', error);
+            throw error;
         }
-        if (filters?.search) {
-            whereConditions.push(sql `(${projects.name} ILIKE ${`%${filters.search}%`} OR ${projects.code} ILIKE ${`%${filters.search}%`})`);
-        }
-        // Build order by
-        const sortField = filters?.sort || 'createdAt';
-        const sortOrder = filters?.sortOrder || 'desc';
-        const orderBy = sortOrder === 'asc'
-            ? asc(projects[sortField])
-            : desc(projects[sortField]);
-        // Get total count
-        const totalResult = await this.db
-            .select({ count: sql `count(*)` })
-            .from(projects)
-            .where(and(...whereConditions));
-        const total = totalResult[0]?.count || 0;
-        const totalPages = Math.ceil(total / pageSize);
-        // Get projects
-        const projectsList = await this.db
-            .select()
-            .from(projects)
-            .where(and(...whereConditions))
-            .orderBy(orderBy)
-            .limit(pageSize)
-            .offset(offset);
-        // Transform to response format
-        const data = projectsList.map(project => ({
-            id: project.id,
-            organizationId: project.organizationId,
-            name: project.name,
-            code: project.code,
-            description: project.description,
-            status: project.status,
-            ownerId: project.ownerId,
-            startDate: project.startDate?.toISOString().split('T')[0] || null,
-            endDate: project.endDate?.toISOString().split('T')[0] || null,
-            metadata: project.metadata || {},
-            createdAt: project.createdAt.toISOString(),
-            updatedAt: project.updatedAt.toISOString(),
-            deletedAt: project.deletedAt?.toISOString() || null
-        }));
-        const meta = {
-            page,
-            size: pageSize,
-            total,
-            totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1
-        };
-        return { data, meta };
     }
     async getProjectById(id) {
-        const projectResult = await this.db
+        const db = getDatabase();
+        const projectResult = await db
             .select()
             .from(projects)
             .where(and(eq(projects.id, id), eq(projects.organizationId, this.context.organizationId), isNull(projects.deletedAt)))
@@ -88,7 +103,7 @@ export class ProjectService {
         // Get owner details if ownerId exists
         let owner = null;
         if (project.ownerId) {
-            const ownerResult = await this.db
+            const ownerResult = await db
                 .select({
                 id: users.id,
                 firstName: users.firstName,
@@ -125,6 +140,7 @@ export class ProjectService {
         return response;
     }
     async createProject(data) {
+        const db = getDatabase();
         const projectId = generateId('proj');
         const now = new Date();
         const projectData = {
@@ -142,7 +158,7 @@ export class ProjectService {
             updatedAt: now,
             deletedAt: null
         };
-        await this.db.insert(projects).values(projectData);
+        await db.insert(projects).values(projectData);
         // Log audit event
         if (this.auditLogger) {
             await this.auditLogger.logEvent({
@@ -174,7 +190,8 @@ export class ProjectService {
         };
     }
     async updateProject(id, data) {
-        const existingProject = await this.db
+        const db = getDatabase();
+        const existingProject = await db
             .select()
             .from(projects)
             .where(and(eq(projects.id, id), eq(projects.organizationId, this.context.organizationId), isNull(projects.deletedAt)))
@@ -202,7 +219,7 @@ export class ProjectService {
             updateData.endDate = data.endDate ? new Date(data.endDate) : null;
         if (data.metadata !== undefined)
             updateData.metadata = data.metadata;
-        await this.db
+        await db
             .update(projects)
             .set(updateData)
             .where(eq(projects.id, id));
@@ -218,7 +235,7 @@ export class ProjectService {
             });
         }
         // Return updated project
-        const updatedProject = await this.db
+        const updatedProject = await db
             .select()
             .from(projects)
             .where(eq(projects.id, id))
@@ -244,7 +261,8 @@ export class ProjectService {
         };
     }
     async deleteProject(id) {
-        const existingProject = await this.db
+        const db = getDatabase();
+        const existingProject = await db
             .select()
             .from(projects)
             .where(and(eq(projects.id, id), eq(projects.organizationId, this.context.organizationId), isNull(projects.deletedAt)))
@@ -253,7 +271,7 @@ export class ProjectService {
             return false;
         }
         // Soft delete
-        await this.db
+        await db
             .update(projects)
             .set({
             deletedAt: new Date(),

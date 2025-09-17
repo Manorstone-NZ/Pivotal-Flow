@@ -7,85 +7,85 @@ export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Dashboard</h1>
-          <p className="text-neutral-600 mt-2">
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight">Dashboard</h1>
+          <p className="text-text-secondary mt-2">
             Welcome back, {user?.name || user?.email}! Here's what's happening with your business.
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white border-neutral-200 hover:shadow-md transition-shadow duration-200">
+          <Card className="bg-surface-card border-surface-border hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-brand-primary/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-neutral-600">Active Quotes</p>
-                  <p className="text-2xl font-semibold text-neutral-900">12</p>
+                  <p className="text-sm font-medium text-text-secondary">Active Quotes</p>
+                  <p className="text-2xl font-semibold text-text-primary">12</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-neutral-200 hover:shadow-md transition-shadow duration-200">
+          <Card className="bg-surface-card border-surface-border hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-success-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-semantic-success/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-semantic-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-neutral-600">Pending Invoices</p>
-                  <p className="text-2xl font-semibold text-neutral-900">8</p>
+                  <p className="text-sm font-medium text-text-secondary">Pending Invoices</p>
+                  <p className="text-2xl font-semibold text-text-primary">8</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-neutral-200 hover:shadow-md transition-shadow duration-200">
+          <Card className="bg-surface-card border-surface-border hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-warning-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-semantic-warning/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-semantic-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-neutral-600">Monthly Revenue</p>
-                  <p className="text-2xl font-semibold text-neutral-900">$24,500</p>
+                  <p className="text-sm font-medium text-text-secondary">Monthly Revenue</p>
+                  <p className="text-2xl font-semibold text-text-primary">$24,500</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-neutral-200 hover:shadow-md transition-shadow duration-200">
+          <Card className="bg-surface-card border-surface-border hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-brand-primary/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-neutral-600">Team Members</p>
-                  <p className="text-2xl font-semibold text-neutral-900">5</p>
+                  <p className="text-sm font-medium text-text-secondary">Team Members</p>
+                  <p className="text-2xl font-semibold text-text-primary">5</p>
                 </div>
               </div>
             </CardContent>
@@ -96,10 +96,10 @@ export const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Quick Actions */}
           <div className="lg:col-span-2">
-            <Card className="bg-white border-neutral-200">
+            <Card className="bg-surface-card border-surface-border">
               <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-semibold text-neutral-900">Quick Actions</CardTitle>
-                <CardDescription className="text-neutral-600">
+                <CardTitle className="text-xl font-semibold text-text-primary">Quick Actions</CardTitle>
+                <CardDescription className="text-text-secondary">
                   Common tasks and shortcuts to get things done faster
                 </CardDescription>
               </CardHeader>
@@ -109,7 +109,7 @@ export const DashboardPage: React.FC = () => {
                     className="justify-start h-12 px-4 bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200"
                     variant="outline"
                   >
-                    <svg className="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     Create Quote
@@ -118,7 +118,7 @@ export const DashboardPage: React.FC = () => {
                     className="justify-start h-12 px-4 bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200"
                     variant="outline"
                   >
-                    <svg className="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                     Generate Invoice
@@ -127,7 +127,7 @@ export const DashboardPage: React.FC = () => {
                     className="justify-start h-12 px-4 bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200"
                     variant="outline"
                   >
-                    <svg className="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
                     View Rate Cards
@@ -136,7 +136,7 @@ export const DashboardPage: React.FC = () => {
                     className="justify-start h-12 px-4 bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200"
                     variant="outline"
                   >
-                    <svg className="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                     Manage Users
@@ -148,10 +148,10 @@ export const DashboardPage: React.FC = () => {
 
           {/* Recent Activity */}
           <div>
-            <Card className="bg-white border-neutral-200">
+            <Card className="bg-surface-card border-surface-border">
               <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-semibold text-neutral-900">Recent Activity</CardTitle>
-                <CardDescription className="text-neutral-600">
+                <CardTitle className="text-xl font-semibold text-text-primary">Recent Activity</CardTitle>
+                <CardDescription className="text-text-secondary">
                   Your latest actions and updates
                 </CardDescription>
               </CardHeader>
@@ -160,22 +160,22 @@ export const DashboardPage: React.FC = () => {
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0 w-2 h-2 bg-primary-500 rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-neutral-900">New quote created</p>
-                      <p className="text-xs text-neutral-500">2 hours ago</p>
+                      <p className="text-sm text-text-primary">New quote created</p>
+                      <p className="text-xs text-text-secondary">2 hours ago</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-2 h-2 bg-success-500 rounded-full mt-2"></div>
+                    <div className="flex-shrink-0 w-2 h-2 bg-semantic-success/100 rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-neutral-900">Invoice #INV-001 paid</p>
-                      <p className="text-xs text-neutral-500">5 hours ago</p>
+                      <p className="text-sm text-text-primary">Invoice #INV-001 paid</p>
+                      <p className="text-xs text-text-secondary">5 hours ago</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-2 h-2 bg-warning-500 rounded-full mt-2"></div>
+                    <div className="flex-shrink-0 w-2 h-2 bg-semantic-warning/100 rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-neutral-900">Rate card updated</p>
-                      <p className="text-xs text-neutral-500">1 day ago</p>
+                      <p className="text-sm text-text-primary">Rate card updated</p>
+                      <p className="text-xs text-text-secondary">1 day ago</p>
                     </div>
                   </div>
                 </div>
@@ -186,10 +186,10 @@ export const DashboardPage: React.FC = () => {
 
         {/* Account Information */}
         <div className="mt-8">
-          <Card className="bg-white border-neutral-200">
+          <Card className="bg-surface-card border-surface-border">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-semibold text-neutral-900">Account Information</CardTitle>
-              <CardDescription className="text-neutral-600">
+              <CardTitle className="text-xl font-semibold text-text-primary">Account Information</CardTitle>
+              <CardDescription className="text-text-secondary">
                 Your account details and settings
               </CardDescription>
             </CardHeader>
@@ -197,19 +197,19 @@ export const DashboardPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-neutral-700">Name</label>
-                  <p className="text-neutral-900">{user?.name || 'Not provided'}</p>
+                  <p className="text-text-primary">{user?.name || 'Not provided'}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-neutral-700">Email</label>
-                  <p className="text-neutral-900">{user?.email}</p>
+                  <p className="text-text-primary">{user?.email}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-neutral-700">Organization</label>
-                  <p className="text-neutral-900">{user?.organizationId || 'Not assigned'}</p>
+                  <p className="text-text-primary">{user?.organizationId || 'Not assigned'}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-neutral-700">Permissions</label>
-                  <p className="text-neutral-900">
+                  <p className="text-text-primary">
                     {user?.permissions?.length || 0} permissions assigned
                   </p>
                 </div>

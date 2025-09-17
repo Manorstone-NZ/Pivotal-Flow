@@ -40,10 +40,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   className,
   'data-testid': testId,
 }, ref) => {
-  const id = React.useId();
-  const inputId = `input-${id}`;
+  const inputId = React.useId();
   
-  const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed bg-surface-card text-text-primary';
   
   const stateClasses = error
     ? 'border-semantic-error focus:ring-semantic-error focus:border-semantic-error'

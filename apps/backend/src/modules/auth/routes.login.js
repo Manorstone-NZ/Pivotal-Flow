@@ -3,6 +3,7 @@ import { config } from "../../config/index.js";
 import { logger } from "../../lib/logger.js";
 import { LoginRequestSchema, LoginResponseSchema, AuthErrorSchema } from "./typeboxSchemas.js";
 import { AuthService } from "./service.drizzle.js";
+import { users } from "../../lib/schema.js";
 export const loginRoute = async (fastify) => {
     // const auditLogger = createAuditLogger(fastify);
     fastify.post("/login", {
@@ -20,6 +21,25 @@ export const loginRoute = async (fastify) => {
         const authService = new AuthService(fastify);
         const email = rawEmail.trim().toLowerCase();
         try {
+            // Debug: Test database connection
+            logger.info({ email }, 'Attempting login for user');
+            // Test database query directly
+            try {
+                const testResult = await fastify.db.select().from(users).limit(1);
+                logger.info({ testResult: testResult.length }, 'Database test query successful');
+            }
+            catch (dbError) {
+                logger.error({ dbError }, 'Database test query failed');
+                // Try raw SQL query as fallback
+                try {
+                    const rawResult = await fastify.db.execute('SELECT COUNT(*) as count FROM users');
+                    logger.info({ rawResult }, 'Raw SQL query successful');
+                }
+                catch (rawError) {
+                    logger.error({ rawError }, 'Raw SQL query also failed');
+                    throw rawError;
+                }
+            }
             // Authenticate user with database
             const user = await authService.authenticateUser(email, password);
             if (!user) {
@@ -87,7 +107,7 @@ export const loginRoute = async (fastify) => {
             logger.error({ err, event: "auth.login_error" }, "Login error");
             return reply.status(500).send({
                 error: "Internal Server Error",
-                message: "An error occurred during login",
+                message: err instanceof Error ? err.message : "An error occurred during login",
                 code: "LOGIN_ERROR"
             });
         }

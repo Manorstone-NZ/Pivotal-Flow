@@ -147,7 +147,11 @@ export const focus = {
     };
     
     element.addEventListener('keydown', handleTabKey);
-    firstElement?.focus();
+    
+    // Only focus the first element if no element within the dialog is currently focused
+    if (!element.contains(document.activeElement)) {
+      firstElement?.focus();
+    }
     
     return () => {
       element.removeEventListener('keydown', handleTabKey);

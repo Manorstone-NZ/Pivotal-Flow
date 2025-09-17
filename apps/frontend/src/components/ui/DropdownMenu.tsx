@@ -75,22 +75,42 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children, open, onOp
   );
 };
 
-export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({ 
-  children 
+export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps & { 
+  isOpen?: boolean; 
+  onOpenChange?: (open: boolean) => void; 
+}> = ({ 
+  children,
+  isOpen,
+  onOpenChange
 }) => {
-  return <>{children}</>;
+  const handleClick = () => {
+    onOpenChange?.(!isOpen);
+  };
+
+  return (
+    <div onClick={handleClick} className="cursor-pointer">
+      {children}
+    </div>
+  );
 };
 
-export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({ 
+export const DropdownMenuContent: React.FC<DropdownMenuContentProps & { 
+  isOpen?: boolean; 
+}> = ({ 
   children, 
   align = 'center',
-  className 
+  className,
+  isOpen
 }) => {
   const alignmentClasses = {
     start: 'left-0',
     center: 'left-1/2 transform -translate-x-1/2',
     end: 'right-0'
   };
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className={cn(
