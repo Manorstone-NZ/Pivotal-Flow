@@ -59,6 +59,30 @@ export const ProjectsListPage: React.FC = () => {
     }));
   }, []);
 
+  const handleOwnerFilter = useCallback((ownerId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      ownerId: ownerId || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const handleCustomerFilter = useCallback((customerId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      customerId: customerId || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const handleServiceCategoryFilter = useCallback((serviceCategoryId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      serviceCategoryId: serviceCategoryId || undefined,
+      page: 1,
+    }));
+  }, []);
+
   const handlePageChange = useCallback((page: number) => {
     setFilters(prev => ({ ...prev, page }));
   }, []);
@@ -121,7 +145,7 @@ export const ProjectsListPage: React.FC = () => {
               Type to search for projects by name or description
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <label htmlFor="status-filter" className="sr-only">Filter by status</label>
             <select
               id="status-filter"
@@ -136,6 +160,31 @@ export const ProjectsListPage: React.FC = () => {
               <option value="on-hold">On Hold</option>
               <option value="cancelled">Cancelled</option>
             </select>
+            
+            <label htmlFor="owner-filter" className="sr-only">Filter by owner</label>
+            <select
+              id="owner-filter"
+              value={filters.ownerId || ''}
+              onChange={(e) => handleOwnerFilter(e.target.value)}
+              className="px-3 py-2 border border-surface-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-surface-card text-text-primary"
+              aria-label="Filter projects by owner"
+            >
+              <option value="">All Owners</option>
+              <option value="user-admin">Admin User</option>
+            </select>
+
+            <label htmlFor="customer-filter" className="sr-only">Filter by customer</label>
+            <select
+              id="customer-filter"
+              value={filters.customerId || ''}
+              onChange={(e) => handleCustomerFilter(e.target.value)}
+              className="px-3 py-2 border border-surface-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-surface-card text-text-primary"
+              aria-label="Filter projects by customer"
+            >
+              <option value="">All Customers</option>
+              <option value="customer-1">Sample Customer</option>
+            </select>
+
             <Button className="bg-primary-600 text-white hover:bg-primary-700" aria-label="Create a new project" onClick={handleCreateClick}>
               Create Project
             </Button>

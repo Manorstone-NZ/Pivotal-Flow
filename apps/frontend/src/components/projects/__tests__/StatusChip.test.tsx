@@ -99,15 +99,15 @@ describe('StatusChip', () => {
 
   it('has correct CSS classes for different statuses', () => {
     const { rerender } = render(<StatusChip status="active" />);
-    expect(screen.getByText('Active')).toHaveClass('bg-green-100', 'text-green-800');
+    expect(screen.getByText('Active')).toHaveClass('bg-semantic-success/10', 'text-semantic-success');
 
     rerender(<StatusChip status="completed" />);
-    expect(screen.getByText('Completed')).toHaveClass('bg-blue-100', 'text-blue-800');
+    expect(screen.getByText('Completed')).toHaveClass('bg-semantic-info/10', 'text-semantic-info');
 
     rerender(<StatusChip status="on-hold" />);
-    expect(screen.getByText('On Hold')).toHaveClass('bg-yellow-100', 'text-yellow-800');
+    expect(screen.getByText('On Hold')).toHaveClass('bg-semantic-warning/10', 'text-semantic-warning');
 
     rerender(<StatusChip status="cancelled" />);
-    expect(screen.getByText('Cancelled')).toHaveClass('bg-red-100', 'text-red-800');
+    expect(screen.getByText('Cancelled')).toHaveClass('bg-semantic-error/10', 'text-semantic-error');
   });
 });
