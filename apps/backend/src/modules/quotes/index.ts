@@ -6,6 +6,7 @@ import { registerListQuotesRoute } from './routes.list.js';
 import { registerStatusTransitionRoute } from './routes.status.js';
 import { registerUpdateQuoteRoute } from './routes.update.js';
 import { registerGetQuoteVersionsRoute, registerGetQuoteVersionRoute } from './routes.versions.js';
+import { registerQuoteLineItemRoutes } from './routes.line-items.js';
 
 /**
  * Register all quote routes with Fastify
@@ -19,6 +20,7 @@ export function registerQuoteRoutes(fastify: FastifyInstance<any, any, any, any,
   registerStatusTransitionRoute(fastify);
   registerGetQuoteVersionsRoute(fastify);
   registerGetQuoteVersionRoute(fastify);
+  registerQuoteLineItemRoutes(fastify);
 }
 
 // Export types and schemas for use in other modules

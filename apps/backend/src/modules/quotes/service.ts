@@ -397,4 +397,194 @@ export class QuoteService {
       quoteNumber: quoteData.quoteNumber,
     };
   }
+
+  async addLineItem(quoteId: string, data: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    metadata?: Record<string, any>;
+  }) {
+    // First verify the quote exists and belongs to the organization
+    const quote = await this.getQuoteById(quoteId);
+    if (!quote) {
+      return null;
+    }
+
+    // Get the next line number
+    const maxLineNumber = await this.db
+      .select({ max: sql<number>`max(${quoteLineItems.lineNumber})` })
+      .from(quoteLineItems)
+      .where(eq(quoteLineItems.quoteId, quoteId));
+
+    const lineNumber = (maxLineNumber[0]?.max || 0) + 1;
+
+    // Calculate totals
+    const subtotal = data.quantity * data.unitPrice;
+    const taxAmount = subtotal * 0.15; // 15% tax rate
+    const totalAmount = subtotal + taxAmount;
+
+    // Create line item
+    const lineItemId = generateId();
+    const lineItemData = {
+      id: lineItemId,
+      quoteId,
+      lineNumber,
+      description: data.description,
+      quantity: data.quantity.toString(),
+      unitPrice: data.unitPrice.toString(),
+      subtotal: subtotal.toString(),
+      taxRate: '0.1500',
+      taxAmount: taxAmount.toString(),
+      totalAmount: totalAmount.toString(),
+      metadata: data.metadata || {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    await this.db.insert(quoteLineItems).values(lineItemData);
+
+    // Recalculate quote totals
+    await this.recalculateQuoteTotals(quoteId);
+
+    // Return the updated quote
+    return await this.getQuoteById(quoteId);
+  }
+
+  async updateLineItem(quoteId: string, lineItemId: string, data: {
+    description?: string;
+    quantity?: number;
+    unitPrice?: number;
+    metadata?: Record<string, any>;
+  }) {
+    // First verify the quote exists and belongs to the organization
+    const quote = await this.getQuoteById(quoteId);
+    if (!quote) {
+      return null;
+    }
+
+    // Get the existing line item
+    const existingItem = await this.db
+      .select()
+      .from(quoteLineItems)
+      .where(and(
+        eq(quoteLineItems.id, lineItemId),
+        eq(quoteLineItems.quoteId, quoteId)
+      ))
+      .limit(1);
+
+    if (existingItem.length === 0) {
+      return null;
+    }
+
+    const item = existingItem[0];
+    const quantity = data.quantity ?? parseFloat(item.quantity.toString());
+    const unitPrice = data.unitPrice ?? parseFloat(item.unitPrice.toString());
+
+    // Calculate totals
+    const subtotal = quantity * unitPrice;
+    const taxAmount = subtotal * 0.15; // 15% tax rate
+    const totalAmount = subtotal + taxAmount;
+
+    // Update line item
+    const updateData = {
+      description: data.description ?? item.description,
+      quantity: quantity.toString(),
+      unitPrice: unitPrice.toString(),
+      subtotal: subtotal.toString(),
+      taxAmount: taxAmount.toString(),
+      totalAmount: totalAmount.toString(),
+      metadata: data.metadata ?? item.metadata,
+      updatedAt: new Date()
+    };
+
+    await this.db
+      .update(quoteLineItems)
+      .set(updateData)
+      .where(eq(quoteLineItems.id, lineItemId));
+
+    // Recalculate quote totals
+    await this.recalculateQuoteTotals(quoteId);
+
+    // Return the updated quote
+    return await this.getQuoteById(quoteId);
+  }
+
+  async deleteLineItem(quoteId: string, lineItemId: string) {
+    // First verify the quote exists and belongs to the organization
+    const quote = await this.getQuoteById(quoteId);
+    if (!quote) {
+      return null;
+    }
+
+    // Delete the line item
+    const result = await this.db
+      .delete(quoteLineItems)
+      .where(and(
+        eq(quoteLineItems.id, lineItemId),
+        eq(quoteLineItems.quoteId, quoteId)
+      ));
+
+    // Recalculate quote totals
+    await this.recalculateQuoteTotals(quoteId);
+
+    // Return the updated quote
+    return await this.getQuoteById(quoteId);
+  }
+
+  private async recalculateQuoteTotals(quoteId: string) {
+    // Get all line items for the quote
+    const lineItems = await this.db
+      .select()
+      .from(quoteLineItems)
+      .where(eq(quoteLineItems.quoteId, quoteId));
+
+    // Calculate totals
+    const subtotal = lineItems.reduce((sum, item) => sum + parseFloat(item.subtotal.toString()), 0);
+    const taxAmount = lineItems.reduce((sum, item) => sum + parseFloat(item.taxAmount.toString()), 0);
+    const totalAmount = lineItems.reduce((sum, item) => sum + parseFloat(item.totalAmount.toString()), 0);
+
+    // Update quote totals
+    await this.db
+      .update(quotes)
+      .set({
+        subtotal: subtotal.toString(),
+        taxAmount: taxAmount.toString(),
+        totalAmount: totalAmount.toString(),
+        updatedAt: new Date()
+      })
+      .where(eq(quotes.id, quoteId));
+  }
+
+  async setDiscount(quoteId: string, discount: { type: 'percentage' | 'fixed'; value: number }) {
+    // First verify the quote exists and belongs to the organization
+    const quote = await this.getQuoteById(quoteId);
+    if (!quote) {
+      return null;
+    }
+
+    // Calculate discount amount
+    const subtotal = parseFloat(quote.subtotal.toString());
+    let discountAmount = 0;
+
+    if (discount.type === 'percentage') {
+      discountAmount = subtotal * (discount.value / 100);
+    } else {
+      discountAmount = discount.value;
+    }
+
+    // Update quote with discount
+    await this.db
+      .update(quotes)
+      .set({
+        discountType: discount.type,
+        discountValue: discount.value.toString(),
+        discountAmount: discountAmount.toString(),
+        totalAmount: (subtotal + parseFloat(quote.taxAmount.toString()) - discountAmount).toString(),
+        updatedAt: new Date()
+      })
+      .where(eq(quotes.id, quoteId));
+
+    // Return the updated quote
+    return await this.getQuoteById(quoteId);
+  }
 }
