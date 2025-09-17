@@ -63,7 +63,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
     baseRate: '',
     currency: 'NZD',
     taxClass: 'standard',
-    effectiveFrom: new Date().toISOString().split('T')[0], // Today's date
+    effectiveFrom: new Date().toISOString().split('T')[0] as string, // Today's date
   });
 
   const createMutation = useCreateRateCard();
@@ -170,7 +170,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
         baseRate: '',
         currency: rateCard.currency,
         taxClass: 'standard',
-        effectiveFrom: new Date().toISOString().split('T')[0],
+        effectiveFrom: new Date().toISOString().split('T')[0] as string,
       });
       setShowAddItemForm(false);
       refetchItems();
@@ -351,8 +351,8 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <Input
                       label="Item Code"
-                      value={newItemData.itemCode}
-                      onChange={(value) => setNewItemData({ ...newItemData, itemCode: value })}
+                      value={newItemData.itemCode || ''}
+                      onChange={(value) => setNewItemData({ ...newItemData, itemCode: value || null })}
                       placeholder="e.g., DEV01"
                       required
                       data-testid="new-item-code"
