@@ -22,6 +22,6 @@ export function registerQuoteRoutes(fastify: FastifyInstance<any, any, any, any,
 }
 
 // Export types and schemas for use in other modules
-export * from './schemas.js';
+export * from './typeboxSchemas.js';
 export * from './service.js';
 export * from './quote-number.js';

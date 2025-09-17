@@ -15,7 +15,7 @@ import { createUserRoute } from './modules/users/routes.create.js';
 import { rateCardRoutes } from './modules/rate-cards/routes.js';
 
 // Import quote route modules
-import { quoteRoutes } from './modules/quotes/routes.js';
+import { registerQuoteRoutes } from './modules/quotes/index.js';
 
 // Import permission route modules
 import { permissionRoutes } from './modules/permissions/routes.js';
@@ -69,7 +69,9 @@ export async function registerRoutes() {
   await app.register(rateCardRoutes, { prefix: '/api/v1' });
 
   // Register quote route modules
-  await app.register(quoteRoutes);
+  await app.register(async (fastify) => {
+    registerQuoteRoutes(fastify);
+  }, { prefix: '/api' });
 
   // Register permission route modules
   await app.register(permissionRoutes);

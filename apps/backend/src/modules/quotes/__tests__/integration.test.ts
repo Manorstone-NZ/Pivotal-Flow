@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 
 import { AuditLogger } from '../../../lib/audit-logger.drizzle.js';
 import { quotes, quoteLineItems, organizations, customers, users, auditLogs, serviceCategories } from '../../../lib/schema.js';
-import { QuoteStatus } from '../schemas.js';
+import { QuoteStatus } from '../typeboxSchemas.js';
 import { QuoteService } from '../service.js';
 
 

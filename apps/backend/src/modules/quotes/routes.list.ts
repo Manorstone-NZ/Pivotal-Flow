@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { logger } from '../../lib/logger.js';
 import type { PaginationOptions } from '../../lib/repo.base.js';
 
-import { QuoteListFiltersSchema } from './schemas.js';
+import { QuoteListFiltersSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 // import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
@@ -28,7 +28,11 @@ interface ListQuotesRequest {
  * Register the list quotes route
  */
 export function registerListQuotesRoute(fastify: FastifyInstance) {
-  fastify.get('/v1/quotes', async (request: FastifyRequest<ListQuotesRequest>, reply: FastifyReply) => {
+  fastify.get('/v1/quotes', {
+    schema: {
+      querystring: QuoteListFiltersSchema
+    }
+  }, async (request: FastifyRequest<ListQuotesRequest>, reply: FastifyReply) => {
     try {
       // Get user context
       const user = (request as any).user;
@@ -46,7 +50,7 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
         pageSize: request.query.pageSize || 20
       };
 
-      const filters = QuoteListFiltersSchema.parse({
+      const filters = {
         status: request.query.status,
         customerId: request.query.customerId,
         projectId: request.query.projectId,
@@ -55,7 +59,7 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
         validFrom: request.query.validFrom,
         validUntil: request.query.validUntil,
         createdBy: request.query.createdBy
-      });
+      };
 
       // Create quote service
       const quoteService = new QuoteService({

@@ -3,7 +3,7 @@ import type { Static } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 
-import { QuoteStatusTransitionSchema } from './schemas.js';
+import { QuoteStatusTransitionSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 // import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
@@ -18,10 +18,14 @@ interface StatusTransitionRequest {
  * Register the status transition route
  */
 export function registerStatusTransitionRoute(fastify: FastifyInstance) {
-  fastify.post('/v1/quotes/:id/status', async (request: FastifyRequest<StatusTransitionRequest>, reply: FastifyReply) => {
+  fastify.post('/v1/quotes/:id/status', {
+    schema: {
+      body: QuoteStatusTransitionSchema
+    }
+  }, async (request: FastifyRequest<StatusTransitionRequest>, reply: FastifyReply) => {
     try {
-      // Validate request body
-      const validatedData = QuoteStatusTransitionSchema.parse(request.body);
+      // Get validated request body (TypeBox handles validation automatically)
+      const validatedData = request.body;
 
       // Get user context
       const user = (request as any).user;
