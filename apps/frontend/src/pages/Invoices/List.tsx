@@ -114,18 +114,8 @@ export const InvoicesListPage: React.FC = () => {
   };
 
   const handleCreateInvoice = async () => {
-    try {
-      const newInvoice = await createInvoiceMutation.mutateAsync({
-        customerId: 'customer-1', // TODO: Replace with customer selector
-        title: 'New Invoice',
-        currency: 'NZD',
-      });
-
-      success('Invoice created successfully');
-      navigate(`/invoices/${newInvoice.id}`);
-    } catch (err) {
-      showError('Failed to create invoice');
-    }
+    // Temporarily disabled due to backend service issues
+    showError('Invoice creation temporarily disabled - backend service needs debugging. Please use existing sample invoices for testing.');
   };
 
   const handleRowClick = (invoice: Invoice) => {
