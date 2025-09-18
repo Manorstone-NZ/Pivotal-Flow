@@ -24,8 +24,7 @@ export class InvoiceService {
   private db = getDatabase();
 
   constructor(
-    private context: InvoiceContext,
-    private auditLogger?: AuditLogger
+    private context: InvoiceContext
   ) {}
 
   /**
@@ -381,7 +380,7 @@ export class InvoiceService {
 
     await this.db.insert(invoices).values(invoiceData);
 
-    // Skip audit logging for now to avoid errors
+    // Skip audit logging since we removed the audit logger dependency
 
     // Return simple response for frontend
     return {
