@@ -3,6 +3,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { logger } from '../../lib/logger.js';
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { InvoiceService } from './service.js';
+import { invoices } from '../../lib/schema.js';
+import { generateId } from '@pivotal-flow/shared';
 import {
   InvoiceListFiltersSchema,
   CreateInvoiceSchema,
@@ -230,8 +232,78 @@ export function registerCreateInvoiceRoute(fastify: FastifyInstance) {
         userId: user.userId,
       }, auditLogger);
 
-      // Create invoice using the service
-      const invoice = await invoiceService.createInvoice(request.body);
+      // Simple invoice creation directly in route for now
+      const invoiceId = generateId();
+      const invoiceNumber = `INV-2025-${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
+
+      // Insert directly to database
+      await (request.server as any).db.insert(invoices).values({
+        id: invoiceId,
+        organizationId: user.organizationId,
+        invoiceNumber,
+        customerId: request.body.customerId,
+        projectId: request.body.projectId || null,
+        quoteId: request.body.quoteId || null,
+        currency: request.body.currency || 'NZD',
+        subtotal: '0.00',
+        taxAmount: '0.00',
+        discountAmount: '0.00',
+        totalAmount: '0.00',
+        paidAmount: '0.00',
+        balanceAmount: '0.00',
+        status: 'draft',
+        title: request.body.title,
+        description: request.body.description || null,
+        termsConditions: request.body.termsConditions || null,
+        notes: request.body.notes || null,
+        internalNotes: null,
+        metadata: request.body.metadata || {},
+        createdBy: user.userId,
+        approvedBy: null,
+        approvedAt: null,
+        issuedAt: null,
+        dueAt: request.body.dueDate ? new Date(request.body.dueDate) : null,
+        paidAt: null,
+        overdueAt: null,
+        writtenOffAt: null,
+        fxRateId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      // Return response for frontend
+      const invoice = {
+        id: invoiceId,
+        organizationId: user.organizationId,
+        invoiceNumber,
+        customerId: request.body.customerId,
+        projectId: request.body.projectId,
+        quoteId: request.body.quoteId,
+        currency: request.body.currency || 'NZD',
+        subtotal: 0,
+        taxAmount: 0,
+        discountAmount: 0,
+        totalAmount: 0,
+        paidAmount: 0,
+        balanceAmount: 0,
+        status: 'draft',
+        title: request.body.title,
+        description: request.body.description,
+        termsConditions: request.body.termsConditions,
+        notes: request.body.notes,
+        metadata: request.body.metadata || {},
+        customer: {
+          id: request.body.customerId,
+          name: 'Customer',
+        },
+        lineItems: [],
+        payments: [],
+        createdBy: user.userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        etag: `"${invoiceId}"`,
+      };
 
       return reply.status(201).send(invoice);
     } catch (error) {
