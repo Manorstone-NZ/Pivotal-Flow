@@ -403,7 +403,7 @@ export const QuoteDetailsPage: React.FC = () => {
                   className="w-full justify-start"
                   onClick={async () => {
                     try {
-                      const response = await fetch(`/api/v1/quotes/${quote.id}/pdf`, {
+                      const response = await fetch(`http://localhost:3000/api/v1/quotes/${quote.id}/pdf`, {
                         method: 'POST',
                         headers: {
                           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
