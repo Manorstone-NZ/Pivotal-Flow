@@ -270,18 +270,41 @@ export class InvoiceService {
 
     // Return formatted invoice
     return {
-      ...invoice,
+      id: invoice.id,
+      organizationId: invoice.organizationId,
+      invoiceNumber: invoice.invoiceNumber,
+      customerId: invoice.customerId,
+      projectId: invoice.projectId || undefined,
+      quoteId: invoice.quoteId || undefined,
+      currency: invoice.currency,
       subtotal: parseFloat(invoice.subtotal.toString()),
       taxAmount: parseFloat(invoice.taxAmount.toString()),
       discountAmount: parseFloat(invoice.discountAmount.toString()),
       totalAmount: parseFloat(invoice.totalAmount.toString()),
       paidAmount: parseFloat(invoice.paidAmount.toString()),
       balanceAmount: parseFloat(invoice.balanceAmount.toString()),
-      customer,
+      status: invoice.status as any,
+      issuedAt: invoice.issuedAt?.toISOString(),
+      dueAt: invoice.dueAt?.toISOString(),
+      paidAt: invoice.paidAt?.toISOString(),
+      overdueAt: invoice.overdueAt?.toISOString(),
+      writtenOffAt: invoice.writtenOffAt?.toISOString(),
+      title: invoice.title,
+      description: invoice.description || undefined,
+      termsConditions: invoice.termsConditions || undefined,
+      notes: invoice.notes || undefined,
+      internalNotes: invoice.internalNotes || undefined,
+      metadata: invoice.metadata as Record<string, any> || {},
+      customer: customer || undefined,
       lineItems: formattedLineItems,
       payments: formattedPayments,
+      createdBy: invoice.createdBy,
+      approvedBy: invoice.approvedBy || undefined,
+      approvedAt: invoice.approvedAt?.toISOString(),
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
       etag: this.generateETag({ ...invoice, payments: formattedPayments }),
-    } as Invoice;
+    };
   }
 
   /**
