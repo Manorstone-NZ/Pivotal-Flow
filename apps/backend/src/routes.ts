@@ -17,6 +17,9 @@ import { rateCardRoutes } from './modules/rate-cards/routes.js';
 // Import quote route modules
 import { registerQuoteRoutes } from './modules/quotes/index.js';
 
+// Import invoice route modules
+import { registerInvoiceRoutes } from './modules/invoices/index.js';
+
 // Import permission route modules
 import { permissionRoutes } from './modules/permissions/routes.js';
 
@@ -71,6 +74,11 @@ export async function registerRoutes() {
   // Register quote route modules
   await app.register(async (fastify) => {
     registerQuoteRoutes(fastify);
+  }, { prefix: '/api' });
+
+  // Register invoice route modules
+  await app.register(async (fastify) => {
+    registerInvoiceRoutes(fastify);
   }, { prefix: '/api' });
 
   // Register permission route modules

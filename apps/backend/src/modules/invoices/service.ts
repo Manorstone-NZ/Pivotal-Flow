@@ -1,0 +1,570 @@
+import { eq, and, desc, sql, like, gte, lte } from 'drizzle-orm';
+import { generateId } from '@pivotal-flow/shared';
+import { createHash } from 'crypto';
+
+import type { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+import { getDatabase } from '../../lib/db.js';
+import { invoices, invoiceLineItems, payments, customers } from '../../lib/schema.js';
+import type {
+  Invoice,
+  CreateInvoice,
+  UpdateInvoice,
+  InvoiceListFilters,
+  InvoiceStatusTransition,
+  MarkInvoicePaid,
+  VoidInvoice,
+  InvoiceStatus,
+} from './typeboxSchemas.js';
+
+export interface InvoiceContext {
+  organizationId: string;
+  userId: string;
+}
+
+export class InvoiceService {
+  private db = getDatabase();
+
+  constructor(
+    private context: InvoiceContext,
+    private auditLogger?: AuditLogger
+  ) {}
+
+  /**
+   * Generate ETag for invoice caching
+   */
+  private generateETag(invoice: any): string {
+    const dataString = JSON.stringify({
+      id: invoice.id,
+      updatedAt: invoice.updatedAt,
+      paymentsCount: invoice.payments?.length || 0,
+      lastPaymentDate: invoice.payments?.[0]?.updatedAt || invoice.updatedAt,
+    });
+    return `"${createHash('sha256').update(dataString).digest('hex').substring(0, 16)}"`;
+  }
+
+  /**
+   * Generate next invoice number
+   */
+  private async generateInvoiceNumber(): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const prefix = `INV-${currentYear}`;
+
+    // Get the latest invoice number for this year
+    const latestInvoice = await this.db
+      .select({ invoiceNumber: invoices.invoiceNumber })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.organizationId, this.context.organizationId),
+          like(invoices.invoiceNumber, `${prefix}-%`)
+        )
+      )
+      .orderBy(desc(invoices.invoiceNumber))
+      .limit(1);
+
+    if (latestInvoice.length === 0) {
+      return `${prefix}-001`;
+    }
+
+    // Extract number and increment
+    const match = latestInvoice[0].invoiceNumber.match(/-(\d+)$/);
+    const nextNumber = match ? parseInt(match[1], 10) + 1 : 1;
+    return `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
+  }
+
+  /**
+   * List invoices with filtering and pagination
+   */
+  async listInvoices(filters: InvoiceListFilters = {}) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 25;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const whereConditions = [eq(invoices.organizationId, this.context.organizationId)];
+
+    if (filters.status) {
+      whereConditions.push(eq(invoices.status, filters.status));
+    }
+    if (filters.customerId) {
+      whereConditions.push(eq(invoices.customerId, filters.customerId));
+    }
+    if (filters.projectId) {
+      whereConditions.push(eq(invoices.projectId, filters.projectId));
+    }
+    if (filters.currency) {
+      whereConditions.push(eq(invoices.currency, filters.currency));
+    }
+    if (filters.issuedAfter) {
+      whereConditions.push(gte(invoices.issuedAt, new Date(filters.issuedAfter)));
+    }
+    if (filters.issuedBefore) {
+      whereConditions.push(lte(invoices.issuedAt, new Date(filters.issuedBefore)));
+    }
+    if (filters.dueAfter) {
+      whereConditions.push(gte(invoices.dueAt, new Date(filters.dueAfter)));
+    }
+    if (filters.dueBefore) {
+      whereConditions.push(lte(invoices.dueAt, new Date(filters.dueBefore)));
+    }
+    if (filters.minAmount) {
+      whereConditions.push(gte(invoices.totalAmount, filters.minAmount.toString()));
+    }
+    if (filters.maxAmount) {
+      whereConditions.push(lte(invoices.totalAmount, filters.maxAmount.toString()));
+    }
+    if (filters.search) {
+      whereConditions.push(
+        sql`(${invoices.invoiceNumber} ILIKE ${`%${filters.search}%`} OR ${invoices.title} ILIKE ${`%${filters.search}%`})`
+      );
+    }
+
+    // Get total count
+    const totalResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(invoices)
+      .where(and(...whereConditions));
+
+    const total = totalResult[0]?.count || 0;
+
+    // Build sort order
+    let orderBy;
+    const sortField = filters.sort || 'createdAt';
+    const sortOrder = filters.sortOrder || 'desc';
+
+    switch (sortField) {
+      case 'invoiceNumber':
+        orderBy = sortOrder === 'asc' ? invoices.invoiceNumber : desc(invoices.invoiceNumber);
+        break;
+      case 'status':
+        orderBy = sortOrder === 'asc' ? invoices.status : desc(invoices.status);
+        break;
+      case 'totalAmount':
+        orderBy = sortOrder === 'asc' ? invoices.totalAmount : desc(invoices.totalAmount);
+        break;
+      case 'dueAt':
+        orderBy = sortOrder === 'asc' ? invoices.dueAt : desc(invoices.dueAt);
+        break;
+      case 'issuedAt':
+        orderBy = sortOrder === 'asc' ? invoices.issuedAt : desc(invoices.issuedAt);
+        break;
+      default:
+        orderBy = sortOrder === 'asc' ? invoices.createdAt : desc(invoices.createdAt);
+    }
+
+    // Get invoices with customer info
+    const invoiceResults = await this.db
+      .select({
+        invoice: invoices,
+        customer: {
+          id: customers.id,
+          name: customers.name,
+          email: customers.email,
+          phone: customers.phone,
+          address: customers.billingAddress,
+        },
+      })
+      .from(invoices)
+      .leftJoin(customers, eq(invoices.customerId, customers.id))
+      .where(and(...whereConditions))
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    // Format response
+    const formattedInvoices = invoiceResults.map((row) => ({
+      ...row.invoice,
+      subtotal: parseFloat(row.invoice.subtotal.toString()),
+      taxAmount: parseFloat(row.invoice.taxAmount.toString()),
+      discountAmount: parseFloat(row.invoice.discountAmount.toString()),
+      totalAmount: parseFloat(row.invoice.totalAmount.toString()),
+      paidAmount: parseFloat(row.invoice.paidAmount.toString()),
+      balanceAmount: parseFloat(row.invoice.balanceAmount.toString()),
+      customer: row.customer,
+      etag: this.generateETag(row.invoice),
+    }));
+
+    return {
+      data: formattedInvoices,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get invoice by ID with full details
+   */
+  async getInvoiceById(id: string): Promise<Invoice | null> {
+    // Get invoice with customer
+    const invoiceResult = await this.db
+      .select({
+        invoice: invoices,
+        customer: {
+          id: customers.id,
+          name: customers.name,
+          email: customers.email,
+          phone: customers.phone,
+          address: customers.billingAddress,
+        },
+      })
+      .from(invoices)
+      .leftJoin(customers, eq(invoices.customerId, customers.id))
+      .where(
+        and(
+          eq(invoices.id, id),
+          eq(invoices.organizationId, this.context.organizationId)
+        )
+      )
+      .limit(1);
+
+    if (invoiceResult.length === 0) {
+      return null;
+    }
+
+    const { invoice, customer } = invoiceResult[0];
+
+    // Get line items
+    const lineItemResults = await this.db
+      .select()
+      .from(invoiceLineItems)
+      .where(eq(invoiceLineItems.invoiceId, id))
+      .orderBy(invoiceLineItems.lineNumber);
+
+    // Get payments
+    const paymentResults = await this.db
+      .select()
+      .from(payments)
+      .where(eq(payments.invoiceId, id))
+      .orderBy(desc(payments.paymentDate));
+
+    // Format line items
+    const formattedLineItems = lineItemResults.map((item) => ({
+      ...item,
+      quantity: parseFloat(item.quantity.toString()),
+      unitPrice: parseFloat(item.unitPrice.toString()),
+      subtotal: parseFloat(item.subtotal.toString()),
+      taxRate: parseFloat(item.taxRate.toString()),
+      taxAmount: parseFloat(item.taxAmount.toString()),
+      totalAmount: parseFloat(item.totalAmount.toString()),
+    }));
+
+    // Format payments
+    const formattedPayments = paymentResults.map((payment) => ({
+      ...payment,
+      amount: parseFloat(payment.amount.toString()),
+    }));
+
+    // Return formatted invoice
+    return {
+      ...invoice,
+      subtotal: parseFloat(invoice.subtotal.toString()),
+      taxAmount: parseFloat(invoice.taxAmount.toString()),
+      discountAmount: parseFloat(invoice.discountAmount.toString()),
+      totalAmount: parseFloat(invoice.totalAmount.toString()),
+      paidAmount: parseFloat(invoice.paidAmount.toString()),
+      balanceAmount: parseFloat(invoice.balanceAmount.toString()),
+      customer,
+      lineItems: formattedLineItems,
+      payments: formattedPayments,
+      etag: this.generateETag({ ...invoice, payments: formattedPayments }),
+    } as Invoice;
+  }
+
+  /**
+   * Create new invoice
+   */
+  async createInvoice(data: CreateInvoice): Promise<Invoice> {
+    const invoiceId = generateId();
+    const invoiceNumber = await this.generateInvoiceNumber();
+
+    // Calculate totals from line items
+    let subtotal = 0;
+    let taxAmount = 0;
+    const taxRate = 0.15; // 15% tax rate
+
+    if (data.lineItems) {
+      data.lineItems.forEach((item) => {
+        const itemSubtotal = item.quantity * item.unitPrice;
+        subtotal += itemSubtotal;
+        taxAmount += itemSubtotal * taxRate;
+      });
+    }
+
+    const totalAmount = subtotal + taxAmount;
+
+    // Create invoice
+    const invoiceData = {
+      id: invoiceId,
+      organizationId: this.context.organizationId,
+      invoiceNumber,
+      customerId: data.customerId,
+      projectId: data.projectId,
+      quoteId: data.quoteId,
+      currency: data.currency || 'NZD',
+      subtotal: subtotal.toString(),
+      taxAmount: taxAmount.toString(),
+      discountAmount: '0.00',
+      totalAmount: totalAmount.toString(),
+      paidAmount: '0.00',
+      balanceAmount: totalAmount.toString(),
+      status: 'draft' as InvoiceStatus,
+      title: data.title,
+      description: data.description,
+      termsConditions: data.termsConditions,
+      notes: data.notes,
+      metadata: data.metadata || {},
+      createdBy: this.context.userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      dueAt: data.dueDate ? new Date(data.dueDate) : null,
+    };
+
+    await this.db.insert(invoices).values(invoiceData);
+
+    // Create line items if provided
+    if (data.lineItems && data.lineItems.length > 0) {
+      const lineItemsData = data.lineItems.map((item, index) => {
+        const itemSubtotal = item.quantity * item.unitPrice;
+        const itemTaxAmount = itemSubtotal * taxRate;
+        const itemTotal = itemSubtotal + itemTaxAmount;
+
+        return {
+          id: generateId(),
+          invoiceId,
+          lineNumber: index + 1,
+          description: item.description,
+          quantity: item.quantity.toString(),
+          unitPrice: item.unitPrice.toString(),
+          subtotal: itemSubtotal.toString(),
+          taxRate: taxRate.toString(),
+          taxAmount: itemTaxAmount.toString(),
+          totalAmount: itemTotal.toString(),
+          metadata: {},
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      });
+
+      await this.db.insert(invoiceLineItems).values(lineItemsData);
+    }
+
+    // Log creation
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        action: 'invoice_created',
+        resource: 'invoice',
+        resourceId: invoiceId,
+        details: {
+          invoiceNumber,
+          customerId: data.customerId,
+          totalAmount,
+        },
+      });
+    }
+
+    // Return created invoice
+    const createdInvoice = await this.getInvoiceById(invoiceId);
+    return createdInvoice!;
+  }
+
+  /**
+   * Update invoice
+   */
+  async updateInvoice(id: string, data: UpdateInvoice): Promise<Invoice | null> {
+    // Verify invoice exists and belongs to organization
+    const existingInvoice = await this.getInvoiceById(id);
+    if (!existingInvoice) {
+      return null;
+    }
+
+    // Only allow updates to draft invoices
+    if (existingInvoice.status !== 'draft') {
+      throw new Error('Can only update draft invoices');
+    }
+
+    // Update invoice
+    await this.db
+      .update(invoices)
+      .set({
+        ...data,
+        dueAt: data.dueDate ? new Date(data.dueDate) : undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, id));
+
+    // Log update
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        action: 'invoice_updated',
+        resource: 'invoice',
+        resourceId: id,
+        details: data,
+      });
+    }
+
+    return await this.getInvoiceById(id);
+  }
+
+  /**
+   * Update invoice status
+   */
+  async updateInvoiceStatus(id: string, transition: InvoiceStatusTransition): Promise<Invoice | null> {
+    const existingInvoice = await this.getInvoiceById(id);
+    if (!existingInvoice) {
+      return null;
+    }
+
+    const updateData: any = {
+      status: transition.status,
+      updatedAt: new Date(),
+    };
+
+    // Set status-specific timestamps
+    const effectiveDate = transition.effectiveDate ? new Date(transition.effectiveDate) : new Date();
+    
+    switch (transition.status) {
+      case 'sent':
+        updateData.issuedAt = effectiveDate;
+        break;
+      case 'paid':
+        updateData.paidAt = effectiveDate;
+        break;
+      case 'overdue':
+        updateData.overdueAt = effectiveDate;
+        break;
+      case 'written_off':
+        updateData.writtenOffAt = effectiveDate;
+        break;
+    }
+
+    await this.db
+      .update(invoices)
+      .set(updateData)
+      .where(eq(invoices.id, id));
+
+    // Log status change
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        action: 'invoice_status_changed',
+        resource: 'invoice',
+        resourceId: id,
+        details: {
+          previousStatus: existingInvoice.status,
+          newStatus: transition.status,
+          reason: transition.reason,
+        },
+      });
+    }
+
+    return await this.getInvoiceById(id);
+  }
+
+  /**
+   * Mark invoice as paid
+   */
+  async markInvoicePaid(id: string, paymentData: MarkInvoicePaid): Promise<Invoice | null> {
+    const existingInvoice = await this.getInvoiceById(id);
+    if (!existingInvoice) {
+      return null;
+    }
+
+    const paymentAmount = paymentData.amount || existingInvoice.balanceAmount;
+    const newPaidAmount = existingInvoice.paidAmount + paymentAmount;
+    const newBalanceAmount = existingInvoice.totalAmount - newPaidAmount;
+
+    // Create payment record
+    const paymentId = generateId();
+    await this.db.insert(payments).values({
+      id: paymentId,
+      invoiceId: id,
+      amount: paymentAmount.toString(),
+      currency: existingInvoice.currency,
+      paymentDate: new Date(paymentData.paymentDate),
+      paymentMethod: paymentData.paymentMethod,
+      reference: paymentData.reference,
+      notes: paymentData.notes,
+      createdBy: this.context.userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Update invoice amounts and status
+    const newStatus = newBalanceAmount <= 0 ? 'paid' : 'part_paid';
+    const updateData: any = {
+      paidAmount: newPaidAmount.toString(),
+      balanceAmount: newBalanceAmount.toString(),
+      status: newStatus,
+      updatedAt: new Date(),
+    };
+
+    if (newStatus === 'paid') {
+      updateData.paidAt = new Date(paymentData.paymentDate);
+    }
+
+    await this.db
+      .update(invoices)
+      .set(updateData)
+      .where(eq(invoices.id, id));
+
+    // Log payment
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        action: 'invoice_payment_recorded',
+        resource: 'invoice',
+        resourceId: id,
+        details: {
+          paymentId,
+          amount: paymentAmount,
+          newBalance: newBalanceAmount,
+          newStatus,
+        },
+      });
+    }
+
+    return await this.getInvoiceById(id);
+  }
+
+  /**
+   * Void invoice
+   */
+  async voidInvoice(id: string, voidData: VoidInvoice): Promise<Invoice | null> {
+    const existingInvoice = await this.getInvoiceById(id);
+    if (!existingInvoice) {
+      return null;
+    }
+
+    // Can't void paid invoices
+    if (existingInvoice.status === 'paid' || existingInvoice.status === 'part_paid') {
+      throw new Error('Cannot void invoices with payments');
+    }
+
+    await this.db
+      .update(invoices)
+      .set({
+        status: 'void',
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, id));
+
+    // Log void action
+    if (this.auditLogger) {
+      await this.auditLogger.logEvent({
+        action: 'invoice_voided',
+        resource: 'invoice',
+        resourceId: id,
+        details: {
+          reason: voidData.reason,
+          previousStatus: existingInvoice.status,
+        },
+      });
+    }
+
+    return await this.getInvoiceById(id);
+  }
+}

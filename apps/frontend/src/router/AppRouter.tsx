@@ -11,6 +11,8 @@ const LandingPage = lazy(() => import('../pages/Landing/Landing').then(m => ({ d
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const QuotesPage = lazy(() => import('../pages/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const QuoteDetailPage = lazy(() => import('../pages/Quotes/Details').then(m => ({ default: m.QuoteDetailsPage })));
+const InvoicesPage = lazy(() => import('../pages/Invoices/List').then(m => ({ default: m.InvoicesListPage })));
+const InvoiceDetailPage = lazy(() => import('../pages/Invoices/Details').then(m => ({ default: m.InvoiceDetailsPage })));
 const ProjectsPage = lazy(() => import('../pages/Projects/List').then(m => ({ default: m.ProjectsListPage })));
 const ProjectDetailPage = lazy(() => import('../pages/Projects/Details').then(m => ({ default: m.ProjectDetailPage })));
 const RateCardsPage = lazy(() => import('../pages/RateCards/List').then(m => ({ default: m.RateCardsListPage })));
@@ -98,6 +100,32 @@ export const AppRouter: React.FC = () => {
                     <AppLayout>
                       <PerformanceMarks routeName="quote-detail">
                         <QuoteDetailPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/invoices"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="invoices">
+                        <InvoicesPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/invoices/:id"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="invoice-detail">
+                        <InvoiceDetailPage />
                       </PerformanceMarks>
                     </AppLayout>
                   </RequireAuth>
