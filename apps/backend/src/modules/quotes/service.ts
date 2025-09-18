@@ -51,7 +51,7 @@ export class QuoteService {
       .offset(offset);
 
     return {
-      quotes: quotesResult,
+      data: quotesResult,  // Changed from 'quotes' to 'data' to match frontend expectation
       pagination: {
         page,
         pageSize,

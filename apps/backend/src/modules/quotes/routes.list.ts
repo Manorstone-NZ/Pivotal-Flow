@@ -5,6 +5,7 @@ import type { PaginationOptions } from '../../lib/repo.base.js';
 
 import { QuoteListFiltersSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 // import { createTenantGuard } from '@pivotal-flow/shared/dist/tenancy/guard.js';
 
 interface ListQuotesRequest {
@@ -47,7 +48,7 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
       // Parse and validate query parameters
       const pagination: PaginationOptions = {
         page: request.query.page || 1,
-        pageSize: request.query.pageSize || 20
+        size: request.query.pageSize || 20  // Fixed: use 'size' to match service expectation
       };
 
       const filters = {
@@ -62,10 +63,11 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
       };
 
       // Create quote service
+      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
-      });
+      }, auditLogger);
 
       // List quotes
       const result = await quoteService.listQuotes(pagination, filters);
