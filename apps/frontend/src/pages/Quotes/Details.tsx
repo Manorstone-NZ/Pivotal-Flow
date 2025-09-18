@@ -11,6 +11,7 @@ import { QuoteLineTable } from '../../components/quotes/QuoteLineTable';
 import { QuoteSummaryCard } from '../../components/quotes/QuoteSummaryCard';
 import { DiscountEditor } from '../../components/quotes/DiscountEditor';
 import { CustomerSelector } from '../../components/quotes/CustomerSelector';
+import { useAuth } from '../../features/auth/store';
 import { 
   useQuote, 
   useUpdateQuote, 
@@ -23,6 +24,7 @@ import {
 export const QuoteDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { accessToken } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<UpdateQuote>({});
@@ -406,7 +408,7 @@ export const QuoteDetailsPage: React.FC = () => {
                       const response = await fetch(`http://localhost:3000/api/v1/quotes/${quote.id}/pdf`, {
                         method: 'POST',
                         headers: {
-                          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                          'Authorization': `Bearer ${accessToken}`,
                         },
                       });
                       
@@ -421,7 +423,8 @@ export const QuoteDetailsPage: React.FC = () => {
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
                       } else {
-                        console.error('Failed to generate PDF');
+                        const errorText = await response.text();
+                        console.error('Failed to generate PDF:', response.status, errorText);
                       }
                     } catch (error) {
                       console.error('Error generating PDF:', error);
