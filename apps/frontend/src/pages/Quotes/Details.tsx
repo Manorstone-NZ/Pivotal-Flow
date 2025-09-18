@@ -407,7 +407,7 @@ export const QuoteDetailsPage: React.FC = () => {
                     try {
                       console.log('PDF Download - Access Token:', accessToken ? 'Present' : 'Missing');
                       const response = await fetch(`http://localhost:3000/api/v1/quotes/${quote.id}/pdf`, {
-                        method: 'POST',
+                        method: 'GET',
                         headers: {
                           'Authorization': `Bearer ${accessToken}`,
                         },
