@@ -343,7 +343,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <Input
                       value={editForm.title}
-                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      onChange={(value) => setEditForm({ ...editForm, title: value })}
                       placeholder="Invoice title"
                     />
                   ) : (
@@ -359,7 +359,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <TextArea
                       value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      onChange={(value) => setEditForm({ ...editForm, description: value })}
                       placeholder="Invoice description"
                       rows={3}
                     />
@@ -402,7 +402,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                       <Input
                         type="date"
                         value={editForm.dueDate}
-                        onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                        onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
                       />
                     ) : (
                       <p className="text-text-secondary">
@@ -420,7 +420,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <TextArea
                       value={editForm.notes}
-                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                      onChange={(value) => setEditForm({ ...editForm, notes: value })}
                       placeholder="Internal notes"
                       rows={2}
                     />
@@ -552,7 +552,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={statusForm.reason}
-                    onChange={(e) => setStatusForm({ ...statusForm, reason: e.target.value })}
+                    onChange={(value) => setStatusForm({ ...statusForm, reason: value })}
                     placeholder="Reason for status change"
                     rows={2}
                   />
@@ -596,7 +596,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     <Input
                       type="date"
                       value={paymentForm.paymentDate}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                      onChange={(value) => setPaymentForm({ ...paymentForm, paymentDate: value })}
                     />
                   </div>
 
@@ -609,7 +609,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                       step="0.01"
                       placeholder={`${invoice.balanceAmount.toFixed(2)} (balance)`}
                       value={paymentForm.amount}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                      onChange={(value) => setPaymentForm({ ...paymentForm, amount: value })}
                     />
                   </div>
                 </div>
@@ -640,7 +640,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <Input
                     value={paymentForm.reference}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+                    onChange={(value) => setPaymentForm({ ...paymentForm, reference: value })}
                     placeholder="Transaction reference"
                   />
                 </div>
@@ -651,7 +651,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                    onChange={(value) => setPaymentForm({ ...paymentForm, notes: value })}
                     placeholder="Payment notes"
                     rows={2}
                   />
@@ -698,7 +698,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={voidForm.reason}
-                    onChange={(e) => setVoidForm({ ...voidForm, reason: e.target.value })}
+                    onChange={(value) => setVoidForm({ ...voidForm, reason: value })}
                     placeholder="Explain why this invoice is being voided"
                     rows={3}
                     required
