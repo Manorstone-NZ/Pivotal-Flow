@@ -457,9 +457,10 @@ export class InvoicePDFService {
     let browser;
     
     try {
-      // Launch browser with minimal configuration
+      // Launch browser with minimal configuration using system Chromium
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: '/usr/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -468,7 +469,9 @@ export class InvoicePDFService {
           '--no-first-run',
           '--no-zygote',
           '--single-process',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
         ],
       });
 
