@@ -418,7 +418,7 @@ export const QuoteDetailsPage: React.FC = () => {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `quote-${quote.quoteNumber}.html`;
+                        a.download = `quote-${quote.quoteNumber}.pdf`;
                         document.body.appendChild(a);
                         a.click();
                         window.URL.revokeObjectURL(url);
