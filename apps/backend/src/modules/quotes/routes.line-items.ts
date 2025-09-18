@@ -190,7 +190,7 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
   });
 
   // Set discount on quote
-  fastify.post('/v1/quotes/:quoteId/discount', {
+  fastify.put('/v1/quotes/:quoteId/discount', {
     schema: {
       body: Type.Object({
         type: Type.Union([Type.Literal('percentage'), Type.Literal('fixed')]),
