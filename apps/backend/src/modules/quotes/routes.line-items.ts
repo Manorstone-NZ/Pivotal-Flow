@@ -3,6 +3,7 @@ import { Type } from '@sinclair/typebox';
 
 import { logger } from '../../lib/logger.js';
 import { QuoteService } from './service.js';
+import { QuotePDFService } from './pdfService.js';
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 
 interface AddLineItemRequest {
@@ -282,138 +283,37 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Generate PDF content (HTML template)
-      const pdfContent = generateQuotePdfTemplate(quote);
+      // Generate PDF using the PDF service
+      const pdfService = new QuotePDFService();
+      const pdfData = {
+        quote,
+        organization: {
+          name: 'Pivotal Flow Ltd', // TODO: Get from organization settings
+          address: 'New Zealand', // TODO: Get from organization settings
+          email: 'admin@pivotalflow.com', // TODO: Get from organization settings
+          website: 'https://pivotalflow.com', // TODO: Get from organization settings
+        },
+      };
 
-      // For now, return the HTML content that can be printed to PDF
-      // In a production environment, you would use a library like puppeteer to generate actual PDF
-      return reply
-        .header('Content-Type', 'text/html')
-        .header('Content-Disposition', `attachment; filename="quote-${quote.quoteNumber}.html"`)
-        .send(pdfContent);
+      const pdfBuffer = await pdfService.generatePDF(pdfData);
+
+      // Set response headers for PDF download
+      reply.type('application/pdf');
+      reply.header('Content-Disposition', `attachment; filename="quote-${quote.quoteNumber}.pdf"`);
+      reply.header('Content-Length', pdfBuffer.length.toString());
+
+      return reply.send(pdfBuffer);
     } catch (error) {
       logger.error('Error generating quote PDF:', error);
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: 'Failed to generate PDF',
-        code: 'INTERNAL_ERROR'
+        message: 'Failed to generate quote PDF',
+        code: 'PDF_GENERATION_FAILED'
       });
     }
   });
 }
 
-/**
- * Generate HTML template for quote PDF
- */
-function generateQuotePdfTemplate(quote: any): string {
-  const formatCurrency = (amount: number, currency: string = 'NZD') => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const currency = quote.metadata?.currency || 'NZD';
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Quote ${quote.quoteNumber}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-        .header { border-bottom: 2px solid #4F46E5; padding-bottom: 20px; margin-bottom: 30px; }
-        .company-name { font-size: 24px; font-weight: bold; color: #4F46E5; }
-        .quote-title { font-size: 20px; margin: 10px 0; }
-        .quote-number { color: #666; }
-        .section { margin: 20px 0; }
-        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f8f9fa; font-weight: bold; }
-        .text-right { text-align: right; }
-        .totals-table { width: 300px; margin-left: auto; }
-        .total-row { font-weight: bold; background-color: #f8f9fa; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="company-name">Pivotal Flow Ltd</div>
-        <div class="quote-title">${quote.title}</div>
-        <div class="quote-number">Quote #${quote.quoteNumber}</div>
-        <div>Date: ${new Date(quote.createdAt).toLocaleDateString()}</div>
-        ${quote.validUntil ? `<div>Valid Until: ${new Date(quote.validUntil).toLocaleDateString()}</div>` : ''}
-    </div>
-
-    <div class="section">
-        <div class="section-title">Quote Details</div>
-        <p><strong>Type:</strong> ${quote.type}</p>
-        <p><strong>Status:</strong> ${quote.status}</p>
-        ${quote.description ? `<p><strong>Description:</strong> ${quote.description}</p>` : ''}
-    </div>
-
-    ${quote.lineItems && quote.lineItems.length > 0 ? `
-    <div class="section">
-        <div class="section-title">Line Items</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th class="text-right">Quantity</th>
-                    <th class="text-right">Unit Price</th>
-                    <th class="text-right">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${quote.lineItems.map((item: any) => `
-                <tr>
-                    <td>${item.description}</td>
-                    <td class="text-right">${item.quantity}</td>
-                    <td class="text-right">${formatCurrency(item.unitPrice, currency)}</td>
-                    <td class="text-right">${formatCurrency(item.totalPrice, currency)}</td>
-                </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    </div>
-    ` : ''}
-
-    <div class="section">
-        <div class="section-title">Summary</div>
-        <table class="totals-table">
-            <tr>
-                <td>Subtotal:</td>
-                <td class="text-right">${formatCurrency(quote.subtotal, currency)}</td>
-            </tr>
-            ${quote.metadata?.discountAmount && parseFloat(quote.metadata.discountAmount) > 0 ? `
-            <tr>
-                <td>Discount (${quote.metadata.discountType === 'percentage' ? quote.metadata.discountValue + '%' : 'Fixed'}):</td>
-                <td class="text-right">-${formatCurrency(parseFloat(quote.metadata.discountAmount), currency)}</td>
-            </tr>
-            ` : ''}
-            <tr>
-                <td>Tax (${quote.metadata?.taxRate ? (parseFloat(quote.metadata.taxRate) * 100).toFixed(1) + '%' : '15%'}):</td>
-                <td class="text-right">${formatCurrency(quote.taxAmount, currency)}</td>
-            </tr>
-            <tr class="total-row">
-                <td><strong>Total Amount:</strong></td>
-                <td class="text-right"><strong>${formatCurrency(quote.totalAmount, currency)}</strong></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="footer">
-        <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-        <p>This quote is valid until ${quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : 'further notice'}.</p>
-    </div>
-</body>
-</html>
-  `.trim();
-}
 
 // Submit quote route
 export function registerSubmitQuoteRoute(fastify: FastifyInstance) {
