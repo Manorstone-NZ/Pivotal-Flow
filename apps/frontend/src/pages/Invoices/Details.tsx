@@ -21,7 +21,7 @@ import {
 import { Button } from '../../components/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
-import { Textarea } from '../../components/ui/Textarea';
+import { TextArea } from '../../components/ui/TextArea';
 import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
@@ -357,7 +357,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     Description
                   </label>
                   {isEditing ? (
-                    <Textarea
+                    <TextArea
                       value={editForm.description}
                       onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                       placeholder="Invoice description"
@@ -418,7 +418,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     Notes
                   </label>
                   {isEditing ? (
-                    <Textarea
+                    <TextArea
                       value={editForm.notes}
                       onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                       placeholder="Internal notes"
@@ -550,7 +550,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-text-primary mb-1">
                     Reason (Optional)
                   </label>
-                  <Textarea
+                  <TextArea
                     value={statusForm.reason}
                     onChange={(e) => setStatusForm({ ...statusForm, reason: e.target.value })}
                     placeholder="Reason for status change"
@@ -649,7 +649,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-text-primary mb-1">
                     Notes
                   </label>
-                  <Textarea
+                  <TextArea
                     value={paymentForm.notes}
                     onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                     placeholder="Payment notes"
@@ -696,7 +696,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-text-primary mb-1">
                     Reason for Voiding <span className="text-red-500">*</span>
                   </label>
-                  <Textarea
+                  <TextArea
                     value={voidForm.reason}
                     onChange={(e) => setVoidForm({ ...voidForm, reason: e.target.value })}
                     placeholder="Explain why this invoice is being voided"
