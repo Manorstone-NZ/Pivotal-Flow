@@ -177,11 +177,12 @@ export interface InvoiceListResponse {
 
 // API client
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: 'http://localhost:3000/api/v1',
 });
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
+  // Get token from auth store (will be injected by the auth system)
   const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
