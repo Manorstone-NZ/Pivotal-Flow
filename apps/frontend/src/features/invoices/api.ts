@@ -308,6 +308,27 @@ export const invoiceApi = {
     
     return response.data;
   },
+
+  // Download PDF
+  downloadPDF: async (id: string, invoiceNumber: string): Promise<void> => {
+    const response = await api.get(`/invoices/${id}/pdf`, {
+      responseType: 'blob',
+    });
+
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `invoice-${invoiceNumber}.pdf`);
+    
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 // React Query hooks
@@ -445,5 +466,15 @@ export const useVoidInvoice = () => {
       // Invalidate lists to ensure they reflect the void status
       queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
     },
+  });
+};
+
+/**
+ * Hook to download invoice PDF
+ */
+export const useDownloadInvoicePDF = () => {
+  return useMutation({
+    mutationFn: ({ id, invoiceNumber }: { id: string; invoiceNumber: string }) =>
+      invoiceApi.downloadPDF(id, invoiceNumber),
   });
 };

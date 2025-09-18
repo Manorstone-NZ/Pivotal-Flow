@@ -58,6 +58,7 @@
     "pino-pretty": "^10.2.3",
     "postgres": "^3.4.7",
     "prom-client": "^15.1.0",
+    "puppeteer": "^24.22.0",
     "redis": "^5.8.2"
   },
   "devDependencies": {

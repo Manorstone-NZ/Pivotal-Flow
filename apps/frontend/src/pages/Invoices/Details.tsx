@@ -6,6 +6,7 @@ import {
   useUpdateInvoiceStatus,
   useMarkInvoicePaid,
   useVoidInvoice,
+  useDownloadInvoicePDF,
   type Invoice,
   type InvoiceStatusTransition,
   type MarkInvoicePaidData,
@@ -91,6 +92,22 @@ export const InvoiceDetailsPage: React.FC = () => {
   const updateStatusMutation = useUpdateInvoiceStatus();
   const markPaidMutation = useMarkInvoicePaid();
   const voidInvoiceMutation = useVoidInvoice();
+  const downloadPDFMutation = useDownloadInvoicePDF();
+
+  // Handlers
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+    
+    try {
+      await downloadPDFMutation.mutateAsync({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+      });
+      success('PDF downloaded successfully');
+    } catch (error) {
+      showError('Failed to download PDF');
+    }
+  };
 
   // Initialize edit form when invoice loads
   React.useEffect(() => {
@@ -499,11 +516,12 @@ export const InvoiceDetailsPage: React.FC = () => {
                 )}
 
                 <Button
-                  onClick={() => window.print()}
+                  onClick={handleDownloadPDF}
                   variant="outline"
                   className="w-full"
+                  disabled={downloadPDFMutation.isPending}
                 >
-                  Print Invoice
+                  {downloadPDFMutation.isPending ? 'Generating PDF...' : 'Download Invoice PDF'}
                 </Button>
 
                 {invoice.status !== 'void' && (

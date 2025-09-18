@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { logger } from '../../lib/logger.js';
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { InvoiceService } from './service.js';
+import { InvoicePDFService } from './pdfService.js';
 import { invoices } from '../../lib/schema.js';
 import { generateId } from '@pivotal-flow/shared';
 import {
@@ -542,6 +543,69 @@ export function registerVoidInvoiceRoute(fastify: FastifyInstance) {
         error: 'Internal Server Error',
         message: 'Failed to void invoice',
         code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Generate PDF for invoice
+  fastify.get<{
+    Params: { id: string };
+  }>('/v1/invoices/:id/pdf', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    try {
+      const user = (request as any).user;
+      if (!user) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Authentication required',
+          code: 'TENANT_ACCESS_DENIED',
+        });
+      }
+
+      const { id } = request.params;
+      const invoiceService = new InvoiceService({
+        organizationId: user.organizationId,
+        userId: user.userId,
+      });
+
+      // Get invoice with full details
+      const invoice = await invoiceService.getInvoiceById(id);
+      if (!invoice) {
+        return reply.status(404).send({
+          error: 'Not Found',
+          message: 'Invoice not found',
+          code: 'INVOICE_NOT_FOUND',
+        });
+      }
+
+      // Prepare PDF data
+      const pdfService = new InvoicePDFService();
+      const pdfData = {
+        invoice,
+        lineItems: invoice.lineItems || [],
+        payments: invoice.payments || [],
+        organization: {
+          name: 'Pivotal Flow Ltd', // TODO: Get from organization settings
+          address: 'New Zealand', // TODO: Get from organization settings
+          email: 'admin@pivotalflow.com', // TODO: Get from organization settings
+          website: 'https://pivotalflow.com', // TODO: Get from organization settings
+        },
+      };
+
+      // Generate PDF
+      const pdfBuffer = await pdfService.generatePDF(pdfData);
+
+      // Set response headers for PDF download
+      reply.type('application/pdf');
+      reply.header('Content-Disposition', `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`);
+      reply.header('Content-Length', pdfBuffer.length.toString());
+
+      return reply.send(pdfBuffer);
+    } catch (error) {
+      logger.error('Error generating PDF:', error);
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to generate PDF',
+        code: 'PDF_GENERATION_FAILED',
       });
     }
   });
