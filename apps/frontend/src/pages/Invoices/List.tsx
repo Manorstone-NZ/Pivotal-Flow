@@ -146,11 +146,11 @@ export const InvoicesListPage: React.FC = () => {
         </div>
         
         <Button
-          onClick={() => showError('Invoice creation temporarily disabled - UI testing ready')}
+          onClick={handleCreateInvoice}
           className="w-full sm:w-auto"
-          variant="outline"
+          disabled={createInvoiceMutation.isPending}
         >
-          Create Invoice (Coming Soon)
+          {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
         </Button>
       </div>
 
