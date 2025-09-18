@@ -22,7 +22,6 @@ import { Button } from '../../components/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { TextArea } from '../../components/ui/TextArea';
-import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
 import { cn } from '../../lib/utils';
@@ -533,9 +532,10 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-text-primary mb-1">
                     New Status
                   </label>
-                  <Select
+                  <select
                     value={statusForm.status}
-                    onValueChange={(value) => setStatusForm({ ...statusForm, status: value as any })}
+                    onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                   >
                     <option value="">Select status...</option>
                     {statusTransitionOptions.map((option) => (
@@ -543,7 +543,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                         {option.label}
                       </option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
 
                 <div>
@@ -618,9 +618,10 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-text-primary mb-1">
                     Payment Method
                   </label>
-                  <Select
+                  <select
                     value={paymentForm.paymentMethod}
-                    onValueChange={(value) => setPaymentForm({ ...paymentForm, paymentMethod: value })}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                   >
                     <option value="">Select method...</option>
                     <option value="cash">Cash</option>
@@ -631,7 +632,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     <option value="direct_debit">Direct Debit</option>
                     <option value="paypal">PayPal</option>
                     <option value="other">Other</option>
-                  </Select>
+                  </select>
                 </div>
 
                 <div>

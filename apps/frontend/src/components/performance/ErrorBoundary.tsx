@@ -260,7 +260,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </button>
             </div>
 
-            {process.env['NODE_ENV'] === 'development' && (
+            {import.meta.env.DEV && (
               <div className="mt-4 text-xs text-text-tertiary">
                 Error ID: {this.state.errorId}
               </div>
