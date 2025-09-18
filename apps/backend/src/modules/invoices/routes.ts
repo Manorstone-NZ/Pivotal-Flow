@@ -86,7 +86,7 @@ export function registerListInvoicesRoute(fastify: FastifyInstance) {
       }
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -153,7 +153,7 @@ export function registerGetInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -224,7 +224,7 @@ export function registerCreateInvoiceRoute(fastify: FastifyInstance) {
       }
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -286,7 +286,7 @@ export function registerUpdateInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -365,7 +365,7 @@ export function registerInvoiceStatusRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -435,7 +435,7 @@ export function registerMarkInvoicePaidRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
@@ -505,7 +505,7 @@ export function registerVoidInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
