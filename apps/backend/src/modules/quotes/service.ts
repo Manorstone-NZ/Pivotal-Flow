@@ -594,4 +594,35 @@ export class QuoteService {
     // Return the updated quote
     return await this.getQuoteById(quoteId);
   }
+
+  async updateQuoteStatus(quoteId: string, status: string) {
+    // First verify the quote exists and belongs to the organization
+    const quote = await this.getQuoteById(quoteId);
+    if (!quote) {
+      return null;
+    }
+
+    // Update the quote status
+    await this.db
+      .update(quotes)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(quotes.id, quoteId));
+
+    // Log the status change
+    await this.auditLogger.logEvent({
+      action: 'quote_status_updated',
+      resource: 'quote',
+      resourceId: quoteId,
+      details: { 
+        newStatus: status,
+        previousStatus: quote.status
+      }
+    });
+
+    // Return the updated quote
+    return await this.getQuoteById(quoteId);
+  }
 }
