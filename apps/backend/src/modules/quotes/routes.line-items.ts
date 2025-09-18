@@ -250,7 +250,7 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
   });
 
   // Generate PDF for quote
-  fastify.post('/v1/quotes/:quoteId/pdf', async (request: FastifyRequest<{
+  fastify.get('/v1/quotes/:quoteId/pdf', async (request: FastifyRequest<{
     Params: { quoteId: string };
   }>, reply: FastifyReply) => {
     try {
