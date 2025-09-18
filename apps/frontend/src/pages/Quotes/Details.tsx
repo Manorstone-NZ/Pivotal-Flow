@@ -401,9 +401,31 @@ export const QuoteDetailsPage: React.FC = () => {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => {
-                    // In real implementation, this would generate and download PDF
-                    console.log('Generate PDF for quote:', quote.id);
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/v1/quotes/${quote.id}/pdf`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                        },
+                      });
+                      
+                      if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `quote-${quote.quoteNumber}.html`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } else {
+                        console.error('Failed to generate PDF');
+                      }
+                    } catch (error) {
+                      console.error('Error generating PDF:', error);
+                    }
                   }}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
