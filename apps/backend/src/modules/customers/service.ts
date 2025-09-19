@@ -3,7 +3,7 @@
  * Business logic and database operations for customers and contacts
  */
 
-import { eq, and, or, like, desc, asc, isNull, inArray, sql } from 'drizzle-orm';
+import { eq, and, or, like, desc, asc, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { generateId } from '@pivotal-flow/shared';
 
@@ -18,7 +18,7 @@ export class CustomerService {
   constructor(
     private fastify: FastifyInstance,
     private organizationId: string,
-    private userId: string
+    private _userId: string // Prefix with underscore to indicate intentionally unused
   ) {}
 
   /**
@@ -80,11 +80,12 @@ export class CustomerService {
 
     // Build order by
     const orderBy = [];
-    if (filters.sortBy) {
-      const column = customers[filters.sortBy as keyof typeof customers];
-      if (column) {
-        orderBy.push(filters.sortOrder === 'asc' ? asc(column) : desc(column));
-      }
+    if (filters.sortBy === 'companyName') {
+      orderBy.push(filters.sortOrder === 'asc' ? asc(customers.companyName) : desc(customers.companyName));
+    } else if (filters.sortBy === 'createdAt') {
+      orderBy.push(filters.sortOrder === 'asc' ? asc(customers.createdAt) : desc(customers.createdAt));
+    } else if (filters.sortBy === 'status') {
+      orderBy.push(filters.sortOrder === 'asc' ? asc(customers.status) : desc(customers.status));
     } else {
       orderBy.push(desc(customers.createdAt));
     }
@@ -137,7 +138,7 @@ export class CustomerService {
       return null;
     }
 
-    const result: CustomerWithContacts = customer[0];
+    const result: CustomerWithContacts = customer[0]!;
 
     if (includeContacts) {
       const contacts = await this.getCustomerContacts(customerId);
@@ -169,7 +170,7 @@ export class CustomerService {
       .values(newCustomer)
       .returning();
 
-    return result[0];
+    return result[0]!;
   }
 
   /**
@@ -312,7 +313,7 @@ export class CustomerService {
       .values(newContact)
       .returning();
 
-    return result[0];
+    return result[0]!;
   }
 
   /**

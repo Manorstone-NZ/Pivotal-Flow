@@ -2,7 +2,7 @@ import { verifyPassword } from '@pivotal-flow/shared';
 import { eq, and } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 
-import { users, roles as rolesTable, userRoles as userRolesTable } from '../../lib/schema.js';
+import { users, roles as rolesTable, userRoles as userRolesTable, permissions, rolePermissions } from '../../lib/schema.js';
 
 
 export interface UserWithRoles {
@@ -26,6 +26,7 @@ export interface AuthUser {
   email: string;
   displayName: string | null;
   roles: string[];
+  permissions?: string[];
   organizationId: string;
 }
 
@@ -85,11 +86,31 @@ export class AuthService {
 
       const userRolesList = rolesResult.map((row: { name: string }) => row.name);
 
+      // Get user permissions through roles
+      const permissionsResult: Array<{ name: string }> = await (this.fastify as any).db
+        .select({
+          name: permissions.name,
+        })
+        .from(userRolesTable)
+        .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+        .innerJoin(rolePermissions, eq(rolesTable.id, rolePermissions.roleId))
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(
+          and(
+            eq(userRolesTable.userId, user.id),
+            eq(userRolesTable.isActive, true),
+            eq(rolesTable.isActive, true)
+          )
+        );
+
+      const userPermissionsList = permissionsResult.map((row: { name: string }) => row.name);
+
       return {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         roles: userRolesList,
+        permissions: userPermissionsList,
         organizationId: user.organizationId,
       };
     } catch (error) {
@@ -143,11 +164,31 @@ export class AuthService {
 
       const userRolesList = rolesResult.map((row: { name: string }) => row.name);
 
+      // Get user permissions through roles
+      const permissionsResult: Array<{ name: string }> = await (this.fastify as any).db
+        .select({
+          name: permissions.name,
+        })
+        .from(userRolesTable)
+        .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+        .innerJoin(rolePermissions, eq(rolesTable.id, rolePermissions.roleId))
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(
+          and(
+            eq(userRolesTable.userId, user.id),
+            eq(userRolesTable.isActive, true),
+            eq(rolesTable.isActive, true)
+          )
+        );
+
+      const userPermissionsList = permissionsResult.map((row: { name: string }) => row.name);
+
       return {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         roles: userRolesList,
+        permissions: userPermissionsList,
         organizationId: user.organizationId,
       };
     } catch (error) {

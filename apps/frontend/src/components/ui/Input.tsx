@@ -16,6 +16,11 @@ interface InputProps extends BaseComponentProps, Omit<FormFieldProps, 'children'
   minLength?: number;
   pattern?: string;
   disabled?: boolean;
+  id?: string;
+  name?: string;
+  step?: string;
+  // Allow additional props for react-hook-form compatibility
+  [key: string]: any;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(({
@@ -39,6 +44,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   pattern,
   className,
   'data-testid': testId,
+  ...restProps
 }, ref) => {
   const inputId = React.useId();
   
@@ -58,6 +64,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     onChange?.(event.target.value);
   };
   
+  // Separate react-hook-form props from other props
+  const { 
+    onChange: rhfOnChange, 
+    onBlur: rhfOnBlur, 
+    name: rhfName,
+    ...otherRestProps 
+  } = restProps as any;
+  
+  // Use react-hook-form's onChange if provided, otherwise use our own
+  const finalOnChange = rhfOnChange || handleChange;
+  
   return (
     <div className="space-y-1">
       {label && (
@@ -74,11 +91,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         ref={ref}
         type={type}
         placeholder={placeholder}
-        value={value ?? ''}
         defaultValue={defaultValue}
-        onChange={handleChange}
-        onBlur={onBlur}
-        onFocus={onFocus}
+        onChange={finalOnChange}
+        onBlur={rhfOnBlur || onBlur}
+        name={rhfName}
         disabled={disabled}
         autoComplete={autoComplete}
         autoFocus={autoFocus}
@@ -89,6 +105,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         className={inputClasses}
         data-testid={testId}
         {...a11y.getFieldProps(inputId, error, required)}
+        {...otherRestProps}
       />
       
       {error && (

@@ -81,7 +81,7 @@ export const Dialog: React.FC<DialogProps> = ({
       <div
         ref={dialogRef}
         className={cn(
-          'relative bg-surface-card rounded-lg shadow-xl w-full',
+          'relative bg-surface-card rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col',
           sizeClasses[size],
           className
         )}
@@ -90,20 +90,24 @@ export const Dialog: React.FC<DialogProps> = ({
         aria-labelledby={title ? 'dialog-title' : undefined}
         aria-describedby={description ? 'dialog-description' : undefined}
       >
-        <div className="p-6">
-          {title && (
-            <h2 id="dialog-title" className="text-lg font-semibold text-text-primary mb-2">
-              {title}
-            </h2>
+        <div className="flex flex-col h-full">
+          {(title || description) && (
+            <div className="p-6 pb-0 flex-shrink-0">
+              {title && (
+                <h2 id="dialog-title" className="text-lg font-semibold text-text-primary mb-2">
+                  {title}
+                </h2>
+              )}
+              
+              {description && (
+                <p id="dialog-description" className="text-sm text-text-secondary mb-4">
+                  {description}
+                </p>
+              )}
+            </div>
           )}
           
-          {description && (
-            <p id="dialog-description" className="text-sm text-text-secondary mb-4">
-              {description}
-            </p>
-          )}
-          
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
             {children}
           </div>
         </div>

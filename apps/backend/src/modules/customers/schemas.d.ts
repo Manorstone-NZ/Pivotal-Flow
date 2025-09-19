@@ -1,12 +1,7 @@
 /**
  * Customer Module Validation Schemas
- * Zod schemas for request/response validation
+ * TypeBox schemas for request/response validation
  */
-export declare const CreateCustomerSchema: any;
-export declare const UpdateCustomerSchema: any;
-export declare const CreateContactSchema: any;
-export declare const UpdateContactSchema: any;
-export declare const CustomerQuerySchema: any;
 export declare const CustomerResponseSchema: import("@sinclair/typebox").TObject<{
     id: import("@sinclair/typebox").TString;
     organizationId: import("@sinclair/typebox").TString;

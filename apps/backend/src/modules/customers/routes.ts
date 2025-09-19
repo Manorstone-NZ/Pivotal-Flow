@@ -22,17 +22,6 @@ import {
   CreateContactBodySchema,
   UpdateContactBodySchema,
 } from './schemas.js';
-import type {
-  AuthenticatedRequest,
-  ListCustomersRequest,
-  CustomerByIdRequest,
-  CreateCustomerRequest,
-  UpdateCustomerRequest,
-  ListContactsRequest,
-  ContactByIdRequest,
-  CreateContactRequest,
-  UpdateContactRequest,
-} from './types.js';
 
 // List customers with filtering and pagination
 export function registerCustomerListRoute(fastify: FastifyInstance): void {

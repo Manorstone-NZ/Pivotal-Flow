@@ -15,6 +15,7 @@ export const LoginResponseSchema = Type.Object({
     email: Type.String({ format: 'email' }),
     displayName: Type.String(),
     roles: Type.Array(Type.String()),
+    permissions: Type.Optional(Type.Array(Type.String())),
     organizationId: Type.String()
   })
 });
@@ -40,6 +41,7 @@ export const MeResponseSchema = Type.Object({
   email: Type.String({ format: 'email' }),
   displayName: Type.String(),
   roles: Type.Array(Type.String()),
+  permissions: Type.Optional(Type.Array(Type.String())),
   organizationId: Type.String()
 });
 

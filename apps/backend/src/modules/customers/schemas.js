@@ -1,57 +1,8 @@
 /**
  * Customer Module Validation Schemas
- * Zod schemas for request/response validation
+ * TypeBox schemas for request/response validation
  */
-import { z } from 'zod';
 import { Type } from '@sinclair/typebox';
-// Zod schemas for runtime validation
-export const CreateCustomerSchema = z.object({
-    companyName: z.string().min(1, 'Company name is required').max(255),
-    legalName: z.string().max(255).optional(),
-    industry: z.string().max(100).optional(),
-    website: z.string().url('Invalid URL').optional().or(z.literal('')),
-    description: z.string().optional(),
-    customerType: z.enum(['business', 'individual']).default('business'),
-    source: z.string().max(50).optional(),
-    tags: z.array(z.string()).optional(),
-    rating: z.number().int().min(1).max(5).optional(),
-    // Address fields
-    street: z.string().optional(),
-    suburb: z.string().optional(),
-    city: z.string().optional(),
-    region: z.string().optional(),
-    postcode: z.string().optional(),
-    country: z.string().optional(),
-    // Contact fields
-    phone: z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, 'Invalid phone number').optional().or(z.literal('')),
-    email: z.string().email('Invalid email').optional().or(z.literal('')),
-    contactExtras: z.any().optional(),
-});
-export const UpdateCustomerSchema = CreateCustomerSchema.partial();
-export const CreateContactSchema = z.object({
-    firstName: z.string().min(1, 'First name is required').max(100),
-    lastName: z.string().min(1, 'Last name is required').max(100),
-    email: z.string().email('Invalid email').optional().or(z.literal('')),
-    phone: z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, 'Invalid phone number').optional().or(z.literal('')),
-    position: z.string().max(100).optional(),
-    department: z.string().max(100).optional(),
-    isPrimary: z.boolean().default(false),
-    notes: z.string().optional(),
-    contactExtras: z.any().optional(),
-});
-export const UpdateContactSchema = CreateContactSchema.partial();
-export const CustomerQuerySchema = z.object({
-    page: z.coerce.number().min(1).default(1),
-    limit: z.coerce.number().min(1).max(100).default(20),
-    search: z.string().optional(),
-    status: z.enum(['active', 'inactive', 'prospect']).optional(),
-    customerType: z.enum(['business', 'individual']).optional(),
-    industry: z.string().optional(),
-    source: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    sortBy: z.string().optional(),
-    sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
 // TypeBox schemas for OpenAPI documentation
 export const CustomerResponseSchema = Type.Object({
     id: Type.String(),

@@ -12,8 +12,8 @@ import type { CustomerFilters, PaginationOptions, CustomerWithContacts } from '.
 export declare class CustomerService {
     private fastify;
     private organizationId;
-    private userId;
-    constructor(fastify: FastifyInstance, organizationId: string, userId: string);
+    private _userId;
+    constructor(fastify: FastifyInstance, organizationId: string, _userId: string);
     /**
      * Generate unique customer number
      */

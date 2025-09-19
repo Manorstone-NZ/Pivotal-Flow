@@ -2,8 +2,8 @@
  * Customer Service Layer
  * Business logic and database operations for customers and contacts
  */
-import { eq, and, or, like, desc, asc, isNull, inArray, sql } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { eq, and, or, like, desc, asc, isNull, sql } from 'drizzle-orm';
+import { generateId } from '@pivotal-flow/shared';
 import { customers, customerContacts } from '../../lib/schema.js';
 /**
  * Customer Service Class
@@ -12,11 +12,12 @@ import { customers, customerContacts } from '../../lib/schema.js';
 export class CustomerService {
     fastify;
     organizationId;
-    userId;
-    constructor(fastify, organizationId, userId) {
+    _userId;
+    constructor(fastify, organizationId, _userId // Prefix with underscore to indicate intentionally unused
+    ) {
         this.fastify = fastify;
         this.organizationId = organizationId;
-        this.userId = userId;
+        this._userId = _userId;
     }
     /**
      * Generate unique customer number
@@ -24,7 +25,7 @@ export class CustomerService {
     async generateCustomerNumber() {
         const prefix = 'CUST';
         const timestamp = Date.now().toString().slice(-6);
-        const random = nanoid(4).toUpperCase();
+        const random = generateId().slice(-4).toUpperCase();
         return `${prefix}-${timestamp}-${random}`;
     }
     /**
@@ -59,11 +60,14 @@ export class CustomerService {
         }
         // Build order by
         const orderBy = [];
-        if (filters.sortBy) {
-            const column = customers[filters.sortBy];
-            if (column) {
-                orderBy.push(filters.sortOrder === 'asc' ? asc(column) : desc(column));
-            }
+        if (filters.sortBy === 'companyName') {
+            orderBy.push(filters.sortOrder === 'asc' ? asc(customers.companyName) : desc(customers.companyName));
+        }
+        else if (filters.sortBy === 'createdAt') {
+            orderBy.push(filters.sortOrder === 'asc' ? asc(customers.createdAt) : desc(customers.createdAt));
+        }
+        else if (filters.sortBy === 'status') {
+            orderBy.push(filters.sortOrder === 'asc' ? asc(customers.status) : desc(customers.status));
         }
         else {
             orderBy.push(desc(customers.createdAt));
@@ -113,7 +117,7 @@ export class CustomerService {
     async createCustomer(data) {
         const db = this.fastify.db;
         const customerNumber = await this.generateCustomerNumber();
-        const customerId = `customer-${nanoid()}`;
+        const customerId = `customer-${generateId()}`;
         const newCustomer = {
             id: customerId,
             organizationId: this.organizationId,
@@ -199,7 +203,7 @@ export class CustomerService {
                 .set({ isPrimary: false, updatedAt: new Date() })
                 .where(and(eq(customerContacts.customerId, customerId), eq(customerContacts.organizationId, this.organizationId), eq(customerContacts.isPrimary, true), isNull(customerContacts.deletedAt)));
         }
-        const contactId = `contact-${nanoid()}`;
+        const contactId = `contact-${generateId()}`;
         const newContact = {
             id: contactId,
             customerId,

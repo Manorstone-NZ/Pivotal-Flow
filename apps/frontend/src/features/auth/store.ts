@@ -272,6 +272,10 @@ export const useAuth = () => {
     // Convenience getters
     isLoggedIn: store.isAuthenticated && !!store.user,
     hasPermission: (permission: string) => {
+      // For now, admin role has all permissions
+      if (store.user?.roles?.includes('admin')) {
+        return true;
+      }
       return store.user?.permissions?.includes(permission) ?? false;
     },
     // API client with current token

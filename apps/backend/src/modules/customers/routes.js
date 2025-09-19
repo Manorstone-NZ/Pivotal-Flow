@@ -1,12 +1,11 @@
 /**
  * Customer Routes
- * API endpoints for customer and contact management
+ * API endpoints for customer and contact management (following quotes pattern)
  */
 import { CustomerService } from './service.js';
-import { CreateCustomerSchema, UpdateCustomerSchema, CreateContactSchema, UpdateContactSchema, CustomerQuerySchema, } from './schemas.js';
 import { CustomerListResponseSchema, CustomerDetailResponseSchema, ContactListResponseSchema, CustomerResponseSchema, ContactResponseSchema, ErrorResponseSchema, StandardSuccessResponseSchema, CustomerIdParamSchema, ContactIdParamSchema, CustomerQuerystringSchema, CreateCustomerBodySchema, UpdateCustomerBodySchema, CreateContactBodySchema, UpdateContactBodySchema, } from './schemas.js';
-export const customerRoutes = async (fastify) => {
-    // List customers with filtering and pagination
+// List customers with filtering and pagination
+export function registerCustomerListRoute(fastify) {
     fastify.get('/v1/customers', {
         schema: {
             tags: ['Customers'],
@@ -25,16 +24,7 @@ export const customerRoutes = async (fastify) => {
     }, async (request, reply) => {
         try {
             const { user } = request;
-            const queryValidation = CustomerQuerySchema.safeParse(request.query);
-            if (!queryValidation.success) {
-                return reply.status(400).send({
-                    success: false,
-                    error: 'Validation Error',
-                    message: 'Invalid query parameters',
-                    details: queryValidation.error.errors,
-                });
-            }
-            const { page, limit, search, status, customerType, industry, source, tags, sortBy, sortOrder, } = queryValidation.data;
+            const { page = 1, limit = 20, search, status, customerType, industry, source, tags, sortBy, sortOrder = 'desc', } = request.query;
             const customerService = new CustomerService(fastify, user.organizationId, user.userId);
             const filters = {
                 search,
@@ -68,7 +58,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Get customer by ID
+}
+// Get customer by ID
+export function registerCustomerGetRoute(fastify) {
     fastify.get('/v1/customers/:id', {
         schema: {
             tags: ['Customers'],
@@ -119,7 +111,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Create new customer
+}
+// Create new customer
+export function registerCustomerCreateRoute(fastify) {
     fastify.post('/v1/customers', {
         schema: {
             tags: ['Customers'],
@@ -145,17 +139,8 @@ export const customerRoutes = async (fastify) => {
     }, async (request, reply) => {
         try {
             const { user } = request;
-            const bodyValidation = CreateCustomerSchema.safeParse(request.body);
-            if (!bodyValidation.success) {
-                return reply.status(400).send({
-                    success: false,
-                    error: 'Validation Error',
-                    message: 'Invalid request body',
-                    details: bodyValidation.error.errors,
-                });
-            }
             const customerService = new CustomerService(fastify, user.organizationId, user.userId);
-            const customer = await customerService.createCustomer(bodyValidation.data);
+            const customer = await customerService.createCustomer(request.body);
             return reply.status(201).send({
                 success: true,
                 data: customer,
@@ -171,7 +156,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Update customer
+}
+// Update customer
+export function registerCustomerUpdateRoute(fastify) {
     fastify.patch('/v1/customers/:id', {
         schema: {
             tags: ['Customers'],
@@ -200,17 +187,8 @@ export const customerRoutes = async (fastify) => {
         try {
             const { user } = request;
             const { id: customerId } = request.params;
-            const bodyValidation = UpdateCustomerSchema.safeParse(request.body);
-            if (!bodyValidation.success) {
-                return reply.status(400).send({
-                    success: false,
-                    error: 'Validation Error',
-                    message: 'Invalid request body',
-                    details: bodyValidation.error.errors,
-                });
-            }
             const customerService = new CustomerService(fastify, user.organizationId, user.userId);
-            const customer = await customerService.updateCustomer(customerId, bodyValidation.data);
+            const customer = await customerService.updateCustomer(customerId, request.body);
             if (!customer) {
                 return reply.status(404).send({
                     success: false,
@@ -233,7 +211,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Delete customer
+}
+// Delete customer
+export function registerCustomerDeleteRoute(fastify) {
     fastify.delete('/v1/customers/:id', {
         schema: {
             tags: ['Customers'],
@@ -277,7 +257,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // List customer contacts
+}
+// List customer contacts
+export function registerContactListRoute(fastify) {
     fastify.get('/v1/customers/:id/contacts', {
         schema: {
             tags: ['Contacts'],
@@ -323,7 +305,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Get contact by ID
+}
+// Get contact by ID
+export function registerContactGetRoute(fastify) {
     fastify.get('/v1/customers/:id/contacts/:contactId', {
         schema: {
             tags: ['Contacts'],
@@ -373,7 +357,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Create new contact
+}
+// Create new contact
+export function registerContactCreateRoute(fastify) {
     fastify.post('/v1/customers/:id/contacts', {
         schema: {
             tags: ['Contacts'],
@@ -402,17 +388,8 @@ export const customerRoutes = async (fastify) => {
         try {
             const { user } = request;
             const { id: customerId } = request.params;
-            const bodyValidation = CreateContactSchema.safeParse(request.body);
-            if (!bodyValidation.success) {
-                return reply.status(400).send({
-                    success: false,
-                    error: 'Validation Error',
-                    message: 'Invalid request body',
-                    details: bodyValidation.error.errors,
-                });
-            }
             const customerService = new CustomerService(fastify, user.organizationId, user.userId);
-            const contact = await customerService.createContact(customerId, bodyValidation.data);
+            const contact = await customerService.createContact(customerId, request.body);
             return reply.status(201).send({
                 success: true,
                 data: contact,
@@ -435,7 +412,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Update contact
+}
+// Update contact
+export function registerContactUpdateRoute(fastify) {
     fastify.patch('/v1/customers/:id/contacts/:contactId', {
         schema: {
             tags: ['Contacts'],
@@ -464,17 +443,8 @@ export const customerRoutes = async (fastify) => {
         try {
             const { user } = request;
             const { id: customerId, contactId } = request.params;
-            const bodyValidation = UpdateContactSchema.safeParse(request.body);
-            if (!bodyValidation.success) {
-                return reply.status(400).send({
-                    success: false,
-                    error: 'Validation Error',
-                    message: 'Invalid request body',
-                    details: bodyValidation.error.errors,
-                });
-            }
             const customerService = new CustomerService(fastify, user.organizationId, user.userId);
-            const contact = await customerService.updateContact(customerId, contactId, bodyValidation.data);
+            const contact = await customerService.updateContact(customerId, contactId, request.body);
             if (!contact) {
                 return reply.status(404).send({
                     success: false,
@@ -497,7 +467,9 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-    // Delete contact
+}
+// Delete contact
+export function registerContactDeleteRoute(fastify) {
     fastify.delete('/v1/customers/:id/contacts/:contactId', {
         schema: {
             tags: ['Contacts'],
@@ -541,5 +513,5 @@ export const customerRoutes = async (fastify) => {
             });
         }
     });
-};
+}
 //# sourceMappingURL=routes.js.map

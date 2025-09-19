@@ -615,7 +615,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             length: 3;
         }>;
         taxId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "taxId";
+            name: "tax_id";
             tableName: "organizations";
             dataType: "string";
             columnType: "PgVarchar";
@@ -825,7 +825,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             generated: undefined;
         }, {}, {}>;
         subscriptionPlan: import("drizzle-orm/pg-core").PgColumn<{
-            name: "subscriptionPlan";
+            name: "subscription_plan";
             tableName: "organizations";
             dataType: "string";
             columnType: "PgVarchar";
@@ -844,7 +844,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             length: 50;
         }>;
         subscriptionStatus: import("drizzle-orm/pg-core").PgColumn<{
-            name: "subscriptionStatus";
+            name: "subscription_status";
             tableName: "organizations";
             dataType: "string";
             columnType: "PgVarchar";
@@ -863,7 +863,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             length: 20;
         }>;
         trialEndsAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "trialEndsAt";
+            name: "trial_ends_at";
             tableName: "organizations";
             dataType: "date";
             columnType: "PgTimestamp";
@@ -880,7 +880,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             generated: undefined;
         }, {}, {}>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "createdAt";
+            name: "created_at";
             tableName: "organizations";
             dataType: "date";
             columnType: "PgTimestamp";
@@ -897,7 +897,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             generated: undefined;
         }, {}, {}>;
         updatedAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "updatedAt";
+            name: "updated_at";
             tableName: "organizations";
             dataType: "date";
             columnType: "PgTimestamp";
@@ -914,7 +914,7 @@ export declare const organizations: import("drizzle-orm/pg-core").PgTableWithCol
             generated: undefined;
         }, {}, {}>;
         deletedAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "deletedAt";
+            name: "deleted_at";
             tableName: "organizations";
             dataType: "date";
             columnType: "PgTimestamp";
@@ -1990,7 +1990,7 @@ export declare const permissions: import("drizzle-orm/pg-core").PgTableWithColum
             length: 100;
         }>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "createdAt";
+            name: "created_at";
             tableName: "permissions";
             dataType: "date";
             columnType: "PgTimestamp";

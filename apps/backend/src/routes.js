@@ -79,7 +79,7 @@ export async function registerRoutes() {
     await app.register(timeRoutes, { prefix: '/api' });
     // Register customer route modules
     await app.register(async (fastify) => {
-        await registerCustomerRoutes(fastify);
+        registerCustomerRoutes(fastify);
     }, { prefix: '/api' });
     // Register health route modules
     await app.register(healthRoutes, { prefix: '/api/v1/health' });

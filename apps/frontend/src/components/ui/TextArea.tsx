@@ -17,6 +17,10 @@ interface TextAreaProps extends BaseComponentProps, Omit<FormFieldProps, 'childr
   disabled?: boolean;
   readOnly?: boolean;
   autoFocus?: boolean;
+  id?: string;
+  name?: string;
+  // Allow additional props for react-hook-form compatibility
+  [key: string]: any;
 }
 
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
@@ -40,6 +44,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
   autoFocus = false,
   className,
   'data-testid': testId,
+  ...restProps
 }, ref) => {
   const id = React.useId();
   const textareaId = `textarea-${id}`;
@@ -94,7 +99,6 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
       <textarea
         ref={textareaRef}
         placeholder={placeholder}
-        value={value}
         defaultValue={defaultValue}
         onChange={handleChange}
         onBlur={onBlur}
@@ -109,6 +113,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
         className={textareaClasses}
         data-testid={testId}
         {...a11y.getFieldProps(textareaId, error, required)}
+        {...restProps}
       />
       
       {error && (

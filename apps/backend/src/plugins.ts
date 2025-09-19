@@ -31,9 +31,9 @@ export async function registerPlugins() {
   // C0 Backend Readiness - CORS configuration (register before auth)
   const corsConfig = getCorsConfig();
   
-  // Try a simple CORS config for testing
+  // CORS config with origin header for all routes
   const simpleCorsConfig = {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'], // Allow frontend ports
+    origin: true, // Allow all origins for development (sends back requesting origin)
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -47,7 +47,16 @@ export async function registerPlugins() {
 
   // C0 Backend Readiness - Security headers
   await app.register(helmet as any, {
-    contentSecurityPolicy: false, // ok for development
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "https:", "data:"],
+        connectSrc: ["'self'"]
+      }
+    }
   });
 
   // C0 Backend Readiness - Rate limiting with per-route configuration
@@ -70,41 +79,47 @@ export async function registerPlugins() {
   // Database plugin (register early for database access)
   await app.register(databasePlugin);
 
-  // Swagger/OpenAPI configuration
-  await app.register(swagger, {
-    openapi: {
-      info: {
-        title: 'Pivotal Flow API',
-        description: 'Business Management Platform API',
-        version: '1.0.0',
-      },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Development server',
-        },
-      ],
-    },
-  });
-
-  // Swagger UI (only if enabled)
+  // Swagger/OpenAPI configuration (conditional registration)
   if (process.env['OPENAPI_ENABLE'] === 'true') {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: 'Pivotal Flow API',
+          description: 'Business Management Platform API',
+          version: '1.0.0',
+        },
+        servers: [
+          {
+            url: 'http://localhost:3000',
+            description: 'Development server',
+          },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'JWT Bearer token authentication',
+            },
+          },
+        },
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+      },
+    });
+
+    // Swagger UI (only after swagger is registered)
     await app.register(swaggerUi, {
       routePrefix: '/docs',
       uiConfig: {
         docExpansion: 'full',
         deepLinking: false,
       },
-      uiHooks: {
-        onRequest: function (_request, _reply, next) {
-          next();
-        },
-        preHandler: function (_request, _reply, next) {
-          next();
-        },
-      },
-      staticCSP: true,
-      transformStaticCSP: (header) => header,
+      staticCSP: false, // Disable static CSP since we're handling it with helmet
       transformSpecification: (swaggerObject, _request, _reply) => {
         return swaggerObject;
       },
