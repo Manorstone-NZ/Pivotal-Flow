@@ -1,27 +1,8 @@
 import { Type } from '@sinclair/typebox';
 import { logger } from '../../lib/logger.js';
-// TypeBox schemas for quotes
-const CreateQuoteSchema = Type.Object({
-    customerId: Type.String({ format: 'uuid' }),
-    projectName: Type.String({ minLength: 1, maxLength: 255 }),
-    description: Type.Optional(Type.String()),
-    lineItems: Type.Array(Type.Object({
-        description: Type.String({ minLength: 1 }),
-        quantity: Type.Number({ minimum: 0 }),
-        unitPrice: Type.Number({ minimum: 0 }),
-        taxRate: Type.Optional(Type.Number({ minimum: 0, maximum: 1 }))
-    }))
-});
-const QuoteResponseSchema = Type.Object({
-    id: Type.String({ format: 'uuid' }),
-    customerId: Type.String({ format: 'uuid' }),
-    projectName: Type.String(),
-    description: Type.Union([Type.String(), Type.Null()]),
-    status: Type.String(),
-    totalAmount: Type.Number(),
-    createdAt: Type.String({ format: 'date-time' }),
-    updatedAt: Type.String({ format: 'date-time' })
-});
+import { QuoteService } from './service.js';
+// Import schemas from shared typeboxSchemas
+import { CreateQuoteSchema, QuoteResponseSchema } from './typeboxSchemas.js';
 export async function createQuoteRoute(fastify) {
     fastify.post('/v1/quotes', {
         schema: {
@@ -49,23 +30,27 @@ export async function createQuoteRoute(fastify) {
     }, async (request, reply) => {
         try {
             const quoteData = request.body; // TypeBox handles validation automatically
-            // Mock quote creation for now
-            const mockQuote = {
-                id: crypto.randomUUID(),
-                customerId: quoteData.customerId,
-                projectName: quoteData.projectName,
-                description: quoteData.description || null,
-                status: 'draft',
-                totalAmount: quoteData.lineItems.reduce((sum, item) => {
-                    const itemTotal = item.quantity * item.unitPrice;
-                    const taxAmount = itemTotal * (item.taxRate || 0);
-                    return sum + itemTotal + taxAmount;
-                }, 0),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            logger.info('Quote created successfully', { quoteId: mockQuote.id });
-            return reply.status(201).send(mockQuote);
+            const authenticatedRequest = request;
+            // Get user context
+            const user = authenticatedRequest.user;
+            if (!user) {
+                return reply.status(403).send({
+                    error: 'Forbidden',
+                    message: 'Authentication required',
+                    code: 'TENANT_ACCESS_DENIED'
+                });
+            }
+            // Create quote service
+            const quoteService = new QuoteService({
+                organizationId: user.organizationId,
+                userId: user.userId
+            });
+            const result = await quoteService.createQuote({
+                ...quoteData,
+                metadata: quoteData.metadata || {}
+            });
+            logger.info('Quote created successfully', { quoteId: result.id });
+            return reply.status(201).send(result);
         }
         catch (error) {
             if (error instanceof Error) {

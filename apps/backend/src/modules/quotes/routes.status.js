@@ -1,14 +1,18 @@
 import { logger } from '../../lib/logger.js';
-import { QuoteStatusTransitionSchema } from './schemas.js';
+import { QuoteStatusTransitionSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 /**
  * Register the status transition route
  */
 export function registerStatusTransitionRoute(fastify) {
-    fastify.post('/v1/quotes/:id/status', async (request, reply) => {
+    fastify.post('/v1/quotes/:id/status', {
+        schema: {
+            body: QuoteStatusTransitionSchema
+        }
+    }, async (request, reply) => {
         try {
-            // Validate request body
-            const validatedData = QuoteStatusTransitionSchema.parse(request.body);
+            // Get validated request body (TypeBox handles validation automatically)
+            const validatedData = request.body;
             // Get user context
             const user = request.user;
             if (!user) {

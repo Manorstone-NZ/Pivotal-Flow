@@ -11,7 +11,9 @@ import { createUserRoute } from './modules/users/routes.create.js';
 // Import rate card route modules
 import { rateCardRoutes } from './modules/rate-cards/routes.js';
 // Import quote route modules
-import { quoteRoutes } from './modules/quotes/routes.js';
+import { registerQuoteRoutes } from './modules/quotes/index.js';
+// Import invoice route modules
+import { registerInvoiceRoutes } from './modules/invoices/index.js';
 // Import permission route modules
 import { permissionRoutes } from './modules/permissions/routes.js';
 // Import currency route modules
@@ -20,6 +22,8 @@ import { currencyRoutes } from './modules/currencies/routes.js';
 import { paymentRoutes } from './modules/payments/routes.js';
 // Import project route modules
 import { projectsModule } from './modules/projects/index.js';
+// Import time tracking route modules
+import { timeRoutes } from './modules/time/routes.js';
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 // Simple response schema for testing
@@ -52,9 +56,15 @@ export async function registerRoutes() {
     await app.register(listUsersRoute);
     await app.register(createUserRoute);
     // Register rate card route modules
-    await app.register(rateCardRoutes);
+    await app.register(rateCardRoutes, { prefix: '/api/v1' });
     // Register quote route modules
-    await app.register(quoteRoutes);
+    await app.register(async (fastify) => {
+        registerQuoteRoutes(fastify);
+    }, { prefix: '/api' });
+    // Register invoice route modules
+    await app.register(async (fastify) => {
+        registerInvoiceRoutes(fastify);
+    }, { prefix: '/api' });
     // Register permission route modules
     await app.register(permissionRoutes);
     // Register currency route modules
@@ -63,6 +73,8 @@ export async function registerRoutes() {
     await app.register(paymentRoutes);
     // Register project route modules
     await app.register(projectsModule);
+    // Register time tracking route modules
+    await app.register(timeRoutes, { prefix: '/api' });
     // Register health route modules
     await app.register(healthRoutes, { prefix: '/api/v1/health' });
 }

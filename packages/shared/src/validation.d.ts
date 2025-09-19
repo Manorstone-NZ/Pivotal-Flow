@@ -19,8 +19,8 @@ export declare const paginationQuerySchema: z.ZodObject<{
 }, {
     limit?: number | undefined;
     page?: number | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
     sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
 }>;
 export declare const paginationResponseSchema: z.ZodObject<{
     page: z.ZodNumber;

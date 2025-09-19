@@ -69,4 +69,20 @@ export declare const QuoteErrorSchema: import("@sinclair/typebox").TObject<{
     code: import("@sinclair/typebox").TString;
 }>;
 export type QuoteError = Static<typeof QuoteErrorSchema>;
+export declare const QuoteListFiltersSchema: import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    customerId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    projectId: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    type: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    q: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    validFrom: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    validUntil: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    createdBy: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>;
+export type QuoteListFilters = Static<typeof QuoteListFiltersSchema>;
+export declare const QuoteStatusTransitionSchema: import("@sinclair/typebox").TObject<{
+    status: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>;
+    reason: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+}>;
+export type QuoteStatusTransition = Static<typeof QuoteStatusTransitionSchema>;
 //# sourceMappingURL=typeboxSchemas.d.ts.map

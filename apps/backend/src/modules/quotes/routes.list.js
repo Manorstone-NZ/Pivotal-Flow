@@ -1,11 +1,16 @@
 import { logger } from '../../lib/logger.js';
-import { QuoteListFiltersSchema } from './schemas.js';
+import { QuoteListFiltersSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 /**
  * Register the list quotes route
  */
 export function registerListQuotesRoute(fastify) {
-    fastify.get('/v1/quotes', async (request, reply) => {
+    fastify.get('/v1/quotes', {
+        schema: {
+            querystring: QuoteListFiltersSchema
+        }
+    }, async (request, reply) => {
         try {
             // Get user context
             const user = request.user;
@@ -19,9 +24,9 @@ export function registerListQuotesRoute(fastify) {
             // Parse and validate query parameters
             const pagination = {
                 page: request.query.page || 1,
-                pageSize: request.query.pageSize || 20
+                size: request.query.pageSize || 20 // Fixed: use 'size' to match service expectation
             };
-            const filters = QuoteListFiltersSchema.parse({
+            const filters = {
                 status: request.query.status,
                 customerId: request.query.customerId,
                 projectId: request.query.projectId,
@@ -30,12 +35,13 @@ export function registerListQuotesRoute(fastify) {
                 validFrom: request.query.validFrom,
                 validUntil: request.query.validUntil,
                 createdBy: request.query.createdBy
-            });
+            };
             // Create quote service
+            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
-            });
+            }, auditLogger);
             // List quotes
             const result = await quoteService.listQuotes(pagination, filters);
             return reply.status(200).send(result);

@@ -11,11 +11,19 @@ export class RateCardService {
         this.auditLogger = auditLogger;
     }
     async getAllRateCards() {
-        return await this.db
+        const results = await this.db
             .select()
             .from(rateCards)
             .where(eq(rateCards.organizationId, this.context.organizationId))
             .orderBy(desc(rateCards.createdAt));
+        // Format dates for API response
+        return results.map(rateCard => ({
+            ...rateCard,
+            effectiveFrom: rateCard.effectiveFrom || '',
+            effectiveUntil: rateCard.effectiveUntil || null,
+            createdAt: rateCard.createdAt.toISOString(),
+            updatedAt: rateCard.updatedAt.toISOString(),
+        }));
     }
     async getActiveRateCard(date) {
         const effectiveDate = date || new Date();
@@ -36,8 +44,8 @@ export class RateCardService {
             version: data.version || '1.0',
             description: data.description || null,
             currency: data.currency || 'NZD',
-            effectiveFrom: new Date(data.effectiveFrom || new Date()),
-            effectiveUntil: data.effectiveUntil ? new Date(data.effectiveUntil) : null,
+            effectiveFrom: data.effectiveFrom || new Date().toISOString().split('T')[0],
+            effectiveUntil: data.effectiveUntil || null,
             isDefault: data.isDefault || false,
             isActive: data.isActive !== false, // Default to true
             metadata: data.metadata || {},
@@ -56,7 +64,14 @@ export class RateCardService {
                 metadata: { name: data.name, currency: data.currency }
             });
         }
-        return rateCardData;
+        // Return formatted response
+        return {
+            ...rateCardData,
+            effectiveFrom: rateCardData.effectiveFrom || '',
+            effectiveUntil: rateCardData.effectiveUntil || null,
+            createdAt: rateCardData.createdAt.toISOString(),
+            updatedAt: rateCardData.updatedAt.toISOString(),
+        };
     }
     async updateRateCard(id, data) {
         const updateData = {
@@ -86,14 +101,33 @@ export class RateCardService {
             .from(rateCards)
             .where(and(eq(rateCards.id, id), eq(rateCards.organizationId, this.context.organizationId)))
             .limit(1);
-        return result[0] || null;
+        const rateCard = result[0];
+        if (!rateCard)
+            return null;
+        // Format dates for API response
+        return {
+            ...rateCard,
+            effectiveFrom: rateCard.effectiveFrom || '',
+            effectiveUntil: rateCard.effectiveUntil || null,
+            createdAt: rateCard.createdAt.toISOString(),
+            updatedAt: rateCard.updatedAt.toISOString(),
+        };
     }
     async getRateCardItems(rateCardId) {
-        return await this.db
+        const results = await this.db
             .select()
             .from(rateCardItems)
-            .where(and(eq(rateCardItems.rateCardId, rateCardId), eq(rateCardItems.organizationId, this.context.organizationId)))
+            .where(eq(rateCardItems.rateCardId, rateCardId))
             .orderBy(rateCardItems.itemCode);
+        // Format dates for API response
+        return results.map(item => ({
+            ...item,
+            baseRate: item.baseRate?.toString() || '0',
+            effectiveFrom: item.effectiveFrom?.toString() || '',
+            effectiveUntil: item.effectiveUntil?.toString() || null,
+            createdAt: item.createdAt?.toISOString() || '',
+            updatedAt: item.updatedAt?.toISOString() || '',
+        }));
     }
     async getRateCardItemByCode(code) {
         const result = await this.db
@@ -108,16 +142,16 @@ export class RateCardService {
         const itemData = {
             id: itemId,
             rateCardId,
-            organizationId: this.context.organizationId,
             serviceCategoryId: data.serviceCategoryId,
             roleId: data.roleId || null,
-            itemCode: data.itemCode,
+            itemCode: data.itemCode || null,
             unit: data.unit || 'hour',
-            baseRate: data.baseRate.toString(),
+            baseRate: data.baseRate?.toString() || '0',
             currency: data.currency || 'NZD',
             taxClass: data.taxClass || 'standard',
-            effectiveFrom: new Date(data.effectiveFrom || new Date()),
-            effectiveUntil: data.effectiveUntil ? new Date(data.effectiveUntil) : null,
+            tieringModelId: data.tieringModelId || null,
+            effectiveFrom: data.effectiveFrom || new Date().toISOString().split('T')[0],
+            effectiveUntil: data.effectiveUntil || null,
             isActive: data.isActive !== false, // Default to true
             metadata: data.metadata || {},
             createdAt: new Date(),
@@ -139,7 +173,15 @@ export class RateCardService {
                 }
             });
         }
-        return itemData;
+        // Return formatted response
+        return {
+            ...itemData,
+            baseRate: itemData.baseRate.toString(),
+            effectiveFrom: itemData.effectiveFrom.toString(),
+            effectiveUntil: itemData.effectiveUntil?.toString() || null,
+            createdAt: itemData.createdAt.toISOString(),
+            updatedAt: itemData.updatedAt.toISOString(),
+        };
     }
     async updateRateCardItem(itemId, data) {
         const updateData = {
@@ -149,7 +191,17 @@ export class RateCardService {
         await this.db
             .update(rateCardItems)
             .set(updateData)
-            .where(and(eq(rateCardItems.id, itemId), eq(rateCardItems.organizationId, this.context.organizationId)));
+            .where(eq(rateCardItems.id, itemId));
+        // Get the updated item
+        const updatedItem = await this.db
+            .select()
+            .from(rateCardItems)
+            .where(eq(rateCardItems.id, itemId))
+            .limit(1);
+        if (!updatedItem.length) {
+            return null;
+        }
+        const item = updatedItem[0];
         // Log audit event
         if (this.auditLogger) {
             await this.auditLogger.log({
@@ -161,7 +213,15 @@ export class RateCardService {
                 metadata: { updatedFields: Object.keys(data) }
             });
         }
-        return await this.getRateCardItemById(itemId);
+        // Return formatted response
+        return {
+            ...item,
+            baseRate: item.baseRate.toString(),
+            effectiveFrom: item.effectiveFrom?.toString() || '',
+            effectiveUntil: item.effectiveUntil?.toString() || null,
+            createdAt: item.createdAt.toISOString(),
+            updatedAt: item.updatedAt.toISOString(),
+        };
     }
     async getRateCardItemById(itemId) {
         const result = await this.db

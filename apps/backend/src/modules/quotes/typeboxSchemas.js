@@ -74,4 +74,28 @@ export const QuoteErrorSchema = Type.Object({
     message: Type.String(),
     code: Type.String()
 });
+// Quote List Filters Schema
+export const QuoteListFiltersSchema = Type.Object({
+    status: Type.Optional(Type.String()),
+    customerId: Type.Optional(Type.String()),
+    projectId: Type.Optional(Type.String()),
+    type: Type.Optional(Type.String()),
+    q: Type.Optional(Type.String()),
+    validFrom: Type.Optional(Type.String()),
+    validUntil: Type.Optional(Type.String()),
+    createdBy: Type.Optional(Type.String())
+});
+// Quote Status Transition Schema
+export const QuoteStatusTransitionSchema = Type.Object({
+    status: Type.Union([
+        Type.Literal('draft'),
+        Type.Literal('pending'),
+        Type.Literal('approved'),
+        Type.Literal('sent'),
+        Type.Literal('accepted'),
+        Type.Literal('rejected'),
+        Type.Literal('cancelled')
+    ]),
+    reason: Type.Optional(Type.String())
+});
 //# sourceMappingURL=typeboxSchemas.js.map

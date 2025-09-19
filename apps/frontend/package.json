@@ -27,6 +27,7 @@
     "perf:ci": "pnpm build && pnpm perf:budget && pnpm perf:monitor"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@pivotal-flow/sdk": "workspace:^",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -39,6 +40,7 @@
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.6.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

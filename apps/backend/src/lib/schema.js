@@ -681,6 +681,63 @@ export const jobs = pgTable('jobs', {
     orgStatusIdx: index('idx_jobs_org_status').on(table.organizationId, table.status),
     priorityStatusIdx: index('idx_jobs_priority_status').on(table.priority, table.status),
 }));
+// Time entries table - time tracking with approval workflow
+export const timeEntries = pgTable('time_entries', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    taskId: text('task_id'), // Optional task reference (for future use)
+    date: date('date').notNull(),
+    startTime: timestamp('start_time', { mode: 'date', precision: 3 }),
+    endTime: timestamp('end_time', { mode: 'date', precision: 3 }),
+    duration: integer('duration').notNull(), // Duration in minutes
+    breakMinutes: integer('break_minutes').notNull().default(0),
+    description: text('description').notNull(),
+    activityType: varchar('activity_type', { length: 50 }).notNull().default('development'), // development, meeting, admin, etc.
+    billable: boolean('billable').notNull().default(true),
+    hourlyRate: decimal('hourly_rate', { precision: 15, scale: 4 }), // Hourly rate at time of entry
+    billableAmount: decimal('billable_amount', { precision: 15, scale: 2 }), // Calculated billable amount
+    currency: varchar('currency', { length: 3 }).notNull().default('NZD').references(() => currencies.code),
+    status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, submitted, approved, rejected, invoiced
+    submittedAt: timestamp('submitted_at', { mode: 'date', precision: 3 }),
+    approvedAt: timestamp('approved_at', { mode: 'date', precision: 3 }),
+    approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    rejectedAt: timestamp('rejected_at', { mode: 'date', precision: 3 }),
+    rejectedBy: text('rejected_by').references(() => users.id, { onDelete: 'set null' }),
+    rejectionReason: text('rejection_reason'),
+    invoiceId: text('invoice_id').references(() => invoices.id, { onDelete: 'set null' }), // Link to invoice when billed
+    tags: text('tags').array(), // Array of tags for categorization
+    notes: text('notes'),
+    metadata: jsonb('metadata').notNull().default('{}'), // Additional flexible data
+    createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
+}, (table) => ({
+    organizationIdIdx: index('idx_time_entries_organization_id').on(table.organizationId),
+    userIdIdx: index('idx_time_entries_user_id').on(table.userId),
+    projectIdIdx: index('idx_time_entries_project_id').on(table.projectId),
+    dateIdx: index('idx_time_entries_date').on(table.date),
+    statusIdx: index('idx_time_entries_status').on(table.status),
+    billableIdx: index('idx_time_entries_billable').on(table.billable),
+    userDateIdx: index('idx_time_entries_user_date').on(table.userId, table.date),
+    orgStatusIdx: index('idx_time_entries_org_status').on(table.organizationId, table.status),
+    approvalIdx: index('idx_time_entries_approval').on(table.approvedBy, table.approvedAt),
+}));
+// Time entry approvals table - approval workflow tracking
+export const timeEntryApprovals = pgTable('time_entry_approvals', {
+    id: text('id').primaryKey(),
+    timeEntryId: text('time_entry_id').notNull().references(() => timeEntries.id, { onDelete: 'cascade' }),
+    approverId: text('approver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, approved, rejected
+    comments: text('comments'),
+    decidedAt: timestamp('decided_at', { mode: 'date', precision: 3 }),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+    timeEntryApproverIdx: index('idx_time_entry_approvals_entry_approver').on(table.timeEntryId, table.approverId),
+    approverStatusIdx: index('idx_time_entry_approvals_approver_status').on(table.approverId, table.status),
+}));
 // Relations
 export const currenciesRelations = relations(currencies, ({ many }) => ({
     organizations: many(organizations),
@@ -735,6 +792,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     approverApprovals: many(approvalRequests, { relationName: 'approver' }),
     resourceAllocations: many(resourceAllocations),
     exportJobs: many(exportJobs),
+    timeEntries: many(timeEntries),
+    approvedTimeEntries: many(timeEntries, { relationName: 'approvedBy' }),
+    rejectedTimeEntries: many(timeEntries, { relationName: 'rejectedBy' }),
+    timeEntryApprovals: many(timeEntryApprovals),
 }));
 export const rolesRelations = relations(roles, ({ one, many }) => ({
     organization: one(organizations, {
@@ -1090,6 +1151,49 @@ export const exportJobsRelations = relations(exportJobs, ({ one }) => ({
     }),
     user: one(users, {
         fields: [exportJobs.userId],
+        references: [users.id],
+    }),
+}));
+export const timeEntriesRelations = relations(timeEntries, ({ one, many }) => ({
+    organization: one(organizations, {
+        fields: [timeEntries.organizationId],
+        references: [organizations.id],
+    }),
+    user: one(users, {
+        fields: [timeEntries.userId],
+        references: [users.id],
+    }),
+    project: one(projects, {
+        fields: [timeEntries.projectId],
+        references: [projects.id],
+    }),
+    approvedBy: one(users, {
+        fields: [timeEntries.approvedBy],
+        references: [users.id],
+        relationName: 'approvedBy',
+    }),
+    rejectedBy: one(users, {
+        fields: [timeEntries.rejectedBy],
+        references: [users.id],
+        relationName: 'rejectedBy',
+    }),
+    invoice: one(invoices, {
+        fields: [timeEntries.invoiceId],
+        references: [invoices.id],
+    }),
+    currency: one(currencies, {
+        fields: [timeEntries.currency],
+        references: [currencies.code],
+    }),
+    approvals: many(timeEntryApprovals),
+}));
+export const timeEntryApprovalsRelations = relations(timeEntryApprovals, ({ one }) => ({
+    timeEntry: one(timeEntries, {
+        fields: [timeEntryApprovals.timeEntryId],
+        references: [timeEntries.id],
+    }),
+    approver: one(users, {
+        fields: [timeEntryApprovals.approverId],
         references: [users.id],
     }),
 }));
