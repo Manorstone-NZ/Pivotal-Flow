@@ -79,7 +79,7 @@ export const timeRoutes = async (fastify) => {
             const conditions = [eq(timeEntries.organizationId, user.organizationId)];
             // Users can only see their own entries unless they have admin role
             if (!user.roles.includes('admin') && !user.roles.includes('manager')) {
-                conditions.push(eq(timeEntries.userId, user.id));
+                conditions.push(eq(timeEntries.userId, user.userId));
             }
             else if (userId) {
                 conditions.push(eq(timeEntries.userId, userId));
@@ -190,7 +190,7 @@ export const timeRoutes = async (fastify) => {
             const newEntry = {
                 id: entryId,
                 organizationId: user.organizationId,
-                userId: user.id,
+                userId: user.userId,
                 projectId: entryData.projectId || null,
                 date: entryData.date,
                 startTime: entryData.startTime ? new Date(entryData.startTime) : null,
@@ -213,7 +213,7 @@ export const timeRoutes = async (fastify) => {
             const [createdEntry] = await db.insert(timeEntries).values(newEntry).returning();
             logger.info({
                 entryId: createdEntry.id,
-                userId: user.id,
+                userId: user.userId,
                 organizationId: user.organizationId
             }, 'Time entry created');
             reply.status(201).send({
@@ -257,7 +257,7 @@ export const timeRoutes = async (fastify) => {
             const entry = await db
                 .select()
                 .from(timeEntries)
-                .where(and(eq(timeEntries.id, id), eq(timeEntries.organizationId, user.organizationId), user.roles.includes('admin') ? undefined : eq(timeEntries.userId, user.id)))
+                .where(and(eq(timeEntries.id, id), eq(timeEntries.organizationId, user.organizationId), user.roles.includes('admin') ? undefined : eq(timeEntries.userId, user.userId)))
                 .limit(1);
             if (!entry.length) {
                 return reply.status(404).send({
@@ -280,7 +280,7 @@ export const timeRoutes = async (fastify) => {
                 updatedAt: new Date()
             })
                 .where(eq(timeEntries.id, id));
-            logger.info({ entryId: id, userId: user.id }, 'Time entry submitted for approval');
+            logger.info({ entryId: id, userId: user.userId }, 'Time entry submitted for approval');
             reply.send({
                 success: true,
                 message: 'Time entry submitted for approval'
@@ -350,7 +350,7 @@ export const timeRoutes = async (fastify) => {
                 .set({
                 status: 'approved',
                 approvedAt: new Date(),
-                approvedBy: user.id,
+                approvedBy: user.userId,
                 updatedAt: new Date()
             })
                 .where(eq(timeEntries.id, id));
@@ -359,14 +359,14 @@ export const timeRoutes = async (fastify) => {
             await db.insert(timeEntryApprovals).values({
                 id: approvalId,
                 timeEntryId: id,
-                approverId: user.id,
+                approverId: user.userId,
                 status: 'approved',
                 comments: comments || null,
                 decidedAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date()
             });
-            logger.info({ entryId: id, approverId: user.id }, 'Time entry approved');
+            logger.info({ entryId: id, approverId: user.userId }, 'Time entry approved');
             reply.send({
                 success: true,
                 message: 'Time entry approved successfully'
@@ -438,7 +438,7 @@ export const timeRoutes = async (fastify) => {
                 .set({
                 status: 'rejected',
                 rejectedAt: new Date(),
-                rejectedBy: user.id,
+                rejectedBy: user.userId,
                 rejectionReason: reason,
                 updatedAt: new Date()
             })
@@ -448,14 +448,14 @@ export const timeRoutes = async (fastify) => {
             await db.insert(timeEntryApprovals).values({
                 id: approvalId,
                 timeEntryId: id,
-                approverId: user.id,
+                approverId: user.userId,
                 status: 'rejected',
                 comments: comments || null,
                 decidedAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date()
             });
-            logger.info({ entryId: id, approverId: user.id, reason }, 'Time entry rejected');
+            logger.info({ entryId: id, approverId: user.userId, reason }, 'Time entry rejected');
             reply.send({
                 success: true,
                 message: 'Time entry rejected'

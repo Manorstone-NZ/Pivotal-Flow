@@ -62,6 +62,16 @@ export declare const ROUTE_PERMISSIONS: {
     readonly 'GET /rate-cards/:id': "rate_cards.view_rate_cards";
     readonly 'PUT /rate-cards/:id': "rate_cards.update_rate_cards";
     readonly 'DELETE /rate-cards/:id': "rate_cards.delete_rate_cards";
+    readonly 'GET /customers': "customers.view";
+    readonly 'POST /customers': "customers.manage";
+    readonly 'GET /customers/:id': "customers.view";
+    readonly 'PATCH /customers/:id': "customers.manage";
+    readonly 'DELETE /customers/:id': "customers.manage";
+    readonly 'GET /customers/:id/contacts': "customers.view";
+    readonly 'POST /customers/:id/contacts': "customers.manage";
+    readonly 'GET /customers/:id/contacts/:contactId': "customers.view";
+    readonly 'PATCH /customers/:id/contacts/:contactId': "customers.manage";
+    readonly 'DELETE /customers/:id/contacts/:contactId': "customers.manage";
 };
 export declare const PUBLIC_ROUTES: string[];
 export declare const AUTH_ONLY_ROUTES: string[];

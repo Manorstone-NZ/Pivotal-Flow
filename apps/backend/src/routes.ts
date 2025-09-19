@@ -35,6 +35,9 @@ import { projectsModule } from './modules/projects/index.js';
 // Import time tracking route modules
 import { timeRoutes } from './modules/time/routes.js';
 
+// Import customer route modules
+import { registerCustomerRoutes } from './modules/customers/index.js';
+
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 
@@ -98,6 +101,11 @@ export async function registerRoutes() {
 
   // Register time tracking route modules
   await app.register(timeRoutes, { prefix: '/api' });
+
+  // Register customer route modules
+  await app.register(async (fastify) => {
+    registerCustomerRoutes(fastify);
+  }, { prefix: '/api' });
 
   // Register health route modules
   await app.register(healthRoutes, { prefix: '/api/v1/health' });

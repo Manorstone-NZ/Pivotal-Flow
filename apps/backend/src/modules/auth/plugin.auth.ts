@@ -196,7 +196,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
         jti: payload.jti,
       };
     } catch (err) {
-      reply.status(401).send({
+      return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Invalid or expired token',
         code: 'INVALID_TOKEN',

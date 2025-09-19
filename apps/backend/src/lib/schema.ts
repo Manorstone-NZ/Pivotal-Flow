@@ -253,6 +253,30 @@ export const customers = pgTable('customers', {
   deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
+// Customer contacts table - separate contacts for each customer
+export const customerContacts = pgTable('customer_contacts', {
+  id: text('id').primaryKey(),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  firstName: varchar('first_name', { length: 100 }).notNull(),
+  lastName: varchar('last_name', { length: 100 }).notNull(),
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
+  position: varchar('position', { length: 100 }),
+  department: varchar('department', { length: 100 }),
+  isPrimary: boolean('is_primary').notNull().default(false),
+  notes: text('notes'),
+  contactExtras: jsonb('contact_extras'), // Social profiles, additional info
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
+}, (table) => ({
+  customerIdIdx: index('idx_customer_contacts_customer_id').on(table.customerId),
+  organizationIdIdx: index('idx_customer_contacts_organization_id').on(table.organizationId),
+  primaryContactIdx: index('idx_customer_contacts_primary').on(table.customerId, table.isPrimary),
+  emailIdx: index('idx_customer_contacts_email').on(table.email),
+}));
+
 // Projects table - core fields as columns, metadata in JSONB
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
@@ -908,8 +932,20 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     fields: [customers.organizationId],
     references: [organizations.id],
   }),
+  contacts: many(customerContacts),
   quotes: many(quotes),
   portalUsers: many(users), // External customer users for portal access
+}));
+
+export const customerContactsRelations = relations(customerContacts, ({ one }) => ({
+  customer: one(customers, {
+    fields: [customerContacts.customerId],
+    references: [customers.id],
+  }),
+  organization: one(organizations, {
+    fields: [customerContacts.organizationId],
+    references: [organizations.id],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -1294,6 +1330,8 @@ export type PolicyOverride = typeof policyOverrides.$inferSelect;
 export type NewPolicyOverride = typeof policyOverrides.$inferInsert;
 export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;
+export type CustomerContact = typeof customerContacts.$inferSelect;
+export type NewCustomerContact = typeof customerContacts.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type ServiceCategory = typeof serviceCategories.$inferSelect;

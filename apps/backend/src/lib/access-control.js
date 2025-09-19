@@ -74,7 +74,19 @@ export const ROUTE_PERMISSIONS = {
     'POST /rate-cards': 'rate_cards.create_rate_cards',
     'GET /rate-cards/:id': 'rate_cards.view_rate_cards',
     'PUT /rate-cards/:id': 'rate_cards.update_rate_cards',
-    'DELETE /rate-cards/:id': 'rate_cards.delete_rate_cards'
+    'DELETE /rate-cards/:id': 'rate_cards.delete_rate_cards',
+    // Customer management
+    'GET /customers': 'customers.view',
+    'POST /customers': 'customers.manage',
+    'GET /customers/:id': 'customers.view',
+    'PATCH /customers/:id': 'customers.manage',
+    'DELETE /customers/:id': 'customers.manage',
+    // Contact management
+    'GET /customers/:id/contacts': 'customers.view',
+    'POST /customers/:id/contacts': 'customers.manage',
+    'GET /customers/:id/contacts/:contactId': 'customers.view',
+    'PATCH /customers/:id/contacts/:contactId': 'customers.manage',
+    'DELETE /customers/:id/contacts/:contactId': 'customers.manage'
 };
 // Public routes that don't require authentication
 export const PUBLIC_ROUTES = [
