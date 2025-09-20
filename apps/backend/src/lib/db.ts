@@ -24,7 +24,7 @@ export async function initializeDatabase(): Promise<void> {
     // Dynamic import of postgres
     const postgresModule = await import('postgres');
     // Handle different module formats
-    const postgres = postgresModule.default || postgresModule;
+    const postgres = (postgresModule as any).default || postgresModule;
     
     // Create postgres client
     client = postgres(connectionString, {

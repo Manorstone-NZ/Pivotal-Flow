@@ -95,11 +95,11 @@ redis (Node.js client)
 AUTHENTICATION AND SECURITY
 ==========================
 
-bcryptjs
+argon2
 - License: MIT License
-- Version: 2.x
-- URL: https://github.com/dcodeIO/bcrypt.js/
-- Usage: Password hashing
+- Version: 0.40.x
+- URL: https://github.com/ranisalt/node-argon2
+- Usage: Password hashing with Argon2id algorithm
 
 jsonwebtoken
 - License: MIT License

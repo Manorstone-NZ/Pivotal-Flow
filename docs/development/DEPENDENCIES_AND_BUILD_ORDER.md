@@ -58,6 +58,8 @@ The Pivotal Flow application consists of multiple interconnected systems:
 }
 ```
 
+**Security Note**: The application uses Argon2id for password hashing instead of bcrypt for enhanced security. Argon2id provides better resistance against side-channel attacks and is the recommended choice for new applications according to current security best practices.
+
 #### Core Frontend Dependencies (`apps/frontend`)
 ```json
 {
@@ -84,6 +86,8 @@ The Pivotal Flow application consists of multiple interconnected systems:
   "prom-client": "^15.1.0"
 }
 ```
+
+**Password Security**: The shared package includes Argon2id password hashing utilities and a bcrypt compatibility layer that uses Argon2 under the hood for improved security while maintaining API compatibility.
 
 #### SDK Dependencies (`packages/sdk`)
 ```json

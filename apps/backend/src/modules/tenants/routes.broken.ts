@@ -1,5 +1,5 @@
 /**
- * F1 Tenant Administration Routes - Clean Version
+ * F1 Tenant Administration Routes
  * API endpoints for tenant CRUD and membership management
  */
 
@@ -23,9 +23,21 @@ import {
  * GET /v1/admin/tenants - List all tenants
  */
 export function registerTenantListRoute(fastify: FastifyInstance): void {
-  fastify.get('/v1/admin/tenants', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/v1/admin/tenants', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', minimum: 1, default: 1 },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
+          sortBy: { type: 'string', enum: ['name', 'createdAt'], default: 'name' },
+          sortOrder: { type: 'string', enum: ['asc', 'desc'], default: 'asc' },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { page = 1, limit = 25, sortBy = 'name', sortOrder = 'asc' } = request.query as any;
+      const { page, limit, sortBy, sortOrder } = request.query as any;
       
       const tenantService = new TenantService();
       const result = await tenantService.listTenants({
@@ -88,7 +100,21 @@ export function registerTenantCreateRoute(fastify: FastifyInstance): void {
  * GET /v1/admin/tenants/:id - Get tenant details
  */
 export function registerTenantDetailRoute(fastify: FastifyInstance): void {
-  fastify.get('/v1/admin/tenants/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/v1/admin/tenants/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
+      // response: {
+        200: TenantSchema,
+        404: TenantErrorSchema,
+      // },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
 
@@ -121,7 +147,18 @@ export function registerTenantDetailRoute(fastify: FastifyInstance): void {
 export function registerTenantUpdateRoute(fastify: FastifyInstance): void {
   fastify.patch('/v1/admin/tenants/:id', {
     schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
       body: UpdateTenantSchema,
+      // response: {
+        200: TenantSchema,
+        404: TenantErrorSchema,
+      // },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -160,10 +197,32 @@ export function registerTenantUpdateRoute(fastify: FastifyInstance): void {
  * GET /v1/admin/tenants/:id/memberships - List tenant memberships
  */
 export function registerTenantMembershipsListRoute(fastify: FastifyInstance): void {
-  fastify.get('/v1/admin/tenants/:id/memberships', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/v1/admin/tenants/:id/memberships', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', minimum: 1, default: 1 },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
+          includeUser: { type: 'boolean', default: true },
+        // },
+      // },
+      // response: {
+        200: MembershipListResponseSchema,
+        404: TenantErrorSchema,
+      // },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
-      const { page = 1, limit = 25, includeUser = true } = request.query as any;
+      const { page, limit, includeUser } = request.query as any;
 
       const tenantService = new TenantService();
       
@@ -201,7 +260,19 @@ export function registerTenantMembershipsListRoute(fastify: FastifyInstance): vo
 export function registerTenantMembershipCreateRoute(fastify: FastifyInstance): void {
   fastify.post('/v1/admin/tenants/:id/memberships', {
     schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
       body: CreateMembershipSchema,
+      // response: {
+        201: MembershipSchema,
+        404: TenantErrorSchema,
+        409: TenantErrorSchema,
+      // },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -249,7 +320,19 @@ export function registerTenantMembershipCreateRoute(fastify: FastifyInstance): v
 export function registerTenantMembershipUpdateRoute(fastify: FastifyInstance): void {
   fastify.patch('/v1/admin/tenants/:id/memberships/:userId', {
     schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          userId: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id', 'userId'],
+      // },
       body: UpdateMembershipSchema,
+      // response: {
+        200: MembershipSchema,
+        404: TenantErrorSchema,
+      // },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -284,7 +367,22 @@ export function registerTenantMembershipUpdateRoute(fastify: FastifyInstance): v
  * DELETE /v1/admin/tenants/:id/memberships/:userId - Remove user from tenant
  */
 export function registerTenantMembershipDeleteRoute(fastify: FastifyInstance): void {
-  fastify.delete('/v1/admin/tenants/:id/memberships/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.delete('/v1/admin/tenants/:id/memberships/:userId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          userId: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id', 'userId'],
+      // },
+      // response: {
+        200: MembershipSchema,
+        404: TenantErrorSchema,
+      // },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id, userId } = request.params as { id: string; userId: string };
 
@@ -320,7 +418,21 @@ export function registerTenantMembershipDeleteRoute(fastify: FastifyInstance): v
  * GET /v1/admin/tenants/:id/features - Get tenant features
  */
 export function registerTenantFeaturesGetRoute(fastify: FastifyInstance): void {
-  fastify.get('/v1/admin/tenants/:id/features', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/v1/admin/tenants/:id/features', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
+      // response: {
+        200: TenantFeatureListResponseSchema,
+        404: TenantErrorSchema,
+      // },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as { id: string };
 
@@ -356,7 +468,18 @@ export function registerTenantFeaturesGetRoute(fastify: FastifyInstance): void {
 export function registerTenantFeaturesUpdateRoute(fastify: FastifyInstance): void {
   fastify.put('/v1/admin/tenants/:id/features', {
     schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        // },
+        required: ['id'],
+      // },
       body: UpdateTenantFeaturesSchema,
+      // response: {
+        200: TenantFeatureListResponseSchema,
+        404: TenantErrorSchema,
+      // },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {

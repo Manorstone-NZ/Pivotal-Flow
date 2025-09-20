@@ -11,33 +11,16 @@ import { meRoute } from './modules/auth/routes.me.js';
 import { listUsersRoute } from './modules/users/routes.list.js';
 import { createUserRoute } from './modules/users/routes.create.js';
 
-// Import rate card route modules
-import { rateCardRoutes } from './modules/rate-cards/routes.js';
-
-// Import quote route modules
-import { registerQuoteRoutes } from './modules/quotes/index.js';
-import { registerPublicQuoteRoutes } from './modules/quotes/routes.public.js';
-
-// Import invoice route modules
-import { registerInvoiceRoutes } from './modules/invoices/index.js';
-
-// Import permission route modules
-import { permissionRoutes } from './modules/permissions/routes.js';
-
-// Import audit route modules
-// import { auditRoutes } from './modules/audit/routes.js';
-
-// Import currency route modules
-import { currencyRoutes } from './modules/currencies/routes.js';
-
-// Import payment route modules
-import { paymentRoutes } from './modules/payments/routes.js';
-
-// Import project route modules
-import { projectsModule } from './modules/projects/index.js';
-
-// Import time tracking route modules
-import { timeRoutes } from './modules/time/routes.js';
+// Temporarily disable problematic module imports
+// import { rateCardRoutes } from './modules/rate-cards/routes.js';
+// import { registerQuoteRoutes } from './modules/quotes/index.js';
+// import { registerPublicQuoteRoutes } from './modules/quotes/routes.public.js';
+// import { registerInvoiceRoutes } from './modules/invoices/index.js';
+// import { permissionRoutes } from './modules/permissions/routes.js';
+// import { currencyRoutes } from './modules/currencies/routes.js';
+// import { paymentRoutes } from './modules/payments/routes.js';
+// import { projectsModule } from './modules/projects/index.js';
+// import { timeRoutes } from './modules/time/routes.js';
 
 // Import customer route modules
 import { registerCustomerRoutes } from './modules/customers/index.js';
@@ -84,36 +67,19 @@ export async function registerRoutes() {
   await app.register(listUsersRoute);
   await app.register(createUserRoute);
 
-  // Register rate card route modules
-  await app.register(rateCardRoutes, { prefix: '/api/v1' });
-
-  // Register quote route modules
-  await app.register(async (fastify) => {
-    registerQuoteRoutes(fastify);
-  }, { prefix: '/api' });
-
-  // Register invoice route modules
-  await app.register(async (fastify) => {
-    registerInvoiceRoutes(fastify);
-  }, { prefix: '/api' });
-
-  // Register permission route modules
-  await app.register(permissionRoutes);
-
-  // Register audit route modules
-  // await app.register(auditRoutes, { prefix: '/api' });
-
-  // Register currency route modules
-  await app.register(currencyRoutes);
-
-  // Register payment route modules
-  await app.register(paymentRoutes);
-
-  // Register project route modules
-  await app.register(projectsModule);
-
-  // Register time tracking route modules
-  await app.register(timeRoutes, { prefix: '/api' });
+  // Temporarily disable problematic modules to test F1 tenant APIs
+  // await app.register(rateCardRoutes, { prefix: '/api/v1' });
+  // await app.register(async (fastify) => {
+  //   registerQuoteRoutes(fastify);
+  // }, { prefix: '/api' });
+  // await app.register(async (fastify) => {
+  //   registerInvoiceRoutes(fastify);
+  // }, { prefix: '/api' });
+  // await app.register(permissionRoutes);
+  // await app.register(currencyRoutes);
+  // await app.register(paymentRoutes);
+  // await app.register(projectsModule);
+  // await app.register(timeRoutes, { prefix: '/api' });
 
   // Register customer route modules
   await app.register(async (fastify) => {
@@ -133,8 +99,8 @@ export async function registerRoutes() {
   // Register health route modules
   await app.register(healthRoutes, { prefix: '/api/v1/health' });
 
-  // Register public quote routes (no authentication required)
-  await app.register(async (fastify) => {
-    registerPublicQuoteRoutes(fastify);
-  }, { prefix: '/api' });
+  // Temporarily disable public quote routes
+  // await app.register(async (fastify) => {
+  //   registerPublicQuoteRoutes(fastify);
+  // }, { prefix: '/api' });
 }

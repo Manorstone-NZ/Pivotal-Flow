@@ -42,7 +42,13 @@ This document lists the compatibility shims created during CZ1 to resolve missin
 - `hash(data: string, saltRounds?: number): Promise<string>`
 - `compare(data: string, encrypted: string): Promise<boolean>`
 
-**Future Removal**: Keep as permanent replacement for bcrypt (better security)
+**Status**: **PERMANENT** - This is a permanent security improvement. Argon2id provides superior security compared to bcrypt and is the recommended password hashing algorithm according to current security best practices. The compatibility layer allows existing code to benefit from Argon2 without API changes.
+
+**Security Benefits**:
+- Argon2id provides better resistance against side-channel attacks
+- Configurable memory and time costs for future-proofing
+- Winner of the Password Hashing Competition (2015)
+- Recommended by OWASP for new applications
 
 ### 5. Cache Compatibility Shim
 **File**: `apps/backend/src/lib/cache.ts`
@@ -99,7 +105,7 @@ This document lists the compatibility shims created during CZ1 to resolve missin
 
 ### C Track (Future)
 - Replace Xero no-op connector with real API integration
-- Keep bcrypt compatibility shim (permanent improvement)
+- **Keep bcrypt compatibility shim permanently** (security improvement using Argon2id)
 
 ## Testing
 
@@ -114,6 +120,6 @@ All shims have been tested to ensure:
 - Shims are designed to be minimal and focused
 - No business logic changes were made
 - All shims maintain existing API contracts
-- Future removal is planned and documented
-- Security improvements (argon2 over bcrypt) are permanent
+- Future removal is planned and documented for most shims
+- **Security improvements (Argon2id over bcrypt) are permanent and should be maintained**
 
