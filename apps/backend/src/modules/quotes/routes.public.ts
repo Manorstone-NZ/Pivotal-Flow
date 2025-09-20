@@ -9,6 +9,59 @@ import { eq } from 'drizzle-orm';
 import { quotes, customers, organizations } from '../../lib/schema.js';
 import { QuoteDeliveryService } from './delivery.service.js';
 
+/**
+ * Validate token and get quote with tenant isolation
+ */
+async function validateTokenAndGetQuote(fastify: FastifyInstance, token: string) {
+  const db = (fastify as any).db;
+  
+  // Look up quote by public token directly in database
+  const quoteResult = await db
+    .select()
+    .from(quotes)
+    .where(eq(quotes.publicToken, token))
+    .limit(1);
+    
+  if (!quoteResult || quoteResult.length === 0) {
+    throw new Error('Quote not found');
+  }
+  
+  const quote = quoteResult[0];
+  
+  // Check if token has expired
+  if (quote.tokenExpiresAt && new Date() > new Date(quote.tokenExpiresAt)) {
+    throw new Error('Quote has expired');
+  }
+  
+  // Get organization for tenant isolation
+  const organizationResult = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, quote.organizationId))
+    .limit(1);
+    
+  if (!organizationResult || organizationResult.length === 0) {
+    throw new Error('Organization not found');
+  }
+  
+  const organization = organizationResult[0];
+  
+  // Get customer information
+  const customerResult = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.id, quote.clientId))
+    .limit(1);
+    
+  if (!customerResult || customerResult.length === 0) {
+    throw new Error('Customer not found');
+  }
+  
+  const customer = customerResult[0];
+  
+  return { quote, customer, organization };
+}
+
 // TypeBox schemas for public API
 const PublicQuoteResponseSchema = Type.Object({
   success: Type.Boolean(),
