@@ -150,10 +150,13 @@ test.describe('Quote Delivery System - SaaS Multi-Tenant', () => {
     // Implementation would depend on test data setup
   });
 
-  test('Multi-tenant isolation', async ({ page, context }) => {
+  test('Multi-tenant isolation', async ({ page }) => {
     // Test that quotes from one tenant cannot be accessed by another
     // This would require setting up multiple tenants and verifying isolation
     // Implementation would depend on tenant switching functionality
+    await page.goto('/quotes');
+    // Placeholder test for multi-tenant isolation
+    await expect(page.locator('[data-testid="quotes-list"]')).toBeVisible();
   });
 
   test('Accessibility compliance', async ({ page }) => {

@@ -12,30 +12,11 @@ import { Button } from '../components/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Card, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { useToast } from '../components/ui/Toast';
 import { QuoteStatusChip } from '../components/quotes/QuoteStatusChip';
 import { cn } from '../lib/utils';
 
 // Quote interface now imported from features/quotes/api
-
-const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
-  draft: 'secondary',
-  pending: 'warning',
-  approved: 'info',
-  sent: 'primary',
-  accepted: 'success',
-  rejected: 'error',
-} as const;
-
-const statusLabels = {
-  draft: 'Draft',
-  pending: 'Pending',
-  approved: 'Approved',
-  sent: 'Sent',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-} as const;
 
 export const QuotesListScreen: React.FC = () => {
   const navigate = useNavigate();

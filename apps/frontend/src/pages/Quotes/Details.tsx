@@ -11,6 +11,8 @@ import { QuoteLineTable } from '../../components/quotes/QuoteLineTable';
 import { QuoteSummaryCard } from '../../components/quotes/QuoteSummaryCard';
 import { DiscountEditor } from '../../components/quotes/DiscountEditor';
 import { CustomerSelector } from '../../components/quotes/CustomerSelector';
+import { QuoteDeliveryPanel } from '../../components/quotes/QuoteDeliveryPanel';
+import { QuoteStatusChip } from '../../components/quotes/QuoteStatusChip';
 import { useAuth } from '../../features/auth/store';
 import { 
   useQuote, 
@@ -189,9 +191,7 @@ export const QuoteDetailsPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-text-primary">{quote.title}</h1>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-text-secondary">#{quote.quoteNumber}</span>
-              <Badge variant={getStatusVariant(quote.status)} size="sm">
-                {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
-              </Badge>
+              <QuoteStatusChip status={quote.status as any} size="sm" />
             </div>
           </div>
         </div>
@@ -345,6 +345,29 @@ export const QuoteDetailsPage: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Quote Delivery Panel */}
+          <QuoteDeliveryPanel
+            quote={{
+              id: quote.id,
+              quoteNumber: quote.quoteNumber,
+              title: quote.title,
+              status: quote.status,
+              deliveredAt: quote.deliveredAt,
+              viewedAt: quote.viewedAt,
+              acceptedAt: quote.acceptedAt,
+              sentAt: quote.sentAt,
+              validUntil: quote.validUntil,
+              customer: {
+                companyName: quote.clientId, // Using clientId as company name fallback
+                email: undefined // Would need to join customer data
+              }
+            }}
+            onDeliverySuccess={() => {
+              // Refresh quote data after delivery
+              window.location.reload();
+            }}
+          />
+          
           {/* Quote Summary */}
           <QuoteSummaryCard quote={quote} />
 

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Type, type Static } from '@sinclair/typebox';
 import {
@@ -72,7 +72,6 @@ interface PublicQuoteData {
 
 export const PublicQuotePage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
   
   const [quote, setQuote] = useState<PublicQuoteData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -553,9 +552,9 @@ export const PublicQuotePage: React.FC = () => {
                   
                   <Button
                     type="submit"
-                    variant="error"
+                    variant="outline"
                     disabled={processing}
-                    className="flex-1 flex items-center justify-center space-x-2"
+                    className="flex-1 flex items-center justify-center space-x-2 border-red-300 text-red-700 hover:bg-red-50"
                   >
                     {processing ? (
                       <>

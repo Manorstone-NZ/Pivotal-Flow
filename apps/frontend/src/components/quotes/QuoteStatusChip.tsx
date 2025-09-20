@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { Badge } from '../ui/Badge';
 import { 
   DocumentTextIcon, 
   ClockIcon, 
@@ -37,7 +36,7 @@ interface QuoteStatusChipProps {
 const statusConfig: Record<QuoteStatus, {
   label: string;
   variant: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   description: string;
 }> = {
   draft: {
@@ -117,10 +116,19 @@ export const QuoteStatusChip: React.FC<QuoteStatusChipProps> = ({
     lg: 'w-5 h-5'
   };
 
+  const variantClasses = {
+    default: 'border-gray-200 bg-gray-50 text-gray-700',
+    primary: 'border-blue-200 bg-blue-50 text-blue-700',
+    secondary: 'border-gray-200 bg-gray-100 text-gray-600',
+    success: 'border-green-200 bg-green-50 text-green-700',
+    warning: 'border-yellow-200 bg-yellow-50 text-yellow-700',
+    error: 'border-red-200 bg-red-50 text-red-700',
+    info: 'border-blue-200 bg-blue-50 text-blue-700'
+  };
+
   return (
-    <Badge
-      variant={config.variant}
-      className={`${sizeClasses[size]} ${className || ''}`}
+    <div
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${sizeClasses[size]} ${variantClasses[config.variant]} ${className || ''}`}
       title={config.description}
     >
       <div className="flex items-center space-x-1.5">
@@ -129,7 +137,7 @@ export const QuoteStatusChip: React.FC<QuoteStatusChipProps> = ({
         )}
         <span>{config.label}</span>
       </div>
-    </Badge>
+    </div>
   );
 };
 
