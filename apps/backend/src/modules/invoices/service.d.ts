@@ -36,6 +36,7 @@ export declare class InvoiceService {
             etag: string;
             id: string;
             organizationId: string;
+            tenantId: string | null;
             invoiceNumber: string;
             customerId: string;
             projectId: string | null;

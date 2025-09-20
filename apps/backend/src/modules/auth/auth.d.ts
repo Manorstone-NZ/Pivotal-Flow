@@ -1,6 +1,11 @@
 export interface JWTPayload {
     sub: string;
     org: string;
+    tenantId: string;
+    memberships: {
+        tenantId: string;
+        role: 'OWNER' | 'ADMIN' | 'STAFF' | 'VIEWER';
+    }[];
     roles: string[];
     permissions?: string[];
     iat?: number;
@@ -10,6 +15,11 @@ export interface JWTPayload {
 export interface AuthContext {
     userId: string;
     organizationId: string;
+    tenantId: string;
+    memberships: {
+        tenantId: string;
+        role: 'OWNER' | 'ADMIN' | 'STAFF' | 'VIEWER';
+    }[];
     roles: string[];
     permissions?: string[];
     jti?: string | undefined;

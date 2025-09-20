@@ -113,7 +113,27 @@ export const ROUTE_PERMISSIONS = {
   'DELETE /organizations/:id': 'Manage Organizations',
   'GET /organizations/:id/settings': 'Super Admin Access',
   'POST /organizations/:id/settings': 'Manage Organizations',
-  'POST /organizations/:id/invite-user': 'Manage Users'
+  'POST /organizations/:id/invite-user': 'Manage Users',
+  
+  // F1: Tenant Administration (Platform Admin only)
+  'GET /v1/admin/tenants': 'tenants.view',
+  'POST /v1/admin/tenants': 'tenants.manage',
+  'GET /v1/admin/tenants/:id': 'tenants.view',
+  'PATCH /v1/admin/tenants/:id': 'tenants.manage',
+  'DELETE /v1/admin/tenants/:id': 'tenants.manage',
+  
+  // F1: Tenant Membership Management
+  'GET /v1/admin/tenants/:id/memberships': 'memberships.manage',
+  'POST /v1/admin/tenants/:id/memberships': 'memberships.manage',
+  'PATCH /v1/admin/tenants/:id/memberships/:userId': 'memberships.manage',
+  'DELETE /v1/admin/tenants/:id/memberships/:userId': 'memberships.manage',
+  
+  // F1: Tenant Feature Management
+  'GET /v1/admin/tenants/:id/features': 'features.manage',
+  'PUT /v1/admin/tenants/:id/features': 'features.manage',
+  
+  // F1: Tenant Switching (User's own memberships)
+  'POST /v1/admin/tenants/:id/switch': 'tenants.switch'
 } as const;
 
 // Public routes that don't require authentication
@@ -237,9 +257,8 @@ export async function accessControlMiddleware(
       const hasPermission = userPermissions.includes(requiredPermission);
       
       if (!hasPermission) {
-        // For now, skip database permission check to avoid circular dependencies
-        // In production, you would check permissions through the database
-        console.warn(`Permission check skipped for ${requiredPermission} - implement database check`);
+        // F1: Strict permission enforcement - no bypass logic
+        throw new AuthorizationError(`Access denied: missing permission '${requiredPermission}'`);
       }
     }
     

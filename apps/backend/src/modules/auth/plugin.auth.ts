@@ -11,11 +11,38 @@ import { logger } from '../../lib/logger.js';
 
 import { createTokenManager } from './tokens.js';
 
-// Type definitions for request context
+/**
+ * F1: Validate tenant membership for the current user
+ */
+function validateTenantMembership(user: AuthenticatedUser, requiredTenantId?: string): boolean {
+  // If no specific tenant required, user must have at least one membership
+  if (!requiredTenantId) {
+    return user.memberships.length > 0;
+  }
+  
+  // Check if user has membership in the required tenant
+  return user.memberships.some(membership => membership.tenantId === requiredTenantId);
+}
+
+/**
+ * F1: Get user's role in a specific tenant
+ */
+function getTenantRole(user: AuthenticatedUser, tenantId: string): string | null {
+  const membership = user.memberships.find(m => m.tenantId === tenantId);
+  return membership?.role || null;
+}
+
+// F1: Enhanced type definitions for multitenant request context
 interface AuthenticatedUser {
   userId: string;
-  organizationId: string;
-  roles: string[];
+  organizationId: string; // Legacy compatibility
+  tenantId: string; // Current active tenant
+  memberships: {
+    tenantId: string;
+    role: 'OWNER' | 'ADMIN' | 'STAFF' | 'VIEWER';
+  }[]; // All tenant memberships
+  roles: string[]; // Legacy roles (will be deprecated)
+  permissions: string[]; // Permissions for current tenant
   jti: string;
 }
 
@@ -146,6 +173,10 @@ export default fp(async function authPlugin(app: FastifyInstance) {
   
   app.decorate('tokenManager', tokenManager);
   app.decorate('refreshTokenManager', refreshTokenManager);
+  
+  // F1: Decorate app with tenant membership utilities
+  app.decorate('validateTenantMembership', validateTenantMembership);
+  app.decorate('getTenantRole', getTenantRole);
 
   // Add JWT verification preHandler
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -188,15 +219,50 @@ export default fp(async function authPlugin(app: FastifyInstance) {
     try {
       await (request as any).jwtVerify();
       
-      // Extract user context from JWT payload
+      // F1: Extract enhanced user context from JWT payload with tenant memberships
       const payload = (request as any).user;
-      (request as any).user = {
+      const user: AuthenticatedUser = {
         userId: payload.sub,
-        organizationId: payload.org,
-        roles: payload.roles ?? [],
-        permissions: payload.permissions ?? [],
+        organizationId: payload.org, // Legacy compatibility
+        tenantId: payload.tenantId || payload.org, // Current active tenant (fallback to org for legacy)
+        memberships: payload.memberships ?? [], // All tenant memberships
+        roles: payload.roles ?? [], // Legacy roles
+        permissions: payload.permissions ?? [], // Permissions for current tenant
         jti: payload.jti,
       };
+      
+      // F1: Validate tenant membership - user must have at least one membership
+      if (!validateTenantMembership(user)) {
+        logger.warn({
+          userId: user.userId,
+          memberships: user.memberships,
+          requestUrl: request.url
+        }, 'F1: Access denied - no valid tenant memberships');
+        
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'No valid tenant memberships found',
+          code: 'NO_TENANT_MEMBERSHIP',
+        });
+      }
+      
+      // F1: Validate current tenant membership
+      if (user.tenantId && !validateTenantMembership(user, user.tenantId)) {
+        logger.warn({
+          userId: user.userId,
+          tenantId: user.tenantId,
+          memberships: user.memberships,
+          requestUrl: request.url
+        }, 'F1: Access denied - no membership in current tenant');
+        
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: `No membership found for tenant: ${user.tenantId}`,
+          code: 'INVALID_TENANT_MEMBERSHIP',
+        });
+      }
+      
+      (request as any).user = user;
     } catch (err) {
       return reply.status(401).send({
         error: 'Unauthorized',

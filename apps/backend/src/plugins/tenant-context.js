@@ -6,8 +6,8 @@ import fp from 'fastify-plugin';
 async function tenantContextPlugin(fastify, _options) {
     // Pre-handler hook to extract tenant context from headers
     fastify.addHook('preHandler', async (request, reply) => {
-        // Skip tenant context for public routes
-        const publicRoutes = ['/health', '/auth/login', '/auth/register', '/auth/refresh'];
+        // Skip tenant context for public routes  
+        const publicRoutes = ['/health', '/auth/login', '/auth/register', '/auth/refresh', '/public/quotes'];
         const isPublicRoute = publicRoutes.some(route => request.url.includes(route));
         if (isPublicRoute) {
             request.tenantId = null;

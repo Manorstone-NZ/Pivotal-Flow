@@ -17,17 +17,15 @@ export class QuoteDeliveryService {
      * Token format: {organizationId}.{quoteId}.{randomBytes}.{timestamp}
      */
     generateSecureToken(quoteId) {
-        // Generate cryptographically secure random bytes
-        const randomPart = randomBytes(32).toString('hex');
-        // Create timestamp for expiration tracking
-        const timestamp = Date.now().toString(36);
-        // Include organization ID for tenant isolation (hashed for security)
+        // Generate short cryptographically secure token (16 bytes = 22 chars in base64url)
+        const randomPart = randomBytes(16).toString('base64url');
+        // Create organization hash for tenant isolation (SaaS requirement)
         const orgHash = createHash('sha256')
             .update(this.context.organizationId)
             .digest('hex')
             .substring(0, 8);
-        // Construct token: orgHash.quoteId.randomPart.timestamp
-        const token = `${orgHash}.${quoteId}.${randomPart}.${timestamp}`;
+        // Short token format: orgHash + randomPart (total ~30 chars)
+        const token = `${orgHash}${randomPart}`;
         // Set expiration (max 30 days for SaaS)
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
@@ -36,7 +34,7 @@ export class QuoteDeliveryService {
     /**
      * Deliver quote to customer with SaaS tenant isolation
      */
-    async deliverQuote(quoteId, options = {}) {
+    async deliverQuote(quoteId, _options = {}) {
         const db = this.fastify.db;
         try {
             // Verify quote exists and belongs to current tenant
@@ -70,7 +68,7 @@ export class QuoteDeliveryService {
             })
                 .where(and(eq(quotes.id, quoteId), eq(quotes.organizationId, this.context.organizationId)));
             // Generate SaaS-appropriate public URL
-            const baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+            const baseUrl = process.env['PUBLIC_BASE_URL'] || 'http://localhost:3000';
             const publicUrl = `${baseUrl}/public/quotes/${token}`;
             // Log delivery for audit trail (SaaS requirement)
             this.fastify.log.info({
@@ -108,27 +106,21 @@ export class QuoteDeliveryService {
      */
     static validatePublicToken(token) {
         try {
-            const parts = token.split('.');
-            if (parts.length !== 4) {
+            // Parse short token format: orgHash(8) + randomPart(22)
+            if (token.length !== 30) {
                 return { isValid: false };
             }
-            const [orgHash, quoteId, randomPart, timestampStr] = parts;
-            const timestamp = parseInt(timestampStr, 36);
+            const orgHash = token.substring(0, 8);
+            const randomPart = token.substring(8);
+            // For the new format, we need to look up the quote from the database
+            // The timestamp validation will be done via the tokenExpiresAt field
             // Basic validation
-            if (!orgHash || !quoteId || !randomPart || !timestamp) {
-                return { isValid: false };
-            }
-            // Check token age (max 30 days)
-            const tokenAge = Date.now() - timestamp;
-            const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-            if (tokenAge > maxAge) {
+            if (!orgHash || !randomPart) {
                 return { isValid: false };
             }
             return {
                 isValid: true,
-                quoteId,
-                organizationHash: orgHash,
-                timestamp
+                organizationHash: orgHash
             };
         }
         catch (error) {
@@ -139,6 +131,8 @@ export class QuoteDeliveryService {
      * Get organization ID from token hash (for tenant validation)
      */
     static getOrganizationFromTokenHash(tokenOrgHash, candidateOrgId) {
+        if (!candidateOrgId)
+            return false;
         const expectedHash = createHash('sha256')
             .update(candidateOrgId)
             .digest('hex')

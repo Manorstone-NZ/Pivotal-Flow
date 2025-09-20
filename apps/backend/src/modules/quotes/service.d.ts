@@ -15,6 +15,7 @@ export declare class QuoteService {
         data: {
             id: string;
             organizationId: string;
+            tenantId: string | null;
             quoteNumber: string;
             customerId: string;
             projectId: string | null;

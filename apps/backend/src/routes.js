@@ -12,6 +12,7 @@ import { createUserRoute } from './modules/users/routes.create.js';
 import { rateCardRoutes } from './modules/rate-cards/routes.js';
 // Import quote route modules
 import { registerQuoteRoutes } from './modules/quotes/index.js';
+import { registerPublicQuoteRoutes } from './modules/quotes/routes.public.js';
 // Import invoice route modules
 import { registerInvoiceRoutes } from './modules/invoices/index.js';
 // Import permission route modules
@@ -30,6 +31,8 @@ import { timeRoutes } from './modules/time/routes.js';
 import { registerCustomerRoutes } from './modules/customers/index.js';
 // Import organization route modules
 import { registerOrganizationRoutes } from './modules/organizations/index.js';
+// F1: Import tenant administration route modules
+import { registerTenantRoutes } from './modules/tenants/index.js';
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 // Simple response schema for testing
@@ -91,7 +94,15 @@ export async function registerRoutes() {
     await app.register(async (fastify) => {
         registerOrganizationRoutes(fastify);
     }, { prefix: '/api' });
+    // F1: Register tenant administration route modules
+    await app.register(async (fastify) => {
+        registerTenantRoutes(fastify);
+    }, { prefix: '/api' });
     // Register health route modules
     await app.register(healthRoutes, { prefix: '/api/v1/health' });
+    // Register public quote routes (no authentication required)
+    await app.register(async (fastify) => {
+        registerPublicQuoteRoutes(fastify);
+    }, { prefix: '/api' });
 }
 //# sourceMappingURL=routes.js.map

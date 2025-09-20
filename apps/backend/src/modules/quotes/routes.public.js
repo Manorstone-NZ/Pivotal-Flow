@@ -3,7 +3,7 @@
  * Customer-facing quote approval with tenant isolation
  */
 import { Type } from '@sinclair/typebox';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { quotes, customers, organizations } from '../../lib/schema.js';
 import { QuoteDeliveryService } from './delivery.service.js';
 // TypeBox schemas for public API
@@ -120,9 +120,6 @@ export function registerPublicQuoteRoutes(fastify) {
     // Get public quote for customer viewing
     fastify.get('/public/quotes/:token', {
         schema: {
-            tags: ['Public', 'Quotes'],
-            summary: 'Get public quote for customer approval',
-            description: 'Customer-facing quote view with tenant isolation via secure token',
             params: Type.Object({
                 token: Type.String({ description: 'Secure public token' })
             }),
@@ -228,9 +225,6 @@ export function registerPublicQuoteRoutes(fastify) {
     // Accept quote (customer approval)
     fastify.post('/public/quotes/:token/accept', {
         schema: {
-            tags: ['Public', 'Quotes'],
-            summary: 'Accept quote (customer approval)',
-            description: 'Customer accepts quote with digital signature',
             params: Type.Object({
                 token: Type.String({ description: 'Secure public token' })
             }),
@@ -321,9 +315,6 @@ export function registerPublicQuoteRoutes(fastify) {
     // Reject quote (customer decline)
     fastify.post('/public/quotes/:token/reject', {
         schema: {
-            tags: ['Public', 'Quotes'],
-            summary: 'Reject quote (customer decline)',
-            description: 'Customer rejects quote with reason',
             params: Type.Object({
                 token: Type.String({ description: 'Secure public token' })
             }),

@@ -23,7 +23,7 @@ export declare const CreateQuoteSchema: import("@sinclair/typebox").TObject<{
     title: import("@sinclair/typebox").TString;
     description: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     type: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"project">, import("@sinclair/typebox").TLiteral<"service">, import("@sinclair/typebox").TLiteral<"product">, import("@sinclair/typebox").TLiteral<"maintenance">]>;
-    status: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>;
+    status: import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"viewed">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"expired">, import("@sinclair/typebox").TLiteral<"cancelled">]>;
     validUntil: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     metadata: import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TUnknown>;
 }>;
@@ -33,7 +33,7 @@ export declare const UpdateQuoteSchema: import("@sinclair/typebox").TObject<{
     title: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     description: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     type: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"project">, import("@sinclair/typebox").TLiteral<"service">, import("@sinclair/typebox").TLiteral<"product">, import("@sinclair/typebox").TLiteral<"maintenance">]>>;
-    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
+    status: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"draft">, import("@sinclair/typebox").TLiteral<"pending">, import("@sinclair/typebox").TLiteral<"approved">, import("@sinclair/typebox").TLiteral<"sent">, import("@sinclair/typebox").TLiteral<"viewed">, import("@sinclair/typebox").TLiteral<"accepted">, import("@sinclair/typebox").TLiteral<"rejected">, import("@sinclair/typebox").TLiteral<"expired">, import("@sinclair/typebox").TLiteral<"cancelled">]>>;
     validUntil: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     metadata: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TRecord<import("@sinclair/typebox").TString, import("@sinclair/typebox").TUnknown>>;
 }>;
@@ -63,6 +63,10 @@ export declare const QuoteResponseSchema: import("@sinclair/typebox").TObject<{
     totalAmount: import("@sinclair/typebox").TNumber;
     createdBy: import("@sinclair/typebox").TString;
     quoteNumber: import("@sinclair/typebox").TString;
+    deliveredAt: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    viewedAt: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    publicToken: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    tokenExpiresAt: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
 }>;
 export type QuoteResponse = Static<typeof QuoteResponseSchema>;
 export declare const QuoteErrorSchema: import("@sinclair/typebox").TObject<{

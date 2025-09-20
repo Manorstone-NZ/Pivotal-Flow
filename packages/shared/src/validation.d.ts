@@ -303,16 +303,16 @@ export declare const logEntrySchema: z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
     requestId: string;
-    level: "debug" | "error" | "warn" | "info";
     message: string;
+    level: "error" | "warn" | "info" | "debug";
     timestamp: string;
     metadata?: Record<string, unknown> | undefined;
     route?: string | undefined;
     latency?: number | undefined;
 }, {
     requestId: string;
-    level: "debug" | "error" | "warn" | "info";
     message: string;
+    level: "error" | "warn" | "info" | "debug";
     timestamp: string;
     metadata?: Record<string, unknown> | undefined;
     route?: string | undefined;
@@ -360,13 +360,13 @@ export declare const metricsConfigSchema: z.ZodObject<{
     collectDefaultMetrics: z.ZodBoolean;
 }, "strip", z.ZodTypeAny, {
     port: number;
-    path: string;
     enabled: boolean;
+    path: string;
     collectDefaultMetrics: boolean;
 }, {
     port: number;
-    path: string;
     enabled: boolean;
+    path: string;
     collectDefaultMetrics: boolean;
 }>;
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;

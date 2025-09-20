@@ -32,7 +32,7 @@ export declare class QuoteDeliveryService {
     /**
      * Deliver quote to customer with SaaS tenant isolation
      */
-    deliverQuote(quoteId: string, options?: DeliveryOptions): Promise<DeliveryResult>;
+    deliverQuote(quoteId: string, _options?: DeliveryOptions): Promise<DeliveryResult>;
     /**
      * Validate and decode public token for SaaS tenant isolation
      */
@@ -45,6 +45,6 @@ export declare class QuoteDeliveryService {
     /**
      * Get organization ID from token hash (for tenant validation)
      */
-    static getOrganizationFromTokenHash(tokenOrgHash: string, candidateOrgId: string): boolean;
+    static getOrganizationFromTokenHash(tokenOrgHash: string, candidateOrgId: string | undefined): boolean;
 }
 //# sourceMappingURL=delivery.service.d.ts.map

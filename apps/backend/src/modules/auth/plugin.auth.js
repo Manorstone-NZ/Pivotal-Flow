@@ -7,6 +7,24 @@ import { config } from '../../config/index.js';
 import { logger } from '../../lib/logger.js';
 import { createTokenManager } from './tokens.js';
 /**
+ * F1: Validate tenant membership for the current user
+ */
+function validateTenantMembership(user, requiredTenantId) {
+    // If no specific tenant required, user must have at least one membership
+    if (!requiredTenantId) {
+        return user.memberships.length > 0;
+    }
+    // Check if user has membership in the required tenant
+    return user.memberships.some(membership => membership.tenantId === requiredTenantId);
+}
+/**
+ * F1: Get user's role in a specific tenant
+ */
+function getTenantRole(user, tenantId) {
+    const membership = user.memberships.find(m => m.tenantId === tenantId);
+    return membership?.role || null;
+}
+/**
  * Parse TTL string to seconds
  */
 function parseTTL(ttl) {
@@ -105,6 +123,9 @@ export default fp(async function authPlugin(app) {
     const refreshTokenManager = new TokenManager(cacheAdapter, parseTTL(config.auth.REFRESH_TOKEN_TTL));
     app.decorate('tokenManager', tokenManager);
     app.decorate('refreshTokenManager', refreshTokenManager);
+    // F1: Decorate app with tenant membership utilities
+    app.decorate('validateTenantMembership', validateTenantMembership);
+    app.decorate('getTenantRole', getTenantRole);
     // Add JWT verification preHandler
     app.addHook('preHandler', async (request, reply) => {
         // Skip JWT verification for public routes
@@ -135,21 +156,52 @@ export default fp(async function authPlugin(app) {
             requestUrl === '/v1/auth/refresh' ||
             requestUrl === '/api/v1/auth/refresh' ||
             requestUrl === '/api/v1/auth/debug-db' ||
-            requestUrl.startsWith('/v1/test/')) {
+            requestUrl.startsWith('/v1/test/') ||
+            requestUrl.startsWith('/api/public/quotes/')) {
             logger.info({ requestUrl }, 'Skipping auth for public route');
             return;
         }
         try {
             await request.jwtVerify();
-            // Extract user context from JWT payload
+            // F1: Extract enhanced user context from JWT payload with tenant memberships
             const payload = request.user;
-            request.user = {
+            const user = {
                 userId: payload.sub,
-                organizationId: payload.org,
-                roles: payload.roles ?? [],
-                permissions: payload.permissions ?? [],
+                organizationId: payload.org, // Legacy compatibility
+                tenantId: payload.tenantId || payload.org, // Current active tenant (fallback to org for legacy)
+                memberships: payload.memberships ?? [], // All tenant memberships
+                roles: payload.roles ?? [], // Legacy roles
+                permissions: payload.permissions ?? [], // Permissions for current tenant
                 jti: payload.jti,
             };
+            // F1: Validate tenant membership - user must have at least one membership
+            if (!validateTenantMembership(user)) {
+                logger.warn({
+                    userId: user.userId,
+                    memberships: user.memberships,
+                    requestUrl: request.url
+                }, 'F1: Access denied - no valid tenant memberships');
+                return reply.status(403).send({
+                    error: 'Forbidden',
+                    message: 'No valid tenant memberships found',
+                    code: 'NO_TENANT_MEMBERSHIP',
+                });
+            }
+            // F1: Validate current tenant membership
+            if (user.tenantId && !validateTenantMembership(user, user.tenantId)) {
+                logger.warn({
+                    userId: user.userId,
+                    tenantId: user.tenantId,
+                    memberships: user.memberships,
+                    requestUrl: request.url
+                }, 'F1: Access denied - no membership in current tenant');
+                return reply.status(403).send({
+                    error: 'Forbidden',
+                    message: `No membership found for tenant: ${user.tenantId}`,
+                    code: 'INVALID_TENANT_MEMBERSHIP',
+                });
+            }
+            request.user = user;
         }
         catch (err) {
             return reply.status(401).send({

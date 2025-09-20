@@ -317,28 +317,8 @@ export const useAuth = () => {
         return true;
       }
       
-      // Super admin permissions for users with 'super_admin' role
-      if (store.user?.roles?.includes('super_admin')) {
-        return true;
-      }
-      
-      // Tenant admin permissions for users with 'tenant_admin' role
-      if (store.user?.roles?.includes('tenant_admin')) {
-        // Tenant admins get all tenant-level permissions but not system-level
-        const tenantPermissions = [
-          'tenant.admin',
-          'users.manage', 
-          'customers.manage',
-          'projects.manage',
-          'quotes.manage'
-        ];
-        return tenantPermissions.includes(permission);
-      }
-      
-      // Legacy support: users with 'admin' role get super admin permissions
-      if (store.user?.roles?.includes('admin')) {
-        return true;
-      }
+      // F1: Strict membership-based permissions - no bypass logic
+      // All permissions must be explicitly granted through tenant memberships
       
       return false;
     },

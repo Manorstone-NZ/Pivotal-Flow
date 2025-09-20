@@ -80,6 +80,18 @@ export declare const ROUTE_PERMISSIONS: {
     readonly 'GET /organizations/:id/settings': "Super Admin Access";
     readonly 'POST /organizations/:id/settings': "Manage Organizations";
     readonly 'POST /organizations/:id/invite-user': "Manage Users";
+    readonly 'GET /v1/admin/tenants': "tenants.view";
+    readonly 'POST /v1/admin/tenants': "tenants.manage";
+    readonly 'GET /v1/admin/tenants/:id': "tenants.view";
+    readonly 'PATCH /v1/admin/tenants/:id': "tenants.manage";
+    readonly 'DELETE /v1/admin/tenants/:id': "tenants.manage";
+    readonly 'GET /v1/admin/tenants/:id/memberships': "memberships.manage";
+    readonly 'POST /v1/admin/tenants/:id/memberships': "memberships.manage";
+    readonly 'PATCH /v1/admin/tenants/:id/memberships/:userId': "memberships.manage";
+    readonly 'DELETE /v1/admin/tenants/:id/memberships/:userId': "memberships.manage";
+    readonly 'GET /v1/admin/tenants/:id/features': "features.manage";
+    readonly 'PUT /v1/admin/tenants/:id/features': "features.manage";
+    readonly 'POST /v1/admin/tenants/:id/switch': "tenants.switch";
 };
 export declare const PUBLIC_ROUTES: string[];
 export declare const AUTH_ONLY_ROUTES: string[];

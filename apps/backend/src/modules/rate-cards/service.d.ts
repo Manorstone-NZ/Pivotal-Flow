@@ -15,6 +15,7 @@ export declare class RateCardService {
         updatedAt: string;
         id: string;
         organizationId: string;
+        tenantId: string | null;
         name: string;
         version: string;
         description: string | null;
@@ -26,6 +27,7 @@ export declare class RateCardService {
     getActiveRateCard(date?: Date): Promise<{
         id: string;
         organizationId: string;
+        tenantId: string | null;
         name: string;
         version: string;
         description: string | null;
@@ -60,6 +62,7 @@ export declare class RateCardService {
         updatedAt: string;
         id: string;
         organizationId: string;
+        tenantId: string | null;
         name: string;
         version: string;
         description: string | null;
@@ -75,6 +78,7 @@ export declare class RateCardService {
         updatedAt: string;
         id: string;
         organizationId: string;
+        tenantId: string | null;
         name: string;
         version: string;
         description: string | null;

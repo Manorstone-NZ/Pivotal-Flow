@@ -45,6 +45,9 @@ import { registerCustomerRoutes } from './modules/customers/index.js';
 // Import organization route modules
 import { registerOrganizationRoutes } from './modules/organizations/index.js';
 
+// F1: Import tenant administration route modules
+import { registerTenantRoutes } from './modules/tenants/index.js';
+
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 
@@ -120,6 +123,11 @@ export async function registerRoutes() {
   // Register organization route modules
   await app.register(async (fastify) => {
     registerOrganizationRoutes(fastify);
+  }, { prefix: '/api' });
+
+  // F1: Register tenant administration route modules
+  await app.register(async (fastify) => {
+    registerTenantRoutes(fastify);
   }, { prefix: '/api' });
 
   // Register health route modules

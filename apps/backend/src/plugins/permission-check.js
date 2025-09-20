@@ -65,7 +65,7 @@ const permissionCheckPlugin = async (fastify) => {
     fastify.addHook('preHandler', async (request, reply) => {
         const { method, url } = request;
         // Skip permission check for public routes
-        const publicRoutes = ['/health', '/auth/login', '/auth/register', '/auth/refresh', '/auth/me'];
+        const publicRoutes = ['/health', '/auth/login', '/auth/register', '/auth/refresh', '/auth/me', '/public/quotes'];
         const isPublicRoute = publicRoutes.some(route => url.includes(route));
         if (isPublicRoute) {
             return;
