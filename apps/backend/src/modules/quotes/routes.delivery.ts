@@ -42,10 +42,6 @@ interface DeliveryRequest {
 export function registerQuoteDeliveryRoute(fastify: FastifyInstance): void {
   fastify.post<DeliveryRequest>('/v1/quotes/:id/deliver', {
     schema: {
-      tags: ['Quotes', 'Delivery'],
-      summary: 'Deliver quote to customer',
-      description: 'Generate secure public link and deliver quote to customer with tenant isolation',
-      security: [{ bearerAuth: [] }],
       params: Type.Object({
         id: Type.String({ description: 'Quote ID' })
       }),

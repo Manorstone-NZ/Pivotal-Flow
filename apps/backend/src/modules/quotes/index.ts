@@ -25,9 +25,9 @@ export function registerQuoteRoutes(fastify: FastifyInstance<any, any, any, any,
   registerQuoteLineItemRoutes(fastify);
   registerSubmitQuoteRoute(fastify);
   
-  // Register new delivery and public routes for E13
+  // Register new delivery routes for E13
   registerQuoteDeliveryRoute(fastify);
-  registerPublicQuoteRoutes(fastify);
+  // Note: Public routes are registered separately in routes.ts to bypass authentication
 }
 
 // Export types and schemas for use in other modules

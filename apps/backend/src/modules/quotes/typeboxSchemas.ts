@@ -41,8 +41,10 @@ export const CreateQuoteSchema = Type.Object({
     Type.Literal('pending'),
     Type.Literal('approved'),
     Type.Literal('sent'),
+    Type.Literal('viewed'),
     Type.Literal('accepted'),
     Type.Literal('rejected'),
+    Type.Literal('expired'),
     Type.Literal('cancelled')
   ]),
   validUntil: Type.Optional(Type.String({ format: 'date-time' })),
@@ -81,7 +83,12 @@ export const QuoteResponseSchema = Type.Object({
   taxAmount: Type.Number(),
   totalAmount: Type.Number(),
   createdBy: Type.String(),
-  quoteNumber: Type.String()
+  quoteNumber: Type.String(),
+  // E13 Quote Delivery & Approval fields
+  deliveredAt: Type.Optional(Type.String({ format: 'date-time' })),
+  viewedAt: Type.Optional(Type.String({ format: 'date-time' })),
+  publicToken: Type.Optional(Type.String()),
+  tokenExpiresAt: Type.Optional(Type.String({ format: 'date-time' }))
 });
 
 export type QuoteResponse = Static<typeof QuoteResponseSchema>;

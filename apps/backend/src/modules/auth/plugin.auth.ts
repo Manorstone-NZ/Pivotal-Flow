@@ -179,7 +179,8 @@ export default fp(async function authPlugin(app: FastifyInstance) {
         requestUrl === '/v1/auth/refresh' ||
         requestUrl === '/api/v1/auth/refresh' ||
         requestUrl === '/api/v1/auth/debug-db' ||
-        requestUrl.startsWith('/v1/test/')) {
+        requestUrl.startsWith('/v1/test/') ||
+        requestUrl.startsWith('/api/public/quotes/')) {
       logger.info({ requestUrl }, 'Skipping auth for public route');
       return;
     }

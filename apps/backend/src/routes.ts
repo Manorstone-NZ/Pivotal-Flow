@@ -16,6 +16,7 @@ import { rateCardRoutes } from './modules/rate-cards/routes.js';
 
 // Import quote route modules
 import { registerQuoteRoutes } from './modules/quotes/index.js';
+import { registerPublicQuoteRoutes } from './modules/quotes/routes.public.js';
 
 // Import invoice route modules
 import { registerInvoiceRoutes } from './modules/invoices/index.js';
@@ -123,4 +124,9 @@ export async function registerRoutes() {
 
   // Register health route modules
   await app.register(healthRoutes, { prefix: '/api/v1/health' });
+
+  // Register public quote routes (no authentication required)
+  await app.register(async (fastify) => {
+    registerPublicQuoteRoutes(fastify);
+  }, { prefix: '/api' });
 }
