@@ -77,6 +77,50 @@ export const organizations = pgTable('organizations', {
   deletedAt: timestamp('deleted_at', { mode: 'date', precision: 3 }),
 });
 
+// F1 Multitenant Foundations - Tenants table (proper tenant entity)
+export const tenants = pgTable('tenants', {
+  id: text('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  billingEmail: varchar('billing_email', { length: 255 }).notNull(),
+  defaultCurrency: varchar('default_currency', { length: 3 }).notNull().default('USD'),
+  timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'), // 'ACTIVE' | 'SUSPENDED'
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  slugIndex: uniqueIndex('tenants_slug_unique').on(table.slug),
+  statusIndex: index('tenants_status_idx').on(table.status),
+}));
+
+// F1 Multitenant Foundations - Memberships table (user-tenant relationships)
+export const memberships = pgTable('memberships', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 20 }).notNull(), // 'OWNER' | 'ADMIN' | 'STAFF' | 'VIEWER'
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  userTenantUnique: uniqueIndex('memberships_user_tenant_unique').on(table.userId, table.tenantId),
+  userIdIndex: index('memberships_user_id_idx').on(table.userId),
+  tenantIdIndex: index('memberships_tenant_id_idx').on(table.tenantId),
+}));
+
+// F1 Multitenant Foundations - Tenant Features (SaaS service allow-listing)
+export const tenantFeatures = pgTable('tenant_features', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  featureCode: varchar('feature_code', { length: 50 }).notNull(),
+  enabled: boolean('enabled').notNull().default(true),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+}, (table) => ({
+  tenantFeatureUnique: uniqueIndex('tenant_features_tenant_feature_unique').on(table.tenantId, table.featureCode),
+  tenantIdIndex: index('tenant_features_tenant_id_idx').on(table.tenantId),
+  featureCodeIndex: index('tenant_features_feature_code_idx').on(table.featureCode),
+}));
+
 // Organization security policies table
 export const orgSecurityPolicies = pgTable('org_security_policies', {
   id: text('id').primaryKey(),
@@ -225,6 +269,7 @@ export const userRoles = pgTable('user_roles', {
 export const customers = pgTable('customers', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   customerNumber: varchar('customer_number', { length: 50 }).notNull().unique(),
   companyName: varchar('company_name', { length: 255 }).notNull(),
   legalName: varchar('legal_name', { length: 255 }),
@@ -281,6 +326,7 @@ export const customerContacts = pgTable('customer_contacts', {
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 50 }), // Project code
   description: text('description'),
@@ -315,6 +361,7 @@ export const serviceCategories = pgTable('service_categories', {
 export const rateCards = pgTable('rate_cards', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   name: varchar('name', { length: 255 }).notNull(),
   version: varchar('version', { length: 20 }).notNull().default('1.0'),
   description: text('description'),
@@ -354,6 +401,7 @@ export const rateCardItems = pgTable('rate_card_items', {
 export const quotes = pgTable('quotes', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   quoteNumber: varchar('quote_number', { length: 50 }).notNull(),
   customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
   projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
@@ -550,6 +598,7 @@ export const approvalRequests = pgTable('approval_requests', {
 export const invoices = pgTable('invoices', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
   customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
   projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
@@ -759,6 +808,7 @@ export const jobs = pgTable('jobs', {
 export const timeEntries = pgTable('time_entries', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
   taskId: text('task_id'), // Optional task reference (for future use)
