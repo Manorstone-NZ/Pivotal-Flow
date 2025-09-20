@@ -163,58 +163,167 @@ wait_for_service() {
     return 1
 }
 
-# Function to start backend
+# Function to setup environment (from startup script)
+setup_environment() {
+    log "🔧 Setting up environment..."
+    
+    export DATABASE_URL="postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e"
+    export REDIS_URL="redis://localhost:6379"
+    export JWT_SECRET="your-super-secret-jwt-key-that-is-at-least-32-characters-long"
+    export CORS_ORIGIN="http://localhost:3000,http://localhost:5173,http://localhost:5174"
+    export OPENAPI_ENABLE="true"
+    export ALLOW_LOCAL_DB_CREATION="yes"
+    export NODE_ENV="development"
+    export PORT="3000"
+    export HOST="localhost"
+    
+    success "Environment variables configured"
+}
+
+# Function to start Docker services (from startup script)
+start_docker_services() {
+    log "🐳 Starting Docker services..."
+    
+    cd "$PROJECT_ROOT/infra/docker"
+    docker-compose up -d
+    cd "$PROJECT_ROOT"
+    
+    log "Waiting for Docker services to initialize..."
+    sleep 10
+    
+    # Check PostgreSQL
+    if docker exec docker_postgres_1 pg_isready -U pivotal -d pivotal_e2e >/dev/null 2>&1; then
+        success "PostgreSQL is ready"
+    else
+        error "PostgreSQL failed to start"
+        return 1
+    fi
+    
+    # Check Redis  
+    if docker exec docker_redis_1 redis-cli ping >/dev/null 2>&1; then
+        success "Redis is ready"
+    else
+        error "Redis failed to start"
+        return 1
+    fi
+    
+    success "Docker services are running"
+}
+
+# Function to setup database (from startup script)
+setup_database() {
+    log "🗄️ Setting up database..."
+    
+    log "Generating database schema..."
+    if pnpm --filter backend drizzle:generate; then
+        success "Database schema generated"
+    else
+        error "Failed to generate database schema"
+        return 1
+    fi
+    
+    log "Pushing database schema..."
+    if DATABASE_URL="$DATABASE_URL" ALLOW_LOCAL_DB_CREATION=yes pnpm --filter backend drizzle:push; then
+        success "Database schema pushed successfully"
+    else
+        warning "Database schema push failed - this may be normal if schema already exists"
+    fi
+    
+    log "Seeding database with demo data..."
+    if DATABASE_URL="$DATABASE_URL" pnpm --filter backend db:seed; then
+        success "Database seeded successfully"
+    else
+        error "Failed to seed database"
+        return 1
+    fi
+}
+
+# Function to start backend (from startup script)
 start_backend() {
-    log "🚀 Starting backend..."
+    log "🚀 Starting backend server..."
+    
+    # Kill any existing backend processes
+    kill_by_port $BACKEND_PORT "Backend"
+    
+    # Create logs directory
+    mkdir -p logs
+    touch logs/backend.log
+    
+    cd "$PROJECT_ROOT/apps/backend"
+    
+    # Start backend in background (exact command from startup script)
+    nohup pnpm dev > ../../logs/backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo $BACKEND_PID > ../../logs/backend.pid
     
     cd "$PROJECT_ROOT"
     
-    # Start backend in background
-    DATABASE_URL="$DATABASE_URL" OPENAPI_ENABLE=true pnpm --filter @pivotal-flow/backend dev > /tmp/backend.log 2>&1 &
-    BACKEND_PID=$!
-    
-    # Wait for backend to be ready
+    # Wait for backend to be ready (using startup script health endpoint)
     if wait_for_service $BACKEND_PORT "Backend" "http://localhost:$BACKEND_PORT/"; then
         success "Backend started successfully (PID: $BACKEND_PID)"
-        echo $BACKEND_PID > /tmp/backend.pid
         return 0
     else
         error "Backend failed to start"
+        error "Check logs: tail -f logs/backend.log"
         kill $BACKEND_PID 2>/dev/null || true
         return 1
     fi
 }
 
-# Function to start frontend
+# Function to start frontend (from startup script)
 start_frontend() {
-    log "🚀 Starting frontend..."
+    log "🌐 Starting frontend server..."
+    
+    # Kill any existing frontend processes
+    kill_by_port $FRONTEND_PORT "Frontend"
+    
+    # Create logs directory
+    mkdir -p logs
+    touch logs/frontend.log
+    
+    cd "$PROJECT_ROOT/apps/frontend"
+    
+    # Start frontend in background (exact command from startup script)
+    nohup pnpm dev > ../../logs/frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    echo $FRONTEND_PID > ../../logs/frontend.pid
     
     cd "$PROJECT_ROOT"
-    
-    # Start frontend in background
-    pnpm --filter @pivotal-flow/frontend dev > /tmp/frontend.log 2>&1 &
-    FRONTEND_PID=$!
     
     # Wait for frontend to be ready
     if wait_for_service $FRONTEND_PORT "Frontend" "http://localhost:$FRONTEND_PORT/"; then
         success "Frontend started successfully (PID: $FRONTEND_PID)"
-        echo $FRONTEND_PID > /tmp/frontend.pid
         return 0
     else
         error "Frontend failed to start"
+        error "Check logs: tail -f logs/frontend.log"
         kill $FRONTEND_PID 2>/dev/null || true
         return 1
     fi
 }
 
-# Function to start all services
+# Function to start all services (using startup script sequence)
 start_services() {
     log "🚀 EMERGENCY STARTUP - Starting all services..."
     
     # Ensure we're in the project root
     cd "$PROJECT_ROOT"
     
-    # Start backend first
+    # Follow exact startup script sequence
+    setup_environment
+    
+    # Start Docker services
+    if start_docker_services; then
+        log "Docker services ready"
+    else
+        error "Docker services failed"
+        return 1
+    fi
+    
+    # Skip database setup for emergency restart (already configured)
+    log "Skipping database setup (using existing schema)"
+    
+    # Start backend
     if start_backend; then
         log "Backend startup complete"
     else
@@ -230,8 +339,45 @@ start_services() {
         return 1
     fi
     
+    # Run health checks
+    run_health_checks
+    
     success "🚀 All services started successfully"
     show_status
+}
+
+# Function to run health checks (from startup script)
+run_health_checks() {
+    log "🔍 Running health checks..."
+    
+    log "Testing backend health endpoint..."
+    if curl -s "http://localhost:3000/api/v1/health" | grep -q "status"; then
+        success "Backend health check passed"
+    else
+        warning "Backend health check failed"
+    fi
+    
+    log "Testing frontend accessibility..."
+    if curl -s "http://localhost:5173" | grep -q "html"; then
+        success "Frontend accessibility check passed"
+    else
+        warning "Frontend accessibility check failed"
+    fi
+    
+    log "Testing login functionality..."
+    sleep 3
+    
+    LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{"email":"admin@pivotalflow.com","password":"password123!extra"}' \
+        --connect-timeout 10)
+    
+    if echo "$LOGIN_RESPONSE" | grep -q "accessToken"; then
+        success "Login test passed!"
+        success "🔑 Login credentials: admin@pivotalflow.com / password123!extra"
+    else
+        warning "Login test failed. Response: $LOGIN_RESPONSE"
+    fi
 }
 
 # Function to show service status
