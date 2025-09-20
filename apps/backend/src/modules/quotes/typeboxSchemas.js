@@ -1,12 +1,14 @@
 import { Type } from '@sinclair/typebox';
-// Quote status enum based on B.1 specification
+// Quote status enum for SaaS multi-tenant delivery system
 export const QuoteStatus = {
     DRAFT: 'draft',
     PENDING: 'pending',
     APPROVED: 'approved',
     SENT: 'sent',
+    VIEWED: 'viewed',
     ACCEPTED: 'accepted',
     REJECTED: 'rejected',
+    EXPIRED: 'expired',
     CANCELLED: 'cancelled'
 };
 // Quote type enum

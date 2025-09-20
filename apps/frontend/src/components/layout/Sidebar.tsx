@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../features/auth/store';
 import { Badge } from '../ui/Badge';
 
 interface SidebarProps {
@@ -14,6 +16,7 @@ interface NavItem {
   icon: React.ReactNode;
   badge?: string | number;
   children?: NavItem[];
+  adminOnly?: boolean;
 }
 
 const navigationItems: NavItem[] = [
@@ -111,6 +114,16 @@ const navigationItems: NavItem[] = [
     ),
   },
   {
+    label: 'Organizations',
+    href: '/admin/tenants',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h4a1 1 0 011 1v5m-6 0V9a1 1 0 011-1h4a1 1 0 011 1v2" />
+      </svg>
+    ),
+    adminOnly: true,
+  },
+  {
     label: 'Settings',
     href: '/settings',
     icon: (
@@ -123,6 +136,16 @@ const navigationItems: NavItem[] = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { hasPermission } = useAuth();
+  
+  // Filter navigation items based on permissions
+  const visibleNavigationItems = navigationItems.filter(item => {
+    if (item.adminOnly) {
+      return hasPermission('system.super_admin');
+    }
+    return true;
+  });
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -166,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-            {navigationItems.map((item) => (
+            {visibleNavigationItems.map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}

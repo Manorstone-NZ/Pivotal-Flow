@@ -16,7 +16,7 @@ import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
 import { CustomerTable } from '../../components/customers/CustomerTable';
 import { CustomerForm } from '../../components/customers/CustomerForm';
-import { Dialog } from '../../components/ui/Dialog';
+import { FormModal } from '../../components/ui/FormModal';
 import { useAuth } from '../../features/auth/store';
 
 export const CustomersListPage: React.FC = () => {
@@ -294,17 +294,17 @@ export const CustomersListPage: React.FC = () => {
       </Card>
 
       {/* New Customer Modal */}
-      <Dialog
+      <FormModal
         open={showNewCustomerModal}
         onClose={() => setShowNewCustomerModal(false)}
         title="Create New Customer"
-        size="xl"
+        size="lg"
       >
         <CustomerForm
           onSuccess={handleNewCustomerSuccess}
           onCancel={() => setShowNewCustomerModal(false)}
         />
-      </Dialog>
+      </FormModal>
     </div>
   );
 };

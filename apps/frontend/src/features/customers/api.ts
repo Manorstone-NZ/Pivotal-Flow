@@ -130,31 +130,67 @@ export interface ContactListResponse {
 
 // API Client
 const createApiClient = () => {
-  const authData = localStorage.getItem('pivotal-flow-auth');
-  let accessToken = '';
+  const baseURL = import.meta.env['VITE_API_BASE_URL'] || 'http://localhost:3000';
   
-  if (authData) {
-    try {
-      const parsed = JSON.parse(authData);
-      accessToken = parsed.state?.accessToken || '';
-    } catch (error) {
-      console.error('Failed to parse auth data:', error);
+  // Get token from localStorage
+  const getAccessToken = () => {
+    const authData = localStorage.getItem('pivotal-flow-auth');
+    console.log('🔍 Customers API: Getting access token from localStorage');
+    console.log('🔍 Customers API: Auth data exists:', !!authData);
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData);
+        console.log('🔍 Customers API: Parsed auth data keys:', Object.keys(parsed));
+        
+        // Handle both Zustand persisted format and direct format
+        let accessToken = null;
+        if (parsed.state && parsed.state.accessToken) {
+          // Zustand persisted format: { state: { accessToken, user, ... }, version: 0 }
+          accessToken = parsed.state.accessToken;
+          console.log('🔍 Customers API: Found token in Zustand format');
+        } else if (parsed.accessToken) {
+          // Direct format: { accessToken, user, isAuthenticated }
+          accessToken = parsed.accessToken;
+          console.log('🔍 Customers API: Found token in direct format');
+        }
+        
+        console.log('🔍 Customers API: Access token exists:', !!accessToken);
+        return accessToken;
+      } catch (error) {
+        console.error('🔍 Customers API: Failed to parse auth data:', error);
+        return null;
+      }
     }
-  }
+    console.log('🔍 Customers API: No auth data found');
+    return null;
+  };
 
   return axios.create({
-    baseURL: import.meta.env['VITE_API_BASE_URL'] || 'http://localhost:3000',
+    baseURL,
     headers: {
       'Content-Type': 'application/json',
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
     },
+    transformRequest: [(data, headers) => {
+      const token = getAccessToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('🔍 Customers API: Adding auth header to request');
+      } else {
+        console.log('🔍 Customers API: No token found, request without auth');
+      }
+      return JSON.stringify(data);
+    }],
   });
 };
+
+const api = createApiClient();
 
 // API Functions
 const customersApi = {
   list: async (filters: CustomerFilters = {}): Promise<CustomerListResponse> => {
-    const api = createApiClient();
+    console.log('🏢 CUSTOMER API LIST called with filters:', filters);
+    
+    // Using centralized API client with tenant context
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
@@ -167,31 +203,29 @@ const customersApi = {
       }
     });
 
+    console.log('🏢 Making customer API call to:', `/api/v1/customers?${params}`);
     const response = await api.get(`/api/v1/customers?${params}`);
+    console.log('🏢 Customer API response received:', response.status);
     return response.data;
   },
 
   getById: async (id: string, includeContacts = false): Promise<CustomerDetailResponse> => {
-    const api = createApiClient();
     const params = includeContacts ? '?includeContacts=true' : '';
     const response = await api.get(`/api/v1/customers/${id}${params}`);
     return response.data;
   },
 
   create: async (data: CreateCustomerData): Promise<{ success: boolean; data: Customer; message: string }> => {
-    const api = createApiClient();
     const response = await api.post('/api/v1/customers', data);
     return response.data;
   },
 
   update: async (id: string, data: UpdateCustomerData): Promise<{ success: boolean; data: Customer; message: string }> => {
-    const api = createApiClient();
     const response = await api.patch(`/api/v1/customers/${id}`, data);
     return response.data;
   },
 
   delete: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const api = createApiClient();
     const response = await api.delete(`/api/v1/customers/${id}`);
     return response.data;
   },
@@ -199,31 +233,26 @@ const customersApi = {
 
 const contactsApi = {
   list: async (customerId: string): Promise<ContactListResponse> => {
-    const api = createApiClient();
     const response = await api.get(`/api/v1/customers/${customerId}/contacts`);
     return response.data;
   },
 
   getById: async (customerId: string, contactId: string): Promise<{ success: boolean; data: CustomerContact }> => {
-    const api = createApiClient();
     const response = await api.get(`/api/v1/customers/${customerId}/contacts/${contactId}`);
     return response.data;
   },
 
   create: async (customerId: string, data: CreateContactData): Promise<{ success: boolean; data: CustomerContact; message: string }> => {
-    const api = createApiClient();
     const response = await api.post(`/api/v1/customers/${customerId}/contacts`, data);
     return response.data;
   },
 
   update: async (customerId: string, contactId: string, data: UpdateContactData): Promise<{ success: boolean; data: CustomerContact; message: string }> => {
-    const api = createApiClient();
     const response = await api.patch(`/api/v1/customers/${customerId}/contacts/${contactId}`, data);
     return response.data;
   },
 
   delete: async (customerId: string, contactId: string): Promise<{ success: boolean; message: string }> => {
-    const api = createApiClient();
     const response = await api.delete(`/api/v1/customers/${customerId}/contacts/${contactId}`);
     return response.data;
   },

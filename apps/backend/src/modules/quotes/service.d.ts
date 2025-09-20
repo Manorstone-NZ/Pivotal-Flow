@@ -42,6 +42,10 @@ export declare class QuoteService {
             sentAt: Date | null;
             acceptedAt: Date | null;
             expiresAt: Date | null;
+            deliveredAt: Date | null;
+            viewedAt: Date | null;
+            publicToken: string | null;
+            tokenExpiresAt: Date | null;
             metadata: unknown;
             createdAt: Date;
             updatedAt: Date;

@@ -8,6 +8,7 @@ export interface JWTPayload {
   sub: string; // User ID
   org: string; // Organization ID
   roles: string[];
+  permissions?: string[]; // User permissions
   iat?: number; // Issued at (optional for signing)
   exp?: number; // Expiration (optional for signing)
   jti?: string; // JWT ID (for refresh tokens)
@@ -17,6 +18,7 @@ export interface AuthContext {
   userId: string;
   organizationId: string;
   roles: string[];
+  permissions?: string[];
   jti?: string | undefined;
 }
 

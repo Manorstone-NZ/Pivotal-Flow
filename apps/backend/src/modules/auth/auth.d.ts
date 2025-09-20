@@ -2,6 +2,7 @@ export interface JWTPayload {
     sub: string;
     org: string;
     roles: string[];
+    permissions?: string[];
     iat?: number;
     exp?: number;
     jti?: string;
@@ -10,6 +11,7 @@ export interface AuthContext {
     userId: string;
     organizationId: string;
     roles: string[];
+    permissions?: string[];
     jti?: string | undefined;
 }
 export interface UserProfile {

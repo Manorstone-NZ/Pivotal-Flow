@@ -193,6 +193,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
         userId: payload.sub,
         organizationId: payload.org,
         roles: payload.roles ?? [],
+        permissions: payload.permissions ?? [],
         jti: payload.jti,
       };
     } catch (err) {

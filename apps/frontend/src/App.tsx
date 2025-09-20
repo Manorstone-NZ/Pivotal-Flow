@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './lib/theme/ThemeProvider';
 import { AppRouter } from './router/AppRouter';
 import { ToastProvider } from './components/ui/Toast';
+import { TenantProvider } from './features/tenancy/context';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -30,11 +31,13 @@ const queryClient = new QueryClient({
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <ToastProvider>
-          <AppRouter />
-        </ToastProvider>
-      </ThemeProvider>
+      <TenantProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <AppRouter />
+          </ToastProvider>
+        </ThemeProvider>
+      </TenantProvider>
     </QueryClientProvider>
   );
 };

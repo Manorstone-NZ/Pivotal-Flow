@@ -9,6 +9,7 @@ interface User {
   name: string;
   organizationId?: string;
   permissions?: string[];
+  roles?: string[];
 }
 
 interface AuthState {
@@ -75,14 +76,16 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: false, // Start with loading false to allow login
       error: null,
 
       // Login action
       login: async (email: string, password: string) => {
+        console.log('🔑 Starting login process...', email);
         set({ isLoading: true, error: null });
         
         try {
+          console.log('🌐 Making login request to:', `${API_BASE_URL}/auth/login`);
           const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -90,12 +93,21 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ email, password }),
           });
 
+          console.log('📡 Login response status:', response.status);
+
           if (!response.ok) {
             const errorData = await response.json();
+            console.error('❌ Login failed:', errorData);
             throw new Error(errorData.message || 'Login failed');
           }
 
           const data = await response.json();
+          console.log('✅ Login successful, data received:', { 
+            hasAccessToken: !!data.accessToken, 
+            hasUser: !!data.user,
+            userEmail: data.user?.email,
+            userRoles: data.user?.roles 
+          });
           
           // Set tokens and user
           set({
@@ -107,7 +119,19 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
+          console.log('🎉 Auth state updated successfully');
+
+          // Manually save to localStorage to ensure it's persisted immediately
+          localStorage.setItem('pivotal-flow-auth', JSON.stringify({
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            user: data.user,
+            isAuthenticated: true,
+          }));
+          console.log('💾 Auth data manually saved to localStorage');
+
         } catch (error) {
+          console.error('💥 Login error:', error);
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Login failed',
@@ -119,11 +143,14 @@ export const useAuthStore = create<AuthState>()(
 
       // Logout action
       logout: async () => {
+        console.log('🚪 LOGOUT CALLED - tracing where this came from');
+        console.trace('Logout stack trace');
         const { accessToken } = get();
         
         try {
           // Call logout endpoint if we have a token
           if (accessToken) {
+            console.log('🌐 Calling logout endpoint...');
             await fetch(`${API_BASE_URL}/auth/logout`, {
               method: 'POST',
               headers: { 
@@ -137,6 +164,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('Logout request failed:', error);
         } finally {
           // Clear state regardless of API call success
+          console.log('🧹 Clearing auth state and localStorage...');
           set({
             user: null,
             accessToken: null,
@@ -206,13 +234,17 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuthStatus: async () => {
+        console.log('🔍 CHECK AUTH STATUS called');
         const { accessToken } = get();
+        console.log('🔍 Current accessToken exists:', !!accessToken);
         
         if (!accessToken) {
-          set({ isAuthenticated: false });
+          console.log('🔍 No access token, setting unauthenticated');
+          set({ isAuthenticated: false, isLoading: false });
           return;
         }
 
+        console.log('🔍 Checking auth with backend...');
         set({ isLoading: true });
 
         try {
@@ -221,18 +253,24 @@ export const useAuthStore = create<AuthState>()(
             credentials: 'include',
           });
 
+          console.log('🔍 Auth check response status:', response.status);
+
           if (response.ok) {
             const user = await response.json();
+            console.log('✅ Auth check successful, user:', user?.email);
             set({ 
               user, 
               isAuthenticated: true, 
               isLoading: false 
             });
           } else if (response.status === 401) {
+            console.log('🔄 Token expired, attempting refresh...');
             // Token expired, try to refresh
             try {
               await get().refreshAccessToken();
+              console.log('✅ Token refresh successful');
             } catch {
+              console.log('❌ Token refresh failed, logging out');
               // Refresh failed, logout
               get().logout();
             }
@@ -240,8 +278,10 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Failed to verify authentication');
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
+          console.error('❌ Auth check failed:', error);
+          console.log('🚪 Auth check failed, calling logout');
           get().logout();
+          set({ isLoading: false }); // Ensure loading is set to false
         }
       },
     }),
@@ -272,11 +312,35 @@ export const useAuth = () => {
     // Convenience getters
     isLoggedIn: store.isAuthenticated && !!store.user,
     hasPermission: (permission: string) => {
-      // For now, admin role has all permissions
+      // Check specific permissions first
+      if (store.user?.permissions?.includes(permission)) {
+        return true;
+      }
+      
+      // Super admin permissions for users with 'super_admin' role
+      if (store.user?.roles?.includes('super_admin')) {
+        return true;
+      }
+      
+      // Tenant admin permissions for users with 'tenant_admin' role
+      if (store.user?.roles?.includes('tenant_admin')) {
+        // Tenant admins get all tenant-level permissions but not system-level
+        const tenantPermissions = [
+          'tenant.admin',
+          'users.manage', 
+          'customers.manage',
+          'projects.manage',
+          'quotes.manage'
+        ];
+        return tenantPermissions.includes(permission);
+      }
+      
+      // Legacy support: users with 'admin' role get super admin permissions
       if (store.user?.roles?.includes('admin')) {
         return true;
       }
-      return store.user?.permissions?.includes(permission) ?? false;
+      
+      return false;
     },
     // API client with current token
     apiClient: createApiClient(store.accessToken || undefined),

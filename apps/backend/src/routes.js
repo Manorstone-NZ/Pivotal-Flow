@@ -16,6 +16,8 @@ import { registerQuoteRoutes } from './modules/quotes/index.js';
 import { registerInvoiceRoutes } from './modules/invoices/index.js';
 // Import permission route modules
 import { permissionRoutes } from './modules/permissions/routes.js';
+// Import audit route modules
+// import { auditRoutes } from './modules/audit/routes.js';
 // Import currency route modules
 import { currencyRoutes } from './modules/currencies/routes.js';
 // Import payment route modules
@@ -26,6 +28,8 @@ import { projectsModule } from './modules/projects/index.js';
 import { timeRoutes } from './modules/time/routes.js';
 // Import customer route modules
 import { registerCustomerRoutes } from './modules/customers/index.js';
+// Import organization route modules
+import { registerOrganizationRoutes } from './modules/organizations/index.js';
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
 // Simple response schema for testing
@@ -69,6 +73,8 @@ export async function registerRoutes() {
     }, { prefix: '/api' });
     // Register permission route modules
     await app.register(permissionRoutes);
+    // Register audit route modules
+    // await app.register(auditRoutes, { prefix: '/api' });
     // Register currency route modules
     await app.register(currencyRoutes);
     // Register payment route modules
@@ -80,6 +86,10 @@ export async function registerRoutes() {
     // Register customer route modules
     await app.register(async (fastify) => {
         registerCustomerRoutes(fastify);
+    }, { prefix: '/api' });
+    // Register organization route modules
+    await app.register(async (fastify) => {
+        registerOrganizationRoutes(fastify);
     }, { prefix: '/api' });
     // Register health route modules
     await app.register(healthRoutes, { prefix: '/api/v1/health' });

@@ -17,6 +17,7 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({
 
   // Check auth status on mount
   useEffect(() => {
+    console.log('🔒 RequireAuth: checkAuthStatus called for route:', location.pathname);
     checkAuthStatus();
   }, [checkAuthStatus]);
 

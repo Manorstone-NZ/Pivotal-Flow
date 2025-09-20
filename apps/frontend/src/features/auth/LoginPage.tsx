@@ -13,9 +13,11 @@ interface LoginFormData {
 }
 
 export const LoginPage: React.FC = () => {
+  console.log('🏠 LoginPage component loaded');
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading, clearError, isAuthenticated } = useAuth();
+  console.log('🔍 Auth state:', { isAuthenticated, isLoading });
   const { success, error: showError } = useToast();
   
   const {
@@ -48,7 +50,9 @@ export const LoginPage: React.FC = () => {
   }, [clearError]);
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('🚀 LOGIN FORM SUBMITTED:', data.email);
     try {
+      console.log('🚀 CALLING AUTH STORE LOGIN...');
       await login(data.email, data.password);
       success('Login successful!');
       navigate(redirectTo, { replace: true });

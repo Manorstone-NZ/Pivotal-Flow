@@ -76,17 +76,26 @@ export const ROUTE_PERMISSIONS = {
     'PUT /rate-cards/:id': 'rate_cards.update_rate_cards',
     'DELETE /rate-cards/:id': 'rate_cards.delete_rate_cards',
     // Customer management
-    'GET /customers': 'customers.view',
-    'POST /customers': 'customers.manage',
-    'GET /customers/:id': 'customers.view',
-    'PATCH /customers/:id': 'customers.manage',
-    'DELETE /customers/:id': 'customers.manage',
+    'GET /customers': 'Manage Customers',
+    'POST /customers': 'Manage Customers',
+    'GET /customers/:id': 'Manage Customers',
+    'PATCH /customers/:id': 'Manage Customers',
+    'DELETE /customers/:id': 'Manage Customers',
     // Contact management
-    'GET /customers/:id/contacts': 'customers.view',
-    'POST /customers/:id/contacts': 'customers.manage',
-    'GET /customers/:id/contacts/:contactId': 'customers.view',
-    'PATCH /customers/:id/contacts/:contactId': 'customers.manage',
-    'DELETE /customers/:id/contacts/:contactId': 'customers.manage'
+    'GET /customers/:id/contacts': 'Manage Customers',
+    'POST /customers/:id/contacts': 'Manage Customers',
+    'GET /customers/:id/contacts/:contactId': 'Manage Customers',
+    'PATCH /customers/:id/contacts/:contactId': 'Manage Customers',
+    'DELETE /customers/:id/contacts/:contactId': 'Manage Customers',
+    // Organizations (Super Admin only - cross-tenant)
+    'GET /organizations': 'Super Admin Access',
+    'POST /organizations': 'Manage Organizations',
+    'GET /organizations/:id': 'Super Admin Access',
+    'PATCH /organizations/:id': 'Manage Organizations',
+    'DELETE /organizations/:id': 'Manage Organizations',
+    'GET /organizations/:id/settings': 'Super Admin Access',
+    'POST /organizations/:id/settings': 'Manage Organizations',
+    'POST /organizations/:id/invite-user': 'Manage Users'
 };
 // Public routes that don't require authentication
 export const PUBLIC_ROUTES = [

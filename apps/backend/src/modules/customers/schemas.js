@@ -116,7 +116,10 @@ export const CreateCustomerBodySchema = Type.Object({
     companyName: Type.String({ minLength: 1, maxLength: 255 }),
     legalName: Type.Optional(Type.String({ maxLength: 255 })),
     industry: Type.Optional(Type.String({ maxLength: 100 })),
-    website: Type.Optional(Type.String({ format: 'uri' })),
+    website: Type.Optional(Type.Union([
+        Type.String({ format: 'uri' }),
+        Type.String({ maxLength: 0 }) // Allow empty string
+    ])),
     description: Type.Optional(Type.String()),
     customerType: Type.Optional(Type.Union([
         Type.Literal('business'),
@@ -124,7 +127,7 @@ export const CreateCustomerBodySchema = Type.Object({
     ])),
     source: Type.Optional(Type.String({ maxLength: 50 })),
     tags: Type.Optional(Type.Array(Type.String())),
-    rating: Type.Optional(Type.Number({ minimum: 1, maximum: 5 })),
+    rating: Type.Optional(Type.Number({ minimum: 0, maximum: 5 })),
     street: Type.Optional(Type.String()),
     suburb: Type.Optional(Type.String()),
     city: Type.Optional(Type.String()),

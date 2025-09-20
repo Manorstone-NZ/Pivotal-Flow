@@ -147,6 +147,7 @@ export default fp(async function authPlugin(app) {
                 userId: payload.sub,
                 organizationId: payload.org,
                 roles: payload.roles ?? [],
+                permissions: payload.permissions ?? [],
                 jti: payload.jti,
             };
         }

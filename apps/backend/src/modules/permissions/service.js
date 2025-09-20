@@ -1,158 +1,227 @@
-import { eq, and, isNull, or } from 'drizzle-orm';
-import { BaseRepository } from '../../lib/repo.base.js';
-import { roles, userRoles, permissions, rolePermissions, policyOverrides } from '../../lib/schema.js';
 /**
- * Permission Service
- *
- * Handles permission checking and management for users
+ * Permission Management Service
+ * Handles CRUD operations for permissions, roles, and role assignments
  */
-export class PermissionService extends BaseRepository {
-    options;
-    constructor(db, options) {
-        super(db, options);
-        this.options = options;
+import { eq, and, desc } from 'drizzle-orm';
+import { permissions, roles, rolePermissions, userRoles, users, organizations } from '../../lib/schema.js';
+export class PermissionService {
+    fastify;
+    userId;
+    organizationId;
+    constructor(fastify, userId, organizationId) {
+        this.fastify = fastify;
+        this.userId = userId;
+        this.organizationId = organizationId;
     }
-    /**
-     * Check if a user has a specific permission
-     */
-    async hasPermission(userId, permission) {
-        try {
-            // Parse permission into action and resource
-            const [action, resource] = permission.split('.');
-            if (!action || !resource) {
-                return {
-                    hasPermission: false,
-                    reason: `Invalid permission format: ${permission}`
-                };
-            }
-            // Get user's permissions through role hierarchy
-            const userPermissionsResult = await this.db
+    // Permission Management
+    async listPermissions() {
+        const result = await this.fastify.db
+            .select()
+            .from(permissions)
+            .orderBy(desc(permissions.category), desc(permissions.name));
+        return result;
+    }
+    async createPermission(data) {
+        const permissionData = {
+            id: `perm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: data.name,
+            description: data.description || null,
+            category: data.category,
+            resource: data.resource,
+            action: data.action,
+            createdAt: new Date(),
+        };
+        await this.fastify.db.insert(permissions).values(permissionData);
+        return permissionData;
+    }
+    // Role Management
+    async listRoles(orgId) {
+        const targetOrgId = orgId || this.organizationId;
+        const result = await this.fastify.db
+            .select({
+            id: roles.id,
+            organizationId: roles.organizationId,
+            name: roles.name,
+            description: roles.description,
+            isSystem: roles.isSystem,
+            isActive: roles.isActive,
+            createdAt: roles.createdAt,
+            updatedAt: roles.updatedAt,
+        })
+            .from(roles)
+            .where(eq(roles.organizationId, targetOrgId))
+            .orderBy(desc(roles.isSystem), desc(roles.name));
+        // Get permissions for each role
+        const rolesWithPermissions = await Promise.all(result.map(async (role) => {
+            const rolePerms = await this.fastify.db
                 .select({
-                permissionId: permissions.id,
-                action: permissions.action,
+                id: permissions.id,
+                name: permissions.name,
+                description: permissions.description,
+                category: permissions.category,
                 resource: permissions.resource,
-                category: permissions.category
-            })
-                .from(userRoles)
-                .innerJoin(roles, eq(userRoles.roleId, roles.id))
-                .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-                .where(and(eq(userRoles.userId, userId), eq(userRoles.organizationId, this.options.organizationId), eq(userRoles.isActive, true), eq(roles.isActive, true), eq(permissions.action, action), eq(permissions.resource, resource)));
-            if (userPermissionsResult.length > 0) {
-                // Check for any policy overrides that might deny the permission
-                const firstPermission = userPermissionsResult[0];
-                if (firstPermission) {
-                    await this.db
-                        .select()
-                        .from(policyOverrides)
-                        .where(and(eq(policyOverrides.organizationId, this.options.organizationId), eq(policyOverrides.resource, resource), eq(policyOverrides.isActive, true), or(isNull(policyOverrides.roleId), eq(policyOverrides.roleId, firstPermission.permissionId))));
-                }
-                // For now, we'll allow the permission if no explicit deny policies exist
-                // In a more sophisticated system, you'd evaluate the JSONB policy conditions
-                return { hasPermission: true };
-            }
-            return {
-                hasPermission: false,
-                reason: `User lacks permission: ${permission}`
-            };
-        }
-        catch (error) {
-            return {
-                hasPermission: false,
-                reason: `Error checking permissions: ${error instanceof Error ? error.message : 'Unknown error'}`
-            };
-        }
-    }
-    /**
-     * Check if the current user has a specific permission
-     */
-    async hasCurrentUserPermission(permission) {
-        return this.hasPermission(this.options.userId, permission);
-    }
-    /**
-     * Check if user has quotes.override_price permission
-     */
-    async canOverrideQuotePrice(userId) {
-        return this.hasPermission(userId, 'quotes.override_price');
-    }
-    /**
-     * Check if current user can override quote prices
-     */
-    async canCurrentUserOverrideQuotePrice() {
-        return this.canOverrideQuotePrice(this.options.userId);
-    }
-    /**
-     * Get all permissions for a user
-     */
-    async getUserPermissions(userId) {
-        try {
-            const userPermissionsResult = await this.db
-                .select({
                 action: permissions.action,
-                resource: permissions.resource
+                createdAt: permissions.createdAt,
             })
-                .from(userRoles)
-                .innerJoin(roles, eq(userRoles.roleId, roles.id))
-                .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+                .from(rolePermissions)
                 .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-                .where(and(eq(userRoles.userId, userId), eq(userRoles.organizationId, this.options.organizationId), eq(userRoles.isActive, true), eq(roles.isActive, true)));
-            // Format permissions as action.resource
-            const allPermissions = userPermissionsResult.map(p => `${p.action}.${p.resource}`);
-            // Remove duplicates
-            return Array.from(new Set(allPermissions));
+                .where(eq(rolePermissions.roleId, role.id));
+            return {
+                ...role,
+                permissions: rolePerms,
+            };
+        }));
+        return rolesWithPermissions;
+    }
+    async createRole(data) {
+        const targetOrgId = data.organizationId || this.organizationId;
+        const roleData = {
+            id: `role-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            organizationId: targetOrgId,
+            name: data.name,
+            description: data.description || null,
+            isSystem: false,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        await this.fastify.db.insert(roles).values(roleData);
+        // Assign permissions to role if provided
+        if (data.permissionIds && data.permissionIds.length > 0) {
+            const rolePermissionData = data.permissionIds.map((permId, index) => ({
+                id: `rp-${roleData.id}-${index + 1}`,
+                roleId: roleData.id,
+                permissionId: permId,
+                createdAt: new Date(),
+            }));
+            await this.fastify.db.insert(rolePermissions).values(rolePermissionData);
         }
-        catch (error) {
-            console.error('Error getting user permissions:', error);
-            return [];
+        return { ...roleData, permissions: [] };
+    }
+    async updateRolePermissions(roleId, permissionIds) {
+        // Remove existing permissions
+        await this.fastify.db
+            .delete(rolePermissions)
+            .where(eq(rolePermissions.roleId, roleId));
+        // Add new permissions
+        if (permissionIds.length > 0) {
+            const rolePermissionData = permissionIds.map((permId, index) => ({
+                id: `rp-${roleId}-${Date.now()}-${index + 1}`,
+                roleId,
+                permissionId: permId,
+                createdAt: new Date(),
+            }));
+            await this.fastify.db.insert(rolePermissions).values(rolePermissionData);
         }
     }
-    /**
-     * Get all permissions for the current user
-     */
-    async getCurrentUserPermissions() {
-        return this.getUserPermissions(this.options.userId);
+    // User Role Management
+    async listUserRoles(orgId) {
+        const targetOrgId = orgId || this.organizationId;
+        const result = await this.fastify.db
+            .select({
+            id: userRoles.id,
+            userId: userRoles.userId,
+            roleId: userRoles.roleId,
+            organizationId: userRoles.organizationId,
+            assignedAt: userRoles.assignedAt,
+            isActive: userRoles.isActive,
+            userEmail: users.email,
+            userDisplayName: users.displayName,
+            roleName: roles.name,
+            roleDescription: roles.description,
+        })
+            .from(userRoles)
+            .innerJoin(users, eq(userRoles.userId, users.id))
+            .innerJoin(roles, eq(userRoles.roleId, roles.id))
+            .where(and(eq(userRoles.organizationId, targetOrgId), eq(userRoles.isActive, true)))
+            .orderBy(desc(users.email));
+        return result.map(row => ({
+            id: row.id,
+            userId: row.userId,
+            roleId: row.roleId,
+            organizationId: row.organizationId,
+            assignedAt: row.assignedAt,
+            isActive: row.isActive,
+            user: {
+                id: row.userId,
+                email: row.userEmail,
+                displayName: row.userDisplayName,
+            },
+            role: {
+                id: row.roleId,
+                name: row.roleName,
+                description: row.roleDescription,
+            },
+        }));
     }
-    /**
-     * Check if user has any of the specified permissions
-     */
-    async hasAnyPermission(userId, permissions) {
-        const userPermissions = await this.getUserPermissions(userId);
-        for (const permission of permissions) {
-            if (userPermissions.includes(permission)) {
-                return { hasPermission: true };
-            }
-        }
+    async assignRoleToUser(userId, roleId, orgId) {
+        const targetOrgId = orgId || this.organizationId;
+        const userRoleData = {
+            id: `ur-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            userId,
+            roleId,
+            organizationId: targetOrgId,
+            assignedBy: this.userId,
+            assignedAt: new Date(),
+            isActive: true,
+        };
+        await this.fastify.db.insert(userRoles).values(userRoleData);
+        // Get user and role details
+        const userDetails = await this.fastify.db
+            .select({
+            email: users.email,
+            displayName: users.displayName,
+        })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+        const roleDetails = await this.fastify.db
+            .select({
+            name: roles.name,
+            description: roles.description,
+        })
+            .from(roles)
+            .where(eq(roles.id, roleId))
+            .limit(1);
         return {
-            hasPermission: false,
-            reason: `User lacks any of the required permissions: ${permissions.join(', ')}`
+            id: userRoleData.id,
+            userId,
+            roleId,
+            organizationId: targetOrgId,
+            assignedAt: userRoleData.assignedAt,
+            isActive: true,
+            user: {
+                id: userId,
+                email: userDetails[0]?.email || '',
+                displayName: userDetails[0]?.displayName || null,
+            },
+            role: {
+                id: roleId,
+                name: roleDetails[0]?.name || '',
+                description: roleDetails[0]?.description || null,
+            },
         };
     }
-    /**
-     * Check if current user has any of the specified permissions
-     */
-    async hasCurrentUserAnyPermission(permissions) {
-        return this.hasAnyPermission(this.options.userId, permissions);
+    async revokeRoleFromUser(userRoleId) {
+        await this.fastify.db
+            .update(userRoles)
+            .set({ isActive: false })
+            .where(eq(userRoles.id, userRoleId));
     }
-    /**
-     * Check if user has all of the specified permissions
-     */
-    async hasAllPermissions(userId, permissions) {
-        const userPermissions = await this.getUserPermissions(userId);
-        for (const permission of permissions) {
-            if (!userPermissions.includes(permission)) {
-                return {
-                    hasPermission: false,
-                    reason: `User lacks permission: ${permission}`
-                };
-            }
-        }
-        return { hasPermission: true };
-    }
-    /**
-     * Check if current user has all of the specified permissions
-     */
-    async hasCurrentUserAllPermissions(permissions) {
-        return this.hasAllPermissions(this.options.userId, permissions);
+    // Organization Users (for role assignment)
+    async listOrganizationUsers(orgId) {
+        const targetOrgId = orgId || this.organizationId;
+        const result = await this.fastify.db
+            .select({
+            id: users.id,
+            email: users.email,
+            displayName: users.displayName,
+            status: users.status,
+        })
+            .from(users)
+            .where(and(eq(users.organizationId, targetOrgId), eq(users.status, 'active')))
+            .orderBy(desc(users.email));
+        return result;
     }
 }
 //# sourceMappingURL=service.js.map

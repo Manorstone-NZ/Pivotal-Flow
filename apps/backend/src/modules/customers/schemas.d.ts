@@ -184,7 +184,7 @@ export declare const CreateCustomerBodySchema: import("@sinclair/typebox").TObje
     companyName: import("@sinclair/typebox").TString;
     legalName: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     industry: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
-    website: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    website: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TString, import("@sinclair/typebox").TString]>>;
     description: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     customerType: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"business">, import("@sinclair/typebox").TLiteral<"individual">]>>;
     source: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
@@ -204,7 +204,7 @@ export declare const UpdateCustomerBodySchema: import("@sinclair/typebox").TObje
     companyName: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     legalName: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     industry: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
-    website: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
+    website: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TString, import("@sinclair/typebox").TString]>>;
     description: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;
     customerType: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TUnion<[import("@sinclair/typebox").TLiteral<"business">, import("@sinclair/typebox").TLiteral<"individual">]>>;
     source: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TString>;

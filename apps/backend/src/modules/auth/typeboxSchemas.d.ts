@@ -10,6 +10,7 @@ export declare const LoginResponseSchema: import("@sinclair/typebox").TObject<{
         email: import("@sinclair/typebox").TString;
         displayName: import("@sinclair/typebox").TString;
         roles: import("@sinclair/typebox").TArray<import("@sinclair/typebox").TString>;
+        permissions: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TArray<import("@sinclair/typebox").TString>>;
         organizationId: import("@sinclair/typebox").TString;
     }>;
 }>;
@@ -27,6 +28,7 @@ export declare const MeResponseSchema: import("@sinclair/typebox").TObject<{
     email: import("@sinclair/typebox").TString;
     displayName: import("@sinclair/typebox").TString;
     roles: import("@sinclair/typebox").TArray<import("@sinclair/typebox").TString>;
+    permissions: import("@sinclair/typebox").TOptional<import("@sinclair/typebox").TArray<import("@sinclair/typebox").TString>>;
     organizationId: import("@sinclair/typebox").TString;
 }>;
 export declare const AuthErrorSchema: import("@sinclair/typebox").TObject<{

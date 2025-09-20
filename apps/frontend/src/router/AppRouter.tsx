@@ -20,9 +20,11 @@ const TimePage = lazy(() => import('../pages/Time/Time').then(m => ({ default: m
 const TimeApprovalsPage = lazy(() => import('../pages/Time/Approvals').then(m => ({ default: m.TimeApprovalsPage })));
 const CustomersListPage = lazy(() => import('../pages/Customers/List').then(m => ({ default: m.CustomersListPage })));
 const CustomerDetailsPage = lazy(() => import('../pages/Customers/Details').then(m => ({ default: m.CustomerDetailsPage })));
+const TenancyListPage = lazy(() => import('../pages/Tenancy/List').then(m => ({ default: m.TenancyListPage })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then(m => ({ default: m.UsersPage })));
 const PaymentsPage = lazy(() => import('../pages/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const SettingsPage = lazy(() => import('../pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const PublicQuotePage = lazy(() => import('../pages/PublicQuote').then(m => ({ default: m.PublicQuotePage })));
 
 // Loading fallback component
 const PageLoader: React.FC = () => (
@@ -66,6 +68,16 @@ export const AppRouter: React.FC = () => {
                 element={
                   <PerformanceMarks routeName="login">
                     <LoginPage />
+                  </PerformanceMarks>
+                } 
+              />
+              
+              {/* Public Routes - No Authentication Required */}
+              <Route 
+                path="/public/quotes/:token" 
+                element={
+                  <PerformanceMarks routeName="public-quote">
+                    <PublicQuotePage />
                   </PerformanceMarks>
                 } 
               />
@@ -221,6 +233,19 @@ export const AppRouter: React.FC = () => {
                     <AppLayout>
                       <PerformanceMarks routeName="customer-details">
                         <CustomerDetailsPage />
+                      </PerformanceMarks>
+                    </AppLayout>
+                  </RequireAuth>
+                }
+              />
+              
+              <Route
+                path="/admin/tenants"
+                element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <PerformanceMarks routeName="tenancy">
+                        <TenancyListPage />
                       </PerformanceMarks>
                     </AppLayout>
                   </RequireAuth>

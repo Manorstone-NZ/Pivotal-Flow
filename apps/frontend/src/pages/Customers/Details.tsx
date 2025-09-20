@@ -15,7 +15,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Ca
 import { Tabs } from '../../components/ui/Tabs';
 import { ContactList } from '../../components/customers/ContactList';
 import { CustomerForm } from '../../components/customers/CustomerForm';
-import { Dialog } from '../../components/ui/Dialog';
+import { FormModal } from '../../components/ui/FormModal';
 import { useAuth } from '../../features/auth/store';
 import { useToast } from '../../components/ui/Toast';
 import { format } from 'date-fns';
@@ -328,18 +328,18 @@ export const CustomerDetailsPage: React.FC = () => {
       />
 
       {/* Edit Customer Modal */}
-      <Dialog
+      <FormModal
         open={isEditing}
         onClose={handleEditCancel}
         title="Edit Customer"
-        size="xl"
+        size="lg"
       >
         <CustomerForm
           customer={customer}
           onSuccess={handleEditSuccess}
           onCancel={handleEditCancel}
         />
-      </Dialog>
+      </FormModal>
     </div>
   );
 };

@@ -79,13 +79,15 @@ export const loginRoute: FastifyPluginAsync = async fastify => {
         const accessToken = await tokenManager.signAccessToken({
           sub: user.id,
           org: user.organizationId,
-          roles: user.roles
+          roles: user.roles,
+          permissions: user.permissions || []
         });
 
         const refreshToken = await tokenManager.signRefreshToken({
           sub: user.id,
           org: user.organizationId,
-          roles: user.roles
+          roles: user.roles,
+          permissions: user.permissions || []
         });
 
         // Store refresh token in Redis using TokenManager

@@ -361,6 +361,11 @@ export const quotes = pgTable('quotes', {
     sentAt: timestamp('sent_at', { mode: 'date', precision: 3 }),
     acceptedAt: timestamp('accepted_at', { mode: 'date', precision: 3 }),
     expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
+    // Quote delivery tracking fields
+    deliveredAt: timestamp('delivered_at', { mode: 'date', precision: 3 }),
+    viewedAt: timestamp('viewed_at', { mode: 'date', precision: 3 }),
+    publicToken: varchar('public_token', { length: 255 }),
+    tokenExpiresAt: timestamp('token_expires_at', { mode: 'date', precision: 3 }),
     // Keep JSONB for flexible metadata
     metadata: jsonb('metadata').notNull().default('{}'), // Customer specific extra fields
     // Note: currentVersionId will be managed at the application level to avoid circular references

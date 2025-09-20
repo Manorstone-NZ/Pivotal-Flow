@@ -4,8 +4,10 @@ export declare const QuoteStatus: {
     readonly PENDING: "pending";
     readonly APPROVED: "approved";
     readonly SENT: "sent";
+    readonly VIEWED: "viewed";
     readonly ACCEPTED: "accepted";
     readonly REJECTED: "rejected";
+    readonly EXPIRED: "expired";
     readonly CANCELLED: "cancelled";
 };
 export type QuoteStatus = typeof QuoteStatus[keyof typeof QuoteStatus];

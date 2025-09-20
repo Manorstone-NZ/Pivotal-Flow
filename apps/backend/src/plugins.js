@@ -10,6 +10,12 @@ import { authPlugin } from './modules/auth/index.js';
 import databasePlugin from './plugins/database.js';
 // Import cache plugin
 import { cachePlugin } from './plugins/cache.plugin.js';
+// Import tenant context plugin
+import tenantContextPlugin from './plugins/tenant-context.js';
+// Import permission check plugin
+import permissionCheckPlugin from './plugins/permission-check.js';
+// Import audit logging plugin
+// import auditLoggingPlugin from './plugins/audit-logging.js';
 // C0 Backend Readiness imports
 import { getCorsConfig } from './lib/cors-rate-limit.js';
 import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
@@ -28,12 +34,19 @@ export async function registerPlugins() {
         origin: true, // Allow all origins for development (sends back requesting origin)
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
         exposedHeaders: ['X-Request-ID']
     };
     await app.register(cors, simpleCorsConfig);
+    // Tenant context plugin (before auth for proper request context)
+    // TODO: Temporarily disabled - causing serialization errors
+    // await app.register(tenantContextPlugin);
     // Authentication plugin (includes cookie and JWT support)
     await app.register(authPlugin);
+    // Permission check plugin (after authentication)
+    await app.register(permissionCheckPlugin);
+    // Audit logging plugin (after permission check)
+    // await app.register(auditLoggingPlugin);
     // C0 Backend Readiness - Security headers
     await app.register(helmet, {
         contentSecurityPolicy: {
@@ -78,6 +91,21 @@ export async function registerPlugins() {
                     {
                         url: 'http://localhost:3000',
                         description: 'Development server',
+                    },
+                ],
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: 'http',
+                            scheme: 'bearer',
+                            bearerFormat: 'JWT',
+                            description: 'JWT Bearer token authentication',
+                        },
+                    },
+                },
+                security: [
+                    {
+                        bearerAuth: [],
                     },
                 ],
             },

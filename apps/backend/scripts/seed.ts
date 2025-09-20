@@ -13,7 +13,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { hash } from '@pivotal-flow/shared';
-import { organizations, users, roles, userRoles, projects } from '../src/lib/schema.js';
+import { organizations, users, roles, userRoles, projects, permissions, rolePermissions } from '../src/lib/schema.js';
 
 // Database connection
 const connectionString = process.env['DATABASE_URL'] || 'postgresql://pivotal:pivotal@localhost:5433/pivotal';
@@ -43,16 +43,11 @@ async function seedDatabase() {
       timezone: 'Pacific/Auckland',
       currency: 'NZD',
       taxId: '123-456-789',
-      street: '123 Queen Street',
-      suburb: 'Auckland Central',
       city: 'Auckland',
-      region: 'Auckland',
-      postcode: '1010',
       country: 'New Zealand',
       phone: '+64 9 123 4567',
       email: 'hello@pivotalflow.com',
       website: 'https://pivotalflow.com',
-      contactExtras: { linkedin: 'https://linkedin.com/company/pivotal-flow' },
       settings: { theme: 'light', notifications: true },
       subscriptionPlan: 'pro',
       subscriptionStatus: 'active',
@@ -83,25 +78,135 @@ async function seedDatabase() {
 
     await db.insert(users).values(userData).onConflictDoNothing();
 
-    // Create admin role
-    const roleData = {
-      id: 'admin-role-1',
+    // Create permissions for multi-tenant admin system
+    console.log('🔐 Seeding permissions...');
+    const permissionData = [
+      // System-level permissions (Super Admin only)
+      {
+        id: 'perm-system-super-admin',
+        name: 'Super Admin Access',
+        description: 'Full system access across all tenants',
+        category: 'system',
+        resource: 'system',
+        action: 'super_admin',
+        createdAt: new Date(),
+      },
+      {
+        id: 'perm-orgs-manage',
+        name: 'Manage Organizations',
+        description: 'Create, read, update, delete organizations',
+        category: 'system',
+        resource: 'organizations',
+        action: 'manage',
+        createdAt: new Date(),
+      },
+      // Tenant-level permissions (Tenant Admin)
+      {
+        id: 'perm-tenant-admin',
+        name: 'Tenant Admin Access',
+        description: 'Administrative access within a specific tenant',
+        category: 'tenant',
+        resource: 'tenant',
+        action: 'admin',
+        createdAt: new Date(),
+      },
+      {
+        id: 'perm-users-manage',
+        name: 'Manage Users',
+        description: 'Create, read, update, delete users within tenant',
+        category: 'tenant',
+        resource: 'users',
+        action: 'manage',
+        createdAt: new Date(),
+      },
+      {
+        id: 'perm-customers-manage',
+        name: 'Manage Customers',
+        description: 'Create, read, update, delete customers within tenant',
+        category: 'tenant',
+        resource: 'customers',
+        action: 'manage',
+        createdAt: new Date(),
+      },
+      {
+        id: 'perm-projects-manage',
+        name: 'Manage Projects',
+        description: 'Create, read, update, delete projects within tenant',
+        category: 'tenant',
+        resource: 'projects',
+        action: 'manage',
+        createdAt: new Date(),
+      },
+      {
+        id: 'perm-quotes-manage',
+        name: 'Manage Quotes',
+        description: 'Create, read, update, delete quotes within tenant',
+        category: 'tenant',
+        resource: 'quotes',
+        action: 'manage',
+        createdAt: new Date(),
+      },
+    ];
+
+    await db.insert(permissions).values(permissionData).onConflictDoNothing();
+
+    // Create Super Admin role (system-wide access)
+    const superAdminRoleData = {
+      id: 'role-super-admin',
       organizationId: orgData.id,
-      name: 'admin',
-      description: 'Administrator role with full access',
+      name: 'super_admin',
+      description: 'Super Administrator with cross-tenant access',
       isSystem: true,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    await db.insert(roles).values(roleData).onConflictDoNothing();
+    await db.insert(roles).values(superAdminRoleData).onConflictDoNothing();
 
-    // Assign admin role to user
+    // Create Tenant Admin role (tenant-specific access)
+    const tenantAdminRoleData = {
+      id: 'role-tenant-admin',
+      organizationId: orgData.id,
+      name: 'tenant_admin',
+      description: 'Tenant Administrator with organization-specific access',
+      isSystem: false,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await db.insert(roles).values(tenantAdminRoleData).onConflictDoNothing();
+
+    // Assign permissions to Super Admin role
+    const superAdminPermissions = [
+      { id: 'rp-super-1', roleId: superAdminRoleData.id, permissionId: 'perm-system-super-admin', createdAt: new Date() },
+      { id: 'rp-super-2', roleId: superAdminRoleData.id, permissionId: 'perm-orgs-manage', createdAt: new Date() },
+      { id: 'rp-super-3', roleId: superAdminRoleData.id, permissionId: 'perm-tenant-admin', createdAt: new Date() },
+      { id: 'rp-super-4', roleId: superAdminRoleData.id, permissionId: 'perm-users-manage', createdAt: new Date() },
+      { id: 'rp-super-5', roleId: superAdminRoleData.id, permissionId: 'perm-customers-manage', createdAt: new Date() },
+      { id: 'rp-super-6', roleId: superAdminRoleData.id, permissionId: 'perm-projects-manage', createdAt: new Date() },
+      { id: 'rp-super-7', roleId: superAdminRoleData.id, permissionId: 'perm-quotes-manage', createdAt: new Date() },
+    ];
+
+    await db.insert(rolePermissions).values(superAdminPermissions).onConflictDoNothing();
+
+    // Assign permissions to Tenant Admin role (no system-level permissions)
+    const tenantAdminPermissions = [
+      { id: 'rp-tenant-1', roleId: tenantAdminRoleData.id, permissionId: 'perm-tenant-admin', createdAt: new Date() },
+      { id: 'rp-tenant-2', roleId: tenantAdminRoleData.id, permissionId: 'perm-users-manage', createdAt: new Date() },
+      { id: 'rp-tenant-3', roleId: tenantAdminRoleData.id, permissionId: 'perm-customers-manage', createdAt: new Date() },
+      { id: 'rp-tenant-4', roleId: tenantAdminRoleData.id, permissionId: 'perm-projects-manage', createdAt: new Date() },
+      { id: 'rp-tenant-5', roleId: tenantAdminRoleData.id, permissionId: 'perm-quotes-manage', createdAt: new Date() },
+    ];
+
+    await db.insert(rolePermissions).values(tenantAdminPermissions).onConflictDoNothing();
+
+    // Assign Super Admin role to the main user
     const userRoleData = {
-      id: 'user-role-1',
+      id: 'user-role-super-admin',
       userId: userData.id,
-      roleId: roleData.id,
+      roleId: superAdminRoleData.id,
       organizationId: orgData.id,
       assignedAt: new Date(),
       isActive: true,

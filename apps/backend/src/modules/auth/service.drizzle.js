@@ -1,6 +1,6 @@
 import { verifyPassword } from '@pivotal-flow/shared';
 import { eq, and } from 'drizzle-orm';
-import { users, roles as rolesTable, userRoles as userRolesTable } from '../../lib/schema.js';
+import { users, roles as rolesTable, userRoles as userRolesTable, permissions, rolePermissions } from '../../lib/schema.js';
 export class AuthService {
     fastify;
     constructor(fastify) {
@@ -42,11 +42,23 @@ export class AuthService {
                 .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
                 .where(and(eq(userRolesTable.userId, user.id), eq(userRolesTable.isActive, true), eq(rolesTable.isActive, true)));
             const userRolesList = rolesResult.map((row) => row.name);
+            // Get user permissions through roles
+            const permissionsResult = await this.fastify.db
+                .select({
+                name: permissions.name,
+            })
+                .from(userRolesTable)
+                .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+                .innerJoin(rolePermissions, eq(rolesTable.id, rolePermissions.roleId))
+                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(and(eq(userRolesTable.userId, user.id), eq(userRolesTable.isActive, true), eq(rolesTable.isActive, true)));
+            const userPermissionsList = permissionsResult.map((row) => row.name);
             return {
                 id: user.id,
                 email: user.email,
                 displayName: user.displayName,
                 roles: userRolesList,
+                permissions: userPermissionsList,
                 organizationId: user.organizationId,
             };
         }
@@ -84,11 +96,23 @@ export class AuthService {
                 .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
                 .where(and(eq(userRolesTable.userId, user.id), eq(userRolesTable.isActive, true), eq(rolesTable.isActive, true)));
             const userRolesList = rolesResult.map((row) => row.name);
+            // Get user permissions through roles
+            const permissionsResult = await this.fastify.db
+                .select({
+                name: permissions.name,
+            })
+                .from(userRolesTable)
+                .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+                .innerJoin(rolePermissions, eq(rolesTable.id, rolePermissions.roleId))
+                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(and(eq(userRolesTable.userId, user.id), eq(userRolesTable.isActive, true), eq(rolesTable.isActive, true)));
+            const userPermissionsList = permissionsResult.map((row) => row.name);
             return {
                 id: user.id,
                 email: user.email,
                 displayName: user.displayName,
                 roles: userRolesList,
+                permissions: userPermissionsList,
                 organizationId: user.organizationId,
             };
         }

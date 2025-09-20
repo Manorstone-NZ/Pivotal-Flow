@@ -19,6 +19,7 @@ export interface AuthUser {
     email: string;
     displayName: string | null;
     roles: string[];
+    permissions?: string[];
     organizationId: string;
 }
 export declare class AuthService {

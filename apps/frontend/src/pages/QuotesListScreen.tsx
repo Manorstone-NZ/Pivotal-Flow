@@ -14,6 +14,7 @@ import { Select } from '../components/ui/Select';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { useToast } from '../components/ui/Toast';
+import { QuoteStatusChip } from '../components/quotes/QuoteStatusChip';
 import { cn } from '../lib/utils';
 
 // Quote interface now imported from features/quotes/api
@@ -112,14 +113,9 @@ export const QuotesListScreen: React.FC = () => {
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }: { row: { original: Quote } }) => {
-        const status = row.original.status;
-        return (
-          <Badge variant={statusColors[status] || 'default'} className="text-xs">
-            {statusLabels[status as keyof typeof statusLabels] || status}
-          </Badge>
-        );
-      },
+      cell: ({ row }: { row: { original: Quote } }) => (
+        <QuoteStatusChip status={row.original.status as any} size="sm" />
+      ),
     },
     {
       accessorKey: 'totalAmount',

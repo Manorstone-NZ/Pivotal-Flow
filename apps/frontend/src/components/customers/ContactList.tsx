@@ -11,7 +11,7 @@ import { useCustomerContacts, useDeleteContact, type CustomerContact } from '../
 import { Button } from '../Button';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { Dialog } from '../ui/Dialog';
+import { FormModal } from '../ui/FormModal';
 import { ContactForm } from './ContactForm';
 import { useAuth } from '../../features/auth/store';
 import { useToast } from '../ui/Toast';
@@ -215,25 +215,25 @@ export const ContactList: React.FC<ContactListProps> = ({
       )}
 
       {/* New Contact Modal */}
-      <Dialog
+      <FormModal
         open={showNewContactModal}
         onClose={handleContactCancel}
         title="Add New Contact"
-        size="lg"
+        size="md"
       >
         <ContactForm
           customerId={customerId}
           onSuccess={handleContactSuccess}
           onCancel={handleContactCancel}
         />
-      </Dialog>
+      </FormModal>
 
       {/* Edit Contact Modal */}
-      <Dialog
+      <FormModal
         open={!!editingContact}
         onClose={handleContactCancel}
         title="Edit Contact"
-        size="lg"
+        size="md"
       >
         <ContactForm
           customerId={customerId}
@@ -241,7 +241,7 @@ export const ContactList: React.FC<ContactListProps> = ({
           onSuccess={handleContactSuccess}
           onCancel={handleContactCancel}
         />
-      </Dialog>
+      </FormModal>
     </div>
   );
 };

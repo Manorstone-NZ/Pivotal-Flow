@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '../ui/DropdownMenu';
 import { ThemeToggle } from '../ui/ThemeToggle';
+import { TenantSwitcher } from '../tenancy/TenantSwitcher';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -56,20 +57,9 @@ export const Header: React.FC<HeaderProps> = ({
           </h1>
         </div>
 
-        {/* Organization Switch Placeholder */}
-        <div className="hidden md:flex items-center space-x-2">
-          <Badge variant="secondary" className="text-xs">
-            {user?.organizationId || 'Default Org'}
-          </Badge>
-          <IconButton 
-            size="sm" 
-            aria-label="Switch organization"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-              </svg>
-            }
-          />
+        {/* Organization Switcher */}
+        <div className="flex items-center space-x-2">
+          <TenantSwitcher />
         </div>
       </div>
 

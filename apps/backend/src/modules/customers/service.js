@@ -36,6 +36,7 @@ export class CustomerService {
         const { page, limit } = pagination;
         const offset = (page - 1) * limit;
         // Build where conditions
+        console.log('🔍 CustomerService.listCustomers - Filtering by organizationId:', this.organizationId);
         const whereConditions = [
             eq(customers.organizationId, this.organizationId),
             isNull(customers.deletedAt),
