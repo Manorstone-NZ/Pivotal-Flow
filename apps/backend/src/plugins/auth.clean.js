@@ -16,6 +16,22 @@ function extractToken(request) {
     return authHeader.substring(7);
 }
 /**
+ * Extract session ID from request (cookie or header)
+ */
+function extractSessionId(request) {
+    // Try to get session ID from cookie first
+    const sessionCookie = request.cookies?.['pf-session'];
+    if (sessionCookie) {
+        return sessionCookie;
+    }
+    // Fallback to Authorization header
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader.substring(7);
+    }
+    return null;
+}
+/**
  * Clean Authentication Plugin
  */
 async function authPlugin(fastify) {
@@ -164,6 +180,85 @@ async function authPlugin(fastify) {
     });
     fastify.decorate('getUserId', (request) => {
         return request.auth?.userId || null;
+    });
+    // Authentication middleware for routes
+    fastify.decorate('authenticate', async (request, reply) => {
+        logger.info({ url: request.url, hasCache: !!fastify.cache }, 'Authenticate middleware called');
+        // Check if route is public
+        const isPublic = PUBLIC_ROUTES.some(route => {
+            // Handle exact matches and path prefixes more carefully
+            const url = request.url.split('?')[0]; // Remove query parameters
+            let matches = false;
+            if (route === '/') {
+                // Only match exact root path
+                matches = url === '/';
+            }
+            else {
+                // For other routes, match if URL starts with route
+                matches = url.startsWith(route);
+            }
+            if (matches) {
+                logger.info({ url: request.url, matchingRoute: route, urlPath: url }, 'Route matches public route');
+            }
+            return matches;
+        });
+        if (isPublic) {
+            logger.info({ url: request.url }, 'Public route, skipping authentication');
+            return; // Allow public routes
+        }
+        // Try to authenticate with opaque tokens (session cookies)
+        const sessionId = extractSessionId(request);
+        logger.info({ sessionId: sessionId ? sessionId.substring(0, 10) + '...' : 'none' }, 'Extracted session ID');
+        if (sessionId) {
+            try {
+                const cache = fastify.cache;
+                const sessionData = await cache.get(`session:${sessionId}`);
+                logger.info({ hasSessionData: !!sessionData, sessionDataLength: sessionData?.length }, 'Session data retrieved');
+                if (sessionData) {
+                    // Parse session data and set user context
+                    const parsedSession = JSON.parse(sessionData);
+                    request.user = {
+                        id: parsedSession.userId,
+                        userId: parsedSession.userId,
+                        organizationId: parsedSession.tenantId,
+                        tenantId: parsedSession.tenantId,
+                        roles: parsedSession.roles || [],
+                        permissions: parsedSession.permissions || []
+                    };
+                    logger.info({ userId: parsedSession.userId, tenantId: parsedSession.tenantId }, 'Authentication successful');
+                    return; // Authentication successful
+                }
+            }
+            catch (error) {
+                logger.error({ error, sessionId: sessionId.substring(0, 10) + '...' }, 'Failed to validate session');
+            }
+        }
+        // Try to authenticate with PASETO tokens
+        const token = extractToken(request);
+        if (token) {
+            try {
+                const payload = await pasetoService.verifyToken(token);
+                if (payload) {
+                    request.user = {
+                        id: payload.sub,
+                        userId: payload.sub,
+                        organizationId: payload.org,
+                        tenantId: payload.org,
+                        roles: [],
+                        permissions: payload.scope || []
+                    };
+                    return; // Authentication successful
+                }
+            }
+            catch (error) {
+                logger.error({ error, token: token.substring(0, 20) + '...' }, 'Failed to verify PASETO token');
+            }
+        }
+        // Authentication failed
+        return reply.status(401).send({
+            error: 'Unauthorized',
+            message: 'Authentication required'
+        });
     });
     logger.info('Clean authentication plugin registered (no JWT)');
 }

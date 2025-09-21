@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AxeAnnouncer, useAxeAnnouncer } from '../components/a11y/AxeAnnouncer';
 import { FocusTrap } from '../components/a11y/FocusTrap';
 import { SkipLink, CommonSkipLinks } from '../components/a11y/SkipLink';

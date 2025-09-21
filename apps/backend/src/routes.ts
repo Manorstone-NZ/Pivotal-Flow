@@ -69,6 +69,10 @@ export async function registerRoutes() {
   // Register audit routes for tenant administrators
   await app.register(auditRoutes, { prefix: '/api/v1/audit' });
 
+  // Register system routes for service monitoring
+  const { systemRoutes } = await import('./modules/system/routes.js');
+  await app.register(systemRoutes, { prefix: '/api/v1' });
+
   // Register user route modules
   await app.register(listUsersRoute);
   await app.register(createUserRoute);

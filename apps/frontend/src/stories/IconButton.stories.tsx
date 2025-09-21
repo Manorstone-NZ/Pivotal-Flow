@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { IconButton, type IconButtonProps } from '../../components/ui/IconButton';
 
 // Simple icon components for demonstration

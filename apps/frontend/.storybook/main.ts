@@ -3,18 +3,13 @@ import path from 'path';
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    '@storybook/addon-a11y',
-    '@storybook/addon-docs',
-    '@storybook/addon-essentials',
-  ],
+  addons: ['@storybook/addon-a11y', '@storybook/addon-docs'],
+
   framework: {
     name: '@storybook/react-vite',
     options: {},
   },
-  docs: {
-    autodocs: 'tag',
-  },
+
   typescript: {
     check: false,
     reactDocgen: 'react-docgen-typescript',
@@ -23,6 +18,7 @@ const config: StorybookConfig = {
       propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
     },
   },
+
   viteFinal: async (config) => {
     // Add path aliases
     config.resolve = config.resolve || {};
@@ -39,7 +35,7 @@ const config: StorybookConfig = {
     };
     
     return config;
-  },
+  }
 };
 
 export default config;

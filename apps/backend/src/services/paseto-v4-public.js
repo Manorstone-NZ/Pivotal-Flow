@@ -28,11 +28,11 @@ export class PasetoPublicKeyManager {
         }
         // In development: generate Ed25519 key pair
         // In production: load from secure key management (HSM/KMS)
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
             const keyPair = await V4.generateKey('public');
             this.keyPair = {
-                publicKey: keyPair.publicKey.export({ type: 'spki', format: 'der' }),
-                secretKey: keyPair.secretKey.export({ type: 'pkcs8', format: 'der' }),
+                publicKey: keyPair.publicKey, // PASETO v4.public keys are in the correct format
+                secretKey: keyPair.secretKey, // PASETO v4.public keys are in the correct format
                 keyId: this.keyId
             };
             logger.info({
@@ -61,7 +61,9 @@ export class PasetoPublicService {
      */
     async generateToken(payload) {
         try {
-            const keyPair = await this.keyManager.getKeyPair();
+            // Generate a fresh key pair for each token (for development)
+            // In production, use a persistent key from secure key management
+            const keyPair = await V4.generateKey('public');
             // Add standard claims
             const jti = randomBytes(16).toString('hex');
             const fullPayload = {
@@ -70,14 +72,13 @@ export class PasetoPublicService {
                 jti
             };
             // Generate signed v4.public token
-            const token = await V4.sign(fullPayload, keyPair.secretKey);
+            const token = await V4.sign(fullPayload, keyPair);
             logger.debug({
                 purpose: payload.purpose,
                 sub: payload.sub,
                 org: payload.org,
                 exp: new Date(payload.exp * 1000).toISOString(),
-                jti,
-                keyId: keyPair.keyId
+                jti
             }, 'PASETO v4.public token generated');
             return token;
         }

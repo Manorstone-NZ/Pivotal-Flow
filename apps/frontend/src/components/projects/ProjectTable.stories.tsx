@@ -3,7 +3,7 @@
  * Stories for the ProjectTable component with controls and accessibility checks
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ProjectTable } from './ProjectTable';
 import type { Project, ProjectFilters } from '../../features/projects/types';
 

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { TimeEntryRow } from './TimeEntryRow';
 import { type TimeEntry } from '../../features/time/api';
 

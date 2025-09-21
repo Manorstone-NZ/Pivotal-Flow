@@ -2,7 +2,7 @@
  * Quote Status Chip Stories - SaaS Multi-Tenant
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QuoteStatusChip, getStatusProgression, canPerformAction } from './QuoteStatusChip';
 
 const meta: Meta<typeof QuoteStatusChip> = {

@@ -4,6 +4,7 @@
  */
 import { eq, and, or, like, desc, asc, isNull, sql } from 'drizzle-orm';
 import { generateId } from '@pivotal-flow/shared';
+import { getDatabase } from '../../lib/db.js';
 import { customers, customerContacts } from '../../lib/schema.js';
 /**
  * Customer Service Class
@@ -32,7 +33,7 @@ export class CustomerService {
      * List customers with filtering and pagination
      */
     async listCustomers(filters, pagination) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const { page, limit } = pagination;
         const offset = (page - 1) * limit;
         // Build where conditions
@@ -96,7 +97,7 @@ export class CustomerService {
      * Get customer by ID with optional contacts
      */
     async getCustomerById(customerId, includeContacts = false) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const customer = await db
             .select()
             .from(customers)
@@ -116,7 +117,7 @@ export class CustomerService {
      * Create new customer
      */
     async createCustomer(data) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const customerNumber = await this.generateCustomerNumber();
         const customerId = `customer-${generateId()}`;
         const newCustomer = {
@@ -136,7 +137,7 @@ export class CustomerService {
      * Update existing customer
      */
     async updateCustomer(customerId, data) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const updateData = {
             ...data,
             updatedAt: new Date(),
@@ -152,7 +153,7 @@ export class CustomerService {
      * Soft delete customer
      */
     async deleteCustomer(customerId) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const result = await db
             .update(customers)
             .set({
@@ -167,7 +168,7 @@ export class CustomerService {
      * Get customer contacts
      */
     async getCustomerContacts(customerId) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const contacts = await db
             .select()
             .from(customerContacts)
@@ -179,7 +180,7 @@ export class CustomerService {
      * Get contact by ID
      */
     async getContactById(customerId, contactId) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const contact = await db
             .select()
             .from(customerContacts)
@@ -191,7 +192,7 @@ export class CustomerService {
      * Create new contact
      */
     async createContact(customerId, data) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         // Verify customer exists
         const customer = await this.getCustomerById(customerId);
         if (!customer) {
@@ -221,7 +222,7 @@ export class CustomerService {
      * Update existing contact
      */
     async updateContact(customerId, contactId, data) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         // If setting as primary, unset other primary contacts
         if (data.isPrimary) {
             await db
@@ -244,7 +245,7 @@ export class CustomerService {
      * Soft delete contact
      */
     async deleteContact(customerId, contactId) {
-        const db = this.fastify.db;
+        const db = getDatabase();
         const result = await db
             .update(customerContacts)
             .set({

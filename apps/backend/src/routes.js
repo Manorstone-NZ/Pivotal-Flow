@@ -4,6 +4,8 @@ import { app } from './server.js';
 import { pasetoServiceRoutes } from './modules/auth/routes.paseto-service.js';
 // Import opaque auth routes (feature flagged)
 import { opaqueAuthRoutes } from './modules/auth/routes.opaque.js';
+// Import audit routes for tenant administrators
+import { auditRoutes } from './modules/audit/routes.js';
 // Import user route modules
 import { listUsersRoute } from './modules/users/routes.list.js';
 import { createUserRoute } from './modules/users/routes.create.js';
@@ -50,6 +52,8 @@ export async function registerRoutes() {
     await app.register(pasetoServiceRoutes, { prefix: '/api/v1/auth' });
     // Register opaque auth routes (always enabled now)
     await app.register(opaqueAuthRoutes, { prefix: '/api/v1/auth' });
+    // Register audit routes for tenant administrators
+    await app.register(auditRoutes, { prefix: '/api/v1/audit' });
     // Register user route modules
     await app.register(listUsersRoute);
     await app.register(createUserRoute);

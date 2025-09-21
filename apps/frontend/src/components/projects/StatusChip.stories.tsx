@@ -3,7 +3,7 @@
  * Stories for the StatusChip component with controls and accessibility checks
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StatusChip } from './StatusChip';
 
 const meta: Meta<typeof StatusChip> = {

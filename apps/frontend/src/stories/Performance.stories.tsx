@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PerformanceOptimizer } from '../components/performance/PerformanceOptimizer';
 import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
 import { Button } from '../components/Button';

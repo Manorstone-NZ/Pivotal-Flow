@@ -3,7 +3,7 @@
  * Stories for the ProjectCard component with controls and accessibility checks
  */
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ProjectCard } from './ProjectCard';
 import type { Project } from '../../features/projects/types';
 

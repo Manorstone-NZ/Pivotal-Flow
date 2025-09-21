@@ -8,6 +8,7 @@ import { randomBytes } from 'crypto';
 import { logger } from "../../lib/logger.js";
 import { AuthService } from "./service.drizzle.js";
 import { AuthenticationError } from "../../lib/error-handler.js";
+import { AuditLogger } from "../../lib/audit-logger.drizzle.js";
 // Helper function to extract session ID from request
 function extractSessionId(request) {
     // Try to get session ID from cookie first
@@ -69,6 +70,7 @@ export const opaqueAuthRoutes = async (fastify) => {
         const { email: rawEmail, password, rememberMe = false } = request.body;
         const authService = new AuthService(fastify);
         const cache = fastify.cache; // Use Redis cache directly
+        const auditLogger = new AuditLogger(fastify);
         // TODO: Fix authRepository access - need to check what's available on fastify instance
         const email = rawEmail.trim().toLowerCase();
         try {
@@ -76,8 +78,21 @@ export const opaqueAuthRoutes = async (fastify) => {
             // Authenticate user (reuse existing service)
             const user = await authService.authenticateUser(email, password);
             if (!user) {
-                // TODO: Fix authRepository access
-                // await authRepository.recordFailedLogin(email, request.ip);
+                // Log failed login attempt - use system organization for failed attempts
+                await auditLogger.logEvent({
+                    action: 'login_failed',
+                    entityType: 'user',
+                    entityId: email, // Use email as entity ID for failed attempts
+                    organizationId: 'd549ddfa-d6e4-44dd-8749-36ea051a795a', // System org for failed attempts
+                    userId: null,
+                    metadata: {
+                        reason: 'invalid_credentials',
+                        loginMethod: 'opaque_token',
+                        ipAddress: request.ip,
+                        userAgent: request.headers['user-agent'],
+                        attemptedEmail: email
+                    }
+                }, request);
                 return reply.status(401).send({
                     error: "Unauthorized",
                     message: "Invalid email or password",
@@ -122,6 +137,23 @@ export const opaqueAuthRoutes = async (fastify) => {
             // Update user login stats
             // TODO: Fix authRepository access
             // await authRepository.updateUserLastLogin(user.id);
+            // Log successful login
+            await auditLogger.logEvent({
+                action: 'login_success',
+                entityType: 'user',
+                entityId: user.id,
+                organizationId: user.organizationId,
+                userId: user.id,
+                metadata: {
+                    loginMethod: 'opaque_token',
+                    sessionId: sessionId,
+                    rememberMe: rememberMe,
+                    ipAddress: request.ip,
+                    userAgent: request.headers['user-agent'],
+                    roles: user.roles,
+                    permissions: user.permissions?.length || 0
+                }
+            }, request);
             logger.info({
                 request_id: request.id,
                 user_id: user.id,
@@ -171,6 +203,7 @@ export const opaqueAuthRoutes = async (fastify) => {
     }, async (request, reply) => {
         const { allDevices = false } = request.body;
         const cache = fastify.cache; // Use Redis cache directly
+        const auditLogger = new AuditLogger(fastify);
         try {
             const sessionId = extractSessionId(request);
             if (!sessionId) {
@@ -202,6 +235,22 @@ export const opaqueAuthRoutes = async (fastify) => {
                 await cache.del(`session:${sessionId}`);
                 revokedCount = 1;
             }
+            // Log logout action
+            await auditLogger.logEvent({
+                action: 'logout',
+                entityType: 'user',
+                entityId: sessionData.userId,
+                organizationId: sessionData.tenantId,
+                userId: sessionData.userId,
+                metadata: {
+                    logoutMethod: 'opaque_token',
+                    sessionId: sessionId,
+                    allDevices: allDevices,
+                    revokedCount: revokedCount,
+                    ipAddress: request.ip,
+                    userAgent: request.headers['user-agent']
+                }
+            }, request);
             // Clear cookie
             reply.clearCookie('pf-session', { path: '/' });
             logger.info({

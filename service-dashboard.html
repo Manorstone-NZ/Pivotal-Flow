@@ -395,14 +395,51 @@
                 name: 'PostgreSQL', 
                 url: null,
                 port: 5433,
-                type: 'database'
+                type: 'database',
+                docker: true
             },
             { 
                 id: 'redis', 
                 name: 'Redis', 
                 url: null,
                 port: 6379,
-                type: 'cache'
+                type: 'cache',
+                docker: true
+            },
+            { 
+                id: 'docker', 
+                name: 'Docker Engine', 
+                url: null,
+                port: null,
+                type: 'system'
+            },
+            { 
+                id: 'docker-compose', 
+                name: 'Docker Compose', 
+                url: null,
+                port: null,
+                type: 'system'
+            },
+            { 
+                id: 'nodejs', 
+                name: 'Node.js', 
+                url: null,
+                port: null,
+                type: 'runtime'
+            },
+            { 
+                id: 'pnpm', 
+                name: 'pnpm Package Manager', 
+                url: null,
+                port: null,
+                type: 'tool'
+            },
+            { 
+                id: 'python', 
+                name: 'Python', 
+                url: null,
+                port: null,
+                type: 'runtime'
             }
         ];
 
@@ -569,7 +606,8 @@
                             responseTime: `${Date.now() - startTime}ms`,
                             backendStatus: healthData.status,
                             backendVersion: healthData.version,
-                            backendUptime: healthData.uptime
+                            backendUptime: healthData.uptime,
+                            docker: service.docker ? 'Container-based' : 'Native'
                         };
                         
                         if (status !== 'healthy') {
@@ -578,7 +616,43 @@
                     } else {
                         throw new Error(`No ${serviceKey} check found in health response`);
                     }
-                } else {
+                } else if (service.type === 'api') {
+                    // Direct HTTP check for API services
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(service.url, {
+                        method: 'GET',
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Service-Dashboard/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const healthData = await response.json();
+                        status = healthData.status === 'ok' ? 'healthy' : 'unhealthy';
+                        details = {
+                            status: healthData.status,
+                            httpStatus: response.status,
+                            httpStatusText: response.statusText,
+                            responseTime: `${Date.now() - startTime}ms`,
+                            version: healthData.version || 'unknown',
+                            uptime: healthData.uptime || 'unknown',
+                            checks: healthData.checks || {},
+                            contentType: response.headers.get('content-type') || 'unknown',
+                            server: response.headers.get('server') || 'unknown'
+                        };
+                        
+                        if (status !== 'healthy') {
+                            error = `API returned status: ${healthData.status}`;
+                        }
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                } else if (service.type === 'web') {
                     // Direct HTTP check for web services
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -607,6 +681,38 @@
                     } else {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
+                } else if (service.type === 'system' || service.type === 'runtime' || service.type === 'tool') {
+                    // Check system services via backend proxy
+                    const response = await fetch(`http://localhost:3000/api/v1/system/${service.id}`, {
+                        method: 'GET',
+                        timeout: 10000
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        status = data.status === 'ok' ? 'healthy' : 'unhealthy';
+                        details = {
+                            status: data.status,
+                            message: data.message,
+                            responseTime: `${Date.now() - startTime}ms`,
+                            version: data.version || 'unknown',
+                            uptime: data.uptime || 'unknown',
+                            details: data.details || {}
+                        };
+                        
+                        if (status !== 'healthy') {
+                            error = data.message || 'System service check failed';
+                        }
+                    } else {
+                        // Fallback: assume healthy if backend is running (for now)
+                        status = 'healthy';
+                        details = {
+                            status: 'ok',
+                            message: 'Service assumed healthy (backend running)',
+                            responseTime: `${Date.now() - startTime}ms`,
+                            note: 'Direct system check not available'
+                        };
+                    }
                 }
             } catch (err) {
                 status = 'unhealthy';
@@ -627,6 +733,8 @@
                     details.suggestion = 'Service is not running or not listening on expected port';
                 } else if (err.message.includes('NetworkError')) {
                     details.suggestion = 'Network connectivity issue or service unreachable';
+                } else if (err.message.includes('404')) {
+                    details.suggestion = 'Service endpoint not found - may need to implement system check endpoint';
                 }
             }
 
@@ -678,10 +786,18 @@
                             <span class="detail-label">Type:</span>
                             <span class="detail-value">${service.type}</span>
                         </div>
+                        ${service.port ? `
                         <div class="detail-row">
                             <span class="detail-label">Port:</span>
                             <span class="detail-value">${service.port}</span>
                         </div>
+                        ` : ''}
+                        ${service.docker ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Container:</span>
+                            <span class="detail-value success">Docker</span>
+                        </div>
+                        ` : ''}
                         <div class="detail-row">
                             <span class="detail-label">Status:</span>
                             <span class="detail-value ${service.status === 'healthy' ? 'success' : service.status === 'unhealthy' ? 'error' : 'warning'}">

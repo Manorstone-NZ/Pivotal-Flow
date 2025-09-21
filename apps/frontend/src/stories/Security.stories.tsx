@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SecurityAudit } from '../components/security/SecurityAudit';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/Button';

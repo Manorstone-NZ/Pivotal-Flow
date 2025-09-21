@@ -15,6 +15,7 @@ export function registerCustomerListRoute(fastify) {
             querystring: CustomerQuerystringSchema,
             // response schemas removed to prevent serialization issues
         },
+        preHandler: fastify.authenticate,
     }, async (request, reply) => {
         try {
             const { user } = request;
