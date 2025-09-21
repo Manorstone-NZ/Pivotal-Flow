@@ -1,159 +1,127 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApprovalQueue } from './ApprovalQueue';
 
 // Mock data for stories
-const mockApprovalItems = [
+const mockApprovals = [
   {
     id: 'approval-1',
+    organizationId: 'org-1',
     userId: 'user-1',
-    userName: 'John Smith',
-    userEmail: 'john.smith@company.com',
+    userName: 'John Doe',
+    userEmail: 'john.doe@example.com',
     projectId: 'project-1',
-    projectName: 'Client Dashboard',
+    projectName: 'Website Redesign',
     date: '2024-01-15',
-    duration: 480, // 8 hours
-    description: 'Frontend development work on user dashboard components and responsive design',
+    startTime: '2024-01-15T09:00:00Z',
+    endTime: '2024-01-15T17:00:00Z',
+    duration: 480,
+    breakMinutes: 60,
+    description: 'Frontend development work on user dashboard',
     activityType: 'development',
     billable: true,
-    billableAmount: 680,
-    submittedAt: '2024-01-15T18:00:00Z',
-    createdAt: '2024-01-15T18:00:00Z',
-    tags: ['frontend', 'react', 'dashboard'],
-    notes: 'Implemented new dashboard layout with responsive design. Added comprehensive unit tests.'
+    hourlyRate: 85,
+    billableAmount: 340,
+    status: 'pending',
+    submittedAt: '2024-01-16T08:00:00Z',
+    submittedBy: 'user-1'
   },
   {
     id: 'approval-2',
+    organizationId: 'org-1',
     userId: 'user-2',
-    userName: 'Sarah Johnson',
-    userEmail: 'sarah.johnson@company.com',
+    userName: 'Jane Smith',
+    userEmail: 'jane.smith@example.com',
     projectId: 'project-2',
-    projectName: 'API Integration',
+    projectName: 'Mobile App',
     date: '2024-01-16',
-    duration: 240, // 4 hours
-    description: 'Client meeting and requirements gathering session',
-    activityType: 'meeting',
+    startTime: '2024-01-16T09:30:00Z',
+    endTime: '2024-01-16T17:30:00Z',
+    duration: 480,
+    breakMinutes: 60,
+    description: 'Backend API development and testing',
+    activityType: 'development',
     billable: true,
-    billableAmount: 340,
-    submittedAt: '2024-01-16T17:00:00Z',
-    createdAt: '2024-01-16T17:00:00Z',
-    tags: ['client', 'requirements']
+    hourlyRate: 90,
+    billableAmount: 360,
+    status: 'pending',
+    submittedAt: '2024-01-17T08:30:00Z',
+    submittedBy: 'user-2'
   },
   {
     id: 'approval-3',
+    organizationId: 'org-1',
     userId: 'user-3',
-    userName: 'Mike Davis',
-    userEmail: 'mike.davis@company.com',
-    date: '2024-01-17',
-    duration: 120, // 2 hours
-    description: 'Internal team standup and sprint planning',
-    activityType: 'admin',
-    billable: false,
-    submittedAt: '2024-01-17T10:00:00Z',
-    createdAt: '2024-01-17T10:00:00Z',
-    tags: ['admin', 'planning']
-  },
-  {
-    id: 'approval-4',
-    userId: 'user-1',
-    userName: 'John Smith',
-    userEmail: 'john.smith@company.com',
-    projectId: 'project-3',
-    projectName: 'Mobile App',
-    date: '2024-01-18',
-    duration: 360, // 6 hours
-    description: 'Backend API development and database optimization',
-    activityType: 'development',
-    billable: true,
-    billableAmount: 510,
-    submittedAt: '2024-01-18T16:30:00Z',
-    createdAt: '2024-01-18T16:30:00Z',
-    tags: ['backend', 'api', 'database'],
-    notes: 'Optimized database queries and implemented new API endpoints for mobile app.'
-  },
-  {
-    id: 'approval-5',
-    userId: 'user-4',
-    userName: 'Lisa Chen',
-    userEmail: 'lisa.chen@company.com',
+    userName: 'Bob Johnson',
+    userEmail: 'bob.johnson@example.com',
     projectId: 'project-1',
-    projectName: 'Client Dashboard',
-    date: '2024-01-19',
-    duration: 180, // 3 hours
-    description: 'Code review and testing of dashboard components',
-    activityType: 'testing',
+    projectName: 'Website Redesign',
+    date: '2024-01-17',
+    startTime: '2024-01-17T10:00:00Z',
+    endTime: '2024-01-17T18:00:00Z',
+    duration: 480,
+    breakMinutes: 60,
+    description: 'Code review and documentation',
+    activityType: 'review',
     billable: true,
-    billableAmount: 255,
-    submittedAt: '2024-01-19T14:15:00Z',
-    createdAt: '2024-01-19T14:15:00Z',
-    tags: ['testing', 'code-review']
+    hourlyRate: 75,
+    billableAmount: 300,
+    status: 'pending',
+    submittedAt: '2024-01-18T09:00:00Z',
+    submittedBy: 'user-3'
   }
 ];
 
-// Mock the API hooks
-const mockUseTimeApprovals = (isEmpty = false, isLoading = false, hasError = false) => ({
-  data: hasError ? undefined : {
-    success: true,
-    data: isEmpty ? [] : mockApprovalItems,
-    pagination: { 
-      page: 1, 
-      limit: 20, 
-      total: isEmpty ? 0 : mockApprovalItems.length, 
-      pages: 1 
-    }
+// Create a mock query client for Storybook
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: Infinity,
+    },
   },
-  isLoading,
-  error: hasError ? new Error('Failed to load approvals') : null,
-  refetch: () => Promise.resolve()
 });
 
-const mockMutations = {
-  mutateAsync: async () => ({ success: true, data: { message: 'Success' } }),
-  isPending: false,
-  isError: false,
-  error: null
-};
-
-// Create a wrapper component that provides QueryClient
-const QueryWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false }
-    }
-  });
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+// Mock provider component
+const MockProvider = ({ children }: { children: React.ReactNode }) => {
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    children
   );
 };
 
 const meta: Meta<typeof ApprovalQueue> = {
   title: 'Components/Approvals/ApprovalQueue',
   component: ApprovalQueue,
-  decorators: [
-    (Story) => (
-      <QueryWrapper>
-        <div className="p-6 bg-gray-50 min-h-screen">
-          <Story />
-        </div>
-      </QueryWrapper>
-    )
-  ],
   parameters: {
-    layout: 'fullscreen',
+    layout: 'padded',
     docs: {
       description: {
-        component: 'A queue component for managing time entry approvals with bulk actions and individual decision making.'
+        component: 'A queue component for managing time entry approvals. Displays pending time entries that require manager approval with bulk actions and individual review capabilities.'
       }
     }
   },
+  tags: ['autodocs'],
+  decorators: [
+    (Story) => React.createElement(MockProvider, null, React.createElement(Story))
+  ],
   argTypes: {
-    className: {
-      control: 'text',
-      description: 'Additional CSS classes'
+    onApprove: {
+      action: 'approve',
+      description: 'Called when a time entry is approved'
+    },
+    onReject: {
+      action: 'reject',
+      description: 'Called when a time entry is rejected'
+    },
+    onBulkApprove: {
+      action: 'bulkApprove',
+      description: 'Called when multiple time entries are approved'
+    },
+    onBulkReject: {
+      action: 'bulkReject',
+      description: 'Called when multiple time entries are rejected'
     }
   }
 };
@@ -161,83 +129,47 @@ const meta: Meta<typeof ApprovalQueue> = {
 export default meta;
 type Story = StoryObj<typeof ApprovalQueue>;
 
-// Mock the hooks before defining stories
-jest.mock('../../features/approvals/api', () => ({
-  ...jest.requireActual('../../features/approvals/api'),
-  useTimeApprovals: () => mockUseTimeApprovals(),
-  useApproveTimeEntry: () => mockMutations,
-  useRejectTimeEntry: () => mockMutations,
-  useBulkApproveTimeEntries: () => mockMutations,
-  useBulkRejectTimeEntries: () => mockMutations,
-  formatDuration: (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    if (mins === 0) return `${hours}h`;
-    return `${hours}h ${mins}m`;
-  },
-  formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-  getActivityTypeColor: (type: string) => {
-    const colors: Record<string, string> = {
-      development: 'bg-blue-100 text-blue-800',
-      meeting: 'bg-green-100 text-green-800',
-      admin: 'bg-gray-100 text-gray-800',
-      testing: 'bg-yellow-100 text-yellow-800'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-800';
-  }
-}));
+// Simple mock component that doesn't use hooks
+const MockApprovalQueue = (props: any) => {
+  const [approvals] = React.useState(mockApprovals);
+  const [isLoading] = React.useState(false);
+  const [error] = React.useState(null);
+
+  return React.createElement(ApprovalQueue, {
+    ...props,
+    approvals: approvals,
+    isLoading,
+    error,
+    onRefresh: () => Promise.resolve()
+  });
+};
 
 export const Default: Story = {
   args: {},
-  parameters: {
-    docs: {
-      description: {
-        story: 'Default approval queue with pending time entries.'
-      }
-    }
-  }
+  render: (args) => React.createElement(MockApprovalQueue, args)
 };
 
-export const EmptyQueue: Story = {
+export const Empty: Story = {
   args: {},
   parameters: {
     docs: {
       description: {
-        story: 'Approval queue with no pending entries.'
+        story: 'ApprovalQueue with no pending approvals, showing empty state.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      jest.doMock('../../features/approvals/api', () => ({
-        ...jest.requireActual('../../features/approvals/api'),
-        useTimeApprovals: () => mockUseTimeApprovals(true),
-        useApproveTimeEntry: () => mockMutations,
-        useRejectTimeEntry: () => mockMutations,
-        useBulkApproveTimeEntries: () => mockMutations,
-        useBulkRejectTimeEntries: () => mockMutations,
-        formatDuration: (minutes: number) => {
-          const hours = Math.floor(minutes / 60);
-          const mins = minutes % 60;
-          if (hours === 0) return `${mins}m`;
-          if (mins === 0) return `${hours}h`;
-          return `${hours}h ${mins}m`;
-        },
-        formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-        getActivityTypeColor: (type: string) => 'bg-blue-100 text-blue-800'
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+  render: (args) => {
+    const EmptyMockApprovalQueue = () => {
+      return React.createElement(ApprovalQueue, {
+        ...args,
+        approvals: [],
+        isLoading: false,
+        error: null,
+        onRefresh: () => Promise.resolve()
+      });
+    };
+    return React.createElement(EmptyMockApprovalQueue);
+  }
 };
 
 export const Loading: Story = {
@@ -245,119 +177,76 @@ export const Loading: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Approval queue in loading state.'
+        story: 'ApprovalQueue in loading state while fetching approvals.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      jest.doMock('../../features/approvals/api', () => ({
-        ...jest.requireActual('../../features/approvals/api'),
-        useTimeApprovals: () => mockUseTimeApprovals(false, true),
-        useApproveTimeEntry: () => mockMutations,
-        useRejectTimeEntry: () => mockMutations,
-        useBulkApproveTimeEntries: () => mockMutations,
-        useBulkRejectTimeEntries: () => mockMutations,
-        formatDuration: (minutes: number) => `${minutes}m`,
-        formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-        getActivityTypeColor: (type: string) => 'bg-blue-100 text-blue-800'
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+  render: (args) => {
+    const LoadingMockApprovalQueue = () => {
+      return React.createElement(ApprovalQueue, {
+        ...args,
+        approvals: [],
+        isLoading: true,
+        error: null,
+        onRefresh: () => Promise.resolve()
+      });
+    };
+    return React.createElement(LoadingMockApprovalQueue);
+  }
 };
 
-export const WithError: Story = {
+export const Error: Story = {
   args: {},
   parameters: {
     docs: {
       description: {
-        story: 'Approval queue with error state.'
+        story: 'ApprovalQueue showing error state when approvals fail to load.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      jest.doMock('../../features/approvals/api', () => ({
-        ...jest.requireActual('../../features/approvals/api'),
-        useTimeApprovals: () => mockUseTimeApprovals(false, false, true),
-        useApproveTimeEntry: () => mockMutations,
-        useRejectTimeEntry: () => mockMutations,
-        useBulkApproveTimeEntries: () => mockMutations,
-        useBulkRejectTimeEntries: () => mockMutations,
-        formatDuration: (minutes: number) => `${minutes}m`,
-        formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-        getActivityTypeColor: (type: string) => 'bg-blue-100 text-blue-800'
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+  render: (args) => {
+    const ErrorMockApprovalQueue = () => {
+      return React.createElement(ApprovalQueue, {
+        ...args,
+        approvals: [],
+        isLoading: false,
+        error: new Error('Failed to load approvals'),
+        onRefresh: () => Promise.resolve()
+      });
+    };
+    return React.createElement(ErrorMockApprovalQueue);
+  }
 };
 
-export const WithPendingActions: Story = {
+export const WithManyApprovals: Story = {
   args: {},
   parameters: {
     docs: {
       description: {
-        story: 'Approval queue with pending mutation states (approve/reject in progress).'
+        story: 'ApprovalQueue with many pending approvals to test pagination and bulk actions.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      const pendingMutations = {
-        mutateAsync: async () => {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          return { success: true, data: { message: 'Success' } };
-        },
-        isPending: true,
-        isError: false,
-        error: null
-      };
-      
-      jest.doMock('../../features/approvals/api', () => ({
-        ...jest.requireActual('../../features/approvals/api'),
-        useTimeApprovals: () => mockUseTimeApprovals(),
-        useApproveTimeEntry: () => pendingMutations,
-        useRejectTimeEntry: () => pendingMutations,
-        useBulkApproveTimeEntries: () => pendingMutations,
-        useBulkRejectTimeEntries: () => pendingMutations,
-        formatDuration: (minutes: number) => {
-          const hours = Math.floor(minutes / 60);
-          const mins = minutes % 60;
-          if (hours === 0) return `${mins}m`;
-          if (mins === 0) return `${hours}h`;
-          return `${hours}h ${mins}m`;
-        },
-        formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-        getActivityTypeColor: (type: string) => 'bg-blue-100 text-blue-800'
+  render: (args) => {
+    const ManyMockApprovalQueue = () => {
+      // Generate more mock data
+      const manyApprovals = Array.from({ length: 25 }, (_, i) => ({
+        ...mockApprovals[i % mockApprovals.length],
+        id: `approval-${i + 1}`,
+        userId: `user-${(i % 5) + 1}`,
+        userName: `User ${(i % 5) + 1}`,
+        userEmail: `user${(i % 5) + 1}@example.com`,
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
-};
 
+      return React.createElement(ApprovalQueue, {
+        ...args,
+        approvals: manyApprovals,
+        isLoading: false,
+        error: null,
+        onRefresh: () => Promise.resolve()
+      });
+    };
+    return React.createElement(ManyMockApprovalQueue);
+  }
+};

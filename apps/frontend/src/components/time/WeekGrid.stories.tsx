@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WeekGrid } from './WeekGrid';
 
@@ -18,15 +18,10 @@ const mockTimeEntries = [
     activityType: 'development',
     billable: true,
     hourlyRate: 85,
-    billableAmount: 680,
-    currency: 'NZD',
-    status: 'approved' as const,
-    submittedAt: '2024-01-15T18:00:00Z',
-    approvedAt: '2024-01-16T09:00:00Z',
-    approvedBy: 'manager-1',
-    tags: ['frontend', 'react', 'dashboard'],
-    createdAt: '2024-01-15T18:00:00Z',
-    updatedAt: '2024-01-16T09:00:00Z'
+    billableAmount: 340,
+    status: 'approved',
+    approvedAt: '2024-01-16T10:00:00Z',
+    approvedBy: 'manager-1'
   },
   {
     id: 'entry-2',
@@ -34,93 +29,90 @@ const mockTimeEntries = [
     userId: 'user-1',
     projectId: 'project-2',
     date: '2024-01-16',
-    duration: 240, // 4 hours
-    breakMinutes: 30,
-    description: 'Client meeting and requirements gathering',
-    activityType: 'meeting',
+    startTime: '2024-01-16T09:30:00Z',
+    endTime: '2024-01-16T17:30:00Z',
+    duration: 480,
+    breakMinutes: 60,
+    description: 'Backend API development and testing',
+    activityType: 'development',
     billable: true,
     hourlyRate: 85,
     billableAmount: 340,
-    currency: 'NZD',
-    status: 'submitted' as const,
-    submittedAt: '2024-01-16T17:00:00Z',
-    createdAt: '2024-01-16T17:00:00Z',
-    updatedAt: '2024-01-16T17:00:00Z'
+    status: 'pending',
+    approvedAt: null,
+    approvedBy: null
   },
   {
     id: 'entry-3',
     organizationId: 'org-1',
     userId: 'user-1',
+    projectId: 'project-1',
     date: '2024-01-17',
-    duration: 120, // 2 hours
-    breakMinutes: 0,
-    description: 'Internal team standup and planning',
-    activityType: 'admin',
-    billable: false,
-    currency: 'NZD',
-    status: 'draft' as const,
-    tags: ['admin', 'planning'],
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z'
+    startTime: '2024-01-17T10:00:00Z',
+    endTime: '2024-01-17T18:00:00Z',
+    duration: 480,
+    breakMinutes: 60,
+    description: 'Code review and documentation',
+    activityType: 'review',
+    billable: true,
+    hourlyRate: 85,
+    billableAmount: 340,
+    status: 'approved',
+    approvedAt: '2024-01-18T09:00:00Z',
+    approvedBy: 'manager-1'
   }
 ];
 
-// Mock the API hooks
-const mockUseTimeEntries = () => ({
-  data: {
-    success: true,
-    data: mockTimeEntries,
-    pagination: { page: 1, limit: 100, total: mockTimeEntries.length, pages: 1 }
+// Create a mock query client for Storybook
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: Infinity,
+    },
   },
-  isLoading: false,
-  error: null,
-  refetch: () => Promise.resolve()
 });
 
-// Create a wrapper component that provides QueryClient
-const QueryWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false }
-    }
-  });
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+// Mock provider component
+const MockProvider = ({ children }: { children: React.ReactNode }) => {
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    children
   );
 };
 
 const meta: Meta<typeof WeekGrid> = {
   title: 'Components/Time/WeekGrid',
   component: WeekGrid,
-  decorators: [
-    (Story) => (
-      <QueryWrapper>
-        <div className="p-6 bg-gray-50 min-h-screen">
-          <Story />
-        </div>
-      </QueryWrapper>
-    )
-  ],
   parameters: {
-    layout: 'fullscreen',
+    layout: 'padded',
     docs: {
       description: {
-        component: 'A weekly time tracking grid that displays time entries in a calendar format with copy/paste functionality and quick totals.'
+        component: 'A weekly grid component for displaying and managing time entries. Shows time entries in a calendar-like grid format with daily totals and project breakdowns.'
       }
     }
   },
+  tags: ['autodocs'],
+  decorators: [
+    (Story) => React.createElement(MockProvider, null, React.createElement(Story))
+  ],
   argTypes: {
     userId: {
       control: 'text',
-      description: 'User ID to filter entries for'
+      description: 'ID of the user whose time entries to display'
     },
-    className: {
-      control: 'text',
-      description: 'Additional CSS classes'
+    weekStart: {
+      control: 'date',
+      description: 'Start date of the week to display'
+    },
+    onTimeEntryClick: {
+      action: 'timeEntryClick',
+      description: 'Called when a time entry is clicked'
+    },
+    onAddTimeEntry: {
+      action: 'addTimeEntry',
+      description: 'Called when the add time entry button is clicked'
     }
   }
 };
@@ -128,46 +120,26 @@ const meta: Meta<typeof WeekGrid> = {
 export default meta;
 type Story = StoryObj<typeof WeekGrid>;
 
-// Mock the hooks before defining stories
-jest.mock('../../features/time/api', () => ({
-  ...jest.requireActual('../../features/time/api'),
-  useTimeEntries: () => mockUseTimeEntries(),
-  useTimeEntryTotals: (entries: any[]) => ({
-    totalMinutes: entries.reduce((sum, entry) => sum + entry.duration, 0),
-    billableMinutes: entries.reduce((sum, entry) => sum + (entry.billable ? entry.duration : 0), 0),
-    nonBillableMinutes: entries.reduce((sum, entry) => sum + (entry.billable ? 0 : entry.duration), 0),
-    totalAmount: entries.reduce((sum, entry) => sum + (entry.billableAmount || 0), 0),
-    totalHours: entries.reduce((sum, entry) => sum + entry.duration, 0) / 60,
-    billableHours: entries.reduce((sum, entry) => sum + (entry.billable ? entry.duration : 0), 0) / 60,
-    nonBillableHours: entries.reduce((sum, entry) => sum + (entry.billable ? 0 : entry.duration), 0) / 60
-  })
-}));
+// Simple mock component that doesn't use hooks
+const MockWeekGrid = (props: any) => {
+  const [entries] = React.useState(mockTimeEntries);
+  const [isLoading] = React.useState(false);
+  const [error] = React.useState(null);
+
+  return React.createElement(WeekGrid, {
+    ...props,
+    timeEntries: entries,
+    isLoading,
+    error,
+    onRefresh: () => Promise.resolve()
+  });
+};
 
 export const Default: Story = {
   args: {
     userId: 'user-1'
-  }
-};
-
-export const WithCallbacks: Story = {
-  args: {
-    userId: 'user-1',
-    onAddEntry: (date: string) => {
-      console.log('Add entry for date:', date);
-      alert(`Add entry for ${date}`);
-    },
-    onEditEntry: (entry: any) => {
-      console.log('Edit entry:', entry);
-      alert(`Edit entry: ${entry.description}`);
-    }
   },
-  parameters: {
-    docs: {
-      description: {
-        story: 'WeekGrid with callback functions for adding and editing entries.'
-      }
-    }
-  }
+  render: (args) => React.createElement(MockWeekGrid, args)
 };
 
 export const EmptyWeek: Story = {
@@ -181,43 +153,18 @@ export const EmptyWeek: Story = {
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      const emptyMock = () => ({
-        data: {
-          success: true,
-          data: [],
-          pagination: { page: 1, limit: 100, total: 0, pages: 1 }
-        },
+  render: (args) => {
+    const EmptyMockWeekGrid = () => {
+      return React.createElement(WeekGrid, {
+        ...args,
+        timeEntries: [],
         isLoading: false,
         error: null,
-        refetch: () => Promise.resolve()
+        onRefresh: () => Promise.resolve()
       });
-      
-      jest.doMock('../../features/time/api', () => ({
-        ...jest.requireActual('../../features/time/api'),
-        useTimeEntries: emptyMock,
-        useTimeEntryTotals: () => ({
-          totalMinutes: 0,
-          billableMinutes: 0,
-          nonBillableMinutes: 0,
-          totalAmount: 0,
-          totalHours: 0,
-          billableHours: 0,
-          nonBillableHours: 0
-        })
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+    };
+    return React.createElement(EmptyMockWeekGrid);
+  }
 };
 
 export const Loading: Story = {
@@ -227,88 +174,60 @@ export const Loading: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'WeekGrid in loading state.'
+        story: 'WeekGrid in loading state while fetching time entries.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      const loadingMock = () => ({
-        data: undefined,
+  render: (args) => {
+    const LoadingMockWeekGrid = () => {
+      return React.createElement(WeekGrid, {
+        ...args,
+        timeEntries: [],
         isLoading: true,
         error: null,
-        refetch: () => Promise.resolve()
+        onRefresh: () => Promise.resolve()
       });
-      
-      jest.doMock('../../features/time/api', () => ({
-        ...jest.requireActual('../../features/time/api'),
-        useTimeEntries: loadingMock,
-        useTimeEntryTotals: () => ({
-          totalMinutes: 0,
-          billableMinutes: 0,
-          nonBillableMinutes: 0,
-          totalAmount: 0,
-          totalHours: 0,
-          billableHours: 0,
-          nonBillableHours: 0
-        })
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+    };
+    return React.createElement(LoadingMockWeekGrid);
+  }
 };
 
-export const WithError: Story = {
+export const Error: Story = {
   args: {
     userId: 'user-1'
   },
   parameters: {
     docs: {
       description: {
-        story: 'WeekGrid with error state.'
+        story: 'WeekGrid showing error state when time entries fail to load.'
       }
     }
   },
-  decorators: [
-    (Story) => {
-      // Override the mock for this story
-      const errorMock = () => ({
-        data: undefined,
+  render: (args) => {
+    const ErrorMockWeekGrid = () => {
+      return React.createElement(WeekGrid, {
+        ...args,
+        timeEntries: [],
         isLoading: false,
         error: new Error('Failed to load time entries'),
-        refetch: () => Promise.resolve()
+        onRefresh: () => Promise.resolve()
       });
-      
-      jest.doMock('../../features/time/api', () => ({
-        ...jest.requireActual('../../features/time/api'),
-        useTimeEntries: errorMock,
-        useTimeEntryTotals: () => ({
-          totalMinutes: 0,
-          billableMinutes: 0,
-          nonBillableMinutes: 0,
-          totalAmount: 0,
-          totalHours: 0,
-          billableHours: 0,
-          nonBillableHours: 0
-        })
-      }));
-      
-      return (
-        <QueryWrapper>
-          <div className="p-6 bg-gray-50 min-h-screen">
-            <Story />
-          </div>
-        </QueryWrapper>
-      );
-    }
-  ]
+    };
+    return React.createElement(ErrorMockWeekGrid);
+  }
 };
 
+export const WithCustomWeek: Story = {
+  args: {
+    userId: 'user-1',
+    weekStart: new Date('2024-01-15')
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'WeekGrid showing a specific week with custom start date.'
+      }
+    }
+  },
+  render: (args) => React.createElement(MockWeekGrid, args)
+};
