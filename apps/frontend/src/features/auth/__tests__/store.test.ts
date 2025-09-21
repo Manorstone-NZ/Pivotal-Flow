@@ -79,8 +79,8 @@ describe('useAuth', () => {
 
   it('handles login successfully', async () => {
     const mockLoginResponse = {
-      accessToken: 'mock-access-token',
-      refreshToken: 'mock-refresh-token',
+      success: true,
+      sessionId: 'mock-session-id',
       user: { id: '1', email: 'test@example.com', name: 'Test User' },
     };
 
@@ -98,7 +98,7 @@ describe('useAuth', () => {
 
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.user).toEqual(mockLoginResponse.user);
-    expect(result.current.accessToken).toBe(mockLoginResponse.accessToken);
+    expect(result.current.sessionId).toBe(mockLoginResponse.sessionId);
   });
 
   it('handles login failure', async () => {
@@ -131,8 +131,8 @@ describe('useAuth', () => {
 
   it('handles logout', async () => {
     const mockLoginResponse = {
-      accessToken: 'mock-access-token',
-      refreshToken: 'mock-refresh-token',
+      success: true,
+      sessionId: 'mock-session-id',
       user: { id: '1', email: 'test@example.com', name: 'Test User' },
     };
 
@@ -158,38 +158,50 @@ describe('useAuth', () => {
 
     expect(result.current.user).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.accessToken).toBeNull();
-    expect(result.current.refreshToken).toBeNull();
+    expect(result.current.sessionId).toBeNull();
   });
 
-  it('handles token refresh', async () => {
-    const mockRefreshResponse = {
-      accessToken: 'new-access-token',
-      expiresIn: 3600,
+  it('handles session validation', async () => {
+    const mockSessionResponse = {
+      sessions: [
+        {
+          sessionId: 'mock-session-id',
+          tenantId: 'tenant-id',
+          lastActivity: '2025-09-21T02:00:00Z',
+          ipAddress: '127.0.0.1',
+          userAgent: 'test'
+        }
+      ],
+      stats: {
+        total: 1,
+        active: 1,
+        expiringSoon: 0
+      }
     };
 
-    // Mock fetch for refresh request
+    // Mock fetch for session validation
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockRefreshResponse),
+      json: () => Promise.resolve(mockSessionResponse),
     });
 
-    // Set up initial state with refresh token
+    // Set up initial state with session ID
     const { result } = renderHook(() => useAuth());
     
-    // Set refresh token in state
+    // Set session ID in state
     await act(async () => {
-      result.current.setTokens('old-access-token', 'refresh-token');
+      result.current.setSession('mock-session-id');
     });
 
     await act(async () => {
-      await result.current.refreshAccessToken();
+      await result.current.checkAuthStatus();
     });
 
-    expect(result.current.accessToken).toBe(mockRefreshResponse.accessToken);
+    expect(result.current.sessionId).toBe('mock-session-id');
+    expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('handles token refresh failure', async () => {
+  it('handles session validation failure', async () => {
     // Mock fetch to return error
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -198,14 +210,14 @@ describe('useAuth', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    // Set refresh token in state
+    // Set session ID in state
     await act(async () => {
-      result.current.setTokens('old-access-token', 'invalid-refresh-token');
+      result.current.setSession('invalid-session-id');
     });
 
     await act(async () => {
       try {
-        await result.current.refreshAccessToken();
+        await result.current.checkAuthStatus();
       } catch {
         // Expected to throw
       }
@@ -215,35 +227,46 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  it('loads user from stored token', async () => {
-    const mockUser = {
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
+  it('loads user from stored session', async () => {
+    const mockSessionResponse = {
+      sessions: [
+        {
+          sessionId: 'mock-session-id',
+          tenantId: 'tenant-id',
+          lastActivity: '2025-09-21T02:00:00Z',
+          ipAddress: '127.0.0.1',
+          userAgent: 'test'
+        }
+      ],
+      stats: {
+        total: 1,
+        active: 1,
+        expiringSoon: 0
+      }
     };
 
-    // Mock fetch for auth check request
+    // Mock fetch for session validation
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockUser),
+      json: () => Promise.resolve(mockSessionResponse),
     });
 
     const { result } = renderHook(() => useAuth());
 
-    // Set access token in state
+    // Set session ID in state
     await act(async () => {
-      result.current.setTokens('valid-access-token', 'refresh-token');
+      result.current.setSession('valid-session-id');
     });
 
     await act(async () => {
       await result.current.checkAuthStatus();
     });
 
-    expect(result.current.user).toEqual(mockUser);
+    expect(result.current.sessionId).toBe('valid-session-id');
     expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('handles loadUser failure', async () => {
+  it('handles session validation failure', async () => {
     // Mock fetch to return 401 (unauthorized)
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -252,9 +275,9 @@ describe('useAuth', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    // Set invalid access token in state
+    // Set invalid session ID in state
     await act(async () => {
-      result.current.setTokens('invalid-access-token', 'refresh-token');
+      result.current.setSession('invalid-session-id');
     });
 
     await act(async () => {

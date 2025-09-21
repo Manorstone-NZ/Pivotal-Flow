@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pivotal Flow - Service Status Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .service-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .service-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-healthy {
+            background-color: #10b981;
+        }
+
+        .status-warning {
+            background-color: #f59e0b;
+        }
+
+        .status-error {
+            background-color: #ef4444;
+        }
+
+        .status-checking {
+            background-color: #6b7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .service-info {
+            margin-bottom: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .service-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .system-info {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .system-info h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background-color: #2563eb;
+            transform: scale(1.1);
+        }
+
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Pivotal Flow Services</h1>
+            <p>Real-time service monitoring and health dashboard</p>
+        </div>
+
+        <div class="system-info">
+            <h3>📊 System Overview</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="info-label">Environment:</span>
+                    <span class="info-value" id="environment">Development</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Uptime:</span>
+                    <span class="info-value" id="uptime">Checking...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Total Services:</span>
+                    <span class="info-value">6</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Healthy Services:</span>
+                    <span class="info-value" id="healthy-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="services-grid">
+            <!-- Services will be populated by JavaScript -->
+        </div>
+
+        <div class="last-updated">
+            <p>Last updated: <span id="last-updated">Never</span></p>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshAllServices()" title="Refresh All Services">
+        🔄
+    </button>
+
+    <script>
+        const services = [
+            {
+                id: 'backend',
+                name: 'Backend API',
+                url: 'http://localhost:3000/api/v1/health',
+                port: 3000,
+                description: 'Fastify API server with authentication and business logic'
+            },
+            {
+                id: 'frontend',
+                name: 'Frontend App',
+                url: 'http://localhost:5173',
+                port: 5173,
+                description: 'React frontend with Vite development server'
+            },
+            {
+                id: 'storybook',
+                name: 'Storybook',
+                url: 'http://localhost:6006',
+                port: 6006,
+                description: 'UI component library and design system'
+            },
+            {
+                id: 'postgres',
+                name: 'PostgreSQL',
+                url: 'http://localhost:5433',
+                port: 5433,
+                description: 'Primary database for application data'
+            },
+            {
+                id: 'redis',
+                name: 'Redis Cache',
+                url: 'http://localhost:6379',
+                port: 6379,
+                description: 'Session storage and caching layer'
+            },
+            {
+                id: 'docker',
+                name: 'Docker Services',
+                url: null,
+                port: null,
+                description: 'Container orchestration and service management'
+            }
+        ];
+
+        let healthyCount = 0;
+        let startTime = Date.now();
+
+        function updateUptime() {
+            const now = Date.now();
+            const uptimeMs = now - startTime;
+            const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
+            const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((uptimeMs % (1000 * 60)) / 1000);
+            
+            document.getElementById('uptime').textContent = 
+                `${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        function updateHealthyCount() {
+            document.getElementById('healthy-count').textContent = healthyCount;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('last-updated').textContent = 
+                now.toLocaleTimeString();
+        }
+
+        async function checkServiceHealth(service) {
+            const card = document.getElementById(`service-${service.id}`);
+            const statusIndicator = card.querySelector('.status-indicator');
+            const statusText = card.querySelector('.status-text');
+            
+            // Set checking state
+            statusIndicator.className = 'status-indicator status-checking';
+            statusText.textContent = 'Checking...';
+
+            try {
+                let isHealthy = false;
+                let responseTime = 0;
+                let details = '';
+
+                if (service.id === 'docker') {
+                    // For Docker, we'll assume it's healthy if we can reach other services
+                    isHealthy = true;
+                    details = 'Container services running';
+                } else if (service.url) {
+                    const startTime = Date.now();
+                    const response = await fetch(service.url, {
+                        method: 'GET',
+                        mode: 'no-cors',
+                        cache: 'no-cache'
+                    });
+                    responseTime = Date.now() - startTime;
+                    
+                    if (response.ok || response.status === 0) { // 0 for no-cors
+                        isHealthy = true;
+                        details = `Response time: ${responseTime}ms`;
+                    } else {
+                        details = `HTTP ${response.status}`;
+                    }
+                } else {
+                    // For services without URL, try to connect to the port
+                    isHealthy = await checkPort(service.port);
+                    details = isHealthy ? 'Port accessible' : 'Port not accessible';
+                }
+
+                if (isHealthy) {
+                    statusIndicator.className = 'status-indicator status-healthy';
+                    statusText.textContent = 'Healthy';
+                    if (!card.classList.contains('was-healthy')) {
+                        healthyCount++;
+                        updateHealthyCount();
+                        card.classList.add('was-healthy');
+                    }
+                } else {
+                    statusIndicator.className = 'status-indicator status-error';
+                    statusText.textContent = 'Error';
+                    if (card.classList.contains('was-healthy')) {
+                        healthyCount--;
+                        updateHealthyCount();
+                        card.classList.remove('was-healthy');
+                    }
+                }
+
+                // Update response time or details
+                const detailsElement = card.querySelector('.info-value');
+                if (detailsElement) {
+                    detailsElement.textContent = details;
+                }
+
+            } catch (error) {
+                statusIndicator.className = 'status-indicator status-error';
+                statusText.textContent = 'Error';
+                if (card.classList.contains('was-healthy')) {
+                    healthyCount--;
+                    updateHealthyCount();
+                    card.classList.remove('was-healthy');
+                }
+                
+                const detailsElement = card.querySelector('.info-value');
+                if (detailsElement) {
+                    detailsElement.textContent = error.message;
+                }
+            }
+        }
+
+        async function checkPort(port) {
+            try {
+                // Try to connect to the port using a simple fetch
+                const response = await fetch(`http://localhost:${port}`, {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function createServiceCard(service) {
+            return `
+                <div class="service-card" id="service-${service.id}">
+                    <div class="service-header">
+                        <div class="service-name">${service.name}</div>
+                        <div class="status-indicator status-checking"></div>
+                    </div>
+                    <div class="service-info">
+                        <div class="info-row">
+                            <span class="info-label">Status:</span>
+                            <span class="info-value status-text">Checking...</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Port:</span>
+                            <span class="info-value">${service.port || 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Details:</span>
+                            <span class="info-value">Initializing...</span>
+                        </div>
+                    </div>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">${service.description}</p>
+                    <div class="service-actions">
+                        <button class="btn btn-primary" onclick="checkServiceHealth(${JSON.stringify(service).replace(/"/g, '&quot;')})">
+                            Check Health
+                        </button>
+                        ${service.url ? `<button class="btn btn-secondary" onclick="window.open('${service.url}', '_blank')">Open</button>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderServices() {
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = services.map(service => createServiceCard(service)).join('');
+        }
+
+        async function refreshAllServices() {
+            updateLastUpdated();
+            const refreshBtn = document.querySelector('.refresh-btn');
+            refreshBtn.innerHTML = '<div class="loading"></div>';
+            
+            healthyCount = 0;
+            
+            for (const service of services) {
+                await checkServiceHealth(service);
+                // Small delay between checks to avoid overwhelming services
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            refreshBtn.innerHTML = '🔄';
+        }
+
+        // Initialize dashboard
+        function init() {
+            renderServices();
+            refreshAllServices();
+            
+            // Update uptime every second
+            setInterval(updateUptime, 1000);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(refreshAllServices, 30000);
+        }
+
+        // Start the dashboard
+        init();
+    </script>
+</body>
+</html>

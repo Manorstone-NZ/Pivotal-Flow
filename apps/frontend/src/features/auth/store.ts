@@ -15,18 +15,16 @@ interface User {
 interface AuthState {
   // State
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
+  sessionId: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   
   // Actions
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
-  refreshAccessToken: () => Promise<void>;
   setUser: (user: User) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setSession: (sessionId: string) => void;
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
 }
@@ -34,37 +32,13 @@ interface AuthState {
 // API client configuration
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
-// Create API client instance
-const createApiClient = (accessToken?: string) => {
+// Create API client instance for opaque token authentication
+const createApiClient = () => {
   return new PivotalFlowClient({
     baseURL: API_BASE_URL,
-    getAccessToken: () => accessToken || null,
-    refreshToken: async () => {
-      const refreshToken = useAuthStore.getState().refreshToken;
-      if (!refreshToken) return null;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${refreshToken}`
-          },
-          credentials: 'include', // For secure cookie refresh
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
-          return data.accessToken;
-        }
-      } catch (error) {
-        console.error('Token refresh failed:', error);
-        useAuthStore.getState().logout();
-      }
-      
-      return null;
-    }
+    // For opaque tokens, we rely on cookies for authentication
+    getAccessToken: () => null, // No token needed, uses cookies
+    // No refresh token needed for opaque tokens - they auto-renew
   });
 };
 
@@ -73,24 +47,23 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       // Initial state
       user: null,
-      accessToken: null,
-      refreshToken: null,
+      sessionId: null,
       isAuthenticated: false,
       isLoading: false, // Start with loading false to allow login
       error: null,
 
       // Login action
-      login: async (email: string, password: string) => {
-        console.log('🔑 Starting login process...', email);
+      login: async (email: string, password: string, rememberMe = false) => {
+        console.log('🔑 Starting opaque token login process...', email);
         set({ isLoading: true, error: null });
         
         try {
-          console.log('🌐 Making login request to:', `${API_BASE_URL}/auth/login`);
-          const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          console.log('🌐 Making login request to:', `${API_BASE_URL}/auth/login-opaque`);
+          const response = await fetch(`${API_BASE_URL}/auth/login-opaque`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // For secure cookies
-            body: JSON.stringify({ email, password }),
+            credentials: 'include', // For secure cookies (opaque tokens)
+            body: JSON.stringify({ email, password, rememberMe }),
           });
 
           console.log('📡 Login response status:', response.status);
@@ -103,16 +76,15 @@ export const useAuthStore = create<AuthState>()(
 
           const data = await response.json();
           console.log('✅ Login successful, data received:', { 
-            hasAccessToken: !!data.accessToken, 
+            hasSessionId: !!data.sessionId, 
             hasUser: !!data.user,
             userEmail: data.user?.email,
             userRoles: data.user?.roles 
           });
           
-          // Set tokens and user
+          // Set session and user (opaque tokens are handled via cookies)
           set({
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
+            sessionId: data.sessionId,
             user: data.user,
             isAuthenticated: true,
             isLoading: false,
@@ -123,8 +95,7 @@ export const useAuthStore = create<AuthState>()(
 
           // Manually save to localStorage to ensure it's persisted immediately
           localStorage.setItem('pivotal-flow-auth', JSON.stringify({
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
+            sessionId: data.sessionId,
             user: data.user,
             isAuthenticated: true,
           }));
@@ -143,21 +114,20 @@ export const useAuthStore = create<AuthState>()(
 
       // Logout action
       logout: async () => {
-        console.log('🚪 LOGOUT CALLED - tracing where this came from');
-        console.trace('Logout stack trace');
-        const { accessToken } = get();
+        console.log('🚪 OPAQUE TOKEN LOGOUT CALLED');
+        const { sessionId } = get();
         
         try {
-          // Call logout endpoint if we have a token
-          if (accessToken) {
-            console.log('🌐 Calling logout endpoint...');
-            await fetch(`${API_BASE_URL}/auth/logout`, {
+          // Call logout endpoint if we have a session
+          if (sessionId) {
+            console.log('🌐 Calling opaque logout endpoint...');
+            await fetch(`${API_BASE_URL}/auth/logout-opaque`, {
               method: 'POST',
               headers: { 
-                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
               },
-              credentials: 'include',
+              credentials: 'include', // Uses cookies for authentication
+              body: JSON.stringify({}), // Empty body for logout
             });
           }
         } catch (error) {
@@ -167,8 +137,7 @@ export const useAuthStore = create<AuthState>()(
           console.log('🧹 Clearing auth state and localStorage...');
           set({
             user: null,
-            accessToken: null,
-            refreshToken: null,
+            sessionId: null,
             isAuthenticated: false,
             isLoading: false,
             error: null,
@@ -176,53 +145,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Refresh access token
-      refreshAccessToken: async () => {
-        const { refreshToken } = get();
-        
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
-        }
-
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${refreshToken}`
-            },
-            credentials: 'include',
-          });
-
-          if (!response.ok) {
-            throw new Error('Token refresh failed');
-          }
-
-          const data = await response.json();
-          
-          set({
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
-            isAuthenticated: true,
-          });
-
-        } catch (error) {
-          // If refresh fails, logout user
-          get().logout();
-          throw error;
-        }
-      },
 
       // Set user data
       setUser: (user: User) => {
         set({ user });
       },
 
-      // Set tokens
-      setTokens: (accessToken: string, refreshToken: string) => {
+      // Set session
+      setSession: (sessionId: string) => {
         set({ 
-          accessToken, 
-          refreshToken, 
+          sessionId, 
           isAuthenticated: true 
         });
       },
@@ -234,12 +166,12 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuthStatus: async () => {
-        console.log('🔍 CHECK AUTH STATUS called');
-        const { accessToken } = get();
-        console.log('🔍 Current accessToken exists:', !!accessToken);
+        console.log('🔍 CHECK OPAQUE AUTH STATUS called');
+        const { sessionId } = get();
+        console.log('🔍 Current sessionId exists:', !!sessionId);
         
-        if (!accessToken) {
-          console.log('🔍 No access token, setting unauthenticated');
+        if (!sessionId) {
+          console.log('🔍 No session ID, setting unauthenticated');
           set({ isAuthenticated: false, isLoading: false });
           return;
         }
@@ -248,32 +180,26 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          const response = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` },
-            credentials: 'include',
+          // Check session validity by calling sessions endpoint
+          const response = await fetch(`${API_BASE_URL}/auth/sessions`, {
+            credentials: 'include', // Uses cookies for authentication
           });
 
           console.log('🔍 Auth check response status:', response.status);
 
           if (response.ok) {
-            const user = await response.json();
-            console.log('✅ Auth check successful, user:', user?.email);
+            const data = await response.json();
+            console.log('✅ Auth check successful, sessions found:', data.sessions?.length || 0);
+            // If we can get sessions, we're authenticated
+            // The user data should already be in state from login
             set({ 
-              user, 
               isAuthenticated: true, 
               isLoading: false 
             });
           } else if (response.status === 401) {
-            console.log('🔄 Token expired, attempting refresh...');
-            // Token expired, try to refresh
-            try {
-              await get().refreshAccessToken();
-              console.log('✅ Token refresh successful');
-            } catch {
-              console.log('❌ Token refresh failed, logging out');
-              // Refresh failed, logout
-              get().logout();
-            }
+            console.log('❌ Session invalid, logging out');
+            // Session invalid, logout
+            get().logout();
           } else {
             throw new Error('Failed to verify authentication');
           }
@@ -288,8 +214,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'pivotal-flow-auth',
       partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        sessionId: state.sessionId,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
@@ -299,8 +224,7 @@ export const useAuthStore = create<AuthState>()(
 
 // Export API client factory
 export const createAuthApiClient = () => {
-  const { accessToken } = useAuthStore.getState();
-  return createApiClient(accessToken || undefined);
+  return createApiClient(); // No token needed for opaque tokens
 };
 
 // Export auth hook for easy access
@@ -322,7 +246,7 @@ export const useAuth = () => {
       
       return false;
     },
-    // API client with current token
-    apiClient: createApiClient(store.accessToken || undefined),
+    // API client for opaque token authentication
+    apiClient: createApiClient(),
   };
 };

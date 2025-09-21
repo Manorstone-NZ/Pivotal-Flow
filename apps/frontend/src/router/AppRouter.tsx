@@ -48,7 +48,7 @@ export const AppRouter: React.FC = () => {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ErrorBoundary>
         <RoutePrefetch>
           <Suspense fallback={<PageLoader />}>

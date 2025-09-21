@@ -6,6 +6,7 @@
 import { eq, and, or, like, desc, asc, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { generateId } from '@pivotal-flow/shared';
+import { getDatabase } from '../../lib/db.js';
 
 import { customers, customerContacts, type Customer, type NewCustomer, type CustomerContact, type NewCustomerContact } from '../../lib/schema.js';
 import type { CustomerFilters, PaginationOptions, CustomerWithContacts } from './types.js';
@@ -38,7 +39,7 @@ export class CustomerService {
     filters: CustomerFilters,
     pagination: PaginationOptions
   ): Promise<{ customers: Customer[]; total: number }> {
-    const db = this.fastify.db;
+    const db = getDatabase();
     const { page, limit } = pagination;
     const offset = (page - 1) * limit;
 
@@ -121,7 +122,7 @@ export class CustomerService {
     customerId: string,
     includeContacts: boolean = false
   ): Promise<CustomerWithContacts | null> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const customer = await db
       .select()
@@ -153,7 +154,7 @@ export class CustomerService {
    * Create new customer
    */
   async createCustomer(data: Omit<NewCustomer, 'id' | 'organizationId' | 'customerNumber'>): Promise<Customer> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const customerNumber = await this.generateCustomerNumber();
     const customerId = `customer-${generateId()}`;
@@ -181,7 +182,7 @@ export class CustomerService {
     customerId: string,
     data: Partial<Omit<NewCustomer, 'id' | 'organizationId' | 'customerNumber'>>
   ): Promise<Customer | null> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const updateData = {
       ...data,
@@ -207,7 +208,7 @@ export class CustomerService {
    * Soft delete customer
    */
   async deleteCustomer(customerId: string): Promise<boolean> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const result = await db
       .update(customers)
@@ -231,7 +232,7 @@ export class CustomerService {
    * Get customer contacts
    */
   async getCustomerContacts(customerId: string): Promise<CustomerContact[]> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const contacts = await db
       .select()
@@ -252,7 +253,7 @@ export class CustomerService {
    * Get contact by ID
    */
   async getContactById(customerId: string, contactId: string): Promise<CustomerContact | null> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const contact = await db
       .select()
@@ -277,7 +278,7 @@ export class CustomerService {
     customerId: string,
     data: Omit<NewCustomerContact, 'id' | 'customerId' | 'organizationId'>
   ): Promise<CustomerContact> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     // Verify customer exists
     const customer = await this.getCustomerById(customerId);
@@ -325,7 +326,7 @@ export class CustomerService {
     contactId: string,
     data: Partial<Omit<NewCustomerContact, 'id' | 'customerId' | 'organizationId'>>
   ): Promise<CustomerContact | null> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     // If setting as primary, unset other primary contacts
     if (data.isPrimary) {
@@ -367,7 +368,7 @@ export class CustomerService {
    * Soft delete contact
    */
   async deleteContact(customerId: string, contactId: string): Promise<boolean> {
-    const db = this.fastify.db;
+    const db = getDatabase();
 
     const result = await db
       .update(customerContacts)

@@ -7,6 +7,7 @@ import { app } from './server.js';
 // Import auth plugins (clean, no JWT)
 import authCleanPlugin from './plugins/auth.clean.js'; // Clean auth (opaque + PASETO)
 import redisPlugin from './plugins/redis.js'; // Redis for session management
+import cookiePlugin from '@fastify/cookie';
 // Import database plugin
 import databasePlugin from './plugins/database.js';
 // Import tenant context plugin
@@ -77,6 +78,10 @@ export async function registerPlugins() {
     await app.register(databasePlugin);
     // Redis plugin (register before any auth or session plugin)
     await app.register(redisPlugin);
+    // Cookie plugin (required for session management)
+    await app.register(cookiePlugin, {
+        secret: process.env['JWT_SECRET'] || 'your-super-secret-jwt-key-that-is-at-least-32-characters-long'
+    });
     // Keep existing JWT authentication (stable)
     await app.register(authCleanPlugin);
     // Feature-flagged auth hardening plugins

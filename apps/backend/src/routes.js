@@ -2,6 +2,8 @@ import { Type } from '@sinclair/typebox';
 import { app } from './server.js';
 // Import PASETO service routes (for service-to-service and signed links)
 import { pasetoServiceRoutes } from './modules/auth/routes.paseto-service.js';
+// Import opaque auth routes (feature flagged)
+import { opaqueAuthRoutes } from './modules/auth/routes.opaque.js';
 // Import user route modules
 import { listUsersRoute } from './modules/users/routes.list.js';
 import { createUserRoute } from './modules/users/routes.create.js';
@@ -47,7 +49,6 @@ export async function registerRoutes() {
     // Register PASETO service routes (for service-to-service and signed links)
     await app.register(pasetoServiceRoutes, { prefix: '/api/v1/auth' });
     // Register opaque auth routes (always enabled now)
-    const { opaqueAuthRoutes } = await import('./modules/auth/routes.opaque.js');
     await app.register(opaqueAuthRoutes, { prefix: '/api/v1/auth' });
     // Register user route modules
     await app.register(listUsersRoute);

@@ -17,7 +17,7 @@ export class PasetoPublicKeyManager {
     keyPair = null;
     keyId;
     constructor() {
-        this.keyId = process.env.PASETO_KEY_ID || 'paseto-v4-public-dev';
+        this.keyId = process.env['PASETO_KEY_ID'] || 'paseto-v4-public-dev';
     }
     /**
      * Generate or load Ed25519 key pair for v4.public

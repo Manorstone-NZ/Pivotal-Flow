@@ -807,7 +807,7 @@ run_health_checks() {
     sleep 3
     
     local login_start=$(date +%s.%3N)
-    LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
+    LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/auth/login-opaque \
         -H "Content-Type: application/json" \
         -d '{"email":"admin@pivotalflow.com","password":"password123!extra"}' \
         --connect-timeout 10 --max-time 15 2>/dev/null || echo "")

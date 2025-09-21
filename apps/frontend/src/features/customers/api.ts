@@ -132,51 +132,38 @@ export interface ContactListResponse {
 const createApiClient = () => {
   const baseURL = import.meta.env['VITE_API_BASE_URL'] || 'http://localhost:3000';
   
-  // Get token from localStorage
-  const getAccessToken = () => {
+  // Check if user is authenticated (for opaque token system with cookies)
+  const isAuthenticated = () => {
     const authData = localStorage.getItem('pivotal-flow-auth');
-    console.log('🔍 Customers API: Getting access token from localStorage');
-    console.log('🔍 Customers API: Auth data exists:', !!authData);
     if (authData) {
       try {
         const parsed = JSON.parse(authData);
-        console.log('🔍 Customers API: Parsed auth data keys:', Object.keys(parsed));
-        
         // Handle both Zustand persisted format and direct format
-        let accessToken = null;
-        if (parsed.state && parsed.state.accessToken) {
-          // Zustand persisted format: { state: { accessToken, user, ... }, version: 0 }
-          accessToken = parsed.state.accessToken;
-          console.log('🔍 Customers API: Found token in Zustand format');
-        } else if (parsed.accessToken) {
-          // Direct format: { accessToken, user, isAuthenticated }
-          accessToken = parsed.accessToken;
-          console.log('🔍 Customers API: Found token in direct format');
+        if (parsed.state && parsed.state.sessionId) {
+          return !!parsed.state.sessionId;
+        } else if (parsed.sessionId) {
+          return !!parsed.sessionId;
         }
-        
-        console.log('🔍 Customers API: Access token exists:', !!accessToken);
-        return accessToken;
       } catch (error) {
         console.error('🔍 Customers API: Failed to parse auth data:', error);
-        return null;
       }
     }
-    console.log('🔍 Customers API: No auth data found');
-    return null;
+    return false;
   };
 
   return axios.create({
     baseURL,
+    withCredentials: true, // Enable cookies for opaque token authentication
     headers: {
       'Content-Type': 'application/json',
     },
     transformRequest: [(data, headers) => {
-      const token = getAccessToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-        console.log('🔍 Customers API: Adding auth header to request');
+      // For opaque token system, authentication is handled via cookies
+      // No need to add Authorization header - cookies are sent automatically
+      if (isAuthenticated()) {
+        console.log('🔍 Customers API: User authenticated, cookies will be sent automatically');
       } else {
-        console.log('🔍 Customers API: No token found, request without auth');
+        console.log('🔍 Customers API: User not authenticated, request without auth');
       }
       return JSON.stringify(data);
     }],

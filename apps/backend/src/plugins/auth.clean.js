@@ -169,6 +169,6 @@ async function authPlugin(fastify) {
 }
 export default fp(authPlugin, {
     name: 'auth-clean',
-    dependencies: ['redis', 'database']
+    dependencies: ['redis-auth']
 });
 //# sourceMappingURL=auth.clean.js.map

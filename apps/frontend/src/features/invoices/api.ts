@@ -198,10 +198,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     // Store ETag for future requests
-    if (response.headers.etag && response.config.url?.includes('/invoices/')) {
+    if (response.headers['etag'] && response.config.url?.includes('/invoices/')) {
       const invoiceId = response.config.url.split('/invoices/')[1];
       if (invoiceId && !invoiceId.includes('?')) {
-        sessionStorage.setItem(`invoice-etag-${invoiceId}`, response.headers.etag);
+        sessionStorage.setItem(`invoice-etag-${invoiceId}`, response.headers['etag']);
       }
     }
     return response;

@@ -29,13 +29,13 @@ export declare const paginationResponseSchema: z.ZodObject<{
     totalPages: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
     limit: number;
-    page: number;
     total: number;
+    page: number;
     totalPages: number;
 }, {
     limit: number;
-    page: number;
     total: number;
+    page: number;
     totalPages: number;
 }>;
 export declare const healthCheckSchema: z.ZodObject<{
@@ -235,13 +235,13 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
         totalPages: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
         limit: number;
-        page: number;
         total: number;
+        page: number;
         totalPages: number;
     }, {
         limit: number;
-        page: number;
         total: number;
+        page: number;
         totalPages: number;
     }>;
 }, "strip", z.ZodTypeAny, {
@@ -250,8 +250,8 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
     timestamp: string;
     pagination: {
         limit: number;
-        page: number;
         total: number;
+        page: number;
         totalPages: number;
     };
     data?: unknown[] | undefined;
@@ -263,8 +263,8 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
     timestamp: string;
     pagination: {
         limit: number;
-        page: number;
         total: number;
+        page: number;
         totalPages: number;
     };
     data?: unknown[] | undefined;
