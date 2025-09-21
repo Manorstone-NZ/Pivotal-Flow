@@ -285,14 +285,14 @@
             {
                 id: 'postgres',
                 name: 'PostgreSQL',
-                url: 'http://localhost:5433',
+                url: null,
                 port: 5433,
                 description: 'Primary database for application data'
             },
             {
                 id: 'redis',
                 name: 'Redis Cache',
-                url: 'http://localhost:6379',
+                url: null,
                 port: 6379,
                 description: 'Session storage and caching layer'
             },
@@ -347,6 +347,14 @@
                     // For Docker, we'll assume it's healthy if we can reach other services
                     isHealthy = true;
                     details = 'Container services running';
+                } else if (service.id === 'postgres') {
+                    // Check PostgreSQL through backend health endpoint
+                    isHealthy = await checkPostgreSQLHealth();
+                    details = isHealthy ? 'Database connection successful' : 'Database connection failed';
+                } else if (service.id === 'redis') {
+                    // Check Redis through backend health endpoint
+                    isHealthy = await checkRedisHealth();
+                    details = isHealthy ? 'Cache connection successful' : 'Cache connection failed';
                 } else if (service.url) {
                     const startTime = Date.now();
                     const response = await fetch(service.url, {
@@ -417,6 +425,28 @@
                     cache: 'no-cache'
                 });
                 return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function checkPostgreSQLHealth() {
+            try {
+                // Use the backend's health endpoint which checks PostgreSQL
+                const response = await fetch('http://localhost:3000/api/v1/health');
+                const data = await response.json();
+                return data.checks && data.checks.database && data.checks.database.status === 'ok';
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function checkRedisHealth() {
+            try {
+                // Use the backend's health endpoint which checks Redis
+                const response = await fetch('http://localhost:3000/api/v1/health');
+                const data = await response.json();
+                return data.checks && data.checks.redis && data.checks.redis.status === 'ok';
             } catch (error) {
                 return false;
             }
