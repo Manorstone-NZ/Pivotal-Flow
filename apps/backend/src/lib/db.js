@@ -79,8 +79,7 @@ export const hybridDb = {
             return await getClient().unsafe(sql, params);
         }
         catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Database query error:', error);
+            // Use structured logging instead of console
             throw error;
         }
     },

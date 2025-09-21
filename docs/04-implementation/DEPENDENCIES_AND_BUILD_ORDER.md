@@ -10,8 +10,7 @@ The Pivotal Flow application consists of multiple interconnected systems:
 
 ### Core Applications
 - **Backend API** (`apps/backend`) - Fastify-based REST API with OpenAPI/Swagger documentation
-- **Frontend Web App** (`apps/frontend`) - React/Vite application  
-- **Python Desktop App** (`apps/python-desktop-app`) - Desktop client
+- **Frontend Web App** (`apps/frontend`) - React/Vite application
 
 ### Shared Packages
 - **Shared Library** (`packages/shared`) - Common utilities and types

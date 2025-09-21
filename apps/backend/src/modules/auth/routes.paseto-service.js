@@ -11,30 +11,12 @@ const ServiceTokenRequestSchema = Type.Object({
     serviceId: Type.String(),
     tenantId: Type.String(),
     scopes: Type.Array(Type.String()),
-    purpose: Type.Optional(Type.String())
-});
-const ServiceTokenResponseSchema = Type.Object({
-    success: Type.Boolean(),
-    token: Type.String(),
-    expiresIn: Type.Number(),
-    purpose: Type.String()
+    purpose: Type.Optional(Type.String()),
+    resource: Type.Optional(Type.String()) // For quote-delivery and invoice-access tokens
 });
 const VerifyTokenRequestSchema = Type.Object({
     token: Type.String(),
     consumeToken: Type.Optional(Type.Boolean()) // Default true for one-time use
-});
-const VerifyTokenResponseSchema = Type.Object({
-    success: Type.Boolean(),
-    payload: Type.Object({
-        sub: Type.String(),
-        org: Type.String(),
-        scope: Type.Array(Type.String()),
-        purpose: Type.String(),
-        exp: Type.Number(),
-        jti: Type.String(),
-        resource: Type.Optional(Type.String()),
-        resourceType: Type.Optional(Type.String())
-    })
 });
 /**
  * PASETO v4.public Service Routes
@@ -154,7 +136,7 @@ export const pasetoServiceRoutes = async (fastify) => {
             }, 'PASETO token verification error');
             return reply.status(401).send({
                 error: "Unauthorized",
-                message: error.message || "Invalid or expired token",
+                message: error instanceof Error ? error.message : "Invalid or expired token",
                 code: "PASETO_VERIFY_ERROR"
             });
         }
@@ -184,7 +166,7 @@ export const pasetoServiceRoutes = async (fastify) => {
                 token,
                 expiresIn: 900, // 15 minutes
                 purpose: 'quote-delivery',
-                publicUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/public/quotes/${token}`
+                publicUrl: `${process.env['FRONTEND_URL'] || 'http://localhost:5173'}/public/quotes/${token}`
             });
         }
         catch (error) {

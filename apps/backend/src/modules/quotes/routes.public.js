@@ -4,7 +4,7 @@
  */
 import { Type } from '@sinclair/typebox';
 import { eq } from 'drizzle-orm';
-import { quotes, customers, organizations } from '../../lib/schema.js';
+import { quotes, customers, organizations, publicTokenAudit } from '../../lib/schema.js';
 import { QuoteDeliveryService } from './delivery.service.js';
 // TypeBox schemas for public API
 const PublicQuoteResponseSchema = Type.Object({
@@ -261,26 +261,55 @@ export function registerPublicQuoteRoutes(fastify) {
                 });
             }
             const acceptedAt = new Date();
-            // Update quote status to accepted
-            await db
-                .update(quotes)
-                .set({
-                status: 'accepted',
-                acceptedAt,
-                updatedAt: acceptedAt,
-                // Store approval details in metadata for SaaS audit
-                metadata: {
-                    ...quote.metadata,
-                    customerApproval: {
-                        name,
-                        role,
-                        acceptedAt: acceptedAt.toISOString(),
-                        ipAddress: request.ip,
-                        userAgent: request.headers['user-agent']
-                    }
+            // Use transaction to ensure atomicity and prevent replay attacks
+            await db.transaction(async (tx) => {
+                // Check if token has already been used (replay protection)
+                const existingQuote = await tx
+                    .select({ tokenUsedAt: quotes.tokenUsedAt })
+                    .from(quotes)
+                    .where(eq(quotes.id, quote.id))
+                    .limit(1);
+                if (existingQuote[0]?.tokenUsedAt) {
+                    throw new Error('Quote has already been processed');
                 }
-            })
-                .where(eq(quotes.id, quote.id));
+                // Update quote status to accepted with token usage tracking
+                await tx
+                    .update(quotes)
+                    .set({
+                    status: 'accepted',
+                    acceptedAt,
+                    updatedAt: acceptedAt,
+                    tokenUsedAt: acceptedAt, // Mark token as used
+                    // Store approval details in metadata for SaaS audit
+                    metadata: {
+                        ...quote.metadata,
+                        customerApproval: {
+                            name,
+                            role,
+                            acceptedAt: acceptedAt.toISOString(),
+                            ipAddress: request.ip,
+                            userAgent: request.headers['user-agent']
+                        }
+                    }
+                })
+                    .where(eq(quotes.id, quote.id));
+                // Log structured audit event
+                await tx.insert(publicTokenAudit).values({
+                    id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    tokenId: quote.publicToken || '',
+                    action: 'accept',
+                    ipAddress: request.ip,
+                    userAgent: request.headers['user-agent'] || null,
+                    organizationId: organization.id,
+                    quoteId: quote.id,
+                    success: true,
+                    metadata: {
+                        customerName: name,
+                        customerRole: role,
+                        timestamp: acceptedAt.toISOString()
+                    }
+                });
+            });
             // Log acceptance for SaaS audit trail
             fastify.log.info({
                 audit: {
@@ -343,24 +372,52 @@ export function registerPublicQuoteRoutes(fastify) {
                 });
             }
             const rejectedAt = new Date();
-            // Update quote status to rejected
-            await db
-                .update(quotes)
-                .set({
-                status: 'rejected',
-                updatedAt: rejectedAt,
-                // Store rejection details in metadata for SaaS audit
-                metadata: {
-                    ...quote.metadata,
-                    customerRejection: {
-                        reason,
-                        rejectedAt: rejectedAt.toISOString(),
-                        ipAddress: request.ip,
-                        userAgent: request.headers['user-agent']
-                    }
+            // Use transaction to ensure atomicity and prevent replay attacks
+            await db.transaction(async (tx) => {
+                // Check if token has already been used (replay protection)
+                const existingQuote = await tx
+                    .select({ tokenUsedAt: quotes.tokenUsedAt })
+                    .from(quotes)
+                    .where(eq(quotes.id, quote.id))
+                    .limit(1);
+                if (existingQuote[0]?.tokenUsedAt) {
+                    throw new Error('Quote has already been processed');
                 }
-            })
-                .where(eq(quotes.id, quote.id));
+                // Update quote status to rejected with token usage tracking
+                await tx
+                    .update(quotes)
+                    .set({
+                    status: 'rejected',
+                    updatedAt: rejectedAt,
+                    tokenUsedAt: rejectedAt, // Mark token as used
+                    // Store rejection details in metadata for SaaS audit
+                    metadata: {
+                        ...quote.metadata,
+                        customerRejection: {
+                            reason,
+                            rejectedAt: rejectedAt.toISOString(),
+                            ipAddress: request.ip,
+                            userAgent: request.headers['user-agent']
+                        }
+                    }
+                })
+                    .where(eq(quotes.id, quote.id));
+                // Log structured audit event
+                await tx.insert(publicTokenAudit).values({
+                    id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    tokenId: quote.publicToken || '',
+                    action: 'reject',
+                    ipAddress: request.ip,
+                    userAgent: request.headers['user-agent'] || null,
+                    organizationId: organization.id,
+                    quoteId: quote.id,
+                    success: true,
+                    metadata: {
+                        reason,
+                        timestamp: rejectedAt.toISOString()
+                    }
+                });
+            });
             // Log rejection for SaaS audit trail
             fastify.log.info({
                 audit: {

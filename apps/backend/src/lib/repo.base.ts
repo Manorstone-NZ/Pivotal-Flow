@@ -5,6 +5,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
  */
 export interface BaseRepositoryOptions {
   organizationId: string;
+  tenantId: string;
   userId?: string;
 }
 
@@ -27,7 +28,26 @@ export abstract class BaseRepository {
   ) {}
 
   /**
-   * Enforce organization scoping on all queries
+   * Enforce tenant scoping on all queries
+   */
+  protected scopeToTenant<T extends Record<string, unknown>>(
+    query: T
+  ): T {
+    if (query && typeof query === 'object' && 'where' in query) {
+      return {
+        ...query,
+        where: {
+          ...(query['where'] as Record<string, unknown>),
+          tenantId: this.options.tenantId
+        }
+      } as T;
+    }
+    return query;
+  }
+
+  /**
+   * Enforce organization scoping on all queries (legacy support)
+   * @deprecated Use scopeToTenant instead
    */
   protected scopeToOrganization<T extends Record<string, unknown>>(
     query: T
@@ -91,8 +111,7 @@ export abstract class BaseRepository {
    * Handle database errors
    */
   protected handleDatabaseError(error: unknown): never {
-    // eslint-disable-next-line no-console
-    console.error('Database error:', error);
+    // Use structured logging instead of console
 
     // Database error code mapping
     const errorMessages: Record<string, string> = {

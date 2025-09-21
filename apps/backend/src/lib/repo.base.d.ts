@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
  */
 export interface BaseRepositoryOptions {
     organizationId: string;
+    tenantId: string;
     userId?: string;
 }
 /**
@@ -22,7 +23,12 @@ export declare abstract class BaseRepository {
     protected options: BaseRepositoryOptions;
     constructor(db: PostgresJsDatabase<typeof import('./schema.js')>, options: BaseRepositoryOptions);
     /**
-     * Enforce organization scoping on all queries
+     * Enforce tenant scoping on all queries
+     */
+    protected scopeToTenant<T extends Record<string, unknown>>(query: T): T;
+    /**
+     * Enforce organization scoping on all queries (legacy support)
+     * @deprecated Use scopeToTenant instead
      */
     protected scopeToOrganization<T extends Record<string, unknown>>(query: T): T;
     /**

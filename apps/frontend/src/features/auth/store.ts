@@ -54,11 +54,11 @@ export const useAuthStore = create<AuthState>()(
 
       // Login action
       login: async (email: string, password: string, rememberMe = false) => {
-        console.log('🔑 Starting opaque token login process...', email);
+        // Starting opaque token login process
         set({ isLoading: true, error: null });
         
         try {
-          console.log('🌐 Making login request to:', `${API_BASE_URL}/auth/login-opaque`);
+          // Making login request
           const response = await fetch(`${API_BASE_URL}/auth/login-opaque`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -66,21 +66,16 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ email, password, rememberMe }),
           });
 
-          console.log('📡 Login response status:', response.status);
+          // Login response received
 
           if (!response.ok) {
             const errorData = await response.json();
-            console.error('❌ Login failed:', errorData);
+            // Login failed
             throw new Error(errorData.message || 'Login failed');
           }
 
           const data = await response.json();
-          console.log('✅ Login successful, data received:', { 
-            hasSessionId: !!data.sessionId, 
-            hasUser: !!data.user,
-            userEmail: data.user?.email,
-            userRoles: data.user?.roles 
-          });
+          // Login successful, data received
           
           // Set session and user (opaque tokens are handled via cookies)
           set({
@@ -91,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          console.log('🎉 Auth state updated successfully');
+          // Auth state updated successfully
 
           // Manually save to localStorage to ensure it's persisted immediately
           localStorage.setItem('pivotal-flow-auth', JSON.stringify({
@@ -99,10 +94,10 @@ export const useAuthStore = create<AuthState>()(
             user: data.user,
             isAuthenticated: true,
           }));
-          console.log('💾 Auth data manually saved to localStorage');
+          // Auth data manually saved to localStorage
 
         } catch (error) {
-          console.error('💥 Login error:', error);
+          // Login error occurred
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Login failed',
@@ -114,13 +109,13 @@ export const useAuthStore = create<AuthState>()(
 
       // Logout action
       logout: async () => {
-        console.log('🚪 OPAQUE TOKEN LOGOUT CALLED');
+        // Opaque token logout called
         const { sessionId } = get();
         
         try {
           // Call logout endpoint if we have a session
           if (sessionId) {
-            console.log('🌐 Calling opaque logout endpoint...');
+            // Calling opaque logout endpoint
             await fetch(`${API_BASE_URL}/auth/logout-opaque`, {
               method: 'POST',
               headers: { 
@@ -131,10 +126,10 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
-          console.error('Logout request failed:', error);
+          // Logout request failed
         } finally {
           // Clear state regardless of API call success
-          console.log('🧹 Clearing auth state and localStorage...');
+          // Clearing auth state and localStorage
           set({
             user: null,
             sessionId: null,
@@ -166,17 +161,17 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuthStatus: async () => {
-        console.log('🔍 CHECK OPAQUE AUTH STATUS called');
+        // Checking opaque auth status
         const { sessionId } = get();
-        console.log('🔍 Current sessionId exists:', !!sessionId);
+        // Current sessionId check
         
         if (!sessionId) {
-          console.log('🔍 No session ID, setting unauthenticated');
+          // No session ID
           set({ isAuthenticated: false, isLoading: false });
           return;
         }
 
-        console.log('🔍 Checking auth with backend...');
+        // Checking auth with backend
         set({ isLoading: true });
 
         try {
@@ -185,11 +180,11 @@ export const useAuthStore = create<AuthState>()(
             credentials: 'include', // Uses cookies for authentication
           });
 
-          console.log('🔍 Auth check response status:', response.status);
+          // Auth check response received
 
           if (response.ok) {
             const data = await response.json();
-            console.log('✅ Auth check successful, sessions found:', data.sessions?.length || 0);
+            // Auth check successful
             // If we can get sessions, we're authenticated
             // The user data should already be in state from login
             set({ 
@@ -197,15 +192,15 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false 
             });
           } else if (response.status === 401) {
-            console.log('❌ Session invalid, logging out');
+            // Session invalid
             // Session invalid, logout
             get().logout();
           } else {
             throw new Error('Failed to verify authentication');
           }
         } catch (error) {
-          console.error('❌ Auth check failed:', error);
-          console.log('🚪 Auth check failed, calling logout');
+          // Auth check failed
+          // Auth check failed, calling logout
           get().logout();
           set({ isLoading: false }); // Ensure loading is set to false
         }

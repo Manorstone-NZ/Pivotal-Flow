@@ -125,33 +125,6 @@ export async function systemRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Python check
-  fastify.get('/system/python', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { stdout } = await execAsync('python3 --version');
-      const version = stdout.trim();
-      
-      // Check if Python can run basic code
-      const { stdout: testOutput } = await execAsync('python3 -c "print(\'Python is working\')"');
-      
-      return {
-        status: 'ok',
-        message: 'Python is available',
-        version: version,
-        uptime: 'unknown',
-        details: {
-          testOutput: testOutput.trim(),
-          executable: 'python3'
-        }
-      };
-    } catch (error) {
-      return reply.status(503).send({
-        status: 'error',
-        message: 'Python is not available',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
 
   // Docker containers check
   fastify.get('/system/containers', async (request: FastifyRequest, reply: FastifyReply) => {

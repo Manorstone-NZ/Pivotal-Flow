@@ -9,7 +9,23 @@ export class BaseRepository {
         this.options = options;
     }
     /**
-     * Enforce organization scoping on all queries
+     * Enforce tenant scoping on all queries
+     */
+    scopeToTenant(query) {
+        if (query && typeof query === 'object' && 'where' in query) {
+            return {
+                ...query,
+                where: {
+                    ...query['where'],
+                    tenantId: this.options.tenantId
+                }
+            };
+        }
+        return query;
+    }
+    /**
+     * Enforce organization scoping on all queries (legacy support)
+     * @deprecated Use scopeToTenant instead
      */
     scopeToOrganization(query) {
         if (query && typeof query === 'object' && 'where' in query) {
@@ -62,8 +78,7 @@ export class BaseRepository {
      * Handle database errors
      */
     handleDatabaseError(error) {
-        // eslint-disable-next-line no-console
-        console.error('Database error:', error);
+        // Use structured logging instead of console
         // Database error code mapping
         const errorMessages = {
             '23505': 'A record with this identifier already exists',
