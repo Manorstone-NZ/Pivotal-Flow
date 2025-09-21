@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Tooltip } from '../../components/ui/Tooltip';
-import { Button } from '../../components/Button';
-import { IconButton } from '../../components/ui/IconButton';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Tooltip } from '../components/ui/Tooltip';
+import { Button } from '../components/Button';
+import { IconButton } from '../components/ui/IconButton';
 
 // Simple icon for demonstration
 const InfoIcon = () => (
