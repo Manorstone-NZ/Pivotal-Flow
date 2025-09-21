@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WeekGrid } from './WeekGrid';
@@ -97,24 +98,6 @@ const meta: Meta<typeof WeekGrid> = {
   decorators: [
     (Story) => React.createElement(MockProvider, null, React.createElement(Story))
   ],
-  argTypes: {
-    userId: {
-      control: 'text',
-      description: 'ID of the user whose time entries to display'
-    },
-    weekStart: {
-      control: 'date',
-      description: 'Start date of the week to display'
-    },
-    onTimeEntryClick: {
-      action: 'timeEntryClick',
-      description: 'Called when a time entry is clicked'
-    },
-    onAddTimeEntry: {
-      action: 'addTimeEntry',
-      description: 'Called when the add time entry button is clicked'
-    }
-  }
 };
 
 export default meta;
@@ -156,11 +139,7 @@ export const EmptyWeek: Story = {
   render: (args) => {
     const EmptyMockWeekGrid = () => {
       return React.createElement(WeekGrid, {
-        ...args,
-        timeEntries: [],
-        isLoading: false,
-        error: null,
-        onRefresh: () => Promise.resolve()
+        ...args
       });
     };
     return React.createElement(EmptyMockWeekGrid);
@@ -181,11 +160,7 @@ export const Loading: Story = {
   render: (args) => {
     const LoadingMockWeekGrid = () => {
       return React.createElement(WeekGrid, {
-        ...args,
-        timeEntries: [],
-        isLoading: true,
-        error: null,
-        onRefresh: () => Promise.resolve()
+        ...args
       });
     };
     return React.createElement(LoadingMockWeekGrid);
@@ -206,11 +181,7 @@ export const Error: Story = {
   render: (args) => {
     const ErrorMockWeekGrid = () => {
       return React.createElement(WeekGrid, {
-        ...args,
-        timeEntries: [],
-        isLoading: false,
-        error: new Error('Failed to load time entries'),
-        onRefresh: () => Promise.resolve()
+        ...args
       });
     };
     return React.createElement(ErrorMockWeekGrid);
@@ -219,8 +190,7 @@ export const Error: Story = {
 
 export const WithCustomWeek: Story = {
   args: {
-    userId: 'user-1',
-    weekStart: new Date('2024-01-15')
+    userId: 'user-1'
   },
   parameters: {
     docs: {
