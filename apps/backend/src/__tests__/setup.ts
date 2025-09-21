@@ -1,7 +1,7 @@
 // Load test environment FIRST before any other imports
 import '../config/load-test-env.js';
 
-import { getRedisClient } from '@pivotal-flow/shared/redis.js';
+import { getRedisClient } from '@pivotal-flow/shared/redis';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import jwt from 'jsonwebtoken';
@@ -12,10 +12,10 @@ import { getDatabase, getClient, initializeDatabase } from '../lib/db.js';
 import { organizations, users, customers, quotes, quoteLineItems, roles, userRoles } from '../lib/schema.js';
 
 // Test database and Redis clients
-let testDb: any;
-let testRedis: any;
+let testDb: ReturnType<typeof getDatabase>;
+let testRedis: ReturnType<typeof getRedisClient>;
 let app: FastifyInstance;
-let testConfig: any;
+let testConfig: typeof config;
 
 // Test utilities
 const testUtils = {
@@ -33,7 +33,9 @@ const testUtils = {
       ...data
     };
     
-    const [org] = await testDb.insert(organizations).values(orgData).returning();
+    const result = await testDb.insert(organizations).values(orgData).returning();
+    const org = result[0];
+    if (!org) throw new Error('Failed to create test organization');
     return org;
   },
 
@@ -50,7 +52,9 @@ const testUtils = {
       ...data
     };
     
-    const [user] = await testDb.insert(users).values(userData).returning();
+    const result = await testDb.insert(users).values(userData).returning();
+    const user = result[0];
+    if (!user) throw new Error('Failed to create test user');
     return user;
   },
 
@@ -67,7 +71,9 @@ const testUtils = {
       ...data
     };
     
-    const [customer] = await testDb.insert(customers).values(customerData).returning();
+    const result = await testDb.insert(customers).values(customerData).returning();
+    const customer = result[0];
+    if (!customer) throw new Error('Failed to create test customer');
     return customer;
   },
 
@@ -81,7 +87,9 @@ const testUtils = {
       ...data
     };
     
-    const [role] = await testDb.insert(roles).values(roleData).returning();
+    const result = await testDb.insert(roles).values(roleData).returning();
+    const role = result[0];
+    if (!role) throw new Error('Failed to create test role');
     return role;
   },
 
@@ -93,7 +101,7 @@ const testUtils = {
         permissions,
         type: 'access'
       },
-      testConfig.auth.jwtSecret,
+      testConfig.auth.JWT_SECRET,
       { expiresIn: '15m' }
     );
   },
@@ -174,7 +182,7 @@ describe('Test Setup', () => {
   it('should have database connection', async () => {
     try {
       const result = await testDb.execute('SELECT 1 as test');
-      expect(result[0].test).toBe(1);
+      expect(result[0]?.['test']).toBe(1);
     } catch (error) {
       console.error('Database connection test failed:', error);
       throw error;

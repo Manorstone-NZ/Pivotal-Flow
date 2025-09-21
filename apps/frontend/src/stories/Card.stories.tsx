@@ -6,9 +6,9 @@ import {
   CardFooter, 
   CardTitle, 
   CardDescription 
-} from '../../components/ui/Card';
+} from '../../components/ui/card';
 import { Button } from '../../components/Button';
-import { Badge } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/badge';
 import { useState } from 'react';
 
 const meta: Meta<typeof Card> = {

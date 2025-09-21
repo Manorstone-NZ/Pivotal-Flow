@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Card, CardHeader, CardContent, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { Button } from '../Button';
 
 interface SystemStatus {

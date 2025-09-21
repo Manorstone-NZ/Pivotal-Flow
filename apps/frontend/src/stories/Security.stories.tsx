@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SecurityAudit } from '../components/security/SecurityAudit';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { Button } from '../components/Button';
-import { Badge } from '../components/ui/Badge';
+import { Badge } from '../components/ui/badge';
 
 const meta: Meta<typeof SecurityAudit> = {
   title: 'Security/SecurityAudit',

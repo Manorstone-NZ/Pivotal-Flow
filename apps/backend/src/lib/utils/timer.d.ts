@@ -17,7 +17,7 @@ export declare class PerformanceTimer {
 /**
  * Timer decorator for functions
  */
-export declare function timer(name?: string): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function timer(name?: string): <T extends Record<string, any>>(target: T, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
 /**
  * Simple timer function for inline usage
  */
@@ -25,6 +25,6 @@ export declare function createTimer(name: string): () => void;
 /**
  * Async timer for async functions
  */
-export declare function asyncTimer(name?: string): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function asyncTimer(name?: string): <T extends Record<string, any>>(target: T, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
 export declare const timerFunction: typeof createTimer;
 //# sourceMappingURL=timer.d.ts.map

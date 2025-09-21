@@ -4,10 +4,10 @@
  */
 
 import React from 'react';
-import { Card, CardContent } from '../ui/Card';
-import { Input } from '../ui/Input';
+import { Card, CardContent } from '../ui/card';
+import { Input } from '../ui/input';
 import { Select } from '../ui/Select';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { LoadingSkeleton } from '../ui/LoadingSkeleton';
 import type { RateCard, RateCardsFilters } from '../../features/rate-cards/types';
 import { SUPPORTED_CURRENCIES } from '../../features/rate-cards/types';
@@ -83,7 +83,7 @@ export const RateCardList: React.FC<RateCardListProps> = ({
           <div className="flex gap-2">
             <Select
               value={filters.status || 'all'}
-              onChange={handleStatusChange}
+              onValueChange={handleStatusChange}
               className="flex-1"
               data-testid="rate-cards-status-filter"
               options={[
@@ -95,7 +95,7 @@ export const RateCardList: React.FC<RateCardListProps> = ({
             
             <Select
               value={filters.currency || ''}
-              onChange={handleCurrencyChange}
+              onValueChange={handleCurrencyChange}
               className="flex-1"
               data-testid="rate-cards-currency-filter"
               options={[

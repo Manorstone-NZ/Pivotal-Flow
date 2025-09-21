@@ -8,10 +8,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuoteDetail, useUpdateQuote, useUpdateQuoteStatus } from '../lib/api/queries';
 import { DataTable } from '../components/ui/DataTable';
 import { Button } from '../components/Button';
-import { Input } from '../components/ui/Input';
+import { Input } from '../components/ui/input';
 import { TextArea } from '../components/ui/TextArea';
-import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { useToast } from '../components/ui/Toast';
 
 interface LineItem {

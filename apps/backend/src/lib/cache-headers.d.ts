@@ -2,7 +2,7 @@
  * Cache Headers Implementation for D3 Contract Stability
  * Provides ETag, Last-Modified, and Cache-Control headers based on resource volatility
  */
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 export interface CacheOptions {
     maxAge?: number;
     sMaxAge?: number;
@@ -34,15 +34,15 @@ export declare function setCacheHeaders(reply: FastifyReply, resourceType: 'stat
 /**
  * Check if request has valid conditional headers
  */
-export declare function hasValidConditionalHeaders(request: any): boolean;
+export declare function hasValidConditionalHeaders(request: FastifyRequest): boolean;
 /**
  * Check if ETag matches (for 304 Not Modified)
  */
-export declare function etagMatches(request: any, etag: string): boolean;
+export declare function etagMatches(request: FastifyRequest, etag: string): boolean;
 /**
  * Check if resource was modified since last request
  */
-export declare function wasModifiedSince(request: any, lastModified: Date): boolean;
+export declare function wasModifiedSince(request: FastifyRequest, lastModified: Date): boolean;
 /**
  * Send 304 Not Modified response
  */

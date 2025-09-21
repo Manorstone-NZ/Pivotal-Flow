@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { Invoice } from '../../features/invoices/api';
 
 export interface InvoiceTotalsProps {
@@ -47,7 +47,7 @@ export const InvoiceTotals: React.FC<InvoiceTotalsProps> = ({
   const isPartiallyPaid = paidAmount > 0 && balanceAmount > 0;
 
   return (
-    <Card className={className}>
+    <Card {...(className && { className })}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">
           Invoice Totals

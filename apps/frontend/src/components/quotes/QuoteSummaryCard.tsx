@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import type { Quote } from '../../features/quotes/api';
 
 interface QuoteSummaryCardProps {
@@ -93,15 +93,15 @@ export const QuoteSummaryCard: React.FC<QuoteSummaryCardProps> = ({
                 </div>
                 
                 {/* Discount (if applied) */}
-                {quote.metadata['discountAmount'] && parseFloat(quote.metadata['discountAmount'] as string) > 0 && (
+                {quote.metadata['discountAmount'] && parseFloat(String(quote.metadata['discountAmount'])) > 0 && (
                   <div className="flex justify-between text-semantic-success">
                     <span>
                       Discount 
                       {quote.metadata['discountType'] === 'percentage' && quote.metadata['discountValue'] && (
-                        <span className="text-xs ml-1">({quote.metadata['discountValue'] as string}%)</span>
+                        <span className="text-xs ml-1">({String(quote.metadata['discountValue'])}%)</span>
                       )}:
                     </span>
-                    <span>-{formatCurrency(parseFloat(quote.metadata['discountAmount'] as string), currency)}</span>
+                    <span>-{formatCurrency(parseFloat(String(quote.metadata['discountAmount'])), currency)}</span>
                   </div>
                 )}
                 
@@ -111,7 +111,7 @@ export const QuoteSummaryCard: React.FC<QuoteSummaryCardProps> = ({
                     <span className="text-text-secondary">
                       Tax 
                       {quote.metadata['taxRate'] && (
-                        <span className="text-xs ml-1">({(parseFloat(quote.metadata['taxRate'] as string) * 100).toFixed(1)}%)</span>
+                        <span className="text-xs ml-1">({(parseFloat(String(quote.metadata['taxRate'])) * 100).toFixed(1)}%)</span>
                       )}:
                     </span>
                     <span className="text-text-primary">{formatCurrency(quote.taxAmount, currency)}</span>

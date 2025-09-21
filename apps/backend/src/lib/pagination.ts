@@ -187,7 +187,7 @@ export function validateFilters(
 /**
  * Parse and validate pagination parameters - unified format
  */
-export function parsePaginationParams(query: Record<string, any>) {
+export function parsePaginationParams(query: Record<string, unknown>) {
   const page = parseInt(query['page'] as string) || 1;
   const size = parseInt(query['size'] as string) || 25;
   
@@ -206,7 +206,7 @@ export function parsePaginationParams(query: Record<string, any>) {
 /**
  * Parse and validate legacy pagination parameters
  */
-export function parseLegacyPaginationParams(query: Record<string, any>) {
+export function parseLegacyPaginationParams(query: Record<string, unknown>) {
   const page = parseInt(query['page'] as string) || 1;
   const pageSize = parseInt(query['pageSize'] as string) || 25;
   

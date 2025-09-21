@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProjects } from '../../features/projects/api';
 import type { ProjectFilters } from '../../features/projects/types';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/input';
 import { MemoizedProjectTable } from '../../components/projects/optimizations';
 import { ProjectCreateDialog } from '../../components/projects/ProjectCreateDialog';
 

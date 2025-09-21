@@ -55,8 +55,6 @@ async function startServer() {
                 code: err?.code,
                 errno: err?.errno,
                 syscall: err?.syscall,
-                address: err?.address,
-                port: err?.port,
                 cause: err?.cause,
             }, 'Failed to start server');
             if (err.code === 'EADDRINUSE' ||

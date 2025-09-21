@@ -3,7 +3,7 @@
  * Provides ETag, Last-Modified, and Cache-Control headers based on resource volatility
  */
 
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import crypto from 'crypto';
 
 export interface CacheOptions {
@@ -143,7 +143,7 @@ function getDefaultMaxAge(resourceType: string): number {
 /**
  * Check if request has valid conditional headers
  */
-export function hasValidConditionalHeaders(request: any): boolean {
+export function hasValidConditionalHeaders(request: FastifyRequest): boolean {
   const ifNoneMatch = request.headers['if-none-match'];
   const ifModifiedSince = request.headers['if-modified-since'];
   
@@ -153,7 +153,7 @@ export function hasValidConditionalHeaders(request: any): boolean {
 /**
  * Check if ETag matches (for 304 Not Modified)
  */
-export function etagMatches(request: any, etag: string): boolean {
+export function etagMatches(request: FastifyRequest, etag: string): boolean {
   const ifNoneMatch = request.headers['if-none-match'];
   if (!ifNoneMatch) return false;
   
@@ -167,7 +167,7 @@ export function etagMatches(request: any, etag: string): boolean {
 /**
  * Check if resource was modified since last request
  */
-export function wasModifiedSince(request: any, lastModified: Date): boolean {
+export function wasModifiedSince(request: FastifyRequest, lastModified: Date): boolean {
   const ifModifiedSince = request.headers['if-modified-since'];
   if (!ifModifiedSince) return true;
   

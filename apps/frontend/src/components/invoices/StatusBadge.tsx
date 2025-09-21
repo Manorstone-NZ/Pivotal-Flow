@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import type { Invoice } from '../../features/invoices/api';
 
 // Status color mapping

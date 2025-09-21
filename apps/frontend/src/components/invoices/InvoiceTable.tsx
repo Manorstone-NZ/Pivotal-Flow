@@ -4,7 +4,7 @@ import { DataTable } from '../ui/DataTable';
 import { StatusBadge } from './StatusBadge';
 import { InvoiceTotalsSummary } from './InvoiceTotals';
 import { PaymentSummary } from './PaymentTimeline';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import type { Invoice, InvoiceListFilters } from '../../features/invoices/api';
 

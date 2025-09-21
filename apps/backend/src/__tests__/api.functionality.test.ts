@@ -190,8 +190,8 @@ describe('API Functionality Tests', () => {
   });
   
   describe('Quote Management', () => {
-    let testUser: any;
-    let testCustomer: any;
+    let testUser: { id: string; organizationId: string; email: string; firstName: string; lastName: string };
+    let testCustomer: { id: string; organizationId: string; companyName: string };
     let authToken: string;
     
     beforeEach(async () => {

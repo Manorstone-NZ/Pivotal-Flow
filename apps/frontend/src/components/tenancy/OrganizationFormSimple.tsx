@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useCreateOrganization, useUpdateOrganization, type Organization, type CreateOrganizationData } from '../../features/tenancy/api';
 

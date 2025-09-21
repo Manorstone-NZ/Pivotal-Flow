@@ -10,7 +10,7 @@ describe('Database Integration Tests', () => {
   describe('Database Connectivity', () => {
     it('should connect to PostgreSQL', async () => {
       const result = await testDb.execute('SELECT 1 as test');
-      expect(result[0].test).toBe(1);
+      expect(result[0]?.['test']).toBe(1);
     });
     
     it('should connect to Redis', async () => {
@@ -27,7 +27,7 @@ describe('Database Integration Tests', () => {
       const result = await testDb.select().from(users).where(eq(users.id, user.id));
       
       expect(result.length).toBe(1);
-      expect(result[0].email).toBe(user.email);
+      expect(result[0]?.email).toBe(user.email);
     });
   });
   
@@ -79,15 +79,20 @@ describe('Database Integration Tests', () => {
         .where(eq(userRoles.userId, user.id));
       
       expect(result.length).toBe(1);
-      expect(result[0].roleName).toBe(role.name);
+      expect(result[0]?.roleName).toBe(role.name);
     });
   });
   
   describe('Quote Service Integration', () => {
     it('should create quotes with line items', async () => {
       const org = await testUtils.createTestOrganization();
+      if (!org) throw new Error('Failed to create test organization');
+      
       const customer = await testUtils.createTestCustomer(org.id);
+      if (!customer) throw new Error('Failed to create test customer');
+      
       const testUser = await testUtils.createTestUser({ organizationId: org.id });
+      if (!testUser) throw new Error('Failed to create test user');
       
       // Create quote using Drizzle
       const quoteId = crypto.randomUUID();
@@ -121,15 +126,20 @@ describe('Database Integration Tests', () => {
       const quoteResult = await testDb.select().from(quotes).where(eq(quotes.id, quoteId));
       
       expect(quoteResult.length).toBe(1);
-      expect(quoteResult[0].title).toBe('Test Quote');
+      expect(quoteResult[0]?.title).toBe('Test Quote');
       // Note: Line items verification skipped due to schema mismatch
       console.log('Quote verification successful');
     });
     
     it('should handle quote status transitions', async () => {
       const org = await testUtils.createTestOrganization();
+      if (!org) throw new Error('Failed to create test organization');
+      
       const customer = await testUtils.createTestCustomer(org.id);
+      if (!customer) throw new Error('Failed to create test customer');
+      
       const testUser = await testUtils.createTestUser({ organizationId: org.id });
+      if (!testUser) throw new Error('Failed to create test user');
       
       // Create quote using Drizzle
       const quoteId = crypto.randomUUID();
@@ -162,7 +172,7 @@ describe('Database Integration Tests', () => {
       // Verify status change using Drizzle
       const result = await testDb.select({ status: quotes.status }).from(quotes).where(eq(quotes.id, quoteId));
       
-      expect(result[0].status).toBe('pending');
+      expect(result[0]?.status).toBe('pending');
     });
   });
   
@@ -177,6 +187,7 @@ describe('Database Integration Tests', () => {
       
       // Get from cache
       const cached = await testRedis.get(cacheKey);
+      if (!cached) throw new Error('Cache value not found');
       const cachedUser = JSON.parse(cached);
       
       expect(cachedUser.id).toBe(user.id);
@@ -283,7 +294,7 @@ describe('Database Integration Tests', () => {
       
       // The user should still exist but with deletedAt set
       expect(result.length).toBe(1);
-      expect(result[0].deletedAt).not.toBeNull();
+      expect(result[0]?.deletedAt).not.toBeNull();
     });
   });
   
@@ -320,7 +331,7 @@ describe('Database Integration Tests', () => {
       // Verify all users were created using Drizzle
       const count = await testDb.select({ count: sql`count(*)` }).from(users).where(eq(users.organizationId, org.id));
       
-      expect(Number(count[0].count)).toBe(100);
+      expect(Number(count[0]?.count)).toBe(100);
     });
     
     it('should handle concurrent operations', async () => {
@@ -350,7 +361,7 @@ describe('Database Integration Tests', () => {
       // Verify all operations completed using Drizzle
       const count = await testDb.select({ count: sql`count(*)` }).from(users).where(eq(users.organizationId, org.id));
       
-      expect(Number(count[0].count)).toBe(10);
+      expect(Number(count[0]?.count)).toBe(10);
     });
   });
 });

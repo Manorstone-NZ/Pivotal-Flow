@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/Button';
-import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
+import { Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
 import { Toggle } from '../components/ui/Toggle';
 
 export const SettingsPage: React.FC = () => {

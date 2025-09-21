@@ -23,6 +23,9 @@ import {
   UpdateContactBodySchema,
 } from './schemas.js';
 
+// Simplified approach - use FastifyRequest directly since auth types are already set up
+
+
 // List customers with filtering and pagination
 export function registerCustomerListRoute(fastify: FastifyInstance): void {
   fastify.get('/v1/customers', {

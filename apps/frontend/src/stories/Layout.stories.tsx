@@ -4,7 +4,7 @@ import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { SystemStatusWidget } from '../components/layout/SystemStatusWidget';
 import { Button } from '../components/Button';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 
 const meta: Meta<typeof AppLayout> = {
   title: 'Layout/AppLayout',

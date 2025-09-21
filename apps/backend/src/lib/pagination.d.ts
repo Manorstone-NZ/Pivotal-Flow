@@ -71,14 +71,14 @@ export declare function validateFilters(query: unknown, allowedFilters: string[]
 /**
  * Parse and validate pagination parameters - unified format
  */
-export declare function parsePaginationParams(query: Record<string, any>): {
+export declare function parsePaginationParams(query: Record<string, unknown>): {
     page: number;
     size: number;
 };
 /**
  * Parse and validate legacy pagination parameters
  */
-export declare function parseLegacyPaginationParams(query: Record<string, any>): {
+export declare function parseLegacyPaginationParams(query: Record<string, unknown>): {
     page: number;
     pageSize: number;
 };

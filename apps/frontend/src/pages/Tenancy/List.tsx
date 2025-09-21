@@ -8,11 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Card, CardContent, CardTitle } from '../../components/ui/Card';
+import { Input } from '../../components/ui/input';
+import { Card, CardContent, CardTitle } from '../../components/ui/card';
 import { FormModal } from '../../components/ui/FormModal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Badge } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/badge';
 import { OrganizationFormSimple } from '../../components/tenancy/OrganizationFormSimple';
 import { useOrganizations, useDeleteOrganization, type OrganizationFilters, type PaginationOptions } from '../../features/tenancy/api';
 import { useAuth } from '../../features/auth/store';

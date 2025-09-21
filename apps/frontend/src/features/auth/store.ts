@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthState>()(
           // Auth check response received
 
           if (response.ok) {
-            const data = await response.json();
+            await response.json();
             // Auth check successful
             // If we can get sessions, we're authenticated
             // The user data should already be in state from login

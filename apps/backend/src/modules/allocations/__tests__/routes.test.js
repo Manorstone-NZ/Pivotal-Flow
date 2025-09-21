@@ -44,8 +44,11 @@ describe('Allocation Service Integration', () => {
             // } as any;
             try {
                 // 1. Create allocation
+                const projectId = testProject[0]?.id;
+                if (!projectId)
+                    throw new Error('Test project not found');
                 const allocationData = {
-                    projectId: testProject[0].id,
+                    projectId,
                     userId: testUser.id,
                     role: ALLOCATION_ROLES.DEVELOPER,
                     allocationPercent: 50,
@@ -72,7 +75,7 @@ describe('Allocation Service Integration', () => {
                 expect(retrievedAllocation.allocationPercent).toBe('75');
                 // 4. List allocations with filters
                 const allocationsList = await allocationService.getAllocations({
-                    projectId: testProject[0].id,
+                    projectId: testProject[0]?.id,
                     role: ALLOCATION_ROLES.ARCHITECT
                 });
                 expect(allocationsList.allocations).toHaveLength(1);
@@ -96,8 +99,11 @@ describe('Allocation Service Integration', () => {
             // } as any;
             try {
                 // Create first allocation: 80% for January
+                const firstProjectId = testProject[0]?.id;
+                if (!firstProjectId)
+                    throw new Error('Test project not found');
                 const firstAllocation = {
-                    projectId: testProject[0].id,
+                    projectId: firstProjectId,
                     userId: testUser.id,
                     role: ALLOCATION_ROLES.DEVELOPER,
                     allocationPercent: 80,
@@ -107,8 +113,11 @@ describe('Allocation Service Integration', () => {
                 };
                 await allocationService.createAllocation(firstAllocation);
                 // Try to create overlapping allocation: 50% for Jan 15 - Feb 15
+                const conflictingProjectId = testProject[0]?.id;
+                if (!conflictingProjectId)
+                    throw new Error('Test project not found');
                 const conflictingAllocation = {
-                    projectId: testProject[0].id,
+                    projectId: conflictingProjectId,
                     userId: testUser.id,
                     role: ALLOCATION_ROLES.DESIGNER,
                     allocationPercent: 50,
@@ -120,7 +129,7 @@ describe('Allocation Service Integration', () => {
                     .rejects.toThrow('Allocation conflicts detected');
                 // Create non-conflicting allocation: 50% for March
                 const nonConflictingAllocation = {
-                    projectId: testProject[0].id,
+                    projectId: testProject[0]?.id,
                     userId: testUser.id,
                     role: ALLOCATION_ROLES.DESIGNER,
                     allocationPercent: 50,
@@ -146,7 +155,7 @@ describe('Allocation Service Integration', () => {
                 // Create multiple allocations for capacity testing
                 const allocations = [
                     {
-                        projectId: testProject[0].id,
+                        projectId: testProject[0]?.id,
                         userId: testUser.id,
                         role: ALLOCATION_ROLES.DEVELOPER,
                         allocationPercent: 50,
@@ -155,7 +164,7 @@ describe('Allocation Service Integration', () => {
                         isBillable: true
                     },
                     {
-                        projectId: testProject[0].id,
+                        projectId: testProject[0]?.id,
                         userId: testApprover.id,
                         role: ALLOCATION_ROLES.DESIGNER,
                         allocationPercent: 75,
@@ -168,9 +177,9 @@ describe('Allocation Service Integration', () => {
                     await allocationService.createAllocation(allocation);
                 }
                 // Get capacity summary
-                const capacity = await allocationService.getProjectCapacity(testProject[0].id, 4);
+                const capacity = await allocationService.getProjectCapacity(testProject[0]?.id, 4);
                 expect(capacity).toBeDefined();
-                expect(capacity.projectId).toBe(testProject[0].id);
+                expect(capacity.projectId).toBe(testProject[0]?.id);
                 expect(capacity.projectName).toBe('Test Project');
                 expect(capacity.allocations.length).toBeGreaterThan(0);
                 // Check that planned hours are calculated correctly
@@ -219,7 +228,7 @@ describe('Allocation Service Integration', () => {
                 const allocations = [];
                 for (let i = 0; i < 5; i++) {
                     allocations.push({
-                        projectId: testProject[0].id,
+                        projectId: testProject[0]?.id,
                         userId: testUser.id,
                         role: ALLOCATION_ROLES.DEVELOPER,
                         allocationPercent: 20,
@@ -261,7 +270,7 @@ describe('Allocation Service Integration', () => {
                     await testDb.insert(resourceAllocations).values({
                         id: testUtils.generateId(),
                         organizationId: testOrg.id,
-                        projectId: testProject[0].id,
+                        projectId: testProject[0]?.id,
                         userId: testUser.id,
                         role: ALLOCATION_ROLES.DEVELOPER,
                         allocationPercent: 10,

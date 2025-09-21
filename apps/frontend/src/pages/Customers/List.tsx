@@ -9,10 +9,10 @@ import { PlusIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/o
 
 import { useCustomers, useDeleteCustomer, type Customer, type CustomerFilters } from '../../features/customers/api';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { Card, CardContent } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../components/ui/Toast';
 import { CustomerTable } from '../../components/customers/CustomerTable';
 import { CustomerForm } from '../../components/customers/CustomerForm';
@@ -115,23 +115,23 @@ export const CustomersListPage: React.FC = () => {
   };
 
   // Status badge variant mapping
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'inactive': return 'error';
-      case 'prospect': return 'warning';
-      default: return 'secondary';
-    }
-  };
+  // const getStatusVariant = (status: string) => {
+  //   switch (status) {
+  //     case 'active': return 'success';
+  //     case 'inactive': return 'error';
+  //     case 'prospect': return 'warning';
+  //     default: return 'secondary';
+  //   }
+  // };
 
   // Customer type badge variant mapping
-  const getCustomerTypeVariant = (type: string) => {
-    switch (type) {
-      case 'business': return 'primary';
-      case 'individual': return 'info';
-      default: return 'secondary';
-    }
-  };
+  // const getCustomerTypeVariant = (type: string) => {
+  //   switch (type) {
+  //     case 'business': return 'primary';
+  //     case 'individual': return 'info';
+  //     default: return 'secondary';
+  //   }
+  // };
 
   if (error) {
     return (
@@ -181,7 +181,7 @@ export const CustomersListPage: React.FC = () => {
                   type="text"
                   placeholder="Search customers..."
                   value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
                   className="pl-10"
                   data-testid="customer-search"
                 />
@@ -246,7 +246,7 @@ export const CustomersListPage: React.FC = () => {
                     type="text"
                     placeholder="Filter by industry..."
                     value={industryFilter}
-                    onChange={(e) => handleFilterChange('industry', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('industry', e.target.value)}
                   />
                 </div>
               </div>

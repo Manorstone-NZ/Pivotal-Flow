@@ -45,11 +45,11 @@ export class PerformanceTimer {
  * Timer decorator for functions
  */
 export function timer(name?: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function <T extends Record<string, any>>(target: T, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const timerName = name || `${target.constructor.name}.${propertyKey}`;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (this: T, ...args: unknown[]) {
       const timer = new PerformanceTimer(timerName);
       try {
         const result = originalMethod.apply(this, args);
@@ -77,11 +77,11 @@ export function createTimer(name: string): () => void {
  * Async timer for async functions
  */
 export function asyncTimer(name?: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function <T extends Record<string, any>>(target: T, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const timerName = name || `${target.constructor.name}.${propertyKey}`;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: T, ...args: unknown[]) {
       const timer = new PerformanceTimer(timerName);
       try {
         const result = await originalMethod.apply(this, args);

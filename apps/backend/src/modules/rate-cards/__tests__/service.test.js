@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { testDb, testUtils } from '../../../__tests__/setup.js';
+import { serviceCategories } from '../../../lib/schema.js';
 import { RateCardService } from '../service.js';
 describe('RateCardService Integration Tests', () => {
     let rateCardService;
@@ -20,11 +21,8 @@ describe('RateCardService Integration Tests', () => {
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        // Insert service category
-        await testDb.execute(`
-        INSERT INTO service_categories (id, organization_id, name, description, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [testServiceCategory.id, testServiceCategory.organizationId, testServiceCategory.name, testServiceCategory.description, testServiceCategory.isActive, testServiceCategory.createdAt.toISOString(), testServiceCategory.updatedAt.toISOString()]);
+        // Insert service category using Drizzle
+        await testDb.insert(serviceCategories).values(testServiceCategory);
         // Create rate card
         testRateCard = {
             id: crypto.randomUUID(),

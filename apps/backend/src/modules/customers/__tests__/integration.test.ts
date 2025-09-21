@@ -6,6 +6,73 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { generateId } from '@pivotal-flow/shared';
 
+// Type interfaces for API responses
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: 'Bearer';
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    roles: string[];
+    permissions: string[];
+    organizationId: string;
+  };
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+interface PaginatedApiResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+interface Customer {
+  id: string;
+  organizationId: string;
+  customerNumber: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  city: string;
+  country: string;
+  customerType: string;
+  description?: string;
+  industry?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+interface Contact {
+  id: string;
+  customerId: string;
+  organizationId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  position?: string;
+  department?: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
 const baseUrl = 'http://localhost:3000';
 
 describe('Customer Module Integration Tests', () => {
@@ -24,7 +91,7 @@ describe('Customer Module Integration Tests', () => {
       })
     });
 
-    const authData = await authResponse.json();
+    const authData = await authResponse.json() as LoginResponse;
     authToken = authData.accessToken;
     expect(authToken).toBeTruthy();
   });
@@ -50,7 +117,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(201);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Customer>;
       expect(result.success).toBe(true);
       expect(result.data.companyName).toBe(customerData.companyName);
       expect(result.data.id).toBeTruthy();
@@ -65,7 +132,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as PaginatedApiResponse<Customer>;
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
       expect(result.pagination).toHaveProperty('page');
@@ -79,7 +146,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Customer>;
       expect(result.success).toBe(true);
       expect(result.data.id).toBe(testCustomerId);
       expect(result.data.companyName).toBe('Test Integration Company');
@@ -101,7 +168,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Customer>;
       expect(result.success).toBe(true);
       expect(result.data.description).toBe(updateData.description);
       expect(result.data.industry).toBe(updateData.industry);
@@ -113,10 +180,10 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as PaginatedApiResponse<Customer>;
       expect(result.success).toBe(true);
       expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0].companyName).toContain('Integration');
+      expect(result.data[0]?.companyName).toContain('Integration');
     });
   });
 
@@ -140,7 +207,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(201);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Contact>;
       expect(result.success).toBe(true);
       expect(result.data.firstName).toBe(contactData.firstName);
       expect(result.data.lastName).toBe(contactData.lastName);
@@ -155,11 +222,11 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Contact[]>;
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
       expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0].firstName).toBe('John');
+      expect(result.data[0]?.firstName).toBe('John');
     });
 
     it('should get contact by ID', async () => {
@@ -168,7 +235,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Contact>;
       expect(result.success).toBe(true);
       expect(result.data.id).toBe(testContactId);
       expect(result.data.firstName).toBe('John');
@@ -190,7 +257,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<Contact>;
       expect(result.success).toBe(true);
       expect(result.data.position).toBe(updateData.position);
       expect(result.data.department).toBe(updateData.department);
@@ -221,10 +288,10 @@ describe('Customer Module Integration Tests', () => {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
-      const contactsResult = await contactsResponse.json();
-      const primaryContacts = contactsResult.data.filter((contact: any) => contact.isPrimary);
+      const contactsResult = await contactsResponse.json() as ApiResponse<Contact[]>;
+      const primaryContacts = contactsResult.data.filter((contact: Contact) => contact.isPrimary);
       expect(primaryContacts.length).toBe(1);
-      expect(primaryContacts[0].firstName).toBe('Jane');
+      expect(primaryContacts[0]?.firstName).toBe('Jane');
     });
   });
 
@@ -236,7 +303,7 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(404);
-      const result = await response.json();
+      const result = await response.json() as { success: boolean; error: string };
       expect(result.success).toBe(false);
       expect(result.error).toBe('Not Found');
     });
@@ -274,9 +341,9 @@ describe('Customer Module Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = await response.json() as PaginatedApiResponse<Customer>;
       // All customers should belong to the same organization
-      result.data.forEach((customer: any) => {
+      result.data.forEach((customer: Customer) => {
         expect(customer.organizationId).toBe('org-pivotal-flow');
       });
     });

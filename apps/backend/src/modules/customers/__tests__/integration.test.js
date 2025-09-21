@@ -98,7 +98,7 @@ describe('Customer Module Integration Tests', () => {
             const result = await response.json();
             expect(result.success).toBe(true);
             expect(result.data.length).toBeGreaterThan(0);
-            expect(result.data[0].companyName).toContain('Integration');
+            expect(result.data[0]?.companyName).toContain('Integration');
         });
     });
     describe('Contact CRUD Operations', () => {
@@ -135,7 +135,7 @@ describe('Customer Module Integration Tests', () => {
             expect(result.success).toBe(true);
             expect(Array.isArray(result.data)).toBe(true);
             expect(result.data.length).toBeGreaterThan(0);
-            expect(result.data[0].firstName).toBe('John');
+            expect(result.data[0]?.firstName).toBe('John');
         });
         it('should get contact by ID', async () => {
             const response = await fetch(`${baseUrl}/api/v1/customers/${testCustomerId}/contacts/${testContactId}`, {
@@ -190,7 +190,7 @@ describe('Customer Module Integration Tests', () => {
             const contactsResult = await contactsResponse.json();
             const primaryContacts = contactsResult.data.filter((contact) => contact.isPrimary);
             expect(primaryContacts.length).toBe(1);
-            expect(primaryContacts[0].firstName).toBe('Jane');
+            expect(primaryContacts[0]?.firstName).toBe('Jane');
         });
     });
     describe('Error Handling', () => {

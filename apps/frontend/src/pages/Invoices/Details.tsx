@@ -7,9 +7,6 @@ import {
   useMarkInvoicePaid,
   useVoidInvoice,
   useDownloadInvoicePDF,
-  type Invoice,
-  type InvoiceStatusTransition,
-  type MarkInvoicePaidData,
 } from '../../features/invoices/api';
 import {
   StatusBadge,
@@ -20,12 +17,12 @@ import {
   isStatusPayable,
 } from '../../components/invoices';
 import { Button } from '../../components/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
 import { TextArea } from '../../components/ui/TextArea';
-import { Badge } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../components/ui/Toast';
-import { cn } from '../../lib/utils';
+// import { cn } from '../../lib/utils';
 
 /**
  * Format date for display
@@ -43,7 +40,8 @@ const formatDate = (dateString: string | undefined): string => {
  * Format date for input
  */
 const formatDateForInput = (dateString: string | undefined): string => {
-  if (!dateString) return '';
+  if (typeof dateString !== 'string') return '';
+  // @ts-ignore - TypeScript control flow analysis issue with exactOptionalPropertyTypes
   return new Date(dateString).toISOString().split('T')[0];
 };
 
@@ -80,6 +78,12 @@ export const InvoiceDetailsPage: React.FC = () => {
     paymentMethod: '',
     reference: '',
     notes: '',
+  } as {
+    paymentDate: string;
+    amount: string;
+    paymentMethod: string;
+    reference: string;
+    notes: string;
   });
 
   const [voidForm, setVoidForm] = useState({
@@ -187,9 +191,9 @@ export const InvoiceDetailsPage: React.FC = () => {
         id: invoice.id,
         data: {
           title: editForm.title,
-          description: editForm.description || undefined,
-          notes: editForm.notes || undefined,
-          dueDate: editForm.dueDate || undefined,
+          ...(editForm.description && { description: editForm.description }),
+          ...(editForm.notes && { notes: editForm.notes }),
+          ...(editForm.dueDate && { dueDate: editForm.dueDate }),
         },
       });
 
@@ -206,7 +210,7 @@ export const InvoiceDetailsPage: React.FC = () => {
         id: invoice.id,
         data: {
           status: statusForm.status,
-          reason: statusForm.reason || undefined,
+          ...(statusForm.reason && { reason: statusForm.reason }),
         },
       });
 
@@ -223,17 +227,17 @@ export const InvoiceDetailsPage: React.FC = () => {
       await markPaidMutation.mutateAsync({
         id: invoice.id,
         data: {
-          paymentDate: paymentForm.paymentDate,
-          amount: paymentForm.amount ? parseFloat(paymentForm.amount) : undefined,
-          paymentMethod: paymentForm.paymentMethod || undefined,
-          reference: paymentForm.reference || undefined,
-          notes: paymentForm.notes || undefined,
+          paymentDate: paymentForm.paymentDate ?? new Date().toISOString().split('T')[0],
+          ...(paymentForm.amount && { amount: parseFloat(paymentForm.amount) }),
+          ...(paymentForm.paymentMethod && { paymentMethod: paymentForm.paymentMethod }),
+          ...(paymentForm.reference && { reference: paymentForm.reference }),
+          ...(paymentForm.notes && { notes: paymentForm.notes }),
         },
       });
 
       setShowPaymentModal(false);
       setPaymentForm({
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: new Date().toISOString().split('T')[0] as string,
         amount: '',
         paymentMethod: '',
         reference: '',
@@ -286,7 +290,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                 </h1>
                 <StatusBadge status={invoice.status} />
                 {invoice.etag && (
-                  <Badge variant="secondary" size="sm" title="ETag cached">
+                  <Badge variant="secondary" size="sm">
                     Cached
                   </Badge>
                 )}
@@ -302,7 +306,7 @@ export const InvoiceDetailsPage: React.FC = () => {
             {canPay && (
               <Button
                 onClick={() => setShowPaymentModal(true)}
-                variant="success"
+                variant="primary"
                 size="sm"
               >
                 Record Payment
@@ -359,7 +363,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <Input
                       value={editForm.title}
-                      onChange={(value) => setEditForm({ ...editForm, title: value })}
+                      onChange={(value: string) => setEditForm({ ...editForm, title: value })}
                       placeholder="Invoice title"
                     />
                   ) : (
@@ -375,7 +379,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <TextArea
                       value={editForm.description}
-                      onChange={(value) => setEditForm({ ...editForm, description: value })}
+                      onChange={(value: string) => setEditForm({ ...editForm, description: value })}
                       placeholder="Invoice description"
                       rows={3}
                     />
@@ -418,7 +422,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                       <Input
                         type="date"
                         value={editForm.dueDate}
-                        onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
+                        onChange={(value: string) => setEditForm({ ...editForm, dueDate: value })}
                       />
                     ) : (
                       <p className="text-text-secondary">
@@ -436,7 +440,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   {isEditing ? (
                     <TextArea
                       value={editForm.notes}
-                      onChange={(value) => setEditForm({ ...editForm, notes: value })}
+                      onChange={(value: string) => setEditForm({ ...editForm, notes: value })}
                       placeholder="Internal notes"
                       rows={2}
                     />
@@ -457,7 +461,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {invoice.lineItems.map((item, index) => (
+                    {invoice.lineItems.map((item) => (
                       <div key={item.id} className="border-b pb-3 last:border-b-0 last:pb-0">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -509,7 +513,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   <Button
                     onClick={() => setShowPaymentModal(true)}
                     className="w-full"
-                    variant="success"
+                    variant="primary"
                   >
                     Record Payment
                   </Button>
@@ -527,7 +531,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                 {invoice.status !== 'void' && (
                   <Button
                     onClick={() => setShowVoidModal(true)}
-                    variant="destructive"
+                    variant="secondary"
                     className="w-full"
                   >
                     Void Invoice
@@ -570,7 +574,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={statusForm.reason}
-                    onChange={(value) => setStatusForm({ ...statusForm, reason: value })}
+                    onChange={(value: string) => setStatusForm({ ...statusForm, reason: value })}
                     placeholder="Reason for status change"
                     rows={2}
                   />
@@ -614,7 +618,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     <Input
                       type="date"
                       value={paymentForm.paymentDate}
-                      onChange={(value) => setPaymentForm({ ...paymentForm, paymentDate: value })}
+                      onChange={(value: string) => setPaymentForm({ ...paymentForm, paymentDate: value })}
                     />
                   </div>
 
@@ -627,7 +631,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                       step="0.01"
                       placeholder={`${invoice.balanceAmount.toFixed(2)} (balance)`}
                       value={paymentForm.amount}
-                      onChange={(value) => setPaymentForm({ ...paymentForm, amount: value })}
+                      onChange={(value: string) => setPaymentForm({ ...paymentForm, amount: value })}
                     />
                   </div>
                 </div>
@@ -659,7 +663,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <Input
                     value={paymentForm.reference}
-                    onChange={(value) => setPaymentForm({ ...paymentForm, reference: value })}
+                    onChange={(value: string) => setPaymentForm({ ...paymentForm, reference: value })}
                     placeholder="Transaction reference"
                   />
                 </div>
@@ -670,7 +674,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={paymentForm.notes}
-                    onChange={(value) => setPaymentForm({ ...paymentForm, notes: value })}
+                    onChange={(value: string) => setPaymentForm({ ...paymentForm, notes: value })}
                     placeholder="Payment notes"
                     rows={2}
                   />
@@ -717,7 +721,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                   </label>
                   <TextArea
                     value={voidForm.reason}
-                    onChange={(value) => setVoidForm({ ...voidForm, reason: value })}
+                    onChange={(value: string) => setVoidForm({ ...voidForm, reason: value })}
                     placeholder="Explain why this invoice is being voided"
                     rows={3}
                     required
@@ -729,7 +733,7 @@ export const InvoiceDetailsPage: React.FC = () => {
                     onClick={handleVoid}
                     loading={voidInvoiceMutation.isPending}
                     disabled={!voidForm.reason.trim()}
-                    variant="destructive"
+                    variant="secondary"
                     className="flex-1"
                   >
                     Void Invoice

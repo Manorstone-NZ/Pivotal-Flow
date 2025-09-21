@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useInvoices, useCreateInvoice, type InvoiceListFilters, type Invoice } from '../../features/invoices/api';
 import { InvoiceTable } from '../../components/invoices';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Card, CardContent } from '../../components/ui/Card';
+import { Input } from '../../components/ui/input';
+import { Card, CardContent } from '../../components/ui/card';
 import { useToast } from '../../components/ui/Toast';
 // Removed unused import
 

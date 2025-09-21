@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PlusIcon, ClockIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { Button } from '../../components/Button';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/card';
 import { WeekGrid } from '../../components/time/WeekGrid';
 import { TimeEntryModal } from '../../components/time/TimeEntryModal';
 import { useAuth } from '../../features/auth/store';

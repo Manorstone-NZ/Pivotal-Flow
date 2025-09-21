@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api/client';
+import { useTenantId } from '../tenancy/context';
 
 // Types
 export interface InvoiceStatus {
@@ -228,11 +229,11 @@ api.interceptors.response.use(
 
 // Query keys
 export const invoiceQueryKeys = {
-  all: ['invoices'] as const,
-  lists: () => [...invoiceQueryKeys.all, 'list'] as const,
-  list: (filters: InvoiceListFilters) => [...invoiceQueryKeys.lists(), filters] as const,
-  details: () => [...invoiceQueryKeys.all, 'detail'] as const,
-  detail: (id: string) => [...invoiceQueryKeys.details(), id] as const,
+  all: (tenantId: string | null) => ['invoices', tenantId] as const,
+  lists: (tenantId: string | null) => [...invoiceQueryKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string | null, filters: InvoiceListFilters) => [...invoiceQueryKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string | null) => [...invoiceQueryKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string | null, id: string) => [...invoiceQueryKeys.details(tenantId), id] as const,
 };
 
 // API functions
@@ -340,8 +341,9 @@ export const useInvoices = (
   filters: InvoiceListFilters = {},
   options?: Omit<UseQueryOptions<InvoiceListResponse>, 'queryKey' | 'queryFn'>
 ) => {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: invoiceQueryKeys.list(filters),
+    queryKey: invoiceQueryKeys.list(tenantId, filters),
     queryFn: () => invoiceApi.list(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -356,8 +358,9 @@ export const useInvoice = (
   id: string,
   options?: Omit<UseQueryOptions<Invoice>, 'queryKey' | 'queryFn'>
 ) => {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: invoiceQueryKeys.detail(id),
+    queryKey: invoiceQueryKeys.detail(tenantId, id),
     queryFn: () => invoiceApi.getById(id),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -371,12 +374,13 @@ export const useInvoice = (
  */
 export const useCreateInvoice = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: invoiceApi.create,
     onSuccess: () => {
       // Invalidate and refetch invoice lists
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists(tenantId) });
     },
   });
 };
@@ -386,14 +390,15 @@ export const useCreateInvoice = () => {
  */
 export const useUpdateInvoice = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateInvoiceData }) =>
       invoiceApi.update(id, data),
     onSuccess: () => {
       // F1.5: No optimistic updates for monetary data - always show server truth
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists(tenantId) });
     },
   });
 };
@@ -403,14 +408,15 @@ export const useUpdateInvoice = () => {
  */
 export const useUpdateInvoiceStatus = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: InvoiceStatusTransition }) =>
       invoiceApi.updateStatus(id, data),
     onSuccess: () => {
       // F1.5: No optimistic updates for monetary data - always show server truth
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists(tenantId) });
     },
   });
 };
@@ -420,14 +426,15 @@ export const useUpdateInvoiceStatus = () => {
  */
 export const useMarkInvoicePaid = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: MarkInvoicePaidData }) =>
       invoiceApi.markPaid(id, data),
     onSuccess: () => {
       // F1.5: No optimistic updates for monetary data - always show server truth
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists(tenantId) });
     },
   });
 };
@@ -437,14 +444,15 @@ export const useMarkInvoicePaid = () => {
  */
 export const useVoidInvoice = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: VoidInvoiceData }) =>
       invoiceApi.void(id, data),
     onSuccess: () => {
       // F1.5: No optimistic updates for monetary data - always show server truth
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
-      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists(tenantId) });
     },
   });
 };

@@ -10,7 +10,7 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '../Button';
-import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card';
+import { Card, CardHeader, CardContent, CardTitle } from '../ui/card';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { DecisionModal } from './DecisionModal';
 import { 

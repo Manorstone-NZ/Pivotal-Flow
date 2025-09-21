@@ -17,7 +17,7 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
   onSuccess
 }) => {
   const [formData, setFormData] = useState<CreateTimeEntryData>({
-    date: defaultDate || new Date().toISOString().split('T')[0],
+    date: defaultDate ?? new Date().toISOString().split('T')[0],
     duration: 480, // 8 hours default
     description: '',
     activityType: 'development',
@@ -34,7 +34,7 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        date: defaultDate || new Date().toISOString().split('T')[0],
+        date: defaultDate ?? new Date().toISOString().split('T')[0],
         duration: 480,
         description: '',
         activityType: 'development',

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 import type { Customer } from '../../features/customers/api';
 import { Button } from '../Button';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useAuth } from '../../features/auth/store';
 
@@ -321,7 +321,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                   return (
                     <Button
                       key={pageNum}
-                      variant={pageNum === pagination.page ? "default" : "outline"}
+                      variant={pageNum === pagination.page ? "primary" : "outline"}
                       size="sm"
                       onClick={() => pagination.onPageChange(pageNum)}
                       className="border-l-0"

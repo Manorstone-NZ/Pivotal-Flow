@@ -9,7 +9,7 @@ import { Type, type Static } from '@sinclair/typebox';
 
 import { useCreateContact, useUpdateContact, type CustomerContact, type CreateContactData, type UpdateContactData } from '../../features/customers/api';
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 import { TextArea } from '../ui/TextArea';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 

@@ -15,7 +15,7 @@ import { useAuth } from '../../features/auth/store';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { AlertTriangle, Shield, Users, Building, Activity } from 'lucide-react';
 import TenantListTable from '../../components/admin/TenantListTable';
 import TenantForm from '../../components/admin/TenantForm';

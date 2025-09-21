@@ -12,6 +12,7 @@ import {
 ErrorResponseSchema, 
 // StandardSuccessResponseSchema, // TODO: Use in response schemas
 CustomerIdParamSchema, ContactIdParamSchema, CustomerQuerystringSchema, CreateCustomerBodySchema, UpdateCustomerBodySchema, CreateContactBodySchema, UpdateContactBodySchema, } from './schemas.js';
+// Simplified approach - use FastifyRequest directly since auth types are already set up
 // List customers with filtering and pagination
 export function registerCustomerListRoute(fastify) {
     fastify.get('/v1/customers', {

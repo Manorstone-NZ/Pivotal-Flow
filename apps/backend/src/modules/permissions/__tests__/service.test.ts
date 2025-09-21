@@ -25,7 +25,7 @@ describe('PermissionService Integration Tests', () => {
           FROM users 
           WHERE organization_id = $1 AND status = 'active'
           LIMIT 1
-        `, [testOrg.id]);
+        ` as any, [testOrg.id] as any);
         
         if (users.length > 0) {
           testUser = users[0];

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Input } from '../ui/Input';
-import { Card } from '../ui/Card';
+import { Input } from '../ui/input';
+import { Card } from '../ui/card';
 import { Button } from '../Button';
 
 interface Customer {

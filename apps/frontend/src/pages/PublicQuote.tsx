@@ -17,9 +17,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { Button } from '../components/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/input';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 // TypeBox schemas for customer approval

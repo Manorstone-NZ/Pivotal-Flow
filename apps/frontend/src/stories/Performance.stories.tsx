@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PerformanceOptimizer } from '../components/performance/PerformanceOptimizer';
 import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
 import { Button } from '../components/Button';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { useState } from 'react';
 
 // Error component for testing ErrorBoundary

@@ -16,8 +16,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
-import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card';
+import { Input } from '../ui/input';
+import { Card, CardHeader, CardContent, CardTitle } from '../ui/card';
 import { FormModal } from '../ui/FormModal';
 import { useToast } from '../ui/Toast';
 import { QuoteStatusChip, canPerformAction } from './QuoteStatusChip';

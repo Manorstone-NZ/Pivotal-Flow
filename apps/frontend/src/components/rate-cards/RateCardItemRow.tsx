@@ -7,7 +7,7 @@ import React, { useState, useCallback } from 'react';
 import { Money, CurrencyInput } from './Money';
 import { Select } from '../ui/Select';
 import { Button } from '../Button';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { useUpdateRateCardItem } from '../../features/rate-cards/api';
 import type { RateCardItem, UpdateRateCardItem } from '../../features/rate-cards/types';
 import { RATE_UNITS, TAX_CLASSES } from '../../features/rate-cards/types';
@@ -184,7 +184,7 @@ export const RateCardItemRow: React.FC<RateCardItemRowProps> = ({
         {editingField === 'unit' ? (
           <Select
             value={editValues.unit || item.unit}
-            onChange={(value) => {
+            onValueChange={(value: string) => {
               setEditValues({ ...editValues, unit: value as string });
               saveField('unit', value);
             }}
@@ -215,7 +215,7 @@ export const RateCardItemRow: React.FC<RateCardItemRowProps> = ({
         {editingField === 'taxClass' ? (
           <Select
             value={editValues.taxClass || item.taxClass}
-            onChange={(value) => {
+            onValueChange={(value: string) => {
               setEditValues({ ...editValues, taxClass: value as string });
               saveField('taxClass', value);
             }}

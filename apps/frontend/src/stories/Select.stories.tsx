@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Select } from '../../components/ui/Select';
+import { Select } from '../../components/ui/select';
 import { useState } from 'react';
 
 const meta: Meta<typeof Select> = {

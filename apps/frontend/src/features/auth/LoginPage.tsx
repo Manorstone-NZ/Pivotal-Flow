@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { useAuth } from './store';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../../components/ui/Card';
+import { Input } from '../../components/ui/input';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../../components/ui/card';
 import { useToast } from '../../components/ui/Toast';
 
 interface LoginFormData {
@@ -35,7 +35,7 @@ export const LoginPage: React.FC = () => {
   // Get redirect path from location state or search params
   const redirectTo = (location.state as { redirectTo?: string })?.redirectTo || 
                     new URLSearchParams(location.search).get('redirectTo') || 
-                    '/';
+                    '/dashboard';
 
   // Redirect if already authenticated
   useEffect(() => {

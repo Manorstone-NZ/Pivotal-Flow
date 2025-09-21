@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
-// import { Select } from '../ui/Select'; // Unused import
+import { Input } from '../ui/input';
+// import { Select } from '../ui/select'; // Unused import
 import { IconButton } from '../ui/IconButton';
 import { useAddLineItem, useUpdateLineItem, useDeleteLineItem } from '../../features/quotes/api';
 import type { Quote, QuoteLineItem, LineItem } from '../../features/quotes/api';
@@ -199,7 +199,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                     <td className="border border-surface-border px-4 py-3">
                       <Input
                         value={editingItem.description}
-                        onChange={(value) => setEditingItem({ ...editingItem, description: value })}
+                        onChange={(value: string) => setEditingItem({ ...editingItem, description: value })}
                         placeholder="Item description"
                         error={errors['description']}
                         autoFocus
@@ -209,7 +209,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                       <Input
                         type="number"
                         value={editingItem.quantity}
-                        onChange={(value) => setEditingItem({ ...editingItem, quantity: value })}
+                        onChange={(value: string) => setEditingItem({ ...editingItem, quantity: value })}
                         placeholder="0"
                         error={errors['quantity']}
                       />
@@ -218,7 +218,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                       <Input
                         type="number"
                         value={editingItem.unitPrice}
-                        onChange={(value) => setEditingItem({ ...editingItem, unitPrice: value })}
+                        onChange={(value: string) => setEditingItem({ ...editingItem, unitPrice: value })}
                         placeholder="0.00"
                         error={errors['unitPrice']}
                       />
@@ -304,7 +304,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                 <td className="border border-surface-border px-4 py-3">
                   <Input
                     value={newItem.description || ''}
-                    onChange={(value) => setNewItem({ ...newItem, description: value })}
+                    onChange={(value: string) => setNewItem({ ...newItem, description: value })}
                     placeholder="Item description"
                     error={errors['description']}
                     autoFocus
@@ -314,7 +314,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                   <Input
                     type="number"
                     value={newItem.quantity?.toString() || '1'}
-                    onChange={(value) => setNewItem({ ...newItem, quantity: parseFloat(value) || 1 })}
+                    onChange={(value: string) => setNewItem({ ...newItem, quantity: parseFloat(value) || 1 })}
                     placeholder="1"
                     error={errors['quantity']}
                   />
@@ -323,7 +323,7 @@ export const QuoteLineTable: React.FC<QuoteLineTableProps> = ({
                   <Input
                     type="number"
                     value={newItem.unitPrice?.toString() || '0'}
-                    onChange={(value) => setNewItem({ ...newItem, unitPrice: parseFloat(value) || 0 })}
+                    onChange={(value: string) => setNewItem({ ...newItem, unitPrice: parseFloat(value) || 0 })}
                     placeholder="0.00"
                     error={errors['unitPrice']}
                   />

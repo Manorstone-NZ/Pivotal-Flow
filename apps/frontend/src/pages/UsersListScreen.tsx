@@ -7,10 +7,10 @@ import React, { useState, useMemo } from 'react';
 import { useUsersList, useCreateUser } from '../lib/api/queries';
 import { DataTable } from '../components/ui/DataTable';
 import { Button } from '../components/Button';
-import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
-import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { useToast } from '../components/ui/Toast';
 
 interface User {

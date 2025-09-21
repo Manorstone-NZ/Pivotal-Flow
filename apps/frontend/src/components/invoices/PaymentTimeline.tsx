@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 import type { Payment, Invoice } from '../../features/invoices/api';
 
 export interface PaymentTimelineProps {
@@ -95,7 +95,7 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({
 
   if (payments.length === 0) {
     return (
-      <Card className={className}>
+      <Card {...(className && { className })}>
         <CardHeader>
           <CardTitle className="text-lg font-semibold">
             Payment History
@@ -115,7 +115,7 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({
   }
 
   return (
-    <Card className={className}>
+    <Card {...(className && { className })}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold flex items-center justify-between">
           Payment History

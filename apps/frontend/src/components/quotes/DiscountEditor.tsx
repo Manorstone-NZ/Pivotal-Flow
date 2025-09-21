@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent } from '../ui/Card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 import { Select } from '../ui/Select';
 import { useSetDiscount } from '../../features/quotes/api';
 import type { Quote, Discount } from '../../features/quotes/api';
@@ -157,7 +157,7 @@ export const DiscountEditor: React.FC<DiscountEditorProps> = ({
                   <Select
                     label="Discount Type"
                     value={discountData.type}
-                    onChange={(value) => setDiscountData({ ...discountData, type: value as 'percentage' | 'fixed' })}
+                    onValueChange={(value: string) => setDiscountData({ ...discountData, type: value as 'percentage' | 'fixed' })}
                     options={[
                       { value: 'percentage', label: 'Percentage (%)' },
                       { value: 'fixed', label: 'Fixed Amount' },
@@ -169,7 +169,7 @@ export const DiscountEditor: React.FC<DiscountEditorProps> = ({
                     label={discountData.type === 'percentage' ? 'Percentage' : 'Amount'}
                     type="number"
                     value={discountData.value.toString()}
-                    onChange={(value) => setDiscountData({ ...discountData, value: parseFloat(value) || 0 })}
+                    onChange={(value: string) => setDiscountData({ ...discountData, value: parseFloat(value) || 0 })}
                     placeholder={discountData.type === 'percentage' ? '10' : '100.00'}
                     error={errors['value']}
                   />

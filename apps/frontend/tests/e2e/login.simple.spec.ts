@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Login Test', () => {
   test('should login successfully', async ({ page }) => {
     // Navigate to login page
-    await page.goto('http://localhost:5173/login');
+    await page.goto('http://localhost:5174/login');
     
     // Wait for login form to be visible
     await expect(page.locator('form')).toBeVisible();
@@ -24,6 +24,6 @@ test.describe('Login Test', () => {
     await expect(page).toHaveURL(/.*\/dashboard/);
     
     // Wait for dashboard to load
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 });

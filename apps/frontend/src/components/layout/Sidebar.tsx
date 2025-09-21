@@ -1,9 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+// import { XMarkIcon } from '@heroicons/react/24/outline'; // TODO: Remove if not used
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../features/auth/store';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 
 interface SidebarProps {
   isOpen: boolean;

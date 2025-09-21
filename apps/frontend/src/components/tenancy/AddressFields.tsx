@@ -6,7 +6,7 @@
 import React from 'react';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
 
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 
 interface AddressFieldsProps {
   register: UseFormRegister<any>;
@@ -15,7 +15,7 @@ interface AddressFieldsProps {
 
 export const AddressFields: React.FC<AddressFieldsProps> = ({
   register,
-  errors,
+  // errors, // TODO: Implement error display when needed
 }) => {
   return (
     <div className="space-y-4">

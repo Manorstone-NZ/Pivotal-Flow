@@ -6,7 +6,7 @@ import { AccessibilityAudit } from '../components/a11y/AccessibilityAudit';
 import { AccessibilityTest } from '../components/a11y/AccessibilityTest';
 import { KeyboardNavigation, KeyboardNavigationInstructions } from '../components/a11y/KeyboardNavigation';
 import { Button } from '../components/Button';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { Dialog } from '../components/ui/Dialog';
 import { useState } from 'react';
 

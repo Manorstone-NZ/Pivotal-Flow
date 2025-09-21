@@ -4,12 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, StarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 
 import { useCustomerContacts, useDeleteContact, type CustomerContact } from '../../features/customers/api';
 import { Button } from '../Button';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { FormModal } from '../ui/FormModal';
 import { ContactForm } from './ContactForm';
@@ -237,7 +237,7 @@ export const ContactList: React.FC<ContactListProps> = ({
       >
         <ContactForm
           customerId={customerId}
-          contact={editingContact}
+          contact={editingContact || undefined}
           onSuccess={handleContactSuccess}
           onCancel={handleContactCancel}
         />

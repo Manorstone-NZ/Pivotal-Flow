@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Dialog } from '../ui/Dialog';
-import { Input } from '../ui/Input';
+import { Dialog } from '../ui/dialog';
+import { Input } from '../ui/input';
 import { Button } from '../Button';
 import { Select } from '../ui/Select';
 import { TextArea } from '../ui/TextArea';
@@ -18,7 +18,7 @@ interface ProjectCreateDialogProps {
   onSuccess?: () => void;
 }
 
-const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
+const PROJECT_STATUSES: { value: string; label: string }[] = [
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
   { value: 'on-hold', label: 'On Hold' },
@@ -179,8 +179,8 @@ export const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
             Status
           </label>
           <Select
-            value={formData.status || 'active'}
-            onChange={(value) => handleStatusChange(String(value))}
+            value={String(formData.status || 'active')}
+            onValueChange={(value: string) => handleStatusChange(String(value))}
             options={PROJECT_STATUSES}
             disabled={isSubmitting}
           />

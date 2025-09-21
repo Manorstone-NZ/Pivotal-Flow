@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/input';
 import { TextArea } from '../../components/ui/TextArea';
-import { Select } from '../../components/ui/Select';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
+import { Select } from '../../components/ui/select';
+import { Card, CardContent } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { QuoteLineTable } from '../../components/quotes/QuoteLineTable';
 import { QuoteSummaryCard } from '../../components/quotes/QuoteSummaryCard';

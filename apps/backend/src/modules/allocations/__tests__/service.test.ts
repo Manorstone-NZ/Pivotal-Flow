@@ -25,11 +25,11 @@ type AllocationQueryResult = {
 
 describe('AllocationService', () => {
   let allocationService: AllocationService;
-  let testOrg: any;
-  let testUser: any;
-  let testApprover: any;
-  let testProject: any;
-  let testFastify: any;
+  let testOrg: { id: string; organizationId?: string };
+  let testUser: { id: string; organizationId: string };
+  let testApprover: { id: string; organizationId: string };
+  let testProject: Array<{ id: string; organizationId: string }>;
+  let testFastify: { db: any; log: { error: (msg: any) => void } };
 
   beforeEach(async () => {
     testOrg = await testUtils.createTestOrganization();
@@ -54,7 +54,7 @@ describe('AllocationService', () => {
       }
     };
 
-    allocationService = new AllocationService(testOrg.id, testUser.id, testFastify);
+    allocationService = new AllocationService(testOrg.id, testUser.id, testFastify as any);
   });
 
   afterEach(async () => {
@@ -64,7 +64,7 @@ describe('AllocationService', () => {
   describe('Allocation Creation', () => {
     it('should reject creation without proper permissions', async () => {
       const allocationData = {
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 50,
@@ -82,7 +82,7 @@ describe('AllocationService', () => {
       await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 80,
@@ -93,7 +93,7 @@ describe('AllocationService', () => {
       });
 
       const newAllocationData = {
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DESIGNER,
         allocationPercent: 50, // This would make total 130%
@@ -121,7 +121,7 @@ describe('AllocationService', () => {
       await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 80,
@@ -132,7 +132,7 @@ describe('AllocationService', () => {
       });
 
       const newAllocationData = {
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 60,
@@ -166,7 +166,7 @@ describe('AllocationService', () => {
       existingAllocation = await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 50,
@@ -219,7 +219,7 @@ describe('AllocationService', () => {
       existingAllocation = await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 50,
@@ -251,7 +251,7 @@ describe('AllocationService', () => {
         .where(eq(resourceAllocations.id, existingAllocation[0].id))
         .limit(1);
 
-      expect(deletedAllocation[0].deletedAt).not.toBeNull();
+      expect(deletedAllocation[0]?.deletedAt).not.toBeNull();
 
       // Restore original service
       // allocationService['permissionService'] = originalPermissionService;
@@ -264,7 +264,7 @@ describe('AllocationService', () => {
       await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 60,
@@ -292,7 +292,7 @@ describe('AllocationService', () => {
       await testDb.insert(resourceAllocations).values({
         id: testUtils.generateId(),
         organizationId: testOrg.id,
-        projectId: testProject[0].id,
+        projectId: testProject[0]?.id,
         userId: testUser.id,
         role: ALLOCATION_ROLES.DEVELOPER,
         allocationPercent: 80,
@@ -364,7 +364,7 @@ describe('AllocationService', () => {
         {
           id: testUtils.generateId(),
           organizationId: testOrg.id,
-          projectId: testProject[0].id,
+          projectId: testProject[0]?.id,
           userId: testUser.id,
           role: ALLOCATION_ROLES.DEVELOPER,
           allocationPercent: 50,
@@ -376,7 +376,7 @@ describe('AllocationService', () => {
         {
           id: testUtils.generateId(),
           organizationId: testOrg.id,
-          projectId: testProject[0].id,
+          projectId: testProject[0]?.id,
           userId: testApprover.id,
           role: ALLOCATION_ROLES.DESIGNER,
           allocationPercent: 75,
@@ -402,7 +402,7 @@ describe('AllocationService', () => {
       // } as any;
 
       const result = await allocationService.getAllocations({
-        projectId: testProject[0].id
+        projectId: testProject[0]?.id
       });
 
       expect(result.allocations).toHaveLength(2);

@@ -5,13 +5,13 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PencilIcon } from '@heroicons/react/24/outline';
 
-import { useCustomer, useUpdateCustomer, type Customer } from '../../features/customers/api';
+import { useCustomer, type Customer } from '../../features/customers/api';
 import { Button } from '../../components/Button';
-import { Badge } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/badge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/card';
 import { Tabs } from '../../components/ui/Tabs';
 import { ContactList } from '../../components/customers/ContactList';
 import { CustomerForm } from '../../components/customers/CustomerForm';
@@ -24,7 +24,7 @@ export const CustomerDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
 
   // State
   const [activeTab, setActiveTab] = useState('details');
@@ -32,7 +32,7 @@ export const CustomerDetailsPage: React.FC = () => {
 
   // API hooks
   const { data: customerResponse, isLoading, error } = useCustomer(id!, true); // Include contacts
-  const updateCustomerMutation = useUpdateCustomer();
+  // const updateCustomerMutation = useUpdateCustomer(); // TODO: Implement when needed
 
   const customer = customerResponse?.data;
 

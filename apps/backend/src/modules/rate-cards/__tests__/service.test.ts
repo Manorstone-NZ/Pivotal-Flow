@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { testDb, testUtils } from '../../../__tests__/setup.js';
+import { serviceCategories } from '../../../lib/schema.js';
 import { RateCardService } from '../service.js';
 
 describe('RateCardService Integration Tests', () => {
@@ -24,11 +25,8 @@ describe('RateCardService Integration Tests', () => {
       updatedAt: new Date()
     };
 
-    // Insert service category
-          await testDb.execute(`
-        INSERT INTO service_categories (id, organization_id, name, description, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [testServiceCategory.id, testServiceCategory.organizationId, testServiceCategory.name, testServiceCategory.description, testServiceCategory.isActive, testServiceCategory.createdAt.toISOString(), testServiceCategory.updatedAt.toISOString()]);
+    // Insert service category using Drizzle
+    await testDb.insert(serviceCategories).values(testServiceCategory);
 
     // Create rate card
     testRateCard = {
@@ -49,7 +47,7 @@ describe('RateCardService Integration Tests', () => {
     await testDb.execute(`
       INSERT INTO rate_cards (id, organization_id, name, description, currency, effective_from, effective_until, is_default, is_active, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    `, [testRateCard.id, testRateCard.organizationId, testRateCard.name, testRateCard.description, testRateCard.currency, testRateCard.effectiveFrom.toISOString().split('T')[0], testRateCard.effectiveUntil?.toISOString().split('T')[0] || null, testRateCard.isDefault, testRateCard.isActive, testRateCard.createdAt.toISOString(), testRateCard.updatedAt.toISOString()]);
+    ` as any, [testRateCard.id, testRateCard.organizationId, testRateCard.name, testRateCard.description, testRateCard.currency, testRateCard.effectiveFrom.toISOString().split('T')[0], testRateCard.effectiveUntil?.toISOString().split('T')[0] || null, testRateCard.isDefault, testRateCard.isActive, testRateCard.createdAt.toISOString(), testRateCard.updatedAt.toISOString()] as any);
 
     // Create rate card service with real database
     rateCardService = new RateCardService({
@@ -60,11 +58,11 @@ describe('RateCardService Integration Tests', () => {
 
   afterEach(async () => {
     // Clean up test data
-    await testDb.execute(`DELETE FROM rate_card_items WHERE rate_card_id = $1`, [testRateCard.id]);
-    await testDb.execute(`DELETE FROM rate_cards WHERE id = $1`, [testRateCard.id]);
-    await testDb.execute(`DELETE FROM service_categories WHERE id = $1`, [testServiceCategory.id]);
-    await testDb.execute(`DELETE FROM users WHERE id = $1`, [testUser.id]);
-    await testDb.execute(`DELETE FROM organizations WHERE id = $1`, [testOrg.id]);
+    await testDb.execute(`DELETE FROM rate_card_items WHERE rate_card_id = $1` as any, [testRateCard.id] as any);
+    await testDb.execute(`DELETE FROM rate_cards WHERE id = $1` as any, [testRateCard.id] as any);
+    await testDb.execute(`DELETE FROM service_categories WHERE id = $1` as any, [testServiceCategory.id] as any);
+    await testDb.execute(`DELETE FROM users WHERE id = $1` as any, [testUser.id] as any);
+    await testDb.execute(`DELETE FROM organizations WHERE id = $1` as any, [testOrg.id] as any);
   });
 
   describe('resolvePricing', () => {
@@ -87,7 +85,7 @@ describe('RateCardService Integration Tests', () => {
       await testDb.execute(`
         INSERT INTO rate_card_items (id, rate_card_id, service_category_id, item_code, unit, base_rate, currency, tax_class, effective_from, is_active, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, new Date('2025-01-01').toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()]);
+      ` as any, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, new Date('2025-01-01').toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()] as any);
 
       const lineItems = [
         {
@@ -128,7 +126,7 @@ describe('RateCardService Integration Tests', () => {
       await testDb.execute(`
         INSERT INTO rate_card_items (id, rate_card_id, service_category_id, item_code, unit, base_rate, currency, tax_class, effective_from, is_active, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, new Date('2025-01-01').toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()]);
+      ` as any, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, new Date('2025-01-01').toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()] as any);
 
       const lineItems = [
         {
@@ -187,7 +185,7 @@ describe('RateCardService Integration Tests', () => {
       // Deactivate the rate card
       await testDb.execute(`
         UPDATE rate_cards SET is_active = false WHERE id = $1
-      `, [testRateCard.id]);
+      ` as any, [testRateCard.id] as any);
 
       const result = await rateCardService.getActiveRateCard();
 
@@ -233,7 +231,7 @@ describe('RateCardService Integration Tests', () => {
         VALUES 
           ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12),
           ($13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
-      `, [item1.id, item1.rateCardId, item1.serviceCategoryId, item1.itemCode, item1.unit, item1.baseRate, item1.currency, item1.taxClass, item1.effectiveFrom.toISOString().split('T')[0], item1.isActive, item1.createdAt.toISOString(), item1.updatedAt.toISOString(), item2.id, item2.rateCardId, item2.serviceCategoryId, item2.itemCode, item2.unit, item2.baseRate, item2.currency, item2.taxClass, item2.effectiveFrom.toISOString().split('T')[0], item2.isActive, item2.createdAt.toISOString(), item2.updatedAt.toISOString()]);
+      ` as any, [item1.id, item1.rateCardId, item1.serviceCategoryId, item1.itemCode, item1.unit, item1.baseRate, item1.currency, item1.taxClass, item1.effectiveFrom.toISOString().split('T')[0], item1.isActive, item1.createdAt.toISOString(), item1.updatedAt.toISOString(), item2.id, item2.rateCardId, item2.serviceCategoryId, item2.itemCode, item2.unit, item2.baseRate, item2.currency, item2.taxClass, item2.effectiveFrom.toISOString().split('T')[0], item2.isActive, item2.createdAt.toISOString(), item2.updatedAt.toISOString()] as any);
 
       const result = await rateCardService.getRateCardItems(testRateCard.id);
 
@@ -279,7 +277,7 @@ describe('RateCardService Integration Tests', () => {
         VALUES 
           ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12),
           ($13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
-      `, [activeItem.id, activeItem.rateCardId, activeItem.serviceCategoryId, activeItem.itemCode, activeItem.unit, activeItem.baseRate, activeItem.currency, activeItem.taxClass, activeItem.effectiveFrom.toISOString().split('T')[0], activeItem.isActive, activeItem.createdAt.toISOString(), activeItem.updatedAt.toISOString(), inactiveItem.id, inactiveItem.rateCardId, inactiveItem.serviceCategoryId, inactiveItem.itemCode, inactiveItem.unit, inactiveItem.baseRate, inactiveItem.currency, inactiveItem.taxClass, inactiveItem.effectiveFrom.toISOString().split('T')[0], inactiveItem.isActive, inactiveItem.createdAt.toISOString(), inactiveItem.updatedAt.toISOString()]);
+      ` as any, [activeItem.id, activeItem.rateCardId, activeItem.serviceCategoryId, activeItem.itemCode, activeItem.unit, activeItem.baseRate, activeItem.currency, activeItem.taxClass, activeItem.effectiveFrom.toISOString().split('T')[0], activeItem.isActive, activeItem.createdAt.toISOString(), activeItem.updatedAt.toISOString(), inactiveItem.id, inactiveItem.rateCardId, inactiveItem.serviceCategoryId, inactiveItem.itemCode, inactiveItem.unit, inactiveItem.baseRate, inactiveItem.currency, inactiveItem.taxClass, inactiveItem.effectiveFrom.toISOString().split('T')[0], inactiveItem.isActive, inactiveItem.createdAt.toISOString(), inactiveItem.updatedAt.toISOString()] as any);
 
       const result = await rateCardService.getRateCardItems(testRateCard.id);
 
@@ -308,7 +306,7 @@ describe('RateCardService Integration Tests', () => {
       await testDb.execute(`
         INSERT INTO rate_card_items (id, rate_card_id, service_category_id, item_code, unit, base_rate, currency, tax_class, effective_from, is_active, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, rateCardItem.effectiveFrom.toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()]);
+      ` as any, [rateCardItem.id, rateCardItem.rateCardId, rateCardItem.serviceCategoryId, rateCardItem.itemCode, rateCardItem.unit, rateCardItem.baseRate, rateCardItem.currency, rateCardItem.taxClass, rateCardItem.effectiveFrom.toISOString().split('T')[0], rateCardItem.isActive, rateCardItem.createdAt.toISOString(), rateCardItem.updatedAt.toISOString()] as any);
 
       const result = await rateCardService.getRateCardItemByCode('DEV-HOURLY');
 

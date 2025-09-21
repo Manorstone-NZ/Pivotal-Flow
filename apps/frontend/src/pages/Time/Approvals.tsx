@@ -8,7 +8,7 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '../../components/Button';
-import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/card';
 import { ApprovalQueue } from '../../components/approvals/ApprovalQueue';
 import { useApprovalStats, useTimeApprovals, useBulkApproveTimeEntries } from '../../features/approvals/api';
 import { useTimeEntries, useSubmitTimeEntry } from '../../features/time/api';

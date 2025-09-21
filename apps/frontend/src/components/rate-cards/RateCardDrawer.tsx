@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../Button';
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 import { TextArea } from '../ui/TextArea';
 import { Select } from '../ui/Select';
 import { LoadingSkeleton } from '../ui/LoadingSkeleton';
@@ -223,7 +223,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
               <Input
                 label="Name"
                 value={formData.name || ''}
-                onChange={(value) => setFormData({ ...formData, name: value })}
+                onChange={(value: string) => setFormData({ ...formData, name: value })}
                 error={errors['name']}
                 required
                 disabled={isSubmitting}
@@ -234,7 +234,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                 <Input
                   label="Version"
                   value={formData.version || ''}
-                  onChange={(value) => setFormData({ ...formData, version: value })}
+                  onChange={(value: string) => setFormData({ ...formData, version: value })}
                   disabled={isSubmitting}
                   data-testid="rate-card-version"
                 />
@@ -242,7 +242,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                 <Select
                   label="Currency"
                   value={formData.currency || ''}
-                  onChange={(value) => setFormData({ ...formData, currency: value as string })}
+                  onValueChange={(value: string) => setFormData({ ...formData, currency: value as string })}
                   error={errors['currency']}
                   required
                   disabled={isSubmitting}
@@ -257,7 +257,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
               <TextArea
                 label="Description"
                 value={formData.description || ''}
-                onChange={(value) => setFormData({ ...formData, description: value })}
+                onChange={(value: string) => setFormData({ ...formData, description: value })}
                 rows={3}
                 disabled={isSubmitting}
                 data-testid="rate-card-description"
@@ -268,7 +268,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                   label="Effective From"
                   type="date"
                   value={formData.effectiveFrom || ''}
-                  onChange={(value) => setFormData({ ...formData, effectiveFrom: value })}
+                  onChange={(value: string) => setFormData({ ...formData, effectiveFrom: value })}
                   error={errors['effectiveFrom']}
                   required
                   disabled={isSubmitting}
@@ -279,7 +279,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                   label="Effective Until"
                   type="date"
                   value={formData.effectiveUntil || ''}
-                  onChange={(value) => setFormData({ ...formData, effectiveUntil: value })}
+                  onChange={(value: string) => setFormData({ ...formData, effectiveUntil: value })}
                   error={errors['effectiveUntil']}
                   disabled={isSubmitting}
                   data-testid="rate-card-effective-until"
@@ -352,7 +352,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                     <Input
                       label="Item Code"
                       value={newItemData.itemCode || ''}
-                      onChange={(value) => setNewItemData({ ...newItemData, itemCode: value || null })}
+                      onChange={(value: string) => setNewItemData({ ...newItemData, itemCode: value || null })}
                       placeholder="e.g., DEV01"
                       required
                       data-testid="new-item-code"
@@ -360,7 +360,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                     <Input
                       label="Base Rate"
                       value={newItemData.baseRate}
-                      onChange={(value) => setNewItemData({ ...newItemData, baseRate: value })}
+                      onChange={(value: string) => setNewItemData({ ...newItemData, baseRate: value })}
                       placeholder="0.00"
                       required
                       data-testid="new-item-rate"
@@ -370,7 +370,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                     <Select
                       label="Unit"
                       value={newItemData.unit}
-                      onChange={(value) => setNewItemData({ ...newItemData, unit: value as string })}
+                      onValueChange={(value: string) => setNewItemData({ ...newItemData, unit: value as string })}
                       data-testid="new-item-unit"
                       options={RATE_UNITS.map(unit => ({
                         value: unit.value,
@@ -380,7 +380,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                     <Select
                       label="Tax Class"
                       value={newItemData.taxClass || 'standard'}
-                      onChange={(value) => setNewItemData({ ...newItemData, taxClass: value as string })}
+                      onValueChange={(value: string) => setNewItemData({ ...newItemData, taxClass: value as string })}
                       data-testid="new-item-tax-class"
                       options={TAX_CLASSES.map(taxClass => ({
                         value: taxClass.value,

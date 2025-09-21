@@ -157,7 +157,7 @@ const createApiClient = () => {
     headers: {
       'Content-Type': 'application/json',
     },
-    transformRequest: [(data, headers) => {
+    transformRequest: [(data) => {
       // For opaque token system, authentication is handled via cookies
       // No need to add Authorization header - cookies are sent automatically
       if (isAuthenticated()) {

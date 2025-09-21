@@ -249,16 +249,18 @@ export const useDeleteUser = () => {
 
 // Quotes Hooks
 export const useQuotesList = (params: PaginationParams & QuoteFilters = {}) => {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: queryKeys.quotes.list(params),
+    queryKey: queryKeys.quotes.list(tenantId, params),
     queryFn: () => apiClient.get('/quotes', { params }).then((res: ApiResponse) => res.data),
     staleTime: 1 * 60 * 1000, // 1 minute for quote lists
   });
 };
 
 export const useQuoteDetail = (id: string) => {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: queryKeys.quotes.detail(id),
+    queryKey: queryKeys.quotes.detail(tenantId, id),
     queryFn: () => apiClient.get(`/quotes/${id}`).then((res: ApiResponse<QuoteData>) => res.data),
     enabled: !!id,
     staleTime: 2 * 60 * 1000, // 2 minutes for quote details
@@ -267,35 +269,38 @@ export const useQuoteDetail = (id: string) => {
 
 export const useCreateQuote = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: (quoteData: QuoteData) => apiClient.post('/quotes', quoteData).then((res: ApiResponse<QuoteData>) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists(tenantId) });
     },
   });
 };
 
 export const useUpdateQuote = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: ({ id, ...quoteData }: { id: string } & Partial<QuoteData>) => 
       apiClient.put(`/quotes/${id}`, quoteData).then((res: ApiResponse<QuoteData>) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.details() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists(tenantId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.details(tenantId) });
     },
   });
 };
 
 export const useDeleteQuote = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: (id: string) => apiClient.delete(`/quotes/${id}`).then((res: ApiResponse<{ success: boolean }>) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotes.lists(tenantId) });
     },
   });
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../features/auth/store';
 import { Button } from '../Button';
 import { IconButton } from '../ui/IconButton';
-import { Badge } from '../ui/Badge';
+// import { Badge } from '../ui/badge'; // TODO: Remove if not used
 import { 
   DropdownMenu, 
   DropdownMenuContent, 

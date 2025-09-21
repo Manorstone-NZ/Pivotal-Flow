@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { Button } from '../Button';
-import { Card, CardHeader, CardContent } from '../ui/Card';
+import { Card, CardHeader, CardContent } from '../ui/card';
 import { TimeEntryRow } from './TimeEntryRow';
 import { useTimeEntries, useTimeEntryTotals, useSubmitTimeEntry, type TimeEntry } from '../../features/time/api';
 import { LoadingSpinner } from '../ui/LoadingSpinner';

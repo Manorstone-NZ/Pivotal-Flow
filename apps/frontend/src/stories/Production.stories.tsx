@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ProductionMonitor } from '../components/production/ProductionMonitor';
 import { ErrorTracker } from '../components/production/ErrorTracker';
 import { DeploymentMonitor } from '../components/production/DeploymentMonitor';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { useState } from 'react';
 
 // ProductionMonitor Stories
