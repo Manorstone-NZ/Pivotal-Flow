@@ -88,6 +88,9 @@ This section contains development standards, implementation guidance, and projec
 - [Seed and Fixtures](./SEED_AND_FIXTURES.md) - Development data seeding and fixtures
 - [Reports Module Notes](./REPORTS_MODULE_NOTES.md) - Reports module implementation notes
 
+### Feature Implementation Analysis
+- [F1A Tenant Admin Portal Analysis](./F1A_tenant_admin_portal_analysis.md) - Tenant admin portal implementation analysis and design
+
 ### Infrastructure
 - [Installer README](./README_INSTALLER.md) - Installation procedures and requirements
 

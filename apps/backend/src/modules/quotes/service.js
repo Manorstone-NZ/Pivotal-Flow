@@ -99,57 +99,7 @@ export class QuoteService {
             quoteNumber: quote.quoteNumber,
         };
     }
-    async createQuote(data) {
-        const quoteId = generateId();
-        const quoteNumber = await this.generateQuoteNumber();
-        const quoteData = {
-            id: quoteId,
-            organizationId: this.context.organizationId,
-            quoteNumber,
-            customerId: data.customerId || data.clientId,
-            projectId: data.projectId || null,
-            title: data.title,
-            description: data.description || null,
-            status: 'draft',
-            type: data.type || 'project',
-            validFrom: new Date(data.validFrom || new Date()),
-            validUntil: new Date(data.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
-            currency: data.currency || 'NZD',
-            exchangeRate: data.exchangeRate || '1.000000',
-            subtotal: data.subtotal || '0.00',
-            taxRate: data.taxRate || '0.1500',
-            taxAmount: data.taxAmount || '0.00',
-            discountType: data.discountType || 'percentage',
-            discountValue: data.discountValue || '0.0000',
-            discountAmount: data.discountAmount || '0.00',
-            totalAmount: data.totalAmount || '0.00',
-            termsConditions: data.termsConditions || null,
-            notes: data.notes || null,
-            internalNotes: data.internalNotes || null,
-            createdBy: this.context.userId,
-            approvedBy: null,
-            approvedAt: null,
-            sentAt: null,
-            acceptedAt: null,
-            rejectedAt: null,
-            metadata: data.metadata || {},
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-        await this.db.insert(quotes).values(quoteData);
-        // Log audit event
-        if (this.auditLogger) {
-            await this.auditLogger.log({
-                entityType: 'quote',
-                entityId: quoteId,
-                action: 'create',
-                userId: this.context.userId,
-                organizationId: this.context.organizationId,
-                metadata: { quoteNumber, title: data.title }
-            });
-        }
-        return quoteData;
-    }
+    // Removed duplicate createQuote method - using the typed version below
     async updateQuote(id, data) {
         const updateData = {
             ...data,
@@ -161,7 +111,7 @@ export class QuoteService {
             .where(and(eq(quotes.id, id), eq(quotes.organizationId, this.context.organizationId)));
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'quote',
                 entityId: id,
                 action: 'update',
@@ -197,7 +147,7 @@ export class QuoteService {
             .where(and(eq(quotes.id, id), eq(quotes.organizationId, this.context.organizationId)));
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'quote',
                 entityId: id,
                 action: 'status_transition',
@@ -248,7 +198,7 @@ export class QuoteService {
         if (!match) {
             return `${prefix}-001`;
         }
-        const nextNumber = parseInt(match[1], 10) + 1;
+        const nextNumber = parseInt(match[1] || '0', 10) + 1;
         return `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
     }
     async createQuote(data) {
@@ -277,6 +227,7 @@ export class QuoteService {
         const quoteData = {
             id: quoteId,
             organizationId: this.context.organizationId,
+            tenantId: this.context.organizationId, // Use organizationId as tenantId for now
             customerId: data.clientId, // Map clientId to customerId for database
             quoteNumber,
             title: data.title,
@@ -299,14 +250,14 @@ export class QuoteService {
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        await this.db.insert(quotes).values(quoteData);
+        await this.db.insert(quotes).values(quoteData); // TODO: Fix schema type compatibility
         // Log audit event
         if (this.auditLogger) {
             await this.auditLogger.logEvent({
                 entityType: 'quote',
                 entityId: quoteId,
                 action: 'create',
-                changes: quoteData,
+                newValues: quoteData,
                 userId: this.context.userId,
                 organizationId: this.context.organizationId
             });
@@ -387,6 +338,9 @@ export class QuoteService {
             return null;
         }
         const item = existingItem[0];
+        if (!item) {
+            throw new Error('Line item not found');
+        }
         const quantity = data.quantity ?? parseFloat(item.quantity.toString());
         const unitPrice = data.unitPrice ?? parseFloat(item.unitPrice.toString());
         // Calculate totals
@@ -420,7 +374,7 @@ export class QuoteService {
             return null;
         }
         // Delete the line item
-        const result = await this.db
+        await this.db
             .delete(quoteLineItems)
             .where(and(eq(quoteLineItems.id, lineItemId), eq(quoteLineItems.quoteId, quoteId)));
         // Recalculate quote totals
@@ -493,15 +447,19 @@ export class QuoteService {
         })
             .where(eq(quotes.id, quoteId));
         // Log the status change
-        await this.auditLogger.logEvent({
-            action: 'quote_status_updated',
-            resource: 'quote',
-            resourceId: quoteId,
-            details: {
-                newStatus: status,
-                previousStatus: quote.status
-            }
-        });
+        if (this.auditLogger) {
+            await this.auditLogger.logEvent({
+                action: 'quote_status_updated',
+                entityType: 'quote',
+                entityId: quoteId,
+                metadata: {
+                    newStatus: status,
+                    previousStatus: quote.status
+                },
+                organizationId: this.context.organizationId,
+                userId: this.context.userId
+            });
+        }
         // Return the updated quote
         return await this.getQuoteById(quoteId);
     }

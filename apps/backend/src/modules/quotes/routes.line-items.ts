@@ -69,18 +69,18 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { quoteId } = request.params;
+      const { quoteId } = request.params as { quoteId: string };
       const lineItemData = request.body;
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
       }, auditLogger);
 
       // Add line item (this will return the updated quote)
-      const updatedQuote = await quoteService.addLineItem(quoteId, lineItemData);
+      const updatedQuote = await quoteService.addLineItem(quoteId as string, lineItemData);
 
       if (!updatedQuote) {
         return reply.status(404).send({
@@ -122,7 +122,7 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
       const updateData = request.body;
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
@@ -166,7 +166,7 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
       const { quoteId, lineItemId } = request.params;
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
@@ -217,11 +217,11 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { quoteId } = request.params;
+      const { quoteId } = request.params as { quoteId: string };
       const { type, value } = request.body;
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
@@ -264,10 +264,10 @@ export function registerQuoteLineItemRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { quoteId } = request.params;
+      const { quoteId } = request.params as { quoteId: string };
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
@@ -331,10 +331,10 @@ export function registerSubmitQuoteRoute(fastify: FastifyInstance) {
         });
       }
 
-      const { quoteId } = request.params;
+      const { quoteId } = request.params as { quoteId: string };
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId

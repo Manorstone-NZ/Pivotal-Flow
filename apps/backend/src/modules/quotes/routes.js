@@ -18,7 +18,7 @@ export async function quoteRoutes(fastify) {
         try {
             const validatedData = request.body; // TypeBox handles validation automatically
             const authenticatedRequest = request;
-            const quoteService = new QuoteService(fastify.db || {}, {
+            const quoteService = new QuoteService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -26,7 +26,7 @@ export async function quoteRoutes(fastify) {
                 ...validatedData,
                 metadata: validatedData.metadata || {}
             });
-            return reply.status(201).send(result);
+            return reply.status(201).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -49,12 +49,12 @@ export async function quoteRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const authenticatedRequest = request;
-            const quoteService = new QuoteService(fastify.db || {}, {
+            const quoteService = new QuoteService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
-            const result = await quoteService.getAllQuotes();
-            return reply.status(200).send(result);
+            const result = await quoteService.listQuotes();
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({

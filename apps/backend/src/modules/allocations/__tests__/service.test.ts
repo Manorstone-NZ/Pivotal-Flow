@@ -103,16 +103,17 @@ describe('AllocationService', () => {
       };
 
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       await expect(allocationService.createAllocation(newAllocationData))
         .rejects.toThrow('Allocation conflicts detected');
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
 
     it('should allow non-overlapping allocations', async () => {
@@ -141,10 +142,11 @@ describe('AllocationService', () => {
       };
 
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       const allocation = await allocationService.createAllocation(newAllocationData);
 
@@ -153,7 +155,7 @@ describe('AllocationService', () => {
       expect(allocation.role).toBe(ALLOCATION_ROLES.DEVELOPER);
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
   });
 
@@ -186,10 +188,11 @@ describe('AllocationService', () => {
 
     it('should successfully update allocation with valid data', async () => {
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       const updateData = {
         allocationPercent: 75,
@@ -205,7 +208,7 @@ describe('AllocationService', () => {
       expect(updatedAllocation.role).toBe(ALLOCATION_ROLES.ARCHITECT);
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
   });
 
@@ -234,10 +237,11 @@ describe('AllocationService', () => {
 
     it('should successfully soft delete allocation', async () => {
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       await allocationService.deleteAllocation(existingAllocation[0].id);
 
@@ -250,7 +254,7 @@ describe('AllocationService', () => {
       expect(deletedAllocation[0].deletedAt).not.toBeNull();
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
   });
 
@@ -391,10 +395,11 @@ describe('AllocationService', () => {
 
     it('should filter allocations by project', async () => {
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       const result = await allocationService.getAllocations({
         projectId: testProject[0].id
@@ -404,15 +409,16 @@ describe('AllocationService', () => {
       expect(result.total).toBe(2);
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
 
     it('should filter allocations by billable status', async () => {
       // Mock permission check to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       const result = await allocationService.getAllocations({
         isBillable: true
@@ -422,7 +428,7 @@ describe('AllocationService', () => {
       expect(result.allocations[0]?.isBillable).toBe(true);
 
       // Restore original service
-      allocationService['permissionService'] = originalPermissionService;
+      // allocationService['permissionService'] = originalPermissionService;
     });
   });
 });

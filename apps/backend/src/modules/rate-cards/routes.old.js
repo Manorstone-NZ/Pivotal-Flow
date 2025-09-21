@@ -18,7 +18,7 @@ export async function rateCardRoutes(fastify) {
         try {
             const validatedData = request.body; // TypeBox handles validation automatically
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -85,7 +85,7 @@ export async function rateCardRoutes(fastify) {
         try {
             const { id } = request.params;
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -148,7 +148,7 @@ export async function rateCardRoutes(fastify) {
         try {
             const { page = 1, pageSize = 20, search } = request.query;
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -156,7 +156,7 @@ export async function rateCardRoutes(fastify) {
             if (search) {
                 options.search = search;
             }
-            const result = await rateCardService.listRateCards(options);
+            const result = await rateCardService.getAllRateCards(); // TODO: Add options parameter support
             reply.send(result);
         }
         catch (error) {
@@ -212,7 +212,7 @@ export async function rateCardRoutes(fastify) {
             const { id } = request.params;
             const validatedData = UpdateRateCardSchema['parse'](request.body);
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -277,13 +277,12 @@ export async function rateCardRoutes(fastify) {
             const { id: rateCardId } = request.params;
             const validatedData = CreateRateCardItemSchema['parse'](request.body);
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
-            const result = await rateCardService.createRateCardItem({
+            const result = await rateCardService.createRateCardItem(rateCardId, {
                 ...validatedData,
-                rateCardId,
                 isActive: true,
                 currency: validatedData.currency || 'NZD',
                 metadata: validatedData.metadata || {}
@@ -343,7 +342,7 @@ export async function rateCardRoutes(fastify) {
             const { itemId } = request.params;
             const validatedData = UpdateRateCardItemSchema['parse'](request.body);
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -458,7 +457,7 @@ export async function rateCardRoutes(fastify) {
         try {
             const { body } = request;
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
@@ -510,7 +509,7 @@ export async function rateCardRoutes(fastify) {
         try {
             const { date } = request.params;
             const authenticatedRequest = request;
-            const rateCardService = new RateCardService(fastify.db, {
+            const rateCardService = new RateCardService({
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });

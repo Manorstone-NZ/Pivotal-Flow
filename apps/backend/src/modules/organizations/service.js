@@ -5,16 +5,15 @@
 import { eq, and, isNull, ilike, desc, asc, count } from 'drizzle-orm';
 import { generateId } from '@pivotal-flow/shared';
 import { organizations } from '../../lib/schema.js';
+// import { type Organization as DbOrganization } from '../../lib/schema.js'; // TODO: Use when needed
 // Import database plugin types
 import '../../plugins/database.js';
 export class OrganizationService {
     fastify;
-    currentUserId;
-    currentOrgId;
-    constructor(fastify, currentUserId, currentOrgId) {
+    constructor(fastify
+    // TODO: Add userId and orgId parameters when needed for permission checks
+    ) {
         this.fastify = fastify;
-        this.currentUserId = currentUserId;
-        this.currentOrgId = currentOrgId;
     }
     /**
      * Generate unique organization slug
@@ -215,7 +214,7 @@ export class OrganizationService {
      * Note: This is a placeholder - full implementation would require
      * user invitation table and email service integration
      */
-    async inviteUser(organizationId, inviteData) {
+    async inviteUser(_organizationId, inviteData) {
         // TODO: Implement full user invitation system
         // This would typically:
         // 1. Create invitation record in database
@@ -229,22 +228,6 @@ export class OrganizationService {
             inviteId,
             email: inviteData.email,
         };
-    }
-    /**
-     * Check if user can manage organizations
-     */
-    async canManageOrganizations() {
-        // TODO: Implement proper permission check
-        // This should check if current user has 'orgs.manage' permission
-        return true; // Temporary - allow all for development
-    }
-    /**
-     * Check if user can view organizations
-     */
-    async canViewOrganizations() {
-        // TODO: Implement proper permission check
-        // This should check if current user has 'orgs.view' permission
-        return true; // Temporary - allow all for development
     }
 }
 //# sourceMappingURL=service.js.map

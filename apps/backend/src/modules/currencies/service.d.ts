@@ -32,10 +32,12 @@ export interface CurrencyResponse {
 export declare class CurrencyService extends BaseRepository {
     options: {
         organizationId: string;
+        tenantId: string;
         userId: string;
     };
     constructor(db: PostgresJsDatabase<typeof import('../../lib/schema.js')>, options: {
         organizationId: string;
+        tenantId: string;
         userId: string;
     });
     /**

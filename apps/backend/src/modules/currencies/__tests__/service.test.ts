@@ -17,7 +17,7 @@ describe('CurrencyService', () => {
   beforeEach(async () => {
     // Setup real test database
     testDb = await getDatabase();
-    currencyService = new CurrencyService(testDb, testOptions);
+    currencyService = new CurrencyService(testDb, { ...testOptions, tenantId: testOptions.organizationId });
 
     // Setup test data
     await testDb.insert(organizations).values({

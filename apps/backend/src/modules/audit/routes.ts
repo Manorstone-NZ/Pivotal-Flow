@@ -121,7 +121,7 @@ export const auditRoutes: FastifyPluginAsync = async (fastify) => {
           conditions.push(like(auditLogs.entityType, `%${entityType}%`));
         }
         if (userId) {
-          conditions.push(eq(auditLogs.userId, userId));
+          conditions.push(eq(auditLogs.actorId, userId));
         }
         if (startDate) {
           conditions.push(gte(auditLogs.createdAt, new Date(startDate)));
@@ -174,13 +174,13 @@ export const auditRoutes: FastifyPluginAsync = async (fastify) => {
         }, 'Audit logs retrieved');
 
         return reply.status(200).send({
-          logs: logs.map(log => ({
+          logs: logs.map((log: any) => ({
             id: log.id,
             action: log.action,
             entityType: log.entityType,
             entityId: log.entityId,
             organizationId: log.organizationId,
-            userId: log.userId,
+            userId: log.actorId,
             ipAddress: log.ipAddress,
             userAgent: log.userAgent,
             sessionId: log.sessionId,

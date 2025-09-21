@@ -47,6 +47,7 @@ export declare class QuoteService {
             viewedAt: Date | null;
             publicToken: string | null;
             tokenExpiresAt: Date | null;
+            tokenUsedAt: Date | null;
             metadata: unknown;
             createdAt: Date;
             updatedAt: Date;
@@ -229,6 +230,33 @@ export declare class QuoteService {
         createdAt: Date;
     } | null>;
     private generateQuoteNumber;
+    createQuote(data: {
+        clientId: string;
+        title: string;
+        description?: string;
+        type: string;
+        status: string;
+        validUntil?: string;
+        metadata: Record<string, any>;
+    }): Promise<{
+        id: string;
+        clientId: string;
+        title: string;
+        description: string | null;
+        type: string;
+        status: string;
+        validUntil: string | null;
+        metadata: Record<string, any>;
+        organizationId: string;
+        createdAt: string;
+        updatedAt: string;
+        lineItems: never[];
+        subtotal: number;
+        taxAmount: number;
+        totalAmount: number;
+        createdBy: string;
+        quoteNumber: string;
+    }>;
     addLineItem(quoteId: string, data: {
         description: string;
         quantity: number;

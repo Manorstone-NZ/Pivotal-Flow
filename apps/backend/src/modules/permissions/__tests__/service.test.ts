@@ -45,10 +45,7 @@ describe('PermissionService Integration Tests', () => {
   beforeEach(async () => {
     if (testOrg && testUser) {
       // Create permission service with real database
-      permissionService = new PermissionService(testDb, {
-        organizationId: testOrg.id,
-        userId: testUser.id
-      });
+      permissionService = new PermissionService(testDb as any, testUser.id, testOrg.id);
     }
   });
 
@@ -70,7 +67,7 @@ describe('PermissionService Integration Tests', () => {
       }
 
       // Check if user already has the permission through existing role assignments
-      const result = await permissionService.hasPermission(testUser.id, 'quotes.override_price');
+      const result = await permissionService.hasPermission('quotes.override_price');
 
       // This will be true if the user has the permission, false if not
       // We're testing the service logic, not creating new data
@@ -89,7 +86,7 @@ describe('PermissionService Integration Tests', () => {
       }
 
       // Test with a permission that likely doesn't exist
-      const result = await permissionService.hasPermission(testUser.id, 'quotes.nonexistent' as any);
+      const result = await permissionService.hasPermission('quotes.nonexistent' as any);
 
       expect(result.hasPermission).toBe(false);
       expect(result.reason).toBe('User lacks permission: quotes.nonexistent');
@@ -101,7 +98,7 @@ describe('PermissionService Integration Tests', () => {
         return;
       }
 
-      const result = await permissionService.hasPermission(testUser.id, 'invalid-permission' as any);
+      const result = await permissionService.hasPermission('invalid-permission' as any);
 
       expect(result.hasPermission).toBe(false);
       expect(result.reason).toBe('Invalid permission format: invalid-permission');
@@ -134,7 +131,7 @@ describe('PermissionService Integration Tests', () => {
       // Should return an array of permissions
       expect(Array.isArray(result)).toBe(true);
       // Each permission should be in action.resource format
-      result.forEach(permission => {
+      result.forEach((permission: string) => {
         expect(typeof permission).toBe('string');
         expect(permission.includes('.')).toBe(true);
       });
@@ -162,7 +159,7 @@ describe('PermissionService Integration Tests', () => {
         return;
       }
 
-      const result = await permissionService.hasAnyPermission(testUser.id, [
+      const result = await permissionService.hasAnyPermission([
         'quotes.override_price',
         'quotes.create',
         'quotes.delete'
@@ -178,7 +175,7 @@ describe('PermissionService Integration Tests', () => {
         return;
       }
 
-      const result = await permissionService.hasAnyPermission(testUser.id, [
+      const result = await permissionService.hasAnyPermission([
         'quotes.nonexistent1' as any,
         'quotes.nonexistent2' as any
       ]);
@@ -195,7 +192,7 @@ describe('PermissionService Integration Tests', () => {
         return;
       }
 
-      const result = await permissionService.hasAllPermissions(testUser.id, [
+      const result = await permissionService.hasAllPermissions([
         'quotes.override_price',
         'quotes.view',
         'quotes.create'
@@ -211,7 +208,7 @@ describe('PermissionService Integration Tests', () => {
         return;
       }
 
-      const result = await permissionService.hasAllPermissions(testUser.id, [
+      const result = await permissionService.hasAllPermissions([
         'quotes.override_price',
         'quotes.nonexistent1' as any,
         'quotes.nonexistent2' as any

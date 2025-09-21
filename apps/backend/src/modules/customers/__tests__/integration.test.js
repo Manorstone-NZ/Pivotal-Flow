@@ -2,7 +2,7 @@
  * Customer Module Integration Tests
  * Test customer and contact API endpoints
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { generateId } from '@pivotal-flow/shared';
 const baseUrl = 'http://localhost:3000';
 describe('Customer Module Integration Tests', () => {

@@ -47,24 +47,24 @@ export const Footer: React.FC = () => {
 
   return (
     <footer 
-      className="bg-neutral-900 text-neutral-100 px-4 py-8 sm:px-6 lg:px-8"
+      className="bg-surface-card border-t border-surface-border text-text-primary px-4 py-8 sm:px-6 lg:px-8"
       role="contentinfo"
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">
+            <h3 className="text-lg font-semibold text-text-primary">
               Pivotal Flow
             </h3>
-            <p className="text-neutral-300 text-sm">
+            <p className="text-text-secondary text-sm">
               Streamline your business workflow from quotes to payments.
             </p>
           </div>
 
           {/* Links Section */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wide">
+            <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
               Resources
             </h4>
             <nav aria-label="Footer navigation">
@@ -73,7 +73,7 @@ export const Footer: React.FC = () => {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-neutral-300 hover:text-white transition-colors duration-150 text-sm"
+                      className="text-text-secondary hover:text-text-primary transition-colors duration-150 text-sm"
                       aria-describedby={`${link.label.toLowerCase()}-description`}
                     >
                       {link.label}
@@ -89,10 +89,10 @@ export const Footer: React.FC = () => {
 
           {/* Version Section */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wide">
+            <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
               Version Info
             </h4>
-            <div className="space-y-2 text-sm text-neutral-300">
+            <div className="space-y-2 text-sm text-text-secondary">
               <p>
                 <span className="font-medium">Version:</span> {appVersion}
               </p>
@@ -107,13 +107,13 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-8 pt-8 border-t border-neutral-700">
+        <div className="mt-8 pt-8 border-t border-surface-border">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-text-disabled">
               © {currentYear} Pivotal Flow. All rights reserved.
             </p>
             
-            <div className="flex items-center space-x-4 text-sm text-neutral-400">
+            <div className="flex items-center space-x-4 text-sm text-text-disabled">
               <span>Built with ❤️ for modern businesses</span>
             </div>
           </div>

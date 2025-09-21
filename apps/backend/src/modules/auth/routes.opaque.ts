@@ -9,7 +9,7 @@ import { Type } from '@sinclair/typebox';
 import { randomBytes } from 'crypto';
 import { logger } from "../../lib/logger.js";
 import { AuthService } from "./service.drizzle.js";
-import { AuthenticationError } from "../../lib/error-handler.js";
+// import { AuthenticationError } from "../../lib/error-handler.js";
 import { AuditLogger } from "../../lib/audit-logger.drizzle.js";
 
 // Helper function to extract session ID from request
@@ -49,11 +49,11 @@ const OpaqueLoginResponseSchema = Type.Object({
   })
 });
 
-const OpaqueLogoutResponseSchema = Type.Object({
-  success: Type.Boolean(),
-  message: Type.String(),
-  revokedSessions: Type.Number()
-});
+// const OpaqueLogoutResponseSchema = Type.Object({
+//   success: Type.Boolean(),
+//   message: Type.String(),
+//   revokedSessions: Type.Number()
+// });
 
 const OpaqueErrorSchema = Type.Object({
   error: Type.String(),
@@ -121,11 +121,11 @@ export const opaqueAuthRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         // Create opaque session
-        const sessionBinding = {
-          ipAddress: request.ip,
-          userAgent: request.headers['user-agent'] || '',
-          fingerprint: request.headers['x-client-fingerprint'] as string
-        };
+        // const sessionBinding = {
+        //   ipAddress: request.ip,
+        //   userAgent: request.headers['user-agent'] || '',
+        //   fingerprint: request.headers['x-client-fingerprint'] as string
+        // };
 
         // Create simple session ID and store in Redis
         const sessionId = `sess_${randomBytes(32).toString('hex')}`;
@@ -153,7 +153,7 @@ export const opaqueAuthRoutes: FastifyPluginAsync = async (fastify) => {
         // Set HttpOnly cookie for browser sessions
         reply.setCookie('pf-session', sessionId, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: process.env['NODE_ENV'] === 'production',
           sameSite: 'lax',
           maxAge: rememberMe ? 30 * 24 * 60 * 60 : 15 * 60,
           path: '/'

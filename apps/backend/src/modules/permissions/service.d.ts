@@ -3,6 +3,7 @@
  * Handles CRUD operations for permissions, roles, and role assignments
  */
 import type { FastifyInstance } from 'fastify';
+import type { PermissionCheck, PermissionName } from './types.js';
 export interface PermissionData {
     id: string;
     name: string;
@@ -71,5 +72,25 @@ export declare class PermissionService {
         displayName: string | null;
         status: string;
     }>>;
+    /**
+     * Check if the current user has a specific permission
+     */
+    hasPermission(permissionName: PermissionName): Promise<PermissionCheck>;
+    /**
+     * Check if the current user has any of the specified permissions
+     */
+    hasAnyPermission(permissionNames: PermissionName[]): Promise<PermissionCheck>;
+    /**
+     * Check if the current user has all of the specified permissions
+     */
+    hasAllPermissions(permissionNames: PermissionName[]): Promise<PermissionCheck>;
+    /**
+     * Check if the current user can override quote prices
+     */
+    canOverrideQuotePrice(_userId?: string): Promise<PermissionCheck>;
+    /**
+     * Get all permissions for the current user
+     */
+    getUserPermissions(_userId?: string): Promise<string[]>;
 }
 //# sourceMappingURL=service.d.ts.map

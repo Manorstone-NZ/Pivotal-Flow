@@ -40,7 +40,7 @@ export function registerStatusTransitionRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create quote service
-      const quoteService = new QuoteService((fastify as any).db, {
+      const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId
       });

@@ -201,21 +201,25 @@ async function createF1CleanSeed() {
             description: 'Sample quote for F1 multitenant testing',
             status: 'draft',
             type: 'project',
-            validFrom: new Date(),
-            validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            validFrom: new Date().toISOString().split('T')[0],
+            validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
             currency: 'NZD',
-            subtotal: 1000.00,
-            taxRate: 0.15,
-            taxAmount: 150.00,
-            totalAmount: 1150.00,
+            exchangeRate: '1.000000',
+            subtotal: '1000.00',
+            taxRate: '0.1500',
+            taxAmount: '150.00',
+            discountType: 'percentage',
+            discountValue: '0.0000',
+            discountAmount: '0.00',
+            totalAmount: '1150.00',
             createdBy: userId,
             createdAt: new Date(),
             updatedAt: new Date(),
-        });
+        }); // TODO: Fix schema type compatibility
         console.log(`✅ Created sample quote: F1 Sample Quote (${quoteId})`);
         console.log('\n🎉 F1 Clean Seed completed successfully!');
         console.log('\n📊 Created:');
-        console.log(`   Tenant: ${tenantData.name} (${tenantId})`);
+        console.log(`   Tenant: Pivotal Flow Ltd (${tenantId})`);
         console.log(`   User: admin@pivotalflow.com (${userId})`);
         console.log(`   Customer: Sample Customer Ltd (${customerId})`);
         console.log(`   Quote: F1 Sample Quote (${quoteId})`);

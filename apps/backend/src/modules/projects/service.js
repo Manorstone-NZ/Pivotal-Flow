@@ -1,7 +1,8 @@
-import { eq, and, desc, asc, like, sql, isNull } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, isNull } from 'drizzle-orm';
+// import { like } from 'drizzle-orm'; // TODO: Use when needed
 import { generateId } from '@pivotal-flow/shared';
 import { getDatabase } from '../../lib/db.js';
-import { projects, users, serviceCategories } from '../../lib/schema.js';
+import { projects, users } from '../../lib/schema.js';
 export class ProjectService {
     context;
     auditLogger;
@@ -100,6 +101,9 @@ export class ProjectService {
             return null;
         }
         const project = projectResult[0];
+        if (!project) {
+            return null;
+        }
         // Get owner details if ownerId exists
         let owner = null;
         if (project.ownerId) {
@@ -134,14 +138,14 @@ export class ProjectService {
             createdAt: project.createdAt.toISOString(),
             updatedAt: project.updatedAt.toISOString(),
             deletedAt: project.deletedAt?.toISOString() || null,
-            owner: owner || undefined,
-            serviceCategories: serviceCategoriesList
+            serviceCategories: serviceCategoriesList,
+            ...(owner ? { owner } : {}),
         };
         return response;
     }
     async createProject(data) {
         const db = getDatabase();
-        const projectId = generateId('proj');
+        const projectId = generateId();
         const now = new Date();
         const projectData = {
             id: projectId,
@@ -244,6 +248,9 @@ export class ProjectService {
             return null;
         }
         const project = updatedProject[0];
+        if (!project) {
+            return null;
+        }
         return {
             id: project.id,
             organizationId: project.organizationId,
@@ -287,7 +294,7 @@ export class ProjectService {
                 organizationId: this.context.organizationId,
                 userId: this.context.userId,
                 oldValues: {
-                    name: existingProject[0].name
+                    name: existingProject[0]?.name || 'Unknown'
                 }
             });
         }

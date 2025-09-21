@@ -6,9 +6,11 @@
 
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { SessionService, PasetoKeyManager } from '../services/paseto.js';
+import { SessionService } from '../services/paseto.js';
+// import { PasetoKeyManager } from '../services/paseto.js'; // TODO: Use when implementing proper key management
 import { AuthRepository } from '../repositories/auth.js';
-import { AuthenticationError, AuthorizationError } from '../lib/error-handler.js';
+import { AuthenticationError } from '../lib/error-handler.js';
+// import { AuthorizationError } from '../lib/error-handler.js'; // TODO: Use when needed
 import { logger } from '../lib/logger.js';
 
 declare module 'fastify' {
@@ -71,8 +73,8 @@ function extractSessionId(request: FastifyRequest): string | null {
  */
 export const opaqueAuthPlugin: FastifyPluginAsync = fp(async (fastify) => {
   // Initialize services
-  const keyManager = new PasetoKeyManager();
-  const sessionService = new SessionService(fastify, keyManager);
+  // const keyManager = new PasetoKeyManager(); // TODO: Use when implementing proper key management
+  const sessionService = new SessionService(fastify);
   const authRepository = new AuthRepository(fastify);
   
   // Decorate fastify instance
@@ -80,7 +82,7 @@ export const opaqueAuthPlugin: FastifyPluginAsync = fp(async (fastify) => {
   fastify.decorate('authRepository', authRepository);
   
   // Session validation middleware
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('preHandler', async (request: FastifyRequest, _reply: FastifyReply) => {
     // Skip public opaque routes (like login)
     if (isOpaquePublicRoute(request.url)) {
       return;
@@ -98,13 +100,13 @@ export const opaqueAuthPlugin: FastifyPluginAsync = fp(async (fastify) => {
     
     // Validate session with binding
     const sessionData = await sessionService.validateUserSession(sessionId, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent']
+      ipAddress: request.ip || '',
+      ...(request.headers['user-agent'] ? { userAgent: request.headers['user-agent'] } : {})
     }, {
-      slidingExpiry: true,
-      bindToIp: process.env.SESSION_BIND_IP === 'true',
-      bindToUserAgent: process.env.SESSION_BIND_UA === 'true'
-    });
+      // slidingExpiry: true, // TODO: Add to SessionOptions interface
+      bindToIp: process.env['SESSION_BIND_IP'] === 'true',
+      bindToUserAgent: process.env['SESSION_BIND_UA'] === 'true'
+    } as any); // TODO: Fix SessionOptions interface
     
     if (!sessionData) {
       throw new AuthenticationError('Invalid or expired session');

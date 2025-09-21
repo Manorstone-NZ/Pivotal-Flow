@@ -27,6 +27,7 @@ export interface RolePermissions {
 }
 
 export type PermissionName = 
+  | 'system.super_admin'
   | 'quotes.view'
   | 'quotes.create'
   | 'quotes.update'

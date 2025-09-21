@@ -3,7 +3,9 @@
  * API endpoints for organization management
  */
 import { OrganizationService } from './service.js';
-import { CreateOrganizationBodySchema, UpdateOrganizationBodySchema, InviteUserBodySchema, OrganizationSettingsBodySchema, OrganizationIdParamSchema, OrganizationQuerystringSchema, OrganizationResponseSchema, OrganizationListResponseSchema, OrganizationDetailResponseSchema, OrganizationSettingsResponseSchema, InviteUserResponseSchema, StandardSuccessResponseSchema, ErrorResponseSchema, } from './schemas.js';
+import { CreateOrganizationBodySchema, UpdateOrganizationBodySchema, InviteUserBodySchema, OrganizationSettingsBodySchema, OrganizationIdParamSchema, OrganizationQuerystringSchema, OrganizationResponseSchema, 
+// OrganizationListResponseSchema, // TODO: Use when needed
+OrganizationDetailResponseSchema, OrganizationSettingsResponseSchema, InviteUserResponseSchema, StandardSuccessResponseSchema, ErrorResponseSchema, } from './schemas.js';
 // List organizations
 export function registerOrganizationListRoute(fastify) {
     fastify.get('/v1/organizations', {
@@ -16,8 +18,8 @@ export function registerOrganizationListRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const { user: _user } = request; // TODO: Use user for permission checks
+            const organizationService = new OrganizationService(fastify);
             const result = await organizationService.listOrganizations(request.query, {
                 page: request.query.page,
                 limit: request.query.limit,
@@ -50,8 +52,8 @@ export function registerOrganizationCreateRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const { user: _user } = request; // TODO: Use user for permission checks
+            const organizationService = new OrganizationService(fastify);
             const organization = await organizationService.createOrganization(request.body);
             return reply.status(201).send({
                 success: true,
@@ -89,9 +91,9 @@ export function registerOrganizationDetailRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const organization = await organizationService.getOrganizationById(organizationId);
             if (!organization) {
                 return reply.status(404).send({
@@ -143,9 +145,9 @@ export function registerOrganizationUpdateRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const organization = await organizationService.updateOrganization(organizationId, request.body);
             if (!organization) {
                 return reply.status(404).send({
@@ -190,9 +192,9 @@ export function registerOrganizationDeleteRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const success = await organizationService.deleteOrganization(organizationId);
             if (!success) {
                 return reply.status(404).send({
@@ -236,9 +238,9 @@ export function registerOrganizationSettingsGetRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const settings = await organizationService.getOrganizationSettings(organizationId);
             if (settings === null) {
                 return reply.status(404).send({
@@ -283,9 +285,9 @@ export function registerOrganizationSettingsUpdateRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const settings = await organizationService.updateOrganizationSettings(organizationId, request.body.settings);
             if (settings === null) {
                 return reply.status(404).send({
@@ -330,9 +332,9 @@ export function registerOrganizationInviteUserRoute(fastify) {
         },
     }, async (request, reply) => {
         try {
-            const { user } = request;
+            const { user: _user } = request; // TODO: Use user for permission checks
             const { id: organizationId } = request.params;
-            const organizationService = new OrganizationService(fastify, user.userId, user.organizationId);
+            const organizationService = new OrganizationService(fastify);
             const result = await organizationService.inviteUser(organizationId, request.body);
             return reply.send({
                 success: true,

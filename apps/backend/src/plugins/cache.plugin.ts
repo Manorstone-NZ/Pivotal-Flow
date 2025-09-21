@@ -7,7 +7,7 @@ import { logger } from '../lib/logger.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    cache: CacheApi;
+    cache: ReturnType<typeof import('redis').createClient>;
   }
 }
 
@@ -61,7 +61,7 @@ export const cachePlugin: FastifyPluginCallback<CachePluginOptions> = async (
     await cacheService.connect();
     
     // Decorate fastify with cache service
-    fastify.decorate('cache', cacheService);
+    fastify.decorate('cache', cacheService as any); // TODO: Fix Fastify decorator type compatibility
     
     // Add cache health check route
     fastify.get('/health/cache', {
@@ -144,7 +144,7 @@ export const cachePlugin: FastifyPluginCallback<CachePluginOptions> = async (
       }
     };
     
-    fastify.decorate('cache', fallbackCache);
+    fastify.decorate('cache', fallbackCache as any); // TODO: Fix Fastify decorator type compatibility
     
     // Add health check route that shows cache is unavailable
     fastify.get('/health/cache', {

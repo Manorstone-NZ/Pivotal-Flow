@@ -156,7 +156,7 @@ export class ReferenceDataService {
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
+        const hasPermission = await this.permissionService.hasPermission(permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }
@@ -214,7 +214,7 @@ export class ReferenceDataService {
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
+        const hasPermission = await this.permissionService.hasPermission(permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }
@@ -316,7 +316,7 @@ export class ReferenceDataService {
     // Check permissions
     if (endpointConfig.permissions) {
       for (const permission of endpointConfig.permissions) {
-        const hasPermission = await this.permissionService.hasPermission(this.userId, permission as any);
+        const hasPermission = await this.permissionService.hasPermission(permission as any);
         if (!hasPermission.hasPermission) {
           throw new Error(REFERENCE_ERRORS.PERMISSION_DENIED);
         }

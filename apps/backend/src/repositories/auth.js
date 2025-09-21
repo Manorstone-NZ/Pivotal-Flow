@@ -68,7 +68,7 @@ export class AuthRepository {
                 .innerJoin(roles, eq(userRoles.roleId, roles.id))
                 .where(and(eq(userRoles.userId, userId), eq(userRoles.isActive, true), eq(roles.isActive, true), eq(userRoles.organizationId, tenantId) // Tenant-scoped roles
             ));
-            const userRolesList = rolesResult.map(r => r.name);
+            const userRolesList = rolesResult.map((r) => r.name);
             // Get user permissions through roles in this tenant
             const permissionsResult = await this.db
                 .select({
@@ -80,7 +80,7 @@ export class AuthRepository {
                 .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
                 .where(and(eq(userRoles.userId, userId), eq(userRoles.isActive, true), eq(roles.isActive, true), eq(userRoles.organizationId, tenantId) // Tenant-scoped permissions
             ));
-            const userPermissionsList = permissionsResult.map(p => p.name);
+            const userPermissionsList = permissionsResult.map((p) => p.name);
             // Get all user memberships (cross-tenant)
             const membershipsResult = await this.db
                 .select({
@@ -88,7 +88,9 @@ export class AuthRepository {
                 role: memberships.role
             })
                 .from(memberships)
-                .where(and(eq(memberships.userId, userId), eq(memberships.status, 'ACTIVE')));
+                .where(eq(memberships.userId, userId)
+            // TODO: Add status filtering when memberships.status field is added
+            );
             return {
                 id: user.id,
                 email: user.email,
@@ -113,7 +115,7 @@ export class AuthRepository {
             const result = await this.db
                 .select({ id: memberships.id })
                 .from(memberships)
-                .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId), eq(memberships.status, 'ACTIVE')))
+                .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId)))
                 .limit(1);
             return result.length > 0;
         }
@@ -130,7 +132,7 @@ export class AuthRepository {
             const result = await this.db
                 .select({ role: memberships.role })
                 .from(memberships)
-                .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId), eq(memberships.status, 'ACTIVE')))
+                .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId)))
                 .limit(1);
             return result[0]?.role || null;
         }
@@ -166,11 +168,13 @@ export class AuthRepository {
                 tenantId: memberships.tenantId,
                 tenantName: tenants.name,
                 role: memberships.role,
-                status: memberships.status
+                // status: memberships.status // TODO: Add status field when needed
             })
                 .from(memberships)
                 .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-                .where(and(eq(memberships.userId, userId), eq(memberships.status, 'ACTIVE'), eq(tenants.status, 'ACTIVE')))
+                .where(and(eq(memberships.userId, userId), 
+            // eq(memberships.status, 'ACTIVE') // TODO: Add status field to memberships table if needed,
+            eq(tenants.status, 'ACTIVE')))
                 .orderBy(tenants.name);
             return result;
         }

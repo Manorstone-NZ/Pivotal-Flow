@@ -20,7 +20,7 @@ import { Footer } from './sections/Footer';
  */
 export const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-background via-neutral-50 to-surface-background">
+    <div className="min-h-screen bg-surface-background">
       {/* Main Content */}
       <main className="relative">
         <Hero />

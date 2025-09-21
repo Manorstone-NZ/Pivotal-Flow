@@ -174,7 +174,7 @@ export function extractUserContext(request: FastifyRequest): UserContext {
     roles?: string[];
   }
 
-  interface AuthenticatedRequest extends FastifyRequest {
+  type AuthenticatedRequest = FastifyRequest & {
     user: AuthenticatedUser;
   }
 

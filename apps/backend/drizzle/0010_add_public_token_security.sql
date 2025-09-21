@@ -43,3 +43,4 @@ CREATE TABLE "public_token_audit" (
 CREATE INDEX "idx_public_token_audit_token" ON "public_token_audit" USING btree ("token_id", "created_at");
 CREATE INDEX "idx_public_token_audit_org" ON "public_token_audit" USING btree ("organization_id", "created_at");
 CREATE INDEX "idx_public_token_audit_action" ON "public_token_audit" USING btree ("action", "created_at");
+

@@ -5,6 +5,25 @@
  * - 30-day expiration for public links
  * - Self-contained verification
  */
+import { KeyObject } from 'crypto';
+import type { FastifyInstance } from 'fastify';
+type KeyPair = KeyObject;
+interface SessionData {
+    userId: string;
+    tenantId: string;
+    organizationId: string;
+    roles: string[];
+    permissions: string[];
+    createdAt: Date;
+    lastActivity: Date;
+    ipAddress: string;
+    userAgent: string;
+}
+interface SessionOptions {
+    ipAddress?: string;
+    userAgent?: string;
+    fingerprint?: string;
+}
 export interface PasetoPayload {
     sub: string;
     org: string;
@@ -81,8 +100,7 @@ export declare function verifyQuoteLink(keyManager: PasetoKeyManager, token: str
  */
 export declare class SessionService {
     private fastify;
-    private keyManager;
-    constructor(fastify: FastifyInstance, keyManager: PasetoKeyManager);
+    constructor(fastify: FastifyInstance);
     /**
      * Create opaque session for user
      */
@@ -107,4 +125,5 @@ export declare class SessionService {
      */
     revokeAllUserSessions(userId: string, tenantId?: string): Promise<number>;
 }
+export {};
 //# sourceMappingURL=paseto.d.ts.map

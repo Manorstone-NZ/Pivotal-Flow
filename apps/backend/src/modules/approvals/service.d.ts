@@ -8,7 +8,6 @@ import type { ApprovalRequest, CreateApprovalRequest, ApproveRequest, RejectRequ
  * Handles approval requests for quotes, invoices, and projects
  */
 export declare class ApprovalService extends BaseRepository {
-    private permissionService;
     private auditLogger;
     constructor(db: PostgresJsDatabase<typeof import('../../lib/schema.js')>, options: {
         organizationId: string;

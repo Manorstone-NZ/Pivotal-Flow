@@ -11,13 +11,13 @@ import { getDatabase } from '../../lib/db.js';
 import { tenants, memberships, tenantFeatures, users } from '../../lib/schema.js';
 import type { Static } from '@sinclair/typebox';
 import type { 
-  TenantSchema, 
+  // TenantSchema, // TODO: Use when needed
   CreateTenantSchema, 
   UpdateTenantSchema,
-  MembershipSchema,
+  // MembershipSchema, // TODO: Use when needed
   CreateMembershipSchema,
   UpdateMembershipSchema,
-  TenantFeatureSchema,
+  // TenantFeatureSchema, // TODO: Use when needed
   UpdateTenantFeaturesSchema
 } from './typeboxSchemas.js';
 

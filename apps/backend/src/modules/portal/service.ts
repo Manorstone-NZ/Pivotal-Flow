@@ -57,16 +57,14 @@ export class PortalService extends BaseRepository {
   ) {
     super(db, {
       organizationId: userContext.organizationId,
+      tenantId: userContext.organizationId,
       userId: userContext.userId
     });
 
     this.userContext = userContext;
     // Note: fastify parameter available for future use
     
-    this.permissionService = new PermissionService(db, {
-      organizationId: userContext.organizationId,
-      userId: userContext.userId
-    });
+    this.permissionService = new PermissionService(fastify, userContext.userId, userContext.organizationId);
     
     this.auditLogger = new AuditLogger(fastify);
   }
@@ -145,10 +143,7 @@ export class PortalService extends BaseRepository {
     await this.validatePortalAccess();
 
     // Check permission
-    const canViewQuotes = await this.permissionService.hasPermission(
-      this.userContext.userId, 
-      PORTAL_PERMISSIONS.VIEW_OWN_QUOTES
-    );
+    const canViewQuotes = await this.permissionService.hasPermission(PORTAL_PERMISSIONS.VIEW_OWN_QUOTES);
     
     if (!canViewQuotes.hasPermission) {
       throw new Error('Permission denied: cannot view quotes');
@@ -263,10 +258,7 @@ export class PortalService extends BaseRepository {
     await this.validatePortalAccess();
 
     // Check permission
-    const canViewQuotes = await this.permissionService.hasPermission(
-      this.userContext.userId, 
-      PORTAL_PERMISSIONS.VIEW_OWN_QUOTES
-    );
+    const canViewQuotes = await this.permissionService.hasPermission(PORTAL_PERMISSIONS.VIEW_OWN_QUOTES);
     
     if (!canViewQuotes.hasPermission) {
       throw new Error('Permission denied: cannot view quotes');
@@ -395,10 +387,7 @@ export class PortalService extends BaseRepository {
     await this.validatePortalAccess();
 
     // Check permission
-    const canViewInvoices = await this.permissionService.hasPermission(
-      this.userContext.userId, 
-      PORTAL_PERMISSIONS.VIEW_OWN_INVOICES
-    );
+    const canViewInvoices = await this.permissionService.hasPermission(PORTAL_PERMISSIONS.VIEW_OWN_INVOICES);
     
     if (!canViewInvoices.hasPermission) {
       throw new Error('Permission denied: cannot view invoices');
@@ -509,10 +498,7 @@ export class PortalService extends BaseRepository {
     await this.validatePortalAccess();
 
     // Check permission
-    const canViewInvoices = await this.permissionService.hasPermission(
-      this.userContext.userId, 
-      PORTAL_PERMISSIONS.VIEW_OWN_INVOICES
-    );
+    const canViewInvoices = await this.permissionService.hasPermission(PORTAL_PERMISSIONS.VIEW_OWN_INVOICES);
     
     if (!canViewInvoices.hasPermission) {
       throw new Error('Permission denied: cannot view invoices');
@@ -629,10 +615,7 @@ export class PortalService extends BaseRepository {
     await this.validatePortalAccess();
 
     // Check permission
-    const canViewTimeEntries = await this.permissionService.hasPermission(
-      this.userContext.userId, 
-      PORTAL_PERMISSIONS.VIEW_OWN_TIME_ENTRIES
-    );
+    const canViewTimeEntries = await this.permissionService.hasPermission(PORTAL_PERMISSIONS.VIEW_OWN_TIME_ENTRIES);
     
     if (!canViewTimeEntries.hasPermission) {
       throw new Error('Permission denied: cannot view time entries');

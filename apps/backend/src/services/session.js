@@ -3,6 +3,7 @@
  * Implements secure session management with Redis storage
  */
 import { randomBytes } from 'crypto';
+// import type { FastifyInstance } from 'fastify'; // TODO: Use when implementing session management
 import { logger } from '../lib/logger.js';
 /**
  * Create session with sliding TTL

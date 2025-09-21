@@ -36,7 +36,7 @@ export class JobsService {
      */
     async createJob(request) {
         // Check permissions
-        const canCreateJob = await this.permissionService.hasPermission(this.userId, 'jobs.create_jobs');
+        const canCreateJob = await this.permissionService.hasPermission('jobs.create_jobs');
         if (!canCreateJob.hasPermission) {
             throw new Error('Permission denied: cannot create jobs');
         }

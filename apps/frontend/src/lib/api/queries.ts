@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
+import { useTenantId } from '../../features/tenancy/context';
 
 // Filter types for different entities
 type UserFilters = Record<string, string | number | boolean>;
@@ -84,60 +85,60 @@ interface ApiResponse<T = unknown> {
   status: number;
 }
 
-// Cache key factory
+// F1.5: Cache key factory with tenant isolation
 export const queryKeys = {
-  // Authentication
+  // Authentication (global, no tenant isolation needed)
   auth: {
     me: ['auth', 'me'] as const,
     refresh: ['auth', 'refresh'] as const,
   },
   
-  // Users
+  // Users (tenant-scoped)
   users: {
-    all: ['users'] as const,
-    lists: () => [...queryKeys.users.all, 'list'] as const,
-    list: (filters: UserFilters) => [...queryKeys.users.lists(), filters] as const,
-    details: () => [...queryKeys.users.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.users.details(), id] as const,
+    all: (tenantId: string | null) => ['users', tenantId] as const,
+    lists: (tenantId: string | null) => [...queryKeys.users.all(tenantId), 'list'] as const,
+    list: (tenantId: string | null, filters: UserFilters) => [...queryKeys.users.lists(tenantId), filters] as const,
+    details: (tenantId: string | null) => [...queryKeys.users.all(tenantId), 'detail'] as const,
+    detail: (tenantId: string | null, id: string) => [...queryKeys.users.details(tenantId), id] as const,
   },
   
-  // Quotes
+  // Quotes (tenant-scoped - critical for monetary data)
   quotes: {
-    all: ['quotes'] as const,
-    lists: () => [...queryKeys.quotes.all, 'list'] as const,
-    list: (filters: QuoteFilters) => [...queryKeys.quotes.lists(), filters] as const,
-    details: () => [...queryKeys.quotes.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.quotes.details(), id] as const,
+    all: (tenantId: string | null) => ['quotes', tenantId] as const,
+    lists: (tenantId: string | null) => [...queryKeys.quotes.all(tenantId), 'list'] as const,
+    list: (tenantId: string | null, filters: QuoteFilters) => [...queryKeys.quotes.lists(tenantId), filters] as const,
+    details: (tenantId: string | null) => [...queryKeys.quotes.all(tenantId), 'detail'] as const,
+    detail: (tenantId: string | null, id: string) => [...queryKeys.quotes.details(tenantId), id] as const,
   },
   
-  // Rate Cards
+  // Rate Cards (tenant-scoped - critical for pricing data)
   rateCards: {
-    all: ['rate-cards'] as const,
-    lists: () => [...queryKeys.rateCards.all, 'list'] as const,
-    list: (filters: RateCardFilters) => [...queryKeys.rateCards.lists(), filters] as const,
-    details: () => [...queryKeys.rateCards.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.rateCards.details(), id] as const,
+    all: (tenantId: string | null) => ['rate-cards', tenantId] as const,
+    lists: (tenantId: string | null) => [...queryKeys.rateCards.all(tenantId), 'list'] as const,
+    list: (tenantId: string | null, filters: RateCardFilters) => [...queryKeys.rateCards.lists(tenantId), filters] as const,
+    details: (tenantId: string | null) => [...queryKeys.rateCards.all(tenantId), 'detail'] as const,
+    detail: (tenantId: string | null, id: string) => [...queryKeys.rateCards.details(tenantId), id] as const,
   },
   
-  // Payments
+  // Payments (tenant-scoped - critical for financial data)
   payments: {
-    all: ['payments'] as const,
-    lists: () => [...queryKeys.payments.all, 'list'] as const,
-    list: (filters: PaymentFilters) => [...queryKeys.payments.lists(), filters] as const,
-    details: () => [...queryKeys.payments.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.payments.details(), id] as const,
+    all: (tenantId: string | null) => ['payments', tenantId] as const,
+    lists: (tenantId: string | null) => [...queryKeys.payments.all(tenantId), 'list'] as const,
+    list: (tenantId: string | null, filters: PaymentFilters) => [...queryKeys.payments.lists(tenantId), filters] as const,
+    details: (tenantId: string | null) => [...queryKeys.payments.all(tenantId), 'detail'] as const,
+    detail: (tenantId: string | null, id: string) => [...queryKeys.payments.details(tenantId), id] as const,
   },
   
-  // Projects
+  // Projects (tenant-scoped)
   projects: {
-    all: ['projects'] as const,
-    lists: () => [...queryKeys.projects.all, 'list'] as const,
-    list: (filters: ProjectFilters) => [...queryKeys.projects.lists(), filters] as const,
-    details: () => [...queryKeys.projects.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.projects.details(), id] as const,
+    all: (tenantId: string | null) => ['projects', tenantId] as const,
+    lists: (tenantId: string | null) => [...queryKeys.projects.all(tenantId), 'list'] as const,
+    list: (tenantId: string | null, filters: ProjectFilters) => [...queryKeys.projects.lists(tenantId), filters] as const,
+    details: (tenantId: string | null) => [...queryKeys.projects.all(tenantId), 'detail'] as const,
+    detail: (tenantId: string | null, id: string) => [...queryKeys.projects.details(tenantId), id] as const,
   },
   
-  // Currencies
+  // Currencies (global - same across tenants)
   currencies: {
     all: ['currencies'] as const,
     lists: () => [...queryKeys.currencies.all, 'list'] as const,
@@ -185,55 +186,63 @@ export const useAuthRefresh = () => {
   });
 };
 
-// Users Hooks
+// F1.5: Users Hooks with tenant isolation
 export const useUsersList = (params: PaginationParams & UserFilters = {}) => {
+  const tenantId = useTenantId();
+  
   return useQuery({
-    queryKey: queryKeys.users.list(params),
+    queryKey: queryKeys.users.list(tenantId, params),
     queryFn: () => apiClient.get('/users', { params }).then((res: ApiResponse) => res.data),
+    enabled: !!tenantId, // Only fetch when tenant is available
     staleTime: 2 * 60 * 1000, // 2 minutes for user lists
   });
 };
 
 export const useUserDetail = (id: string) => {
+  const tenantId = useTenantId();
+  
   return useQuery({
-    queryKey: queryKeys.users.detail(id),
+    queryKey: queryKeys.users.detail(tenantId, id),
     queryFn: () => apiClient.get(`/users/${id}`).then((res: ApiResponse) => res.data),
-    enabled: !!id,
+    enabled: !!id && !!tenantId,
     staleTime: 5 * 60 * 1000, // 5 minutes for user details
   });
 };
 
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: (userData: UserData) => apiClient.post('/users', userData).then((res: ApiResponse) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists(tenantId) });
     },
   });
 };
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: ({ id, ...userData }: { id: string } & Partial<UserData>) => 
       apiClient.put(`/users/${id}`, userData).then((res: ApiResponse) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.details() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists(tenantId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.details(tenantId) });
     },
   });
 };
 
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: (id: string) => apiClient.delete(`/users/${id}`).then((res: ApiResponse) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists(tenantId) });
     },
   });
 };

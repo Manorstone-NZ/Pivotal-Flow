@@ -7,13 +7,14 @@ import type { FastifyInstance } from 'fastify';
 import { eq, and, isNull, ilike, desc, asc, count } from 'drizzle-orm';
 import { generateId } from '@pivotal-flow/shared';
 
-import { organizations, type Organization as DbOrganization, type NewOrganization as DbNewOrganization } from '../../lib/schema.js';
+import { organizations, type NewOrganization as DbNewOrganization } from '../../lib/schema.js';
+// import { type Organization as DbOrganization } from '../../lib/schema.js'; // TODO: Use when needed
 
 // Import database plugin types
 import '../../plugins/database.js';
 import type { 
   Organization, 
-  NewOrganization, 
+  // NewOrganization, // TODO: Use when needed
   CreateOrganizationData, 
   UpdateOrganizationData,
   InviteUserData,
@@ -25,9 +26,8 @@ import type {
 
 export class OrganizationService {
   constructor(
-    private fastify: FastifyInstance,
-    private currentUserId: string,
-    private currentOrgId?: string
+    private fastify: FastifyInstance
+    // TODO: Add userId and orgId parameters when needed for permission checks
   ) {}
 
   /**
@@ -305,7 +305,7 @@ export class OrganizationService {
    * user invitation table and email service integration
    */
   async inviteUser(
-    organizationId: string,
+    _organizationId: string,
     inviteData: InviteUserData
   ): Promise<{ inviteId: string; email: string }> {
     // TODO: Implement full user invitation system
@@ -325,21 +325,7 @@ export class OrganizationService {
     };
   }
 
-  /**
-   * Check if user can manage organizations
-   */
-  private async canManageOrganizations(): Promise<boolean> {
-    // TODO: Implement proper permission check
-    // This should check if current user has 'orgs.manage' permission
-    return true; // Temporary - allow all for development
-  }
-
-  /**
-   * Check if user can view organizations
-   */
-  private async canViewOrganizations(): Promise<boolean> {
-    // TODO: Implement proper permission check
-    // This should check if current user has 'orgs.view' permission
-    return true; // Temporary - allow all for development
-  }
+  // TODO: Add permission check methods when needed:
+  // - _canManageOrganizations(): Promise<boolean>
+  // - _canViewOrganizations(): Promise<boolean>
 }

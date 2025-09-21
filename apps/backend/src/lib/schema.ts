@@ -190,6 +190,8 @@ export const users = pgTable('users', {
   failedLoginAttempts: integer('failed_login_attempts').notNull().default(0),
   lockedUntil: timestamp('locked_until', { mode: 'date', precision: 3 }),
   passwordHash: varchar('password_hash', { length: 255 }),
+  passwordHashAlgo: varchar('password_hash_algo', { length: 50 }).default('legacy'),
+  passwordHashSalt: text('password_hash_salt'),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
   mfaSecret: varchar('mfa_secret', { length: 255 }),
   createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
@@ -434,6 +436,7 @@ export const quotes = pgTable('quotes', {
   viewedAt: timestamp('viewed_at', { mode: 'date', precision: 3 }),
   publicToken: varchar('public_token', { length: 255 }),
   tokenExpiresAt: timestamp('token_expires_at', { mode: 'date', precision: 3 }),
+  tokenUsedAt: timestamp('token_used_at', { mode: 'date', precision: 3 }),
   // Keep JSONB for flexible metadata
   metadata: jsonb('metadata').notNull().default('{}'), // Customer specific extra fields
   // Note: currentVersionId will be managed at the application level to avoid circular references
@@ -1428,9 +1431,101 @@ export type NewResourceAllocation = typeof resourceAllocations.$inferInsert;
 export type ExportJob = typeof exportJobs.$inferSelect;
 export type NewExportJob = typeof exportJobs.$inferInsert;
 
+// Public token security tables
+export const publicRateLimits = pgTable('public_rate_limits', {
+  id: text('id').primaryKey(),
+  endpoint: varchar('endpoint', { length: 255 }).notNull(),
+  ipAddress: inet('ip_address').notNull(),
+  tokenId: text('token_id'),
+  requestCount: integer('request_count').notNull().default(1),
+  windowStart: timestamp('window_start', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  lastRequest: timestamp('last_request', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
+
+export const publicTokenAudit = pgTable('public_token_audit', {
+  id: text('id').primaryKey(),
+  tokenId: text('token_id').notNull(),
+  resourceType: varchar('resource_type', { length: 50 }).notNull(),
+  resourceId: text('resource_id').notNull(),
+  action: varchar('action', { length: 50 }).notNull(),
+  ipAddress: inet('ip_address'),
+  userAgent: text('user_agent'),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'set null' }),
+  success: boolean('success').notNull().default(true),
+  errorMessage: text('error_message'),
+  requestData: jsonb('request_data').notNull().default('{}'),
+  responseData: jsonb('response_data').notNull().default('{}'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
+
 export type Job = typeof jobs.$inferSelect;
 export type NewJob = typeof jobs.$inferInsert;
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type NewTimeEntry = typeof timeEntries.$inferInsert;
 export type TimeEntryApproval = typeof timeEntryApprovals.$inferSelect;
 export type NewTimeEntryApproval = typeof timeEntryApprovals.$inferInsert;
+export type PublicRateLimit = typeof publicRateLimits.$inferSelect;
+export type NewPublicRateLimit = typeof publicRateLimits.$inferInsert;
+export type PublicTokenAudit = typeof publicTokenAudit.$inferSelect;
+export type NewPublicTokenAudit = typeof publicTokenAudit.$inferInsert;
+
+// Authentication security tables
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  deviceFingerprint: text('device_fingerprint').notNull(),
+  ipHash: text('ip_hash').notNull(),
+  refreshKid: text('refresh_kid').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }).notNull(),
+  revokedAt: timestamp('revoked_at', { mode: 'date', precision: 3 }),
+});
+
+export const oprfRecords = pgTable('oprf_records', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recordData: text('record_data').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }).notNull(),
+});
+
+export const pasetoKeys = pgTable('paseto_keys', {
+  id: text('id').primaryKey(),
+  keyId: varchar('key_id', { length: 50 }).notNull(),
+  keyType: varchar('key_type', { length: 20 }).notNull(),
+  keyPurpose: varchar('key_purpose', { length: 20 }).notNull(),
+  keyData: text('key_data').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { mode: 'date', precision: 3 }),
+  isActive: boolean('is_active').notNull().default(true),
+  revokedAt: timestamp('revoked_at', { mode: 'date', precision: 3 }),
+});
+
+export const authAudit = pgTable('auth_audit', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  sessionId: text('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  action: varchar('action', { length: 50 }).notNull(),
+  ipAddress: inet('ip_address'),
+  userAgent: text('user_agent'),
+  deviceFingerprint: text('device_fingerprint'),
+  success: boolean('success').notNull(),
+  errorMessage: text('error_message'),
+  metadata: jsonb('metadata').notNull().default('{}'),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
+
+// Type exports for new auth security tables
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type OprfRecord = typeof oprfRecords.$inferSelect;
+export type NewOprfRecord = typeof oprfRecords.$inferInsert;
+export type PasetoKey = typeof pasetoKeys.$inferSelect;
+export type NewPasetoKey = typeof pasetoKeys.$inferInsert;
+export type AuthAudit = typeof authAudit.$inferSelect;
+export type NewAuthAudit = typeof authAudit.$inferInsert;

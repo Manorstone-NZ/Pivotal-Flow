@@ -26,7 +26,7 @@ export interface PasetoAuthenticatedUser {
 // Request extensions
 declare module 'fastify' {
   interface FastifyRequest {
-    user: PasetoAuthenticatedUser;
+    user?: PasetoAuthenticatedUser;
     session: SessionData;
     tokenService: PasetoTokenService;
   }
@@ -105,8 +105,8 @@ function extractTokenBinding(request: FastifyRequest): TokenBinding {
  */
 export const pasetoAuthPlugin: FastifyPluginAsync = async (fastify) => {
   // Decorate fastify instance first
-  fastify.decorateRequest('user', null);
-  fastify.decorateRequest('session', null);
+  fastify.decorateRequest('user', {} as PasetoAuthenticatedUser);
+  fastify.decorateRequest('session', {} as SessionData);
   
   // Initialize token service after database is available
   let tokenService: PasetoTokenService;
@@ -194,7 +194,7 @@ export const pasetoAuthPlugin: FastifyPluginAsync = async (fastify) => {
         roles: session.roles,
         permissions: session.permissions,
         memberships: session.memberships,
-        sessionId: session.sessionId || 'unknown',
+        sessionId: 'session-' + session.userId, // TODO: Add proper sessionId to SessionData interface
         lastActivity: session.lastActivity
       };
 
@@ -239,7 +239,7 @@ export const pasetoAuthPlugin: FastifyPluginAsync = async (fastify) => {
     // Implement per-token rate limiting
     const token = request.headers.authorization?.substring(7);
     if (token && request.user) {
-      const rateLimitKey = `rate_limit:${request.user.sessionId}:${request.method}:${request.routerPath}`;
+      const rateLimitKey = `rate_limit:${request.user.sessionId}:${request.method}:${request.url}`;
       
       try {
         const count = await (fastify as any).redis.incr(rateLimitKey);
@@ -248,7 +248,7 @@ export const pasetoAuthPlugin: FastifyPluginAsync = async (fastify) => {
         }
 
         // Different limits for different types of operations
-        const limit = getRateLimitForEndpoint(request.method, request.routerPath || request.url);
+        const limit = getRateLimitForEndpoint(request.method, request.url);
         
         if (count > limit) {
           reply.header('X-RateLimit-Limit', limit);
@@ -293,7 +293,7 @@ export const pasetoAuthPlugin: FastifyPluginAsync = async (fastify) => {
  */
 async function handlePublicApiAuthentication(
   request: FastifyRequest, 
-  reply: FastifyReply,
+  _reply: FastifyReply,
   tokenService: PasetoTokenService
 ): Promise<void> {
   // Extract token from URL path (e.g., /public/quotes/:token)
@@ -308,7 +308,7 @@ async function handlePublicApiAuthentication(
   const binding = extractTokenBinding(request);
 
   try {
-    const payload = await tokenService.validatePublicToken(token, binding);
+    const payload = await tokenService.validatePublicToken(token || '', binding);
     if (!payload) {
       throw new AuthenticationError('Invalid or expired public token');
     }
@@ -332,7 +332,7 @@ async function handlePublicApiAuthentication(
       throw error;
     }
 
-    logger.error({ err: error, token: token.substring(0, 8) + '...' }, 'Public token validation failed');
+    logger.error({ err: error, token: token?.substring(0, 8) + '...' || 'undefined' }, 'Public token validation failed');
     throw new AuthenticationError('Public token validation failed');
   }
 }
@@ -340,7 +340,7 @@ async function handlePublicApiAuthentication(
 /**
  * Check if a feature is enabled for a tenant
  */
-async function checkTenantFeature(tenantId: string, featureCode: string): Promise<boolean> {
+async function checkTenantFeature(_tenantId: string, _featureCode: string): Promise<boolean> {
   // This would check the tenant_features table
   // For now, return true (all features enabled)
   return true;
@@ -371,7 +371,7 @@ function getRateLimitForEndpoint(method: string, path: string): number {
  * Permission checking middleware factory
  */
 export function requirePermission(permission: string) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (request: FastifyRequest, _reply: FastifyReply) => {
     if (!request.user) {
       throw new AuthenticationError('Authentication required');
     }
@@ -394,7 +394,7 @@ export function requirePermission(permission: string) {
  * Tenant membership checking middleware factory
  */
 export function requireTenantMembership() {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (request: FastifyRequest, _reply: FastifyReply) => {
     if (!request.user) {
       throw new AuthenticationError('Authentication required');
     }
@@ -412,7 +412,7 @@ export function requireTenantMembership() {
  * Role checking middleware factory
  */
 export function requireRole(role: string) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (request: FastifyRequest, _reply: FastifyReply) => {
     if (!request.user) {
       throw new AuthenticationError('Authentication required');
     }

@@ -34,7 +34,7 @@ export function registerQuoteLineItemRoutes(fastify) {
             const { quoteId } = request.params;
             const lineItemData = request.body;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
@@ -78,7 +78,7 @@ export function registerQuoteLineItemRoutes(fastify) {
             const { quoteId, lineItemId } = request.params;
             const updateData = request.body;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
@@ -117,7 +117,7 @@ export function registerQuoteLineItemRoutes(fastify) {
             }
             const { quoteId, lineItemId } = request.params;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
@@ -164,7 +164,7 @@ export function registerQuoteLineItemRoutes(fastify) {
             const { quoteId } = request.params;
             const { type, value } = request.body;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
@@ -203,7 +203,7 @@ export function registerQuoteLineItemRoutes(fastify) {
             }
             const { quoteId } = request.params;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId
@@ -260,7 +260,7 @@ export function registerSubmitQuoteRoute(fastify) {
             }
             const { quoteId } = request.params;
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId

@@ -25,7 +25,6 @@ describe('Reports Integration Tests', () => {
 
     reportingService = new ReportingService(
       'test-org-id',
-      'test-user-id',
       mockPermissionService
     );
 

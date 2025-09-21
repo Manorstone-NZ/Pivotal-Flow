@@ -4,7 +4,6 @@
  */
 
 import { eq, and, or, like, desc, asc, isNull, sql } from 'drizzle-orm';
-import type { FastifyInstance } from 'fastify';
 import { generateId } from '@pivotal-flow/shared';
 import { getDatabase } from '../../lib/db.js';
 
@@ -17,9 +16,8 @@ import type { CustomerFilters, PaginationOptions, CustomerWithContacts } from '.
  */
 export class CustomerService {
   constructor(
-    private fastify: FastifyInstance,
-    private organizationId: string,
-    private _userId: string // Prefix with underscore to indicate intentionally unused
+    private organizationId: string
+    // Note: FastifyInstance and userId parameters removed as they are not used in this service
   ) {}
 
   /**

@@ -296,9 +296,9 @@ export class InvoicePDFService {
             <div class="bill-to">
                 <h3>Bill To</h3>
                 <div class="customer-info">
-                    <strong>${invoice.customer.name}</strong><br>
-                    ${invoice.customer.email || ''}<br>
-                    ${invoice.customer.address || ''}
+                    <strong>${invoice.customer?.name || 'N/A'}</strong><br>
+                    ${invoice.customer?.email || ''}<br>
+                    ${invoice.customer?.address || ''}
                 </div>
             </div>
             <div class="invoice-info">
@@ -309,11 +309,11 @@ export class InvoicePDFService {
                 </div>
                 <div class="info-row">
                     <span class="info-label">Issue Date:</span>
-                    <span class="info-value">${formatDate(invoice.issuedAt || invoice.createdAt)}</span>
+                    <span class="info-value">${formatDate(invoice.issuedAt || invoice.createdAt || new Date())}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Due Date:</span>
-                    <span class="info-value">${formatDate(invoice.dueAt)}</span>
+                    <span class="info-value">${formatDate(invoice.dueAt || new Date())}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Currency:</span>
@@ -341,7 +341,7 @@ export class InvoicePDFService {
                     <tr>
                         <td>
                             <strong>${item.description}</strong>
-                            ${item.notes ? `<br><small style="color: #6b7280;">${item.notes}</small>` : ''}
+                            ${item.metadata?.notes ? `<br><small style="color: #6b7280;">${item.metadata.notes}</small>` : ''}
                         </td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-right">${formatCurrency(item.unitPrice, invoice.currency)}</td>

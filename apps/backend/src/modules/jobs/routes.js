@@ -3,7 +3,7 @@
  * API endpoints for job management and status polling
  */
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
-import { getDatabase } from '../../lib/db.js';
+// import { getDatabase } from '../../lib/db.js'; // TODO: Use when needed
 import { PermissionService } from '../permissions/service.js';
 import { ExportJobProcessor } from './processors/export-job.processor.js';
 import { CreateJobRequestSchema, JobStatusResponseSchema, JobListResponseSchema, JobQuerySchema, } from './schemas.js';
@@ -28,8 +28,8 @@ export async function registerJobsRoutes(fastify) {
         },
     }, async (request) => {
         const { organizationId, userId } = request.user;
-        const db = getDatabase();
-        const permissionService = new PermissionService(db, { organizationId, userId });
+        // const db = getDatabase(); // TODO: Use when needed
+        const permissionService = new PermissionService(fastify, userId, organizationId);
         const auditLogger = new AuditLogger(fastify);
         const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
         // Register processors
@@ -57,8 +57,8 @@ export async function registerJobsRoutes(fastify) {
     }, async (request) => {
         const { organizationId, userId } = request.user;
         const { jobId } = request.params;
-        const db = getDatabase();
-        const permissionService = new PermissionService(db, { organizationId, userId });
+        // const db = getDatabase(); // TODO: Use when needed
+        const permissionService = new PermissionService(fastify, userId, organizationId);
         const auditLogger = new AuditLogger(fastify);
         const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
         const result = await jobsService.getJobStatus(jobId);
@@ -75,8 +75,8 @@ export async function registerJobsRoutes(fastify) {
     }, async (request) => {
         const { organizationId, userId } = request.user;
         const { page, pageSize, status, jobType } = request.query;
-        const db = getDatabase();
-        const permissionService = new PermissionService(db, { organizationId, userId });
+        // const db = getDatabase(); // TODO: Use when needed
+        const permissionService = new PermissionService(fastify, userId, organizationId);
         const auditLogger = new AuditLogger(fastify);
         const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
         const result = await jobsService.listJobs(page, pageSize, status, jobType);
@@ -104,8 +104,8 @@ export async function registerJobsRoutes(fastify) {
     }, async (request) => {
         const { organizationId, userId } = request.user;
         const { jobId } = request.params;
-        const db = getDatabase();
-        const permissionService = new PermissionService(db, { organizationId, userId });
+        // const db = getDatabase(); // TODO: Use when needed
+        const permissionService = new PermissionService(fastify, userId, organizationId);
         const auditLogger = new AuditLogger(fastify);
         const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
         await jobsService.cancelJob(jobId);
@@ -135,8 +135,8 @@ export async function registerJobsRoutes(fastify) {
     }, async (request) => {
         const { organizationId, userId } = request.user;
         const { jobId } = request.params;
-        const db = getDatabase();
-        const permissionService = new PermissionService(db, { organizationId, userId });
+        // const db = getDatabase(); // TODO: Use when needed
+        const permissionService = new PermissionService(fastify, userId, organizationId);
         const auditLogger = new AuditLogger(fastify);
         const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
         await jobsService.retryJob(jobId);

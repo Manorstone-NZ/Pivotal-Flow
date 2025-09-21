@@ -4,15 +4,15 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-interface SystemCheckRequest {
-  Params: {
-    service: string;
-  };
-}
+// interface SystemCheckRequest {
+//   Params: {
+//     service: string;
+//   };
+// }; // TODO: Use when needed
 
 export async function systemRoutes(fastify: FastifyInstance) {
   // Docker Engine check
-  fastify.get('/system/docker', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/docker', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { stdout } = await execAsync('docker --version');
       const version = stdout.trim();
@@ -40,7 +40,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
   });
 
   // Docker Compose check
-  fastify.get('/system/docker-compose', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/docker-compose', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { stdout } = await execAsync('docker compose version');
       const version = stdout.trim();
@@ -69,7 +69,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
   });
 
   // Node.js check
-  fastify.get('/system/nodejs', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/nodejs', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { stdout } = await execAsync('node --version');
       const version = stdout.trim();
@@ -98,13 +98,13 @@ export async function systemRoutes(fastify: FastifyInstance) {
   });
 
   // pnpm check
-  fastify.get('/system/pnpm', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/pnpm', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { stdout } = await execAsync('pnpm --version');
       const version = stdout.trim();
       
       // Check if pnpm can list packages
-      const { stdout: listOutput } = await execAsync('pnpm list --depth=0 --json 2>/dev/null || echo "{}"');
+      const { stdout: _listOutput } = await execAsync('pnpm list --depth=0 --json 2>/dev/null || echo "{}"'); // TODO: Use for package info
       
       return {
         status: 'ok',
@@ -127,7 +127,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
 
 
   // Docker containers check
-  fastify.get('/system/containers', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/containers', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"');
       const containers = stdout.trim().split('\n').filter(line => line.trim()).map(line => {
@@ -143,7 +143,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
         details: {
           containers: containers,
           totalContainers: containers.length,
-          runningContainers: containers.filter(c => c.status.includes('Up')).length
+          runningContainers: containers.filter(c => c.status?.includes('Up')).length
         }
       };
     } catch (error) {
@@ -156,7 +156,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
   });
 
   // System resources check
-  fastify.get('/system/resources', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/system/resources', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const [memory, disk] = await Promise.all([
         execAsync('free -h'),
@@ -172,12 +172,12 @@ export async function systemRoutes(fastify: FastifyInstance) {
         version: 'unknown',
         uptime: 'unknown',
         details: {
-          memory: memoryLines[1], // Use second line (Mem:)
-          disk: diskLines[1], // Use second line (root filesystem)
-          memoryTotal: memoryLines[1].split(/\s+/)[1],
-          memoryUsed: memoryLines[1].split(/\s+/)[2],
-          memoryFree: memoryLines[1].split(/\s+/)[3],
-          diskUsed: diskLines[1].split(/\s+/)[4]
+          memory: memoryLines[1] || 'unknown', // Use second line (Mem:)
+          disk: diskLines[1] || 'unknown', // Use second line (root filesystem)
+          memoryTotal: memoryLines[1]?.split(/\s+/)[1] || 'unknown',
+          memoryUsed: memoryLines[1]?.split(/\s+/)[2] || 'unknown',
+          memoryFree: memoryLines[1]?.split(/\s+/)[3] || 'unknown',
+          diskUsed: diskLines[1]?.split(/\s+/)[4] || 'unknown'
         }
       };
     } catch (error) {

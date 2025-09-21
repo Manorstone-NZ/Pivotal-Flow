@@ -319,7 +319,7 @@ export function registerPublicQuoteRoutes(fastify: FastifyInstance): void {
       const acceptedAt = new Date();
 
       // Use transaction to ensure atomicity and prevent replay attacks
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         // Check if token has already been used (replay protection)
         const existingQuote = await tx
           .select({ tokenUsedAt: quotes.tokenUsedAt })
@@ -441,7 +441,7 @@ export function registerPublicQuoteRoutes(fastify: FastifyInstance): void {
       const rejectedAt = new Date();
 
       // Use transaction to ensure atomicity and prevent replay attacks
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         // Check if token has already been used (replay protection)
         const existingQuote = await tx
           .select({ tokenUsedAt: quotes.tokenUsedAt })

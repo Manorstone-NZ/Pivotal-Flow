@@ -4,13 +4,13 @@
  */
 import type { FastifyRequest } from 'fastify';
 import type { Customer, NewCustomer, CustomerContact, NewCustomerContact } from '../../lib/schema.js';
-export interface AuthenticatedRequest extends FastifyRequest {
+export type AuthenticatedRequest = FastifyRequest & {
     user: {
         userId: string;
         organizationId: string;
         roles: string[];
     };
-}
+};
 export interface ListCustomersRequest extends AuthenticatedRequest {
     Querystring: {
         page?: number;

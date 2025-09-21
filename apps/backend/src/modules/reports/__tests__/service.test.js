@@ -31,7 +31,7 @@ describe('ReportingService', () => {
         mockPermissionService = {
             hasPermission: vi.fn().mockResolvedValue({ hasPermission: true }),
         };
-        reportingService = new ReportingService('test-org-id', 'test-user-id', mockPermissionService);
+        reportingService = new ReportingService('test-org-id', mockPermissionService);
     });
     describe('generateQuoteCycleTimeSummary', () => {
         it('should generate summary with valid filters', async () => {

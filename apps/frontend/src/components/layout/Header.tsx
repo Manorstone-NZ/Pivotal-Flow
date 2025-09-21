@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '../ui/DropdownMenu';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { TenantSwitcher } from '../tenancy/TenantSwitcher';
+// TenantSwitcher removed for security - tenant switching only allowed via server admin endpoint
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -57,10 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
           </h1>
         </div>
 
-        {/* Organization Switcher */}
-        <div className="flex items-center space-x-2">
-          <TenantSwitcher />
-        </div>
+        {/* Organization Switcher removed for security */}
       </div>
 
       {/* Right Section */}

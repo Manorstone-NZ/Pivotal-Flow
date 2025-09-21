@@ -1,5 +1,6 @@
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { timeEntries, timeEntryApprovals } from '../../lib/schema.js';
+// import { type TimeEntry } from '../../lib/schema.js'; // TODO: Use when needed
 import { logger } from '../../lib/logger.js';
 export const timeRoutes = async (fastify) => {
     const db = fastify.db;
@@ -73,7 +74,7 @@ export const timeRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         try {
-            const { startDate, endDate, projectId, status, billable, userId, page = 1, limit = 20 } = request.query;
+            const { startDate, endDate, projectId, status, billable, userId, page = 1, limit = 20 } = request.query; // TODO: Add proper TypeBox schema
             const { user } = request;
             // Build query conditions
             const conditions = [eq(timeEntries.organizationId, user.organizationId)];
@@ -179,7 +180,7 @@ export const timeRoutes = async (fastify) => {
     }, async (request, reply) => {
         try {
             const { user } = request;
-            const entryData = request.body;
+            const entryData = request.body; // TODO: Add proper TypeBox schema
             // Generate unique ID
             const entryId = `time-entry-${Date.now()}-${Math.random().toString(36).substring(7)}`;
             // Calculate billable amount if hourly rate is provided
@@ -251,7 +252,7 @@ export const timeRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         try {
-            const { id } = request.params;
+            const { id } = request.params; // TODO: Add proper TypeBox schema
             const { user } = request;
             // Check if entry exists and belongs to user (or user is admin)
             const entry = await db
@@ -322,8 +323,8 @@ export const timeRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         try {
-            const { id } = request.params;
-            const { comments } = request.body;
+            const { id } = request.params; // TODO: Add proper TypeBox schema
+            const { comments } = request.body; // TODO: Add proper TypeBox schema
             const { user } = request;
             // Check if user has approval permissions
             if (!user.roles.includes('admin') && !user.roles.includes('manager') && !user.roles.includes('approver')) {
@@ -410,8 +411,8 @@ export const timeRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         try {
-            const { id } = request.params;
-            const { reason, comments } = request.body;
+            const { id } = request.params; // TODO: Add proper TypeBox schema
+            const { reason, comments } = request.body; // TODO: Add proper TypeBox schema
             const { user } = request;
             // Check if user has approval permissions
             if (!user.roles.includes('admin') && !user.roles.includes('manager') && !user.roles.includes('approver')) {
@@ -519,7 +520,7 @@ export const timeRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         try {
-            const { page = 1, limit = 20 } = request.query;
+            const { page = 1, limit = 20 } = request.query; // TODO: Add proper TypeBox schema
             const { user } = request;
             // Check if user has approval permissions
             if (!user.roles.includes('admin') && !user.roles.includes('manager') && !user.roles.includes('approver')) {

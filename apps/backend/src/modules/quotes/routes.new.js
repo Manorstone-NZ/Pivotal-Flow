@@ -26,7 +26,7 @@ export async function quoteRoutes(fastify) {
                 ...validatedData,
                 metadata: validatedData.metadata || {}
             });
-            return reply.status(201).send(result);
+            return reply.status(201).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -53,8 +53,8 @@ export async function quoteRoutes(fastify) {
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
-            const result = await quoteService.getAllQuotes();
-            return reply.status(200).send(result);
+            const result = await quoteService.listQuotes();
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -93,7 +93,7 @@ export async function quoteRoutes(fastify) {
                     code: 'QUOTE_NOT_FOUND'
                 });
             }
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({

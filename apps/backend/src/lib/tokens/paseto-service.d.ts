@@ -47,9 +47,6 @@ export declare class PasetoTokenService {
     private fastify;
     private db;
     private redis;
-    private localKey;
-    private publicKey;
-    private secretKey;
     private initialized;
     constructor(fastify: FastifyInstance);
     private ensureInitialized;

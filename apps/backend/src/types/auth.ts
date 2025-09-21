@@ -15,11 +15,12 @@ export interface AuthenticatedUser {
   scope?: string[];
 }
 
-export interface AuthenticatedRequest extends FastifyRequest {
+// Use intersection type to avoid Fastify interface conflicts
+export type AuthenticatedRequest = FastifyRequest & {
   user: AuthenticatedUser;
   organizationId: string;
   customerId?: string;
-}
+};
 
 export interface AuthContext {
   userId: string;

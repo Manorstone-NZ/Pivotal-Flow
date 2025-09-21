@@ -103,7 +103,7 @@ export const FeatureGrid: React.FC = () => {
 
   return (
     <section 
-      className="px-4 py-20 sm:px-6 lg:px-8 bg-white"
+      className="px-4 py-20 sm:px-6 lg:px-8 bg-surface-card"
       aria-labelledby="features-heading"
     >
       <div className="max-w-7xl mx-auto">
@@ -111,11 +111,11 @@ export const FeatureGrid: React.FC = () => {
         <div className="text-center mb-16">
           <h2 
             id="features-heading"
-            className="text-3xl font-bold text-neutral-900 tracking-tight sm:text-4xl mb-4"
+            className="text-3xl font-bold text-text-primary tracking-tight sm:text-4xl mb-4"
           >
             Everything you need to manage your business
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
             Streamline your workflow from quotes to payments with our comprehensive suite of professional tools designed for modern businesses.
           </p>
         </div>
@@ -126,25 +126,25 @@ export const FeatureGrid: React.FC = () => {
             <article
               key={feature.id}
               role="article"
-              className="group bg-white rounded-xl border border-neutral-200 p-6 hover:border-neutral-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+              className="group bg-surface-card rounded-xl border border-surface-border p-6 hover:border-surface-border hover:shadow-md transition-all duration-200 cursor-pointer"
               onClick={() => handleFeatureClick(feature)}
             >
               {/* Icon Container */}
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-50 rounded-lg text-primary-600 mb-4 group-hover:bg-primary-100 transition-colors duration-200">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-brand-primary/10 rounded-lg text-brand-primary mb-4 group-hover:bg-brand-primary/20 transition-colors duration-200">
                 {feature.icon}
               </div>
               
               {/* Content */}
-              <h3 className="text-xl font-semibold text-neutral-900 mb-3 group-hover:text-primary-700 transition-colors duration-200">
+              <h3 className="text-xl font-semibold text-text-primary mb-3 group-hover:text-brand-primary transition-colors duration-200">
                 {feature.title}
               </h3>
               
-              <p className="text-neutral-600 mb-6 leading-relaxed">
+              <p className="text-text-secondary mb-6 leading-relaxed">
                 {feature.description}
               </p>
               
               {/* CTA Button */}
-              <div className="flex items-center text-sm font-medium text-primary-600 group-hover:text-primary-700 transition-colors duration-200">
+              <div className="flex items-center text-sm font-medium text-brand-primary group-hover:text-brand-secondary transition-colors duration-200">
                 {feature.requiresAuth && !isAuthenticated ? (
                   <>
                     <span>Sign In Required</span>
@@ -177,12 +177,12 @@ export const FeatureGrid: React.FC = () => {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16">
-          <p className="text-neutral-600 mb-6">
+          <p className="text-text-secondary mb-6">
             Ready to streamline your business workflow?
           </p>
           <Button
             onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
-            className="bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+            className="bg-brand-primary text-text-inverse hover:bg-brand-secondary focus:ring-brand-primary px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
           >
             {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
           </Button>

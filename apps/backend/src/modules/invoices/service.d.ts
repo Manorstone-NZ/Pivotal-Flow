@@ -94,6 +94,6 @@ export declare class InvoiceService {
     /**
      * Void invoice
      */
-    voidInvoice(id: string, voidData: VoidInvoice): Promise<Invoice | null>;
+    voidInvoice(id: string, _voidData: VoidInvoice): Promise<Invoice | null>;
 }
 //# sourceMappingURL=service.d.ts.map

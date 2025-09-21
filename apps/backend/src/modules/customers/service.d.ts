@@ -2,7 +2,6 @@
  * Customer Service Layer
  * Business logic and database operations for customers and contacts
  */
-import type { FastifyInstance } from 'fastify';
 import { type Customer, type NewCustomer, type CustomerContact, type NewCustomerContact } from '../../lib/schema.js';
 import type { CustomerFilters, PaginationOptions, CustomerWithContacts } from './types.js';
 /**
@@ -10,10 +9,8 @@ import type { CustomerFilters, PaginationOptions, CustomerWithContacts } from '.
  * Handles all customer and contact operations
  */
 export declare class CustomerService {
-    private fastify;
     private organizationId;
-    private _userId;
-    constructor(fastify: FastifyInstance, organizationId: string, _userId: string);
+    constructor(organizationId: string);
     /**
      * Generate unique customer number
      */

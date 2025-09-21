@@ -14,6 +14,7 @@ This section contains technical architecture and system design documentation for
 ## Documents
 
 ### System Architecture
+- [Current Architecture Status](./CURRENT_ARCHITECTURE_STATUS.md) - **CONFIRMED** Current system architecture and security model
 - [System Architecture](./system-architecture.md) - Comprehensive technical architecture overview
 - [Authentication System](./AUTHENTICATION_SYSTEM.md) - PASETO + Opaque token security architecture
 - [Multi-Tenant RBAC](./MULTI_TENANT_RBAC.md) - Multi-tenant security and access control

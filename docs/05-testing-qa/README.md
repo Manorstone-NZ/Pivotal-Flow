@@ -28,6 +28,10 @@ This section contains testing strategy, quality assurance processes, and testing
 - [Test Data Management](./test-data-management.md)
 - [Bug Tracking and Resolution](./bug-tracking.md)
 
+### Stability & Quality Analysis
+- [F1.5 Bug Inventory](./F1_5_inventory.md) - Comprehensive bug inventory and risk analysis
+- [F1.5 Stability Analysis](./F1_5_stability_analysis.md) - Cross-stack stability and security analysis
+
 ## Audience
 
 **Primary:** QA engineers, product owners, auditors

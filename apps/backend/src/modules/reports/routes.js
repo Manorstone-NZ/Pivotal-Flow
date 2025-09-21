@@ -2,8 +2,8 @@
  * Reporting module routes
  * API endpoints for reports and exports
  */
-import { AuditLogger } from '../../lib/audit/logger.js';
-import { getDatabase } from '../../lib/db.js';
+import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+// import { getDatabase } from '../../lib/db.js'; // TODO: Use when needed
 import { PermissionService } from '../permissions/service.js';
 import { ExportJobService } from './export-job.service.js';
 import { ExportJobRequestSchema, QuoteCycleTimeFiltersSchema, InvoiceSettlementTimeFiltersSchema, TimeApprovalsFiltersSchema, PaymentsReceivedFiltersSchema, CreateExportJobResponseSchema, ExportJobStatusResponseSchema, ReportSummaryResponseSchema, ErrorResponseSchema, } from './schemas.js';
@@ -26,10 +26,10 @@ export async function reportsRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const { organizationId, userId } = request.user;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const _auditLogger = new AuditLogger(fastify, { organizationId, userId });
-            const exportJobService = new ExportJobService(organizationId, userId, permissionService, _auditLogger);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const auditLogger = new AuditLogger(fastify);
+            const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger); // TODO: Fix AuditLogger interface compatibility
             const jobId = await exportJobService.createExportJob(request.body);
             return reply.status(200).send({
                 jobId,
@@ -73,10 +73,10 @@ export async function reportsRoutes(fastify) {
         try {
             const { organizationId, userId } = request.user;
             const { jobId } = request.params;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const _auditLogger = new AuditLogger(fastify, { organizationId, userId });
-            const exportJobService = new ExportJobService(organizationId, userId, permissionService, _auditLogger);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const auditLogger = new AuditLogger(fastify);
+            const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger); // TODO: Fix AuditLogger interface compatibility
             const result = await exportJobService.getExportJobStatus(jobId);
             return reply.status(200).send(result);
         }
@@ -119,10 +119,10 @@ export async function reportsRoutes(fastify) {
         try {
             const { organizationId, userId } = request.user;
             const { jobId } = request.params;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const _auditLogger = new AuditLogger(fastify, { organizationId, userId });
-            const exportJobService = new ExportJobService(organizationId, userId, permissionService, _auditLogger);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const auditLogger = new AuditLogger(fastify);
+            const exportJobService = new ExportJobService(organizationId, userId, permissionService, auditLogger); // TODO: Fix AuditLogger interface compatibility
             const jobStatus = await exportJobService.getExportJobStatus(jobId);
             if (jobStatus.job.status !== 'completed') {
                 return reply.status(400).send({
@@ -167,9 +167,9 @@ export async function reportsRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const { organizationId, userId } = request.user;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const reportingService = new ReportingService(organizationId, userId, permissionService);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const reportingService = new ReportingService(organizationId, permissionService);
             const filters = { ...request.query, organizationId };
             const summary = await reportingService.generateQuoteCycleTimeSummary(filters);
             return reply.status(200).send(summary);
@@ -203,9 +203,9 @@ export async function reportsRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const { organizationId, userId } = request.user;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const reportingService = new ReportingService(organizationId, userId, permissionService);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const reportingService = new ReportingService(organizationId, permissionService);
             const filters = { ...request.query, organizationId };
             const summary = await reportingService.generateInvoiceSettlementTimeSummary(filters);
             return reply.status(200).send(summary);
@@ -239,9 +239,9 @@ export async function reportsRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const { organizationId, userId } = request.user;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const reportingService = new ReportingService(organizationId, userId, permissionService);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const reportingService = new ReportingService(organizationId, permissionService);
             const filters = { ...request.query, organizationId };
             const summary = await reportingService.generateTimeApprovalsSummary(filters);
             return reply.status(200).send(summary);
@@ -275,9 +275,9 @@ export async function reportsRoutes(fastify) {
     }, async (request, reply) => {
         try {
             const { organizationId, userId } = request.user;
-            const db = getDatabase();
-            const permissionService = new PermissionService(db, { organizationId, userId });
-            const reportingService = new ReportingService(organizationId, userId, permissionService);
+            // const db = getDatabase(); // TODO: Use when needed for database operations
+            const permissionService = new PermissionService(fastify, userId, organizationId);
+            const reportingService = new ReportingService(organizationId, permissionService);
             const filters = { ...request.query, organizationId };
             const summary = await reportingService.generatePaymentsReceivedSummary(filters);
             return reply.status(200).send(summary);

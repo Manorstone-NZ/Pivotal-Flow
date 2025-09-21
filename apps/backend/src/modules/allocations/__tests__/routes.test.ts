@@ -45,11 +45,11 @@ describe('Allocation Service Integration', () => {
 
   describe('End-to-End Allocation Workflow', () => {
     it('should handle complete allocation lifecycle', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // 1. Create allocation
@@ -104,16 +104,16 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
 
     it('should handle conflict detection in real scenarios', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // Create first allocation: 80% for January
@@ -159,16 +159,16 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
 
     it('should calculate project capacity correctly', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // Create multiple allocations for capacity testing
@@ -214,16 +214,16 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
 
     it('should handle edge cases gracefully', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // Test with non-existent project
@@ -245,16 +245,16 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
 
     it('should handle pagination correctly', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // Create multiple allocations
@@ -290,18 +290,18 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
   });
 
   describe('Performance Tests', () => {
     it('should handle conflict checks within performance threshold', async () => {
-      // Mock permission checks to pass
-      const originalPermissionService = allocationService['permissionService'];
-      allocationService['permissionService'] = {
-        hasPermission: async () => ({ hasPermission: true })
-      } as any;
+      // Mock permission checks to pass - TODO: Fix when permissionService is re-enabled
+      // const originalPermissionService = allocationService['permissionService'];
+      // allocationService['permissionService'] = {
+      //   hasPermission: async () => ({ hasPermission: true })
+      // } as any;
 
       try {
         // Create some existing allocations to test against
@@ -336,7 +336,7 @@ describe('Allocation Service Integration', () => {
 
       } finally {
         // Restore original service
-        allocationService['permissionService'] = originalPermissionService;
+        // allocationService['permissionService'] = originalPermissionService;
       }
     });
   });

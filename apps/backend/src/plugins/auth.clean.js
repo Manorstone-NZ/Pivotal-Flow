@@ -195,7 +195,7 @@ async function authPlugin(fastify) {
             }
             else {
                 // For other routes, match if URL starts with route
-                matches = url.startsWith(route);
+                matches = url?.startsWith(route) || false;
             }
             if (matches) {
                 logger.info({ url: request.url, matchingRoute: route, urlPath: url }, 'Route matches public route');
@@ -219,11 +219,13 @@ async function authPlugin(fastify) {
                     const parsedSession = JSON.parse(sessionData);
                     request.user = {
                         id: parsedSession.userId,
-                        userId: parsedSession.userId,
                         organizationId: parsedSession.tenantId,
                         tenantId: parsedSession.tenantId,
                         roles: parsedSession.roles || [],
-                        permissions: parsedSession.permissions || []
+                        permissions: parsedSession.permissions || [],
+                        memberships: parsedSession.memberships || [],
+                        sessionId: 'session-' + parsedSession.userId,
+                        lastActivity: new Date()
                     };
                     logger.info({ userId: parsedSession.userId, tenantId: parsedSession.tenantId }, 'Authentication successful');
                     return; // Authentication successful
@@ -237,15 +239,17 @@ async function authPlugin(fastify) {
         const token = extractToken(request);
         if (token) {
             try {
-                const payload = await pasetoService.verifyToken(token);
+                const payload = await pasetoService.verifyTokenReadOnly(token);
                 if (payload) {
                     request.user = {
                         id: payload.sub,
-                        userId: payload.sub,
                         organizationId: payload.org,
                         tenantId: payload.org,
                         roles: [],
-                        permissions: payload.scope || []
+                        permissions: payload.scope || [],
+                        memberships: [],
+                        sessionId: 'paseto-' + payload.sub,
+                        lastActivity: new Date()
                     };
                     return; // Authentication successful
                 }

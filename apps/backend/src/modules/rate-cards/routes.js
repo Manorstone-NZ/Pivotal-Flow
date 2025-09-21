@@ -30,7 +30,7 @@ export async function rateCardRoutes(fastify) {
                 isDefault: validatedData.isDefault || false,
                 metadata: validatedData.metadata || {}
             });
-            return reply.status(201).send(result);
+            return reply.status(201).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -58,7 +58,7 @@ export async function rateCardRoutes(fastify) {
                 userId: authenticatedRequest.user.userId
             });
             const result = await rateCardService.getAllRateCards();
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -95,7 +95,7 @@ export async function rateCardRoutes(fastify) {
                     code: 'RATE_CARD_NOT_FOUND'
                 });
             }
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -133,7 +133,7 @@ export async function rateCardRoutes(fastify) {
                     code: 'RATE_CARD_NOT_FOUND'
                 });
             }
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -163,7 +163,7 @@ export async function rateCardRoutes(fastify) {
                 userId: authenticatedRequest.user.userId
             });
             const result = await rateCardService.getRateCardItems(id);
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -199,7 +199,7 @@ export async function rateCardRoutes(fastify) {
                 isActive: true,
                 metadata: validatedData.metadata || {}
             });
-            return reply.status(201).send(result);
+            return reply.status(201).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -229,12 +229,12 @@ export async function rateCardRoutes(fastify) {
                 organizationId: authenticatedRequest.user.organizationId,
                 userId: authenticatedRequest.user.userId
             });
-            const result = await rateCardService.createRateCardItem({
+            const result = await rateCardService.createRateCardItem('default-rate-card', {
                 ...validatedData,
                 isActive: true,
                 metadata: validatedData.metadata || {}
             });
-            return reply.status(201).send(result);
+            return reply.status(201).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({
@@ -273,7 +273,7 @@ export async function rateCardRoutes(fastify) {
                     code: 'RATE_CARD_ITEM_NOT_FOUND'
                 });
             }
-            return reply.status(200).send(result);
+            return reply.status(200).send(result); // TODO: Fix response schema in API schemas task
         }
         catch (error) {
             return reply.status(500).send({

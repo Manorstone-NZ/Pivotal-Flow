@@ -19,7 +19,7 @@ export interface PasetoAuthenticatedUser {
 }
 declare module 'fastify' {
     interface FastifyRequest {
-        user: PasetoAuthenticatedUser;
+        user?: PasetoAuthenticatedUser;
         session: SessionData;
         tokenService: PasetoTokenService;
     }
@@ -36,14 +36,14 @@ export declare const pasetoAuthPlugin: FastifyPluginAsync;
 /**
  * Permission checking middleware factory
  */
-export declare function requirePermission(permission: string): (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+export declare function requirePermission(permission: string): (request: FastifyRequest, _reply: FastifyReply) => Promise<void>;
 /**
  * Tenant membership checking middleware factory
  */
-export declare function requireTenantMembership(): (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+export declare function requireTenantMembership(): (request: FastifyRequest, _reply: FastifyReply) => Promise<void>;
 /**
  * Role checking middleware factory
  */
-export declare function requireRole(role: string): (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+export declare function requireRole(role: string): (request: FastifyRequest, _reply: FastifyReply) => Promise<void>;
 export default pasetoAuthPlugin;
 //# sourceMappingURL=auth.paseto.d.ts.map

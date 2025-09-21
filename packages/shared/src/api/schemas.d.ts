@@ -18,14 +18,14 @@ export declare const PagingResponseSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     total: number;
     page: number;
-    totalPages: number;
     pageSize: number;
+    totalPages: number;
     items: any[];
 }, {
     total: number;
     page: number;
-    totalPages: number;
     pageSize: number;
+    totalPages: number;
     items: any[];
 }>;
 export declare const FilterStringSchema: z.ZodObject<{

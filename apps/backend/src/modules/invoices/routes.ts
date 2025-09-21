@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { logger } from '../../lib/logger.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+// import { AuditLogger } from '../../lib/audit-logger.drizzle.js'; // TODO: Use when needed
 import { InvoiceService } from './service.js';
 import { InvoicePDFService } from './pdfService.js';
-import { invoices } from '../../lib/schema.js';
-import { generateId } from '@pivotal-flow/shared';
+// import { invoices } from '../../lib/schema.js'; // TODO: Use when needed
+// import { generateId } from '@pivotal-flow/shared'; // TODO: Use when needed
 import {
   InvoiceListFiltersSchema,
   CreateInvoiceSchema,
@@ -89,11 +89,11 @@ export function registerListInvoicesRoute(fastify: FastifyInstance) {
       }
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Get invoices
       const result = await invoiceService.listInvoices(request.query);
@@ -156,11 +156,11 @@ export function registerGetInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Get invoice
       const invoice = await invoiceService.getInvoiceById(id);
@@ -291,11 +291,11 @@ export function registerUpdateInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Update invoice
       const invoice = await invoiceService.updateInvoice(id, request.body);
@@ -370,11 +370,11 @@ export function registerInvoiceStatusRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Update status
       const invoice = await invoiceService.updateInvoiceStatus(id, request.body);
@@ -440,11 +440,11 @@ export function registerMarkInvoicePaidRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Mark as paid
       const invoice = await invoiceService.markInvoicePaid(id, request.body);
@@ -510,11 +510,11 @@ export function registerVoidInvoiceRoute(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Create invoice service
-      const auditLogger = new AuditLogger(request.server);
+      // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
       const invoiceService = new InvoiceService({
         organizationId: user.organizationId,
         userId: user.userId,
-      }, auditLogger);
+      });
 
       // Void invoice
       const invoice = await invoiceService.voidInvoice(id, request.body);

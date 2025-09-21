@@ -13,9 +13,10 @@ interface AuthenticatedUser {
   jti: string;
 }
 
-interface AuthenticatedRequest extends FastifyRequest {
+// Use type assertion instead of extending FastifyRequest to avoid conflicts
+type AuthenticatedRequest = FastifyRequest & {
   user: AuthenticatedUser;
-}
+};
 
 export const logoutRoute: FastifyPluginAsync = async (fastify) => {
   const auditLogger = createAuditLogger(fastify);

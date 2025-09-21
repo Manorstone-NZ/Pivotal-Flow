@@ -13,11 +13,11 @@ export interface AuthenticatedUser {
     mfa?: boolean;
     scope?: string[];
 }
-export interface AuthenticatedRequest extends FastifyRequest {
+export type AuthenticatedRequest = FastifyRequest & {
     user: AuthenticatedUser;
     organizationId: string;
     customerId?: string;
-}
+};
 export interface AuthContext {
     userId: string;
     organizationId: string;

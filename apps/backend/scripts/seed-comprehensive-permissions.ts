@@ -16,7 +16,7 @@ import {
   organizations
 } from '../src/lib/schema.js';
 import { eq, and } from 'drizzle-orm';
-import * as argon2 from 'argon2';
+// argon2 import removed as it's not used in this script
 
 // Initialize database connection
 await initializeDatabase();

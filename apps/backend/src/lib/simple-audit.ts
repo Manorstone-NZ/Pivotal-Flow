@@ -82,10 +82,10 @@ export class SimpleAuditLogger {
         route: data.route,
         originalAction: data.action,
       },
-      ipAddress: data.ipAddress,
-      userAgent: data.userAgent,
+      ipAddress: data.ipAddress ?? 'unknown',
+      userAgent: data.userAgent ?? 'unknown',
       success: data.success,
-      errorMessage: data.success ? null : `Permission denied: ${data.requiredPermission}`,
+      ...(data.success ? {} : { errorMessage: `Permission denied: ${data.requiredPermission}` }),
     });
   }
 
@@ -107,10 +107,10 @@ export class SimpleAuditLogger {
       details: {
         userEmail: data.userEmail,
       },
-      ipAddress: data.ipAddress,
-      userAgent: data.userAgent,
+      ipAddress: data.ipAddress ?? 'unknown',
+      userAgent: data.userAgent ?? 'unknown',
       success: data.success,
-      errorMessage: data.errorMessage,
+      ...(data.errorMessage ? { errorMessage: data.errorMessage } : {}),
     });
   }
 
@@ -129,12 +129,12 @@ export class SimpleAuditLogger {
       userId: data.userId,
       action: data.action,
       resource: data.resource,
-      resourceId: data.resourceId,
+      ...(data.resourceId ? { resourceId: data.resourceId } : {}),
       details: {
-        recordCount: data.recordCount,
+        ...(data.recordCount ? { recordCount: data.recordCount } : {}),
       },
-      ipAddress: data.ipAddress,
-      userAgent: data.userAgent,
+      ipAddress: data.ipAddress ?? 'unknown',
+      userAgent: data.userAgent ?? 'unknown',
       success: true,
     });
   }

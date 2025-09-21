@@ -47,18 +47,19 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
 
       try {
         // Extract current access token from Authorization header
-        const authHeader = request.headers.authorization;
-        const currentAccessToken = authHeader?.startsWith('Bearer ') 
-          ? authHeader.substring(7) 
-          : null;
+        // const authHeader = request.headers.authorization;
+        // const currentAccessToken = authHeader?.startsWith('Bearer ') 
+        //   ? authHeader.substring(7) 
+        //   : null;
 
         let revokedCount = 0;
 
         if (request.user) {
           // User is authenticated via access token
-          const userId = request.user.id;
-          const tenantId = request.user.tenantId;
-          const sessionId = request.user.sessionId;
+          const user = request.user as any;
+          const userId = user.id;
+          const tenantId = user.tenantId;
+          const sessionId = user.sessionId;
 
           if (allDevices) {
             // Revoke all tokens for this user across all tenants
@@ -179,6 +180,7 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
       }
     },
     async (request, reply) => {
+      const tokenService = (fastify as any).tokenService;
       if (!request.user) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -187,11 +189,14 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
         });
       }
 
+      const user = request.user as any;
+      const userId = user.id;
+
       try {
-        const sessions = await tokenService.getActiveSessions(request.user.id);
+        const sessions = await tokenService.getActiveSessions(userId);
         
         return reply.status(200).send({
-          sessions: sessions.map(session => ({
+          sessions: sessions.map((session: any) => ({
             id: session.id,
             sessionId: session.sessionId,
             tenantId: session.tenantId,
@@ -205,7 +210,7 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
         logger.error({
           err: error,
           request_id: request.id,
-          user_id: request.user.id
+          user_id: userId
         }, 'Failed to get active sessions');
 
         return reply.status(500).send({
@@ -239,6 +244,7 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
       }
     },
     async (request, reply) => {
+      const tokenService = (fastify as any).tokenService;
       if (!request.user) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -247,14 +253,17 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
         });
       }
 
+      const user = request.user as any;
+      const userId = user.id;
+
       try {
         const { sessionId } = request.params;
         
         const revokedCount = await tokenService.revokeTokens({
-          userId: request.user.id,
+          userId: userId,
           sessionId,
           reason: 'Session revoked by user',
-          revokedBy: request.user.id
+          revokedBy: userId
         });
 
         if (revokedCount === 0) {
@@ -267,7 +276,7 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
 
         logger.info({
           request_id: request.id,
-          user_id: request.user.id,
+          user_id: userId,
           session_id: sessionId,
           revoked_count: revokedCount
         }, 'Session revoked by user');
@@ -281,7 +290,7 @@ export const pasetoLogoutRoute: FastifyPluginAsync = async fastify => {
         logger.error({
           err: error,
           request_id: request.id,
-          user_id: request.user.id
+          user_id: userId
         }, 'Failed to revoke session');
 
         return reply.status(500).send({

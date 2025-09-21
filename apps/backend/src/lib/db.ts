@@ -34,6 +34,9 @@ export async function initializeDatabase(): Promise<void> {
     });
     
     // Create Drizzle database instance
+    if (!client) {
+      throw new Error('Database client not initialized');
+    }
     db = drizzle(client, { schema });
     
     isInitialized = true;

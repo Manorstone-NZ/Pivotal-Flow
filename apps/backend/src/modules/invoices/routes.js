@@ -1,9 +1,9 @@
 import { logger } from '../../lib/logger.js';
-import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
+// import { AuditLogger } from '../../lib/audit-logger.drizzle.js'; // TODO: Use when needed
 import { InvoiceService } from './service.js';
 import { InvoicePDFService } from './pdfService.js';
-import { invoices } from '../../lib/schema.js';
-import { generateId } from '@pivotal-flow/shared';
+// import { invoices } from '../../lib/schema.js'; // TODO: Use when needed
+// import { generateId } from '@pivotal-flow/shared'; // TODO: Use when needed
 import { InvoiceListFiltersSchema, CreateInvoiceSchema, UpdateInvoiceSchema, InvoiceStatusTransitionSchema, MarkInvoicePaidSchema, VoidInvoiceSchema, InvoiceResponseSchema, InvoiceListResponseSchema, InvoiceErrorSchema, } from './typeboxSchemas.js';
 /**
  * Register invoice list route
@@ -35,11 +35,11 @@ export function registerListInvoicesRoute(fastify) {
                 });
             }
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Get invoices
             const result = await invoiceService.listInvoices(request.query);
             return reply.status(200).send(result);
@@ -98,11 +98,11 @@ export function registerGetInvoiceRoute(fastify) {
             }
             const { id } = request.params;
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Get invoice
             const invoice = await invoiceService.getInvoiceById(id);
             if (!invoice) {
@@ -223,11 +223,11 @@ export function registerUpdateInvoiceRoute(fastify) {
             }
             const { id } = request.params;
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Update invoice
             const invoice = await invoiceService.updateInvoice(id, request.body);
             if (!invoice) {
@@ -295,11 +295,11 @@ export function registerInvoiceStatusRoute(fastify) {
             }
             const { id } = request.params;
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Update status
             const invoice = await invoiceService.updateInvoiceStatus(id, request.body);
             if (!invoice) {
@@ -360,11 +360,11 @@ export function registerMarkInvoicePaidRoute(fastify) {
             }
             const { id } = request.params;
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Mark as paid
             const invoice = await invoiceService.markInvoicePaid(id, request.body);
             if (!invoice) {
@@ -425,11 +425,11 @@ export function registerVoidInvoiceRoute(fastify) {
             }
             const { id } = request.params;
             // Create invoice service
-            const auditLogger = new AuditLogger(request.server);
+            // const auditLogger = new AuditLogger(request.server); // TODO: Use when needed
             const invoiceService = new InvoiceService({
                 organizationId: user.organizationId,
                 userId: user.userId,
-            }, auditLogger);
+            });
             // Void invoice
             const invoice = await invoiceService.voidInvoice(id, request.body);
             if (!invoice) {

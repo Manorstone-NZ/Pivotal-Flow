@@ -16,7 +16,7 @@ interface User {
   jti?: string;
 }
 
-interface AuthenticatedRequest extends FastifyRequest {
+type AuthenticatedRequest = FastifyRequest & {
   user: User;
 }
 
@@ -25,7 +25,7 @@ interface AuthenticatedRequest extends FastifyRequest {
  */
 function getRequiredPermission(method: string, url: string): string | null {
   // Remove query parameters and normalize URL
-  const cleanUrl = url.split('?')[0].replace(/\/api\/v1/, '');
+  const cleanUrl = url?.split('?')[0]?.replace(/\/api\/v1/, '') || '';
   const routeKey = `${method} ${cleanUrl}`;
   
   // console.log(`🔍 Permission check: ${method} ${url} -> ${routeKey}`);
@@ -41,7 +41,7 @@ function getRequiredPermission(method: string, url: string): string | null {
       const [routeMethod, routePath] = route.split(' ');
       if (routeMethod === method) {
         // Convert route pattern to regex
-        const regexPattern = routePath
+        const regexPattern = (routePath || '')
           .replace(/:[^/]+/g, '[^/]+') // Replace :param with regex
           .replace(/\//g, '\\/'); // Escape forward slashes
         

@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { logger } from '../../lib/logger.js';
-import type { PaginationOptions } from '../../lib/repo.base.js';
+// import type { PaginationOptions } from '../../lib/repo.base.js'; // TODO: Use when needed
 
 import { QuoteListFiltersSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
@@ -46,9 +46,9 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
       }
 
       // Parse and validate query parameters
-      const pagination: PaginationOptions = {
+      const pagination = {
         page: request.query.page || 1,
-        size: request.query.pageSize || 20  // Fixed: use 'size' to match service expectation
+        size: request.query.pageSize || 20
       };
 
       const filters = {
@@ -63,7 +63,7 @@ export function registerListQuotesRoute(fastify: FastifyInstance) {
       };
 
       // Create quote service
-      const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+      const auditLogger = new AuditLogger(request.server);
       const quoteService = new QuoteService({
         organizationId: user.organizationId,
         userId: user.userId

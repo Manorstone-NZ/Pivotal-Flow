@@ -40,7 +40,7 @@ export interface CurrencyResponse {
 export class CurrencyService extends BaseRepository {
   constructor(
     db: PostgresJsDatabase<typeof import('../../lib/schema.js')>,
-    public override options: { organizationId: string; userId: string }
+    public override options: { organizationId: string; tenantId: string; userId: string }
   ) {
     super(db, options);
   }

@@ -20,7 +20,8 @@ const TimePage = lazy(() => import('../pages/Time/Time').then(m => ({ default: m
 const TimeApprovalsPage = lazy(() => import('../pages/Time/Approvals').then(m => ({ default: m.TimeApprovalsPage })));
 const CustomersListPage = lazy(() => import('../pages/Customers/List').then(m => ({ default: m.CustomersListPage })));
 const CustomerDetailsPage = lazy(() => import('../pages/Customers/Details').then(m => ({ default: m.CustomerDetailsPage })));
-const TenancyListPage = lazy(() => import('../pages/Tenancy/List').then(m => ({ default: m.TenancyListPage })));
+// F1A: Platform Admin Portal (replaces old tenancy page)
+const TenantAdminPage = lazy(() => import('../pages/admin/TenantAdminPage').then(m => ({ default: m.default })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then(m => ({ default: m.UsersPage })));
 const PaymentsPage = lazy(() => import('../pages/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const SettingsPage = lazy(() => import('../pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -239,15 +240,14 @@ export const AppRouter: React.FC = () => {
                 }
               />
               
+              {/* F1A: Platform Admin Portal - Secure tenant management */}
               <Route
-                path="/admin/tenants"
+                path="/admin/*"
                 element={
                   <RequireAuth>
-                    <AppLayout>
-                      <PerformanceMarks routeName="tenancy">
-                        <TenancyListPage />
-                      </PerformanceMarks>
-                    </AppLayout>
+                    <PerformanceMarks routeName="admin-portal">
+                      <TenantAdminPage />
+                    </PerformanceMarks>
                   </RequireAuth>
                 }
               />

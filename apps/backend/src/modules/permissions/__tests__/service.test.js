@@ -41,10 +41,7 @@ describe('PermissionService Integration Tests', () => {
     beforeEach(async () => {
         if (testOrg && testUser) {
             // Create permission service with real database
-            permissionService = new PermissionService(testDb, {
-                organizationId: testOrg.id,
-                userId: testUser.id
-            });
+            permissionService = new PermissionService(testDb, testUser.id, testOrg.id);
         }
     });
     afterEach(async () => {
@@ -62,7 +59,7 @@ describe('PermissionService Integration Tests', () => {
                 return;
             }
             // Check if user already has the permission through existing role assignments
-            const result = await permissionService.hasPermission(testUser.id, 'quotes.override_price');
+            const result = await permissionService.hasPermission('quotes.override_price');
             // This will be true if the user has the permission, false if not
             // We're testing the service logic, not creating new data
             expect(typeof result.hasPermission).toBe('boolean');
@@ -79,7 +76,7 @@ describe('PermissionService Integration Tests', () => {
                 return;
             }
             // Test with a permission that likely doesn't exist
-            const result = await permissionService.hasPermission(testUser.id, 'quotes.nonexistent');
+            const result = await permissionService.hasPermission('quotes.nonexistent');
             expect(result.hasPermission).toBe(false);
             expect(result.reason).toBe('User lacks permission: quotes.nonexistent');
         });
@@ -88,7 +85,7 @@ describe('PermissionService Integration Tests', () => {
                 console.log('⏭️ Skipping test - no test data available');
                 return;
             }
-            const result = await permissionService.hasPermission(testUser.id, 'invalid-permission');
+            const result = await permissionService.hasPermission('invalid-permission');
             expect(result.hasPermission).toBe(false);
             expect(result.reason).toBe('Invalid permission format: invalid-permission');
         });
@@ -114,7 +111,7 @@ describe('PermissionService Integration Tests', () => {
             // Should return an array of permissions
             expect(Array.isArray(result)).toBe(true);
             // Each permission should be in action.resource format
-            result.forEach(permission => {
+            result.forEach((permission) => {
                 expect(typeof permission).toBe('string');
                 expect(permission.includes('.')).toBe(true);
             });
@@ -137,7 +134,7 @@ describe('PermissionService Integration Tests', () => {
                 console.log('⏭️ Skipping test - no test data available');
                 return;
             }
-            const result = await permissionService.hasAnyPermission(testUser.id, [
+            const result = await permissionService.hasAnyPermission([
                 'quotes.override_price',
                 'quotes.create',
                 'quotes.delete'
@@ -150,7 +147,7 @@ describe('PermissionService Integration Tests', () => {
                 console.log('⏭️ Skipping test - no test data available');
                 return;
             }
-            const result = await permissionService.hasAnyPermission(testUser.id, [
+            const result = await permissionService.hasAnyPermission([
                 'quotes.nonexistent1',
                 'quotes.nonexistent2'
             ]);
@@ -164,7 +161,7 @@ describe('PermissionService Integration Tests', () => {
                 console.log('⏭️ Skipping test - no test data available');
                 return;
             }
-            const result = await permissionService.hasAllPermissions(testUser.id, [
+            const result = await permissionService.hasAllPermissions([
                 'quotes.override_price',
                 'quotes.view',
                 'quotes.create'
@@ -177,7 +174,7 @@ describe('PermissionService Integration Tests', () => {
                 console.log('⏭️ Skipping test - no test data available');
                 return;
             }
-            const result = await permissionService.hasAllPermissions(testUser.id, [
+            const result = await permissionService.hasAllPermissions([
                 'quotes.override_price',
                 'quotes.nonexistent1',
                 'quotes.nonexistent2'

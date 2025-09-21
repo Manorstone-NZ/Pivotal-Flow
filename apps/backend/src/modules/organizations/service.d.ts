@@ -7,9 +7,7 @@ import '../../plugins/database.js';
 import type { Organization, CreateOrganizationData, UpdateOrganizationData, InviteUserData, OrganizationFilters, PaginationOptions, OrganizationListResponse, OrganizationSettings } from './types.js';
 export declare class OrganizationService {
     private fastify;
-    private currentUserId;
-    private currentOrgId?;
-    constructor(fastify: FastifyInstance, currentUserId: string, currentOrgId?: string | undefined);
+    constructor(fastify: FastifyInstance);
     /**
      * Generate unique organization slug
      */
@@ -47,17 +45,9 @@ export declare class OrganizationService {
      * Note: This is a placeholder - full implementation would require
      * user invitation table and email service integration
      */
-    inviteUser(organizationId: string, inviteData: InviteUserData): Promise<{
+    inviteUser(_organizationId: string, inviteData: InviteUserData): Promise<{
         inviteId: string;
         email: string;
     }>;
-    /**
-     * Check if user can manage organizations
-     */
-    private canManageOrganizations;
-    /**
-     * Check if user can view organizations
-     */
-    private canViewOrganizations;
 }
 //# sourceMappingURL=service.d.ts.map

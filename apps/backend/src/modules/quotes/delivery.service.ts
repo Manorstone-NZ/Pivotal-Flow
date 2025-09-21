@@ -38,7 +38,7 @@ export class QuoteDeliveryService {
    * Generate secure public token for SaaS multi-tenant access
    * Token format: {organizationId}.{quoteId}.{randomBytes}.{timestamp}
    */
-  private generateSecureToken(quoteId: string): { token: string; expiresAt: Date } {
+  private generateSecureToken(_quoteId: string): { token: string; expiresAt: Date } {
     // Generate short cryptographically secure token (16 bytes = 22 chars in base64url)
     const randomPart = randomBytes(16).toString('base64url');
     

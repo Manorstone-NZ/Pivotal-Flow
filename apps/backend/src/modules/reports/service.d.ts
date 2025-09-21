@@ -9,11 +9,10 @@ import type { QuoteCycleTimeFilters, InvoiceSettlementTimeFilters, TimeApprovals
  */
 export declare class ReportingService {
     private organizationId;
-    private userId;
     private permissionService;
     private db;
     private metrics;
-    constructor(organizationId: string, userId: string, permissionService: PermissionService);
+    constructor(organizationId: string, permissionService: PermissionService);
     /**
      * Generate quote cycle time summary
      */

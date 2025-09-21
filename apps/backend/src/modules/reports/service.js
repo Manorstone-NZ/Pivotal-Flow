@@ -13,13 +13,13 @@ import { ReportingMetrics } from './metrics.js';
  */
 export class ReportingService {
     organizationId;
-    userId;
     permissionService;
     db = getDatabase();
     metrics = ReportingMetrics.getInstance();
-    constructor(organizationId, userId, permissionService) {
+    constructor(organizationId, 
+    // private _userId: string, // TODO: Use when needed for user-specific operations // TODO: Use for audit logging
+    permissionService) {
         this.organizationId = organizationId;
-        this.userId = userId;
         this.permissionService = permissionService;
     }
     /**
@@ -28,7 +28,7 @@ export class ReportingService {
     async generateQuoteCycleTimeSummary(filters) {
         const timer = startTimer();
         // Check permissions
-        const canViewReports = await this.permissionService.hasPermission(this.userId, 'reports.view_reports');
+        const canViewReports = await this.permissionService.hasPermission('reports.view_reports');
         if (!canViewReports.hasPermission) {
             throw new Error('Permission denied: cannot view reports');
         }
@@ -136,7 +136,7 @@ export class ReportingService {
      */
     async generateInvoiceSettlementTimeSummary(filters) {
         // Check permissions
-        const canViewReports = await this.permissionService.hasPermission(this.userId, 'reports.view_reports');
+        const canViewReports = await this.permissionService.hasPermission('reports.view_reports');
         if (!canViewReports.hasPermission) {
             throw new Error('Permission denied: cannot view reports');
         }
@@ -243,7 +243,7 @@ export class ReportingService {
      */
     async generateTimeApprovalsSummary(_filters) {
         // Check permissions
-        const canViewReports = await this.permissionService.hasPermission(this.userId, 'reports.view_reports');
+        const canViewReports = await this.permissionService.hasPermission('reports.view_reports');
         if (!canViewReports.hasPermission) {
             throw new Error('Permission denied: cannot view reports');
         }
@@ -268,7 +268,7 @@ export class ReportingService {
      */
     async generatePaymentsReceivedSummary(filters) {
         // Check permissions
-        const canViewReports = await this.permissionService.hasPermission(this.userId, 'reports.view_reports');
+        const canViewReports = await this.permissionService.hasPermission('reports.view_reports');
         if (!canViewReports.hasPermission) {
             throw new Error('Permission denied: cannot view reports');
         }
@@ -358,7 +358,7 @@ export class ReportingService {
      */
     async getQuoteCycleTimeData(filters, page = 1, limit = 25) {
         // Check permissions
-        const canViewReports = await this.permissionService.hasPermission(this.userId, 'reports.view_reports');
+        const canViewReports = await this.permissionService.hasPermission('reports.view_reports');
         if (!canViewReports.hasPermission) {
             throw new Error('Permission denied: cannot view reports');
         }

@@ -3,7 +3,15 @@
  * API endpoints for customer and contact management (following quotes pattern)
  */
 import { CustomerService } from './service.js';
-import { CustomerListResponseSchema, CustomerDetailResponseSchema, ContactListResponseSchema, CustomerResponseSchema, ContactResponseSchema, ErrorResponseSchema, StandardSuccessResponseSchema, CustomerIdParamSchema, ContactIdParamSchema, CustomerQuerystringSchema, CreateCustomerBodySchema, UpdateCustomerBodySchema, CreateContactBodySchema, UpdateContactBodySchema, } from './schemas.js';
+import { 
+// CustomerListResponseSchema, // TODO: Use in response schemas
+// CustomerDetailResponseSchema, // TODO: Use in response schemas
+// ContactListResponseSchema, // TODO: Use in response schemas
+// CustomerResponseSchema, // TODO: Use in response schemas
+// ContactResponseSchema, // TODO: Use in response schemas
+ErrorResponseSchema, 
+// StandardSuccessResponseSchema, // TODO: Use in response schemas
+CustomerIdParamSchema, ContactIdParamSchema, CustomerQuerystringSchema, CreateCustomerBodySchema, UpdateCustomerBodySchema, CreateContactBodySchema, UpdateContactBodySchema, } from './schemas.js';
 // List customers with filtering and pagination
 export function registerCustomerListRoute(fastify) {
     fastify.get('/v1/customers', {
@@ -23,7 +31,7 @@ export function registerCustomerListRoute(fastify) {
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
             console.log('🔍 Customer list route - Tenant ID:', tenantId, 'User org:', user.organizationId);
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const filters = {
                 search,
                 status,
@@ -83,7 +91,7 @@ export function registerCustomerGetRoute(fastify) {
             const includeContacts = request.query?.includeContacts || false;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const customer = await customerService.getCustomerById(customerId, includeContacts);
             if (!customer) {
                 return reply.status(404).send({
@@ -123,7 +131,7 @@ export function registerCustomerCreateRoute(fastify) {
             const { user } = request;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const customer = await customerService.createCustomer(request.body);
             return reply.status(201).send({
                 success: true,
@@ -159,7 +167,7 @@ export function registerCustomerUpdateRoute(fastify) {
             const { id: customerId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const customer = await customerService.updateCustomer(customerId, request.body);
             if (!customer) {
                 return reply.status(404).send({
@@ -207,7 +215,7 @@ export function registerCustomerDeleteRoute(fastify) {
             const { id: customerId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const deleted = await customerService.deleteCustomer(customerId);
             if (!deleted) {
                 return reply.status(404).send({
@@ -254,7 +262,7 @@ export function registerContactListRoute(fastify) {
             const { id: customerId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             // Verify customer exists
             const hasAccess = await customerService.hasCustomerAccess(customerId);
             if (!hasAccess) {
@@ -303,7 +311,7 @@ export function registerContactGetRoute(fastify) {
             const { id: customerId, contactId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const contact = await customerService.getContactById(customerId, contactId);
             if (!contact) {
                 return reply.status(404).send({
@@ -351,7 +359,7 @@ export function registerContactCreateRoute(fastify) {
             const { id: customerId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const contact = await customerService.createContact(customerId, request.body);
             return reply.status(201).send({
                 success: true,
@@ -400,7 +408,7 @@ export function registerContactUpdateRoute(fastify) {
             const { id: customerId, contactId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const contact = await customerService.updateContact(customerId, contactId, request.body);
             if (!contact) {
                 return reply.status(404).send({
@@ -448,7 +456,7 @@ export function registerContactDeleteRoute(fastify) {
             const { id: customerId, contactId } = request.params;
             // Use tenant context from request header, fallback to user's organization
             const tenantId = (typeof fastify.getTenantId === 'function' ? fastify.getTenantId(request) : null) || user.organizationId;
-            const customerService = new CustomerService(fastify, tenantId, user.userId);
+            const customerService = new CustomerService(tenantId);
             const deleted = await customerService.deleteContact(customerId, contactId);
             if (!deleted) {
                 return reply.status(404).send({

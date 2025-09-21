@@ -9,7 +9,7 @@ import { ROUTE_PERMISSIONS } from '../lib/access-control.js';
  */
 function getRequiredPermission(method, url) {
     // Remove query parameters and normalize URL
-    const cleanUrl = url.split('?')[0].replace(/\/api\/v1/, '');
+    const cleanUrl = url?.split('?')[0]?.replace(/\/api\/v1/, '') || '';
     const routeKey = `${method} ${cleanUrl}`;
     // console.log(`🔍 Permission check: ${method} ${url} -> ${routeKey}`);
     // Check exact matches first
@@ -22,7 +22,7 @@ function getRequiredPermission(method, url) {
             const [routeMethod, routePath] = route.split(' ');
             if (routeMethod === method) {
                 // Convert route pattern to regex
-                const regexPattern = routePath
+                const regexPattern = (routePath || '')
                     .replace(/:[^/]+/g, '[^/]+') // Replace :param with regex
                     .replace(/\//g, '\\/'); // Escape forward slashes
                 const regex = new RegExp(`^${regexPattern}$`);

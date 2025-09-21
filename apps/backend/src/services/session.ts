@@ -4,7 +4,7 @@
  */
 
 import { randomBytes } from 'crypto';
-import type { FastifyInstance } from 'fastify';
+// import type { FastifyInstance } from 'fastify'; // TODO: Use when implementing session management
 import { logger } from '../lib/logger.js';
 
 export interface SessionData {

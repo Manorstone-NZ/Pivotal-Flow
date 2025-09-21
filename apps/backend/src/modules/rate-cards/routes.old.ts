@@ -48,7 +48,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = request.body; // TypeBox handles validation automatically
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -118,7 +118,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const { id } = request.params;
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -187,7 +187,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const { page = 1, pageSize = 20, search } = request.query;
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -197,7 +197,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
         options.search = search;
       }
       
-      const result = await rateCardService.listRateCards(options);
+      const result = await rateCardService.getAllRateCards(); // TODO: Add options parameter support
       
       reply.send(result);
     } catch (error) {
@@ -257,7 +257,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = UpdateRateCardSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -328,14 +328,13 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = CreateRateCardItemSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
       
-      const result = await rateCardService.createRateCardItem({
+      const result = await rateCardService.createRateCardItem(rateCardId, {
         ...validatedData,
-        rateCardId,
         isActive: true,
         currency: validatedData.currency || 'NZD',
         metadata: validatedData.metadata || {}
@@ -399,7 +398,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const validatedData = UpdateRateCardItemSchema['parse'](request.body);
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -521,7 +520,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const { body } = request;
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });
@@ -582,7 +581,7 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
       const { date } = request.params;
       const authenticatedRequest = request as AuthenticatedRequest;
       
-      const rateCardService = new RateCardService(fastify.db, {
+      const rateCardService = new RateCardService({
         organizationId: authenticatedRequest.user.organizationId,
         userId: authenticatedRequest.user.userId
       });

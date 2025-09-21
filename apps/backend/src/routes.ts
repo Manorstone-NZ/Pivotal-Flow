@@ -7,6 +7,13 @@ import { pasetoServiceRoutes } from './modules/auth/routes.paseto-service.js';
 // Import opaque auth routes (feature flagged)
 import { opaqueAuthRoutes } from './modules/auth/routes.opaque.js';
 
+// Import new F1.5 auth routes
+import { opaqueAuthRoutes as opaqueEndpoints } from './modules/auth/routes.opaque-endpoints.js';
+import { adminAssumeRoutes } from './modules/auth/routes.admin-assume.js';
+
+// Import F1A admin portal routes
+import { adminTenantRoutes } from './modules/admin/tenants/routes.js';
+
 // Import audit routes for tenant administrators
 import { auditRoutes } from './modules/audit/routes.js';
 
@@ -31,8 +38,8 @@ import { registerCustomerRoutes } from './modules/customers/index.js';
 // Import organization route modules
 import { registerOrganizationRoutes } from './modules/organizations/index.js';
 
-// F1: Import tenant administration route modules
-import { registerTenantRoutes } from './modules/tenants/index.js';
+// F1: Import tenant switching route (not full CRUD to avoid duplicates)
+import { registerTenantSwitchRoute } from './modules/tenants/routes.switch.js';
 
 // Import health route modules
 import { healthRoutes } from './routes/health.js';
@@ -65,6 +72,13 @@ export async function registerRoutes() {
   
   // Register opaque auth routes (always enabled now)
   await app.register(opaqueAuthRoutes, { prefix: '/api/v1/auth' });
+  
+  // Register new F1.5 auth endpoints
+  await app.register(opaqueEndpoints, { prefix: '/api/v1' });
+  await app.register(adminAssumeRoutes, { prefix: '/api' });
+  
+  // Register F1A admin portal routes
+  await app.register(adminTenantRoutes, { prefix: '/api' });
 
   // Register audit routes for tenant administrators
   await app.register(auditRoutes, { prefix: '/api/v1/audit' });
@@ -105,9 +119,9 @@ export async function registerRoutes() {
     registerOrganizationRoutes(fastify);
   }, { prefix: '/api' });
 
-  // F1: Register tenant administration route modules
+  // F1: Register tenant switching route only (admin CRUD routes handled by adminTenantRoutes)
   await app.register(async (fastify) => {
-    registerTenantRoutes(fastify);
+    registerTenantSwitchRoute(fastify);
   }, { prefix: '/api' });
 
   // Register health route modules

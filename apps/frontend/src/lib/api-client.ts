@@ -22,10 +22,8 @@ class ApiClient {
       },
     });
 
-    // Set initial tenant ID
-    if (config.tenantId) {
-      this.setTenantId(config.tenantId);
-    }
+    // Tenant ID is now derived from server-issued tokens only
+    // No client-side tenant switching for security
 
     // Add request interceptor for authentication and tenant context
     this.client.interceptors.request.use((config) => {
@@ -84,20 +82,8 @@ class ApiClient {
     );
   }
 
-  // Set tenant context for all subsequent requests
-  setTenantId(tenantId: string | null) {
-    this.tenantId = tenantId;
-    if (tenantId) {
-      console.log('API client tenant context set to:', tenantId);
-    } else {
-      console.log('API client tenant context cleared');
-    }
-  }
-
-  // Get current tenant ID
-  getTenantId(): string | null {
-    return this.tenantId;
-  }
+  // Tenant switching removed for security - tenant context is set server-side only
+  // via admin "Assume Tenant" endpoint that issues new tokens
 
   // Force refresh auth token from localStorage
   refreshAuthToken() {

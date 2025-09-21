@@ -31,7 +31,7 @@ export const Hero: React.FC = () => {
 
   return (
     <section 
-      className="relative bg-gradient-to-br from-neutral-50 via-white to-primary-50 px-4 py-20 sm:px-6 lg:px-8 lg:py-32"
+      className="relative bg-gradient-to-br from-surface-background via-surface-card to-surface-background px-4 py-20 sm:px-6 lg:px-8 lg:py-32"
       aria-labelledby="hero-heading"
     >
       {/* Background Pattern */}
@@ -43,14 +43,14 @@ export const Hero: React.FC = () => {
         {/* Main Headline */}
         <h1 
           id="hero-heading"
-          className="text-4xl font-bold text-blue-600 tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl mb-6"
+          className="text-4xl font-bold text-brand-primary tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl mb-6"
         >
           <span className="block">Pivotal Flow</span>
         </h1>
         
         {/* Subheadline */}
         <p 
-          className="text-lg text-neutral-600 mb-8 max-w-3xl mx-auto sm:text-xl lg:text-2xl leading-relaxed"
+          className="text-lg text-text-secondary mb-8 max-w-3xl mx-auto sm:text-xl lg:text-2xl leading-relaxed"
           aria-describedby="hero-description"
         >
           Streamline your business workflow from quotes to payments with our comprehensive suite of professional tools.
@@ -62,14 +62,14 @@ export const Hero: React.FC = () => {
             <>
               <Button
                 onClick={handleContinueToDashboard}
-                className="bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
+                className="bg-brand-primary text-text-inverse hover:bg-brand-secondary focus:ring-brand-primary px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
                 aria-describedby="continue-description"
               >
                 Continue to Dashboard
               </Button>
               <Button
                 onClick={handleExploreQuotes}
-                className="border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 focus:ring-primary-500 px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
+                className="border border-surface-border bg-surface-card text-text-primary hover:bg-surface-background focus:ring-brand-primary px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
                 aria-describedby="explore-description"
               >
                 Explore Quotes
@@ -78,7 +78,7 @@ export const Hero: React.FC = () => {
           ) : (
             <Button
               onClick={handleSignIn}
-              className="bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
+              className="bg-brand-primary text-text-inverse hover:bg-brand-secondary focus:ring-brand-primary px-8 py-3 text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-w-[200px]"
               aria-describedby="signin-description"
             >
               Sign In
@@ -109,22 +109,22 @@ export const Hero: React.FC = () => {
         
         {/* Welcome message for authenticated users */}
         {isAuthenticated && user && (
-          <div className="mt-8 p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-neutral-200/50 shadow-sm max-w-md mx-auto">
-            <p className="text-sm text-neutral-600">
-              Welcome back, <span className="font-medium text-neutral-900">{user.email}</span>
+          <div className="mt-8 p-4 bg-surface-card/60 backdrop-blur-sm rounded-lg border border-surface-border/50 shadow-sm max-w-md mx-auto">
+            <p className="text-sm text-text-secondary">
+              Welcome back, <span className="font-medium text-text-primary">{user.email}</span>
             </p>
           </div>
         )}
 
         {/* Trust indicators */}
-        <div className="mt-16 pt-8 border-t border-neutral-200">
-          <p className="text-sm text-neutral-500 mb-6">Trusted by businesses worldwide</p>
+        <div className="mt-16 pt-8 border-t border-surface-border">
+          <p className="text-sm text-text-disabled mb-6">Trusted by businesses worldwide</p>
           <div className="flex justify-center items-center space-x-8 opacity-60">
-            <div className="text-neutral-400 font-semibold">Security First</div>
-            <div className="w-1 h-1 bg-neutral-300 rounded-full"></div>
-            <div className="text-neutral-400 font-semibold">99.9% Uptime</div>
-            <div className="w-1 h-1 bg-neutral-300 rounded-full"></div>
-            <div className="text-neutral-400 font-semibold">24/7 Support</div>
+            <div className="text-text-disabled font-semibold">Security First</div>
+            <div className="w-1 h-1 bg-surface-border rounded-full"></div>
+            <div className="text-text-disabled font-semibold">99.9% Uptime</div>
+            <div className="w-1 h-1 bg-surface-border rounded-full"></div>
+            <div className="text-text-disabled font-semibold">24/7 Support</div>
           </div>
         </div>
       </div>

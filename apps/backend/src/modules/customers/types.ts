@@ -6,14 +6,14 @@
 import type { FastifyRequest } from 'fastify';
 import type { Customer, NewCustomer, CustomerContact, NewCustomerContact } from '../../lib/schema.js';
 
-// Authenticated request interface
-export interface AuthenticatedRequest extends FastifyRequest {
+// Authenticated request interface - use intersection type to avoid conflicts
+export type AuthenticatedRequest = FastifyRequest & {
   user: {
     userId: string;
     organizationId: string;
     roles: string[];
   };
-}
+};
 
 // Customer list request interface
 export interface ListCustomersRequest extends AuthenticatedRequest {

@@ -1,4 +1,5 @@
 import { logger } from '../../lib/logger.js';
+// import type { PaginationOptions } from '../../lib/repo.base.js'; // TODO: Use when needed
 import { QuoteListFiltersSchema } from './typeboxSchemas.js';
 import { QuoteService } from './service.js';
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
@@ -24,7 +25,7 @@ export function registerListQuotesRoute(fastify) {
             // Parse and validate query parameters
             const pagination = {
                 page: request.query.page || 1,
-                size: request.query.pageSize || 20 // Fixed: use 'size' to match service expectation
+                size: request.query.pageSize || 20
             };
             const filters = {
                 status: request.query.status,
@@ -37,7 +38,7 @@ export function registerListQuotesRoute(fastify) {
                 createdBy: request.query.createdBy
             };
             // Create quote service
-            const auditLogger = new AuditLogger(request.server, user.organizationId, user.userId);
+            const auditLogger = new AuditLogger(request.server);
             const quoteService = new QuoteService({
                 organizationId: user.organizationId,
                 userId: user.userId

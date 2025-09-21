@@ -154,8 +154,9 @@ export function useUpdateQuote() {
       const response = await apiClient.put(`/quotes/${id}`, data);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -169,8 +170,9 @@ export function useUpdateQuoteStatus() {
       const response = await apiClient.post(`/quotes/${id}/status`, { status });
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -185,8 +187,9 @@ export function useAddLineItem() {
       const response = await apiClient.post(`/quotes/${quoteId}/line-items`, data);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -208,8 +211,9 @@ export function useUpdateLineItem() {
       const response = await apiClient.put(`/quotes/${quoteId}/line-items/${lineItemId}`, data);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -223,8 +227,9 @@ export function useDeleteLineItem() {
       const response = await apiClient.delete(`/quotes/${quoteId}/line-items/${lineItemId}`);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -239,8 +244,9 @@ export function useSetDiscount() {
       const response = await apiClient.put(`/quotes/${quoteId}/discount`, discount);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });
@@ -255,8 +261,9 @@ export function useSubmitQuote() {
       const response = await apiClient.post(`/quotes/${quoteId}/submit`);
       return response.data as Quote;
     },
-    onSuccess: (updatedQuote) => {
-      queryClient.setQueryData(quoteKeys.detail(updatedQuote.id), updatedQuote);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
     },
   });

@@ -390,14 +390,9 @@ export const useUpdateInvoice = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateInvoiceData }) =>
       invoiceApi.update(id, data),
-    onSuccess: (updatedInvoice) => {
-      // Update the specific invoice in cache
-      queryClient.setQueryData(
-        invoiceQueryKeys.detail(updatedInvoice.id),
-        updatedInvoice
-      );
-      
-      // Invalidate lists to ensure they reflect the update
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
       queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
     },
   });
@@ -412,14 +407,9 @@ export const useUpdateInvoiceStatus = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: InvoiceStatusTransition }) =>
       invoiceApi.updateStatus(id, data),
-    onSuccess: (updatedInvoice) => {
-      // Update the specific invoice in cache
-      queryClient.setQueryData(
-        invoiceQueryKeys.detail(updatedInvoice.id),
-        updatedInvoice
-      );
-      
-      // Invalidate lists to ensure they reflect the status change
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
       queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
     },
   });
@@ -434,14 +424,9 @@ export const useMarkInvoicePaid = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: MarkInvoicePaidData }) =>
       invoiceApi.markPaid(id, data),
-    onSuccess: (updatedInvoice) => {
-      // Update the specific invoice in cache
-      queryClient.setQueryData(
-        invoiceQueryKeys.detail(updatedInvoice.id),
-        updatedInvoice
-      );
-      
-      // Invalidate lists to ensure they reflect the payment
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
       queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
     },
   });
@@ -456,14 +441,9 @@ export const useVoidInvoice = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: VoidInvoiceData }) =>
       invoiceApi.void(id, data),
-    onSuccess: (updatedInvoice) => {
-      // Update the specific invoice in cache
-      queryClient.setQueryData(
-        invoiceQueryKeys.detail(updatedInvoice.id),
-        updatedInvoice
-      );
-      
-      // Invalidate lists to ensure they reflect the void status
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.all() });
       queryClient.invalidateQueries({ queryKey: invoiceQueryKeys.lists() });
     },
   });

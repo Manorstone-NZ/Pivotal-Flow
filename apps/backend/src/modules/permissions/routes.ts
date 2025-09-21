@@ -1,34 +1,35 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
+// import type { FastifyRequest } from 'fastify'; // TODO: Use when needed
 import { Type } from '@sinclair/typebox';
 
 import { PermissionService } from './service.js';
 
-type AuthenticatedRequest = FastifyRequest & {
-  user: { userId: string; organizationId: string; permissions: string[] };
-};
+// type AuthenticatedRequest = FastifyRequest & {
+//   user: { userId: string; organizationId: string; permissions: string[] };
+// }; // TODO: Use when needed
 
 // TypeBox schemas
-const PermissionSchema = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  description: Type.Union([Type.String(), Type.Null()]),
-  category: Type.String(),
-  resource: Type.String(),
-  action: Type.String(),
-  createdAt: Type.String({ format: 'date-time' }),
-});
+// const PermissionSchema = Type.Object({
+//   id: Type.String(),
+//   name: Type.String(),
+//   description: Type.Union([Type.String(), Type.Null()]),
+//   category: Type.String(),
+//   resource: Type.String(),
+//   action: Type.String(),
+//   createdAt: Type.String({ format: 'date-time' }),
+// }); // TODO: Use when needed
 
-const RoleSchema = Type.Object({
-  id: Type.String(),
-  organizationId: Type.String(),
-  name: Type.String(),
-  description: Type.Union([Type.String(), Type.Null()]),
-  isSystem: Type.Boolean(),
-  isActive: Type.Boolean(),
-  createdAt: Type.String({ format: 'date-time' }),
-  updatedAt: Type.String({ format: 'date-time' }),
-  permissions: Type.Optional(Type.Array(PermissionSchema)),
-});
+// const RoleSchema = Type.Object({
+//   id: Type.String(),
+//   organizationId: Type.String(),
+//   name: Type.String(),
+//   description: Type.Union([Type.String(), Type.Null()]),
+//   isSystem: Type.Boolean(),
+//   isActive: Type.Boolean(),
+//   createdAt: Type.String({ format: 'date-time' }),
+//   updatedAt: Type.String({ format: 'date-time' }),
+//   permissions: Type.Optional(Type.Array(PermissionSchema)),
+// }); // TODO: Use when needed
 
 const CreateRoleBodySchema = Type.Object({
   name: Type.String({ minLength: 1 }),

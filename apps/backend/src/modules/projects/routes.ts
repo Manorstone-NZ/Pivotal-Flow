@@ -50,7 +50,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { organizationId, userId } = authenticatedRequest.user;
-      const filters = authenticatedRequest.query;
+      const filters = authenticatedRequest.query as ProjectFilters;
 
       const projectService = new ProjectService({ organizationId, userId });
       const result = await projectService.listProjects(filters);
@@ -88,7 +88,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { organizationId, userId } = authenticatedRequest.user;
-      const { id } = authenticatedRequest.params;
+      const { id } = authenticatedRequest.params as { id: string };
 
       const projectService = new ProjectService({ organizationId, userId });
       const project = await projectService.getProjectById(id);
@@ -132,7 +132,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { organizationId, userId } = authenticatedRequest.user;
-      const projectData = authenticatedRequest.body;
+      const projectData = authenticatedRequest.body as CreateProject;
 
       const projectService = new ProjectService({ organizationId, userId });
       const project = await projectService.createProject(projectData);
@@ -173,8 +173,8 @@ export async function projectRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { organizationId, userId } = authenticatedRequest.user;
-      const { id } = authenticatedRequest.params;
-      const updateData = authenticatedRequest.body;
+      const { id } = authenticatedRequest.params as { id: string };
+      const updateData = authenticatedRequest.body as UpdateProject;
 
       const projectService = new ProjectService({ organizationId, userId });
       const project = await projectService.updateProject(id, updateData);
@@ -222,7 +222,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { organizationId, userId } = authenticatedRequest.user;
-      const { id } = authenticatedRequest.params;
+      const { id } = authenticatedRequest.params as { id: string };
 
       const projectService = new ProjectService({ organizationId, userId });
       const success = await projectService.deleteProject(id);

@@ -1,9 +1,14 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 const execAsync = promisify(exec);
+// interface SystemCheckRequest {
+//   Params: {
+//     service: string;
+//   };
+// }; // TODO: Use when needed
 export async function systemRoutes(fastify) {
     // Docker Engine check
-    fastify.get('/system/docker', async (request, reply) => {
+    fastify.get('/system/docker', async (_request, reply) => {
         try {
             const { stdout } = await execAsync('docker --version');
             const version = stdout.trim();
@@ -29,7 +34,7 @@ export async function systemRoutes(fastify) {
         }
     });
     // Docker Compose check
-    fastify.get('/system/docker-compose', async (request, reply) => {
+    fastify.get('/system/docker-compose', async (_request, reply) => {
         try {
             const { stdout } = await execAsync('docker compose version');
             const version = stdout.trim();
@@ -56,7 +61,7 @@ export async function systemRoutes(fastify) {
         }
     });
     // Node.js check
-    fastify.get('/system/nodejs', async (request, reply) => {
+    fastify.get('/system/nodejs', async (_request, reply) => {
         try {
             const { stdout } = await execAsync('node --version');
             const version = stdout.trim();
@@ -83,12 +88,12 @@ export async function systemRoutes(fastify) {
         }
     });
     // pnpm check
-    fastify.get('/system/pnpm', async (request, reply) => {
+    fastify.get('/system/pnpm', async (_request, reply) => {
         try {
             const { stdout } = await execAsync('pnpm --version');
             const version = stdout.trim();
             // Check if pnpm can list packages
-            const { stdout: listOutput } = await execAsync('pnpm list --depth=0 --json 2>/dev/null || echo "{}"');
+            const { stdout: _listOutput } = await execAsync('pnpm list --depth=0 --json 2>/dev/null || echo "{}"'); // TODO: Use for package info
             return {
                 status: 'ok',
                 message: 'pnpm is available',
@@ -108,34 +113,8 @@ export async function systemRoutes(fastify) {
             });
         }
     });
-    // Python check
-    fastify.get('/system/python', async (request, reply) => {
-        try {
-            const { stdout } = await execAsync('python3 --version');
-            const version = stdout.trim();
-            // Check if Python can run basic code
-            const { stdout: testOutput } = await execAsync('python3 -c "print(\'Python is working\')"');
-            return {
-                status: 'ok',
-                message: 'Python is available',
-                version: version,
-                uptime: 'unknown',
-                details: {
-                    testOutput: testOutput.trim(),
-                    executable: 'python3'
-                }
-            };
-        }
-        catch (error) {
-            return reply.status(503).send({
-                status: 'error',
-                message: 'Python is not available',
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
-        }
-    });
     // Docker containers check
-    fastify.get('/system/containers', async (request, reply) => {
+    fastify.get('/system/containers', async (_request, reply) => {
         try {
             const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"');
             const containers = stdout.trim().split('\n').filter(line => line.trim()).map(line => {
@@ -150,7 +129,7 @@ export async function systemRoutes(fastify) {
                 details: {
                     containers: containers,
                     totalContainers: containers.length,
-                    runningContainers: containers.filter(c => c.status.includes('Up')).length
+                    runningContainers: containers.filter(c => c.status?.includes('Up')).length
                 }
             };
         }
@@ -163,7 +142,7 @@ export async function systemRoutes(fastify) {
         }
     });
     // System resources check
-    fastify.get('/system/resources', async (request, reply) => {
+    fastify.get('/system/resources', async (_request, reply) => {
         try {
             const [memory, disk] = await Promise.all([
                 execAsync('free -h'),
@@ -177,12 +156,12 @@ export async function systemRoutes(fastify) {
                 version: 'unknown',
                 uptime: 'unknown',
                 details: {
-                    memory: memoryLines[1], // Use second line (Mem:)
-                    disk: diskLines[1], // Use second line (root filesystem)
-                    memoryTotal: memoryLines[1].split(/\s+/)[1],
-                    memoryUsed: memoryLines[1].split(/\s+/)[2],
-                    memoryFree: memoryLines[1].split(/\s+/)[3],
-                    diskUsed: diskLines[1].split(/\s+/)[4]
+                    memory: memoryLines[1] || 'unknown', // Use second line (Mem:)
+                    disk: diskLines[1] || 'unknown', // Use second line (root filesystem)
+                    memoryTotal: memoryLines[1]?.split(/\s+/)[1] || 'unknown',
+                    memoryUsed: memoryLines[1]?.split(/\s+/)[2] || 'unknown',
+                    memoryFree: memoryLines[1]?.split(/\s+/)[3] || 'unknown',
+                    diskUsed: diskLines[1]?.split(/\s+/)[4] || 'unknown'
                 }
             };
         }

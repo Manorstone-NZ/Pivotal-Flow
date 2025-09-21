@@ -5,7 +5,7 @@ describe('Quote List Performance with Filters', () => {
     let testUserId;
     beforeAll(async () => {
         // Mock database setup for now
-        const mockDb = {};
+        // const mockDb = {} as any; // TODO: Use when needed
         const organizationId = 'test-org-123';
         const userId = 'test-user-456';
         quoteService = new QuoteService({ organizationId, userId });
@@ -17,44 +17,44 @@ describe('Quote List Performance with Filters', () => {
     describe('List quotes with typed column filters', () => {
         it('should list quotes filtered by status', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { status: 'draft' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
             expect(result.pagination).toBeDefined();
             expect(result.pagination.page).toBe(1);
             expect(result.pagination.pageSize).toBe(25);
         });
         it('should list quotes filtered by customer ID', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { customerId: 'test-customer-123' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes filtered by project ID', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { projectId: 'test-project-456' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes filtered by type', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { type: 'project' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes filtered by created by', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { createdBy: testUserId });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes filtered by date range', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, {
                 validFrom: '2025-01-01',
                 validUntil: '2025-12-31'
             });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes with text search', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { q: 'test' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should list quotes with multiple filters', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, {
@@ -62,8 +62,8 @@ describe('Quote List Performance with Filters', () => {
                 customerId: 'test-customer-123',
                 type: 'project'
             });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
         });
         it('should handle pagination correctly', async () => {
             const result = await quoteService.listQuotes({ page: 2, size: 10 }, { status: 'draft' });
@@ -73,9 +73,9 @@ describe('Quote List Performance with Filters', () => {
         });
         it('should return empty results for non-existent filters', async () => {
             const result = await quoteService.listQuotes({ page: 1, size: 25 }, { status: 'non-existent-status' });
-            expect(result.quotes).toBeDefined();
-            expect(Array.isArray(result.quotes)).toBe(true);
-            expect(result.quotes.length).toBe(0);
+            expect(result.data).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
+            expect(result.data.length).toBe(0);
         });
     });
     describe('Performance validation', () => {
@@ -86,7 +86,7 @@ describe('Quote List Performance with Filters', () => {
             const duration = endTime - startTime;
             // Performance budget: 250ms for list with 25 items
             expect(duration).toBeLessThan(250);
-            expect(result.quotes).toBeDefined();
+            expect(result.data).toBeDefined();
         });
         it('should handle large page sizes efficiently', async () => {
             const startTime = performance.now();

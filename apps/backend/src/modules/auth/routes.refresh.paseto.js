@@ -106,9 +106,9 @@ export const pasetoRefreshRoute = async (fastify) => {
                 ],
                 createdAt: new Date(),
                 lastActivity: new Date(),
-                ipAddress: request.ip,
+                ipAddress: request.ip || '',
                 userAgent: request.headers['user-agent'] || '',
-                fingerprint: tokenBinding.fingerprint
+                ...(tokenBinding.fingerprint ? { fingerprint: tokenBinding.fingerprint } : {})
             };
             // Generate new tokens
             const newAccessToken = await tokenService.generateAccessToken(sessionData, tokenBinding);

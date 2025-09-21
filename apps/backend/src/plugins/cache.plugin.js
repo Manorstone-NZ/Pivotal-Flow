@@ -37,7 +37,7 @@ export const cachePlugin = async (fastify, options) => {
         // Connect to Redis
         await cacheService.connect();
         // Decorate fastify with cache service
-        fastify.decorate('cache', cacheService);
+        fastify.decorate('cache', cacheService); // TODO: Fix Fastify decorator type compatibility
         // Add cache health check route
         fastify.get('/health/cache', {
             schema: {
@@ -114,7 +114,7 @@ export const cachePlugin = async (fastify, options) => {
                 logger.warn('Cache clear operation called but Redis is not available');
             }
         };
-        fastify.decorate('cache', fallbackCache);
+        fastify.decorate('cache', fallbackCache); // TODO: Fix Fastify decorator type compatibility
         // Add health check route that shows cache is unavailable
         fastify.get('/health/cache', {
             schema: {

@@ -2,11 +2,10 @@
  * PASETO-based Login Route
  * Replaces JWT authentication with PASETO + Opaque tokens
  */
-import { config } from "../../config/index.js";
+// import { config } from "../../config/index.js";
 import { logger } from "../../lib/logger.js";
 import { LoginRequestSchema, LoginResponseSchema, AuthErrorSchema } from "./typeboxSchemas.js";
 import { AuthService } from "./service.drizzle.js";
-import { users } from "../../lib/schema.js";
 export const pasetoLoginRoute = async (fastify) => {
     fastify.post("/login", {
         schema: {
@@ -82,13 +81,13 @@ export const pasetoLoginRoute = async (fastify) => {
                 ],
                 createdAt: new Date(),
                 lastActivity: new Date(),
-                ipAddress: request.ip,
+                ipAddress: request.ip || '',
                 userAgent: request.headers['user-agent'] || '',
-                fingerprint: tokenBinding.fingerprint
+                ...(tokenBinding.fingerprint ? { fingerprint: tokenBinding.fingerprint } : {})
             };
             // Generate PASETO tokens
             const accessToken = await tokenService.generateAccessToken(sessionData, tokenBinding);
-            const refreshToken = await tokenService.generateRefreshToken(user.id, user.organizationId, tokenBinding);
+            // const refreshToken = await tokenService.generateRefreshToken(user.id, user.organizationId, tokenBinding);
             // Log successful login
             logger.info({
                 request_id: request.id,
@@ -101,14 +100,13 @@ export const pasetoLoginRoute = async (fastify) => {
             // Return response with PASETO tokens
             return reply.status(200).send({
                 accessToken,
-                refreshToken,
                 user: {
                     id: user.id,
                     email: user.email,
-                    displayName: user.displayName,
+                    displayName: user.displayName || '',
                     roles: user.roles,
                     organizationId: user.organizationId,
-                    permissions: user.permissions
+                    ...(user.permissions ? { permissions: user.permissions } : {})
                 }
             });
         }

@@ -1,7 +1,8 @@
-import { eq, and, desc, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, sql, lte } from 'drizzle-orm';
+// import { gte } from 'drizzle-orm'; // TODO: Use when needed
 import { generateId } from '@pivotal-flow/shared';
 import { getDatabase } from '../../lib/db.js';
-import { rateCards, rateCardItems, serviceCategories } from '../../lib/schema.js';
+import { rateCards, rateCardItems } from '../../lib/schema.js';
 export class RateCardService {
     context;
     auditLogger;
@@ -30,7 +31,8 @@ export class RateCardService {
         const result = await this.db
             .select()
             .from(rateCards)
-            .where(and(eq(rateCards.organizationId, this.context.organizationId), eq(rateCards.isActive, true), lte(rateCards.effectiveFrom, effectiveDate), sql `(${rateCards.effectiveUntil} IS NULL OR ${rateCards.effectiveUntil} >= ${effectiveDate})`))
+            .where(and(eq(rateCards.organizationId, this.context.organizationId), eq(rateCards.isActive, true), lte(rateCards.effectiveFrom, effectiveDate.toISOString().split('T')[0]), // TODO: Fix date string comparison
+        sql `(${rateCards.effectiveUntil} IS NULL OR ${rateCards.effectiveUntil} >= ${effectiveDate.toISOString().split('T')[0]})`))
             .orderBy(desc(rateCards.isDefault), desc(rateCards.effectiveFrom))
             .limit(1);
         return result[0] || null;
@@ -55,7 +57,7 @@ export class RateCardService {
         await this.db.insert(rateCards).values(rateCardData);
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'rate_card',
                 entityId: rateCardId,
                 action: 'create',
@@ -84,7 +86,7 @@ export class RateCardService {
             .where(and(eq(rateCards.id, id), eq(rateCards.organizationId, this.context.organizationId)));
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'rate_card',
                 entityId: id,
                 action: 'update',
@@ -131,9 +133,27 @@ export class RateCardService {
     }
     async getRateCardItemByCode(code) {
         const result = await this.db
-            .select()
+            .select({
+            id: rateCardItems.id,
+            rateCardId: rateCardItems.rateCardId,
+            serviceCategoryId: rateCardItems.serviceCategoryId,
+            roleId: rateCardItems.roleId,
+            itemCode: rateCardItems.itemCode,
+            unit: rateCardItems.unit,
+            baseRate: rateCardItems.baseRate,
+            currency: rateCardItems.currency,
+            taxClass: rateCardItems.taxClass,
+            tieringModelId: rateCardItems.tieringModelId,
+            effectiveFrom: rateCardItems.effectiveFrom,
+            effectiveUntil: rateCardItems.effectiveUntil,
+            isActive: rateCardItems.isActive,
+            metadata: rateCardItems.metadata,
+            createdAt: rateCardItems.createdAt,
+            updatedAt: rateCardItems.updatedAt
+        })
             .from(rateCardItems)
-            .where(and(eq(rateCardItems.itemCode, code), eq(rateCardItems.organizationId, this.context.organizationId), eq(rateCardItems.isActive, true)))
+            .innerJoin(rateCards, eq(rateCardItems.rateCardId, rateCards.id))
+            .where(and(eq(rateCardItems.itemCode, code), eq(rateCards.organizationId, this.context.organizationId), eq(rateCardItems.isActive, true)))
             .limit(1);
         return result[0] || null;
     }
@@ -160,7 +180,7 @@ export class RateCardService {
         await this.db.insert(rateCardItems).values(itemData);
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'rate_card_item',
                 entityId: itemId,
                 action: 'create',
@@ -202,9 +222,12 @@ export class RateCardService {
             return null;
         }
         const item = updatedItem[0];
+        if (!item) {
+            return null;
+        }
         // Log audit event
         if (this.auditLogger) {
-            await this.auditLogger.log({
+            await this.auditLogger.logEvent({
                 entityType: 'rate_card_item',
                 entityId: itemId,
                 action: 'update',
@@ -227,7 +250,8 @@ export class RateCardService {
         const result = await this.db
             .select()
             .from(rateCardItems)
-            .where(and(eq(rateCardItems.id, itemId), eq(rateCardItems.organizationId, this.context.organizationId)))
+            .innerJoin(rateCards, eq(rateCardItems.rateCardId, rateCards.id))
+            .where(and(eq(rateCardItems.id, itemId), eq(rateCards.organizationId, this.context.organizationId)))
             .limit(1);
         return result[0] || null;
     }
@@ -243,25 +267,33 @@ export class RateCardService {
                 if (!rateCardItem && item.description) {
                     // Try to find by description (fuzzy matching)
                     const descriptionMatch = await this.db
-                        .select()
+                        .select({
+                        id: rateCardItems.id,
+                        baseRate: rateCardItems.baseRate,
+                        unit: rateCardItems.unit,
+                        itemCode: rateCardItems.itemCode,
+                        serviceCategoryId: rateCardItems.serviceCategoryId,
+                        rateCardId: rateCardItems.rateCardId
+                    })
                         .from(rateCardItems)
-                        .where(and(eq(rateCardItems.organizationId, this.context.organizationId), eq(rateCardItems.isActive, true), sql `LOWER(${rateCardItems.itemCode}) LIKE LOWER(${'%' + item.description + '%'})`))
+                        .innerJoin(rateCards, eq(rateCardItems.rateCardId, rateCards.id))
+                        .where(and(eq(rateCards.organizationId, this.context.organizationId), eq(rateCardItems.isActive, true), sql `LOWER(${rateCardItems.itemCode}) LIKE LOWER(${'%' + item.description + '%'})`))
                         .limit(1);
                     rateCardItem = descriptionMatch[0] || null;
                 }
                 if (rateCardItem) {
-                    const unitPrice = parseFloat(rateCardItem.baseRate);
+                    const unitPrice = parseFloat(rateCardItem?.baseRate || '0');
                     const taxRate = includeTax ? 0.15 : 0; // Default tax rate
-                    const taxAmount = unitPrice * taxRate;
+                    // TODO: Calculate tax amount when needed: unitPrice * taxRate
                     results.push({
                         unitPrice: { toString: () => unitPrice.toFixed(2) },
                         taxRate: { toString: () => taxRate.toFixed(2) },
-                        unit: rateCardItem.unit,
+                        unit: rateCardItem?.unit || 'hour',
                         source: 'rate_card',
-                        rateCardId: rateCardItem.rateCardId,
-                        rateCardItemId: rateCardItem.id,
-                        serviceCategoryId: rateCardItem.serviceCategoryId,
-                        itemCode: rateCardItem.itemCode
+                        rateCardId: rateCardItem?.rateCardId || '',
+                        rateCardItemId: rateCardItem?.id || '',
+                        serviceCategoryId: rateCardItem?.serviceCategoryId || '',
+                        itemCode: rateCardItem?.itemCode || ''
                     });
                 }
                 else {

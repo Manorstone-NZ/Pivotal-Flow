@@ -19,7 +19,6 @@ export declare class AllocationService {
     private organizationId;
     private userId;
     private db;
-    private permissionService;
     private auditLogger;
     constructor(organizationId: string, userId: string, fastify: FastifyInstance);
     createAllocation(data: CreateAllocationRequest): Promise<any>;

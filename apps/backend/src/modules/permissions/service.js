@@ -2,8 +2,10 @@
  * Permission Management Service
  * Handles CRUD operations for permissions, roles, and role assignments
  */
-import { eq, and, desc } from 'drizzle-orm';
-import { permissions, roles, rolePermissions, userRoles, users, organizations } from '../../lib/schema.js';
+import { eq, and, desc, inArray } from 'drizzle-orm';
+import { permissions, roles, rolePermissions, userRoles, users
+// organizations // TODO: Use when needed
+ } from '../../lib/schema.js';
 export class PermissionService {
     fastify;
     userId;
@@ -135,7 +137,7 @@ export class PermissionService {
             .innerJoin(roles, eq(userRoles.roleId, roles.id))
             .where(and(eq(userRoles.organizationId, targetOrgId), eq(userRoles.isActive, true)))
             .orderBy(desc(users.email));
-        return result.map(row => ({
+        return result.map((row) => ({
             id: row.id,
             userId: row.userId,
             roleId: row.roleId,
@@ -222,6 +224,104 @@ export class PermissionService {
             .where(and(eq(users.organizationId, targetOrgId), eq(users.status, 'active')))
             .orderBy(desc(users.email));
         return result;
+    }
+    /**
+     * Check if the current user has a specific permission
+     */
+    async hasPermission(permissionName) {
+        try {
+            // Get user's active roles
+            const userRolesResult = await this.fastify.db
+                .select({
+                roleId: userRoles.roleId,
+            })
+                .from(userRoles)
+                .where(and(eq(userRoles.userId, this.userId), eq(userRoles.organizationId, this.organizationId), eq(userRoles.isActive, true)));
+            if (userRolesResult.length === 0) {
+                return { hasPermission: false, reason: 'User has no active roles' };
+            }
+            const roleIds = userRolesResult.map((ur) => ur.roleId);
+            // Check if any of the user's roles has the required permission
+            const permissionCheck = await this.fastify.db
+                .select({
+                permissionId: permissions.id,
+            })
+                .from(rolePermissions)
+                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(and(eq(permissions.name, permissionName), inArray(rolePermissions.roleId, roleIds)))
+                .limit(1);
+            if (permissionCheck.length === 0) {
+                return { hasPermission: false, reason: `Permission '${permissionName}' not granted to user roles` };
+            }
+            return { hasPermission: true };
+        }
+        catch (error) {
+            return { hasPermission: false, reason: `Error checking permission: ${error}` };
+        }
+    }
+    /**
+     * Check if the current user has any of the specified permissions
+     */
+    async hasAnyPermission(permissionNames) {
+        for (const permissionName of permissionNames) {
+            const check = await this.hasPermission(permissionName);
+            if (check.hasPermission) {
+                return check;
+            }
+        }
+        return { hasPermission: false, reason: `User has none of the required permissions: ${permissionNames.join(', ')}` };
+    }
+    /**
+     * Check if the current user has all of the specified permissions
+     */
+    async hasAllPermissions(permissionNames) {
+        const missingPermissions = [];
+        for (const permissionName of permissionNames) {
+            const check = await this.hasPermission(permissionName);
+            if (!check.hasPermission) {
+                missingPermissions.push(permissionName);
+            }
+        }
+        if (missingPermissions.length === 0) {
+            return { hasPermission: true };
+        }
+        return { hasPermission: false, reason: `User missing permissions: ${missingPermissions.join(', ')}` };
+    }
+    /**
+     * Check if the current user can override quote prices
+     */
+    async canOverrideQuotePrice(_userId) {
+        return await this.hasPermission('quotes.override_price');
+    }
+    /**
+     * Get all permissions for the current user
+     */
+    async getUserPermissions(_userId) {
+        try {
+            // Get user's active roles
+            const userRolesResult = await this.fastify.db
+                .select({
+                roleId: userRoles.roleId,
+            })
+                .from(userRoles)
+                .where(and(eq(userRoles.userId, this.userId), eq(userRoles.organizationId, this.organizationId), eq(userRoles.isActive, true)));
+            if (userRolesResult.length === 0) {
+                return [];
+            }
+            const roleIds = userRolesResult.map((ur) => ur.roleId);
+            // Get all permissions for the user's roles
+            const userPermissions = await this.fastify.db
+                .select({
+                permissionName: permissions.name,
+            })
+                .from(rolePermissions)
+                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(inArray(rolePermissions.roleId, roleIds));
+            return userPermissions.map((p) => p.permissionName);
+        }
+        catch (error) {
+            return [];
+        }
     }
 }
 //# sourceMappingURL=service.js.map

@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 
 import { AuditLogger } from '../modules/audit/logger.js';
-import { PermissionService } from '../modules/permissions/service.js';
+// import { PermissionService } from '../modules/permissions/service.js';
 
 import { FILE_ERRORS } from './constants.js';
 import { FileService } from './service.js';
@@ -72,10 +72,10 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
+    // const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
-    const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
+    const fileService = new FileService(organizationId, userId, auditLogger);
 
     const fileId = await fileService.generateFile({
       organizationId,
@@ -104,10 +104,10 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId, fileType } = request.body as { fileId: string; fileType: string };
-    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
+    // const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
-    const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
+    const fileService = new FileService(organizationId, userId, auditLogger);
 
     const signedUrl = await fileService.getSignedUrl(fileId, fileType as any);
 
@@ -203,10 +203,10 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
-    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
+    // const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
-    const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
+    const fileService = new FileService(organizationId, userId, auditLogger);
 
     const fileInfo = await fileService.getFileInfo(fileId);
 
@@ -244,10 +244,10 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
     const { fileId } = request.params;
-    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
+    // const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
-    const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
+    const fileService = new FileService(organizationId, userId, auditLogger);
 
     await fileService.deleteFile(fileId);
 
@@ -272,10 +272,10 @@ export async function registerFileRoutes(fastify: FastifyInstance): Promise<void
     preHandler: fastify.authenticate,
   }, async (request, _reply) => {
     const { organizationId, userId } = request.user as any;
-    const permissionService = new PermissionService(fastify.db, { organizationId, userId });
+    // const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify, organizationId, userId);
 
-    const fileService = new FileService(organizationId, userId, permissionService, auditLogger);
+    const fileService = new FileService(organizationId, userId, auditLogger);
 
     const deletedCount = await fileService.cleanupExpiredFiles();
 

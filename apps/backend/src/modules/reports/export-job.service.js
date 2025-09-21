@@ -29,7 +29,7 @@ export class ExportJobService {
      */
     async createExportJob(request) {
         // Check permissions
-        const canExport = await this.permissionService.hasPermission(this.userId, 'reports.export_reports');
+        const canExport = await this.permissionService.hasPermission('reports.export_reports');
         if (!canExport.hasPermission) {
             throw new Error('Permission denied: cannot export reports');
         }

@@ -14,7 +14,7 @@ declare module "fastify" {
 }
 
 export default fp(async (fastify) => {
-  const redisUrl = process.env.AUTH_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379';
+  const redisUrl = process.env['AUTH_REDIS_URL'] || process.env['REDIS_URL'] || 'redis://localhost:6379';
   
   logger.info({ redisUrl: redisUrl.replace(/\/\/.*@/, '//***@') }, 'Connecting to Redis for auth sessions');
   

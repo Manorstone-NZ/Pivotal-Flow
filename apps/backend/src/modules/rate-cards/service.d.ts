@@ -130,35 +130,53 @@ export declare class RateCardService {
         effectiveUntil: string | null;
         createdAt: string;
         updatedAt: string;
-        id?: string;
-        rateCardId?: string;
-        serviceCategoryId?: string;
-        roleId?: string | null;
-        itemCode?: string | null;
-        unit?: string;
-        currency?: string;
-        taxClass?: string;
-        tieringModelId?: string | null;
-        isActive?: boolean;
-        metadata?: unknown;
-    } | null>;
-    getRateCardItemById(itemId: string): Promise<{
         id: string;
         rateCardId: string;
         serviceCategoryId: string;
         roleId: string | null;
         itemCode: string | null;
         unit: string;
-        baseRate: string;
         currency: string;
         taxClass: string;
         tieringModelId: string | null;
-        effectiveFrom: string;
-        effectiveUntil: string | null;
         isActive: boolean;
         metadata: unknown;
-        createdAt: Date;
-        updatedAt: Date;
+    } | null>;
+    getRateCardItemById(itemId: string): Promise<{
+        rate_cards: {
+            id: string;
+            organizationId: string;
+            tenantId: string | null;
+            name: string;
+            version: string;
+            description: string | null;
+            currency: string;
+            effectiveFrom: string;
+            effectiveUntil: string | null;
+            isDefault: boolean;
+            isActive: boolean;
+            metadata: unknown;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        rate_card_items: {
+            id: string;
+            rateCardId: string;
+            serviceCategoryId: string;
+            roleId: string | null;
+            itemCode: string | null;
+            unit: string;
+            baseRate: string;
+            currency: string;
+            taxClass: string;
+            tieringModelId: string | null;
+            effectiveFrom: string;
+            effectiveUntil: string | null;
+            isActive: boolean;
+            metadata: unknown;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     } | null>;
     resolvePricing(lineItems: any[], includeTax?: boolean): Promise<{
         success: boolean;
@@ -174,7 +192,7 @@ export declare class RateCardService {
             rateCardId: string;
             rateCardItemId: string;
             serviceCategoryId: string;
-            itemCode: string | null;
+            itemCode: string;
         } | {
             unitPrice: {
                 toString: () => string;

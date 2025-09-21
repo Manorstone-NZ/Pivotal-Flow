@@ -12,7 +12,7 @@ describe('Reports Integration Tests', () => {
         mockPermissionService = {
             hasPermission: vi.fn().mockResolvedValue({ hasPermission: true }),
         };
-        reportingService = new ReportingService('test-org-id', 'test-user-id', mockPermissionService);
+        reportingService = new ReportingService('test-org-id', mockPermissionService);
         // Seed test data
         await seedTestData();
     });

@@ -116,24 +116,14 @@ export const ROUTE_PERMISSIONS = {
   'POST /organizations/:id/invite-user': 'Manage Users',
   
   // F1: Tenant Administration (Platform Admin only)
-  'GET /v1/admin/tenants': 'tenants.view',
-  'POST /v1/admin/tenants': 'tenants.manage',
-  'GET /v1/admin/tenants/:id': 'tenants.view',
-  'PATCH /v1/admin/tenants/:id': 'tenants.manage',
-  'DELETE /v1/admin/tenants/:id': 'tenants.manage',
+  'GET /v1/admin/tenants': 'system.super_admin',
+  'POST /v1/admin/tenants': 'system.super_admin',
+  'GET /v1/admin/tenants/:id': 'system.super_admin',
+  'PATCH /v1/admin/tenants/:id': 'system.super_admin',
   
-  // F1: Tenant Membership Management
-  'GET /v1/admin/tenants/:id/memberships': 'memberships.manage',
-  'POST /v1/admin/tenants/:id/memberships': 'memberships.manage',
-  'PATCH /v1/admin/tenants/:id/memberships/:userId': 'memberships.manage',
-  'DELETE /v1/admin/tenants/:id/memberships/:userId': 'memberships.manage',
-  
-  // F1: Tenant Feature Management
-  'GET /v1/admin/tenants/:id/features': 'features.manage',
-  'PUT /v1/admin/tenants/:id/features': 'features.manage',
-  
-  // F1: Tenant Switching (User's own memberships)
-  'POST /v1/admin/tenants/:id/switch': 'tenants.switch'
+  // F1: Tenant Membership Management (Platform Admin only)
+  'POST /v1/admin/tenants/:id/users': 'system.super_admin',
+  'DELETE /v1/admin/tenants/:id/users/:membershipId': 'system.super_admin'
 } as const;
 
 // Public routes that don't require authentication

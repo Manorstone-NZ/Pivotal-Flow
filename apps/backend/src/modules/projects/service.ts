@@ -1,15 +1,17 @@
-import { eq, and, desc, asc, like, sql, isNull } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, isNull } from 'drizzle-orm';
+// import { like } from 'drizzle-orm'; // TODO: Use when needed
 import { generateId } from '@pivotal-flow/shared';
 
 import type { AuditLogger } from '../../lib/audit-logger.drizzle.js';
 import { getDatabase } from '../../lib/db.js';
-import { projects, users, serviceCategories } from '../../lib/schema.js';
+import { projects, users } from '../../lib/schema.js';
+// import { serviceCategories } from '../../lib/schema.js'; // TODO: Use when needed
 import type { 
   ProjectFilters, 
   CreateProject, 
   UpdateProject, 
   Project, 
-  ProjectWithRelations,
+  // ProjectWithRelations, // TODO: Use when needed
   ProjectsListResponse,
   ProjectDetailResponse,
   PaginationMeta
@@ -140,6 +142,9 @@ export class ProjectService {
     }
 
     const project = projectResult[0];
+    if (!project) {
+      return null;
+    }
 
     // Get owner details if ownerId exists
     let owner = null;
@@ -178,8 +183,8 @@ export class ProjectService {
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
       deletedAt: project.deletedAt?.toISOString() || null,
-      owner: owner || undefined,
-      serviceCategories: serviceCategoriesList
+      serviceCategories: serviceCategoriesList,
+      ...(owner ? { owner } : {}),
     };
 
     return response;
@@ -187,7 +192,7 @@ export class ProjectService {
 
   async createProject(data: CreateProject): Promise<Project> {
     const db = getDatabase();
-    const projectId = generateId('proj');
+    const projectId = generateId();
     const now = new Date();
 
     const projectData = {
@@ -236,7 +241,7 @@ export class ProjectService {
       metadata: projectData.metadata,
       createdAt: projectData.createdAt.toISOString(),
       updatedAt: projectData.updatedAt.toISOString(),
-      deletedAt: projectData.deletedAt?.toISOString() || null
+      deletedAt: (projectData.deletedAt as unknown as Date)?.toISOString() || null
     };
   }
 
@@ -301,6 +306,10 @@ export class ProjectService {
     }
 
     const project = updatedProject[0];
+    if (!project) {
+      return null;
+    }
+    
     return {
       id: project.id,
       organizationId: project.organizationId,
@@ -354,7 +363,7 @@ export class ProjectService {
         organizationId: this.context.organizationId,
         userId: this.context.userId,
         oldValues: {
-          name: existingProject[0].name
+          name: existingProject[0]?.name || 'Unknown'
         }
       });
     }

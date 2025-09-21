@@ -6,7 +6,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { AuditLogger } from '../../lib/audit-logger.drizzle.js';
-import { getDatabase } from '../../lib/db.js';
+// import { getDatabase } from '../../lib/db.js'; // TODO: Use when needed
 import { PermissionService } from '../permissions/service.js';
 
 import { ExportJobProcessor } from './processors/export-job.processor.js';
@@ -38,8 +38,8 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
     },
   }, async (request) => {
     const { organizationId, userId } = request.user as any;
-    const db = getDatabase();
-    const permissionService = new PermissionService(db, { organizationId, userId });
+    // const db = getDatabase(); // TODO: Use when needed
+    const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
@@ -72,8 +72,8 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const db = getDatabase();
-    const permissionService = new PermissionService(db, { organizationId, userId });
+    // const db = getDatabase(); // TODO: Use when needed
+    const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
@@ -93,8 +93,8 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { page, pageSize, status, jobType } = request.query as any;
-    const db = getDatabase();
-    const permissionService = new PermissionService(db, { organizationId, userId });
+    // const db = getDatabase(); // TODO: Use when needed
+    const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
@@ -125,8 +125,8 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const db = getDatabase();
-    const permissionService = new PermissionService(db, { organizationId, userId });
+    // const db = getDatabase(); // TODO: Use when needed
+    const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);
@@ -159,8 +159,8 @@ export async function registerJobsRoutes(fastify: FastifyInstance): Promise<void
   }, async (request) => {
     const { organizationId, userId } = request.user as any;
     const { jobId } = request.params;
-    const db = getDatabase();
-    const permissionService = new PermissionService(db, { organizationId, userId });
+    // const db = getDatabase(); // TODO: Use when needed
+    const permissionService = new PermissionService(fastify, userId, organizationId);
     const auditLogger = new AuditLogger(fastify);
 
     const jobsService = new JobsService(organizationId, userId, permissionService, auditLogger);

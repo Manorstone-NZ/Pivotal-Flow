@@ -1,16 +1,17 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
-import { timeEntries, timeEntryApprovals, type TimeEntry, type NewTimeEntry } from '../../lib/schema.js';
+import { timeEntries, timeEntryApprovals, type NewTimeEntry } from '../../lib/schema.js';
+// import { type TimeEntry } from '../../lib/schema.js'; // TODO: Use when needed
 import { logger } from '../../lib/logger.js';
 
-// Type definitions for requests
-interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    userId: string;
-    organizationId: string;
-    roles: string[];
-  };
-}
+// Type definitions for requests - use intersection type to avoid conflicts
+// type AuthenticatedRequest = FastifyRequest & {
+//   user: {
+//     userId: string;
+//     organizationId: string;
+//     roles: string[];
+//   };
+// }; // TODO: Use when implementing proper TypeBox schemas
 
 interface CreateTimeEntryRequest {
   Body: {
@@ -29,10 +30,10 @@ interface CreateTimeEntryRequest {
   };
 }
 
-interface UpdateTimeEntryRequest {
-  Params: { id: string };
-  Body: Partial<CreateTimeEntryRequest['Body']>;
-}
+// interface UpdateTimeEntryRequest { // TODO: Use when needed
+//   Params: { id: string };
+//   Body: Partial<CreateTimeEntryRequest['Body']>;
+// }
 
 interface ListTimeEntriesRequest {
   Querystring: {
@@ -137,9 +138,9 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
-      const { startDate, endDate, projectId, status, billable, userId, page = 1, limit = 20 } = request.query;
+      const { startDate, endDate, projectId, status, billable, userId, page = 1, limit = 20 } = request.query as any; // TODO: Add proper TypeBox schema
       const { user } = request;
 
       // Build query conditions
@@ -248,10 +249,10 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
       const { user } = request;
-      const entryData = request.body;
+      const entryData = request.body as any; // TODO: Add proper TypeBox schema
 
       // Generate unique ID
       const entryId = `time-entry-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -327,9 +328,9 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
-      const { id } = request.params;
+      const { id } = request.params as any; // TODO: Add proper TypeBox schema
       const { user } = request;
 
       // Check if entry exists and belongs to user (or user is admin)
@@ -408,10 +409,10 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
-      const { id } = request.params;
-      const { comments } = request.body;
+      const { id } = request.params as any; // TODO: Add proper TypeBox schema
+      const { comments } = request.body as any; // TODO: Add proper TypeBox schema
       const { user } = request;
 
       // Check if user has approval permissions
@@ -507,10 +508,10 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
-      const { id } = request.params;
-      const { reason, comments } = request.body;
+      const { id } = request.params as any; // TODO: Add proper TypeBox schema
+      const { reason, comments } = request.body as any; // TODO: Add proper TypeBox schema
       const { user } = request;
 
       // Check if user has approval permissions
@@ -627,9 +628,9 @@ export const timeRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+  }, async (request: any, reply: FastifyReply) => {
     try {
-      const { page = 1, limit = 20 } = request.query;
+      const { page = 1, limit = 20 } = request.query as any; // TODO: Add proper TypeBox schema
       const { user } = request;
 
       // Check if user has approval permissions

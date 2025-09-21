@@ -8,7 +8,7 @@ import { registerUpdateQuoteRoute } from './routes.update.js';
 import { registerGetQuoteVersionsRoute, registerGetQuoteVersionRoute } from './routes.versions.js';
 import { registerQuoteLineItemRoutes, registerSubmitQuoteRoute } from './routes.line-items.js';
 import { registerQuoteDeliveryRoute } from './routes.delivery.js';
-import { registerPublicQuoteRoutes } from './routes.public.js';
+// import { registerPublicQuoteRoutes } from './routes.public.js'; // TODO: Use when needed
 
 /**
  * Register all quote routes with Fastify

@@ -11,14 +11,11 @@ import { customers, customerContacts } from '../../lib/schema.js';
  * Handles all customer and contact operations
  */
 export class CustomerService {
-    fastify;
     organizationId;
-    _userId;
-    constructor(fastify, organizationId, _userId // Prefix with underscore to indicate intentionally unused
+    constructor(organizationId
+    // Note: FastifyInstance and userId parameters removed as they are not used in this service
     ) {
-        this.fastify = fastify;
         this.organizationId = organizationId;
-        this._userId = _userId;
     }
     /**
      * Generate unique customer number

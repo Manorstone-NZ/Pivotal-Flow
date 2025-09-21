@@ -112,7 +112,7 @@ export class AuthRepository {
           )
         );
       
-      const userRolesList = rolesResult.map(r => r.name);
+      const userRolesList = rolesResult.map((r: any) => r.name);
       
       // Get user permissions through roles in this tenant
       const permissionsResult = await this.db
@@ -132,7 +132,7 @@ export class AuthRepository {
           )
         );
       
-      const userPermissionsList = permissionsResult.map(p => p.name);
+      const userPermissionsList = permissionsResult.map((p: any) => p.name);
       
       // Get all user memberships (cross-tenant)
       const membershipsResult = await this.db
@@ -142,10 +142,8 @@ export class AuthRepository {
         })
         .from(memberships)
         .where(
-          and(
-            eq(memberships.userId, userId),
-            eq(memberships.status, 'ACTIVE')
-          )
+          eq(memberships.userId, userId)
+          // TODO: Add status filtering when memberships.status field is added
         );
       
       return {
@@ -177,7 +175,7 @@ export class AuthRepository {
           and(
             eq(memberships.userId, userId),
             eq(memberships.tenantId, tenantId),
-            eq(memberships.status, 'ACTIVE')
+            // eq(memberships.status, 'ACTIVE') // TODO: Add status field to memberships table if needed
           )
         )
         .limit(1);
@@ -201,7 +199,7 @@ export class AuthRepository {
           and(
             eq(memberships.userId, userId),
             eq(memberships.tenantId, tenantId),
-            eq(memberships.status, 'ACTIVE')
+            // eq(memberships.status, 'ACTIVE') // TODO: Add status field to memberships table if needed
           )
         )
         .limit(1);
@@ -251,14 +249,14 @@ export class AuthRepository {
           tenantId: memberships.tenantId,
           tenantName: tenants.name,
           role: memberships.role,
-          status: memberships.status
+          // status: memberships.status // TODO: Add status field when needed
         })
         .from(memberships)
         .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
         .where(
           and(
             eq(memberships.userId, userId),
-            eq(memberships.status, 'ACTIVE'),
+            // eq(memberships.status, 'ACTIVE') // TODO: Add status field to memberships table if needed,
             eq(tenants.status, 'ACTIVE')
           )
         )

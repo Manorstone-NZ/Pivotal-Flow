@@ -24,6 +24,9 @@ export async function initializeDatabase() {
             connect_timeout: 10, // Connection timeout
         });
         // Create Drizzle database instance
+        if (!client) {
+            throw new Error('Database client not initialized');
+        }
         db = drizzle(client, { schema });
         isInitialized = true;
         // eslint-disable-next-line no-console

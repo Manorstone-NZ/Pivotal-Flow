@@ -52,7 +52,7 @@ describe('RateCardService Integration Tests', () => {
     `, [testRateCard.id, testRateCard.organizationId, testRateCard.name, testRateCard.description, testRateCard.currency, testRateCard.effectiveFrom.toISOString().split('T')[0], testRateCard.effectiveUntil?.toISOString().split('T')[0] || null, testRateCard.isDefault, testRateCard.isActive, testRateCard.createdAt.toISOString(), testRateCard.updatedAt.toISOString()]);
 
     // Create rate card service with real database
-    rateCardService = new RateCardService(testDb, {
+    rateCardService = new RateCardService({
       organizationId: testOrg.id,
       userId: testUser.id
     });

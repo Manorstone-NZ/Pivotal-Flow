@@ -1,9 +1,8 @@
-import type { CacheApi } from '@pivotal-flow/shared';
 import type { FastifyPluginCallback } from 'fastify';
 import { type CacheOptions } from '../lib/cache.service.js';
 declare module 'fastify' {
     interface FastifyInstance {
-        cache: CacheApi;
+        cache: ReturnType<typeof import('redis').createClient>;
     }
 }
 export interface CachePluginOptions extends CacheOptions {

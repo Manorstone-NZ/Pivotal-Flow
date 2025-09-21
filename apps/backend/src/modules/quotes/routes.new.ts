@@ -54,7 +54,7 @@ export async function quoteRoutes(fastify: FastifyInstance) {
         metadata: validatedData.metadata || {}
       });
 
-      return reply.status(201).send(result);
+      return reply.status(201).send(result as any); // TODO: Fix response schema in API schemas task
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -85,8 +85,8 @@ export async function quoteRoutes(fastify: FastifyInstance) {
         userId: authenticatedRequest.user.userId
       });
       
-      const result = await quoteService.getAllQuotes();
-      return reply.status(200).send(result);
+      const result = await quoteService.listQuotes();
+      return reply.status(200).send(result as any); // TODO: Fix response schema in API schemas task
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -131,7 +131,7 @@ export async function quoteRoutes(fastify: FastifyInstance) {
         });
       }
       
-      return reply.status(200).send(result);
+      return reply.status(200).send(result as any); // TODO: Fix response schema in API schemas task
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',

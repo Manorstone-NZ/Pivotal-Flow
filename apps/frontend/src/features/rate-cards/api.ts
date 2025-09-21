@@ -119,8 +119,9 @@ export function useUpdateRateCard() {
       const response = await apiClient.put(`/rate-cards/${id}`, data);
       return response.data as RateCard;
     },
-    onSuccess: (updatedRateCard) => {
-      queryClient.setQueryData(rateCardKeys.detail(updatedRateCard.id), updatedRateCard);
+    onSuccess: () => {
+      // F1.5: No optimistic updates for monetary data - always show server truth
+      queryClient.invalidateQueries({ queryKey: rateCardKeys.all() });
       queryClient.invalidateQueries({ queryKey: rateCardKeys.lists() });
     },
   });

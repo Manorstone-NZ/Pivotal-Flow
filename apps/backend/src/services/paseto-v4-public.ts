@@ -55,8 +55,8 @@ export class PasetoPublicKeyManager {
     if (process.env['NODE_ENV'] === 'development') {
       const keyPair = await V4.generateKey('public');
       this.keyPair = {
-        publicKey: keyPair.publicKey, // PASETO v4.public keys are in the correct format
-        secretKey: keyPair.secretKey, // PASETO v4.public keys are in the correct format
+        publicKey: keyPair as any, // TODO: Fix PASETO key type compatibility
+        secretKey: keyPair as any, // TODO: Fix PASETO key type compatibility  
         keyId: this.keyId
       };
       
@@ -104,13 +104,13 @@ export class PasetoPublicService {
       };
 
       // Generate signed v4.public token
-      const token = await V4.sign(fullPayload, keyPair);
+      const token = await V4.sign(fullPayload as any, keyPair);
       
       logger.debug({
-        purpose: payload.purpose,
-        sub: payload.sub,
-        org: payload.org,
-        exp: new Date(payload.exp * 1000).toISOString(),
+        purpose: payload['purpose'],
+        sub: payload['sub'],
+        org: payload['org'],
+        exp: new Date(payload['exp'] * 1000).toISOString(),
         jti
       }, 'PASETO v4.public token generated');
       
@@ -129,45 +129,45 @@ export class PasetoPublicService {
       const keyPair = await this.keyManager.getKeyPair();
       
       // Verify signature and parse token
-      const payload = await V4.verify(token, keyPair.publicKey);
+      const payload = await V4.verify(token, keyPair.publicKey as any);
       
       // Verify expiration
       const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) {
+      if (payload['exp'] && (payload['exp'] as number) < now) {
         throw new Error('Token expired');
       }
 
       // Verify issued at (not in future, with 60s clock skew tolerance)
-      if (payload.iat && payload.iat > now + 60) {
+      if (payload['iat'] && (payload['iat'] as number) > now + 60) {
         throw new Error('Token issued in future');
       }
 
       // Check if token has already been used (JTI tracking)
-      if (this.redis && payload.jti) {
-        const jtiKey = `paseto:jti:${payload.jti}`;
+      if (this.redis && payload['jti']) {
+        const jtiKey = `paseto:jti:${payload['jti']}`;
         const alreadyUsed = await this.redis.get(jtiKey);
         
         if (alreadyUsed) {
           logger.warn({
-            jti: payload.jti,
-            purpose: payload.purpose
+            jti: payload['jti'],
+            purpose: payload['purpose']
           }, 'PASETO token reuse attempt blocked');
           throw new Error('Token already used');
         }
 
         // Mark token as used (TTL = remaining token lifetime + buffer)
-        const ttl = Math.max(payload.exp - now + 300, 300); // 5 min buffer
+        const ttl = Math.max((payload as any)['exp'] - now + 300, 300); // 5 min buffer
         await this.redis.set(jtiKey, 'used', ttl);
       }
       
       logger.debug({
-        purpose: payload.purpose,
-        sub: payload.sub,
-        org: payload.org,
-        jti: payload.jti
+        purpose: payload['purpose'],
+        sub: payload['sub'],
+        org: payload['org'],
+        jti: payload['jti']
       }, 'PASETO v4.public token verified and consumed');
       
-      return payload as PasetoPublicPayload;
+      return payload as unknown as PasetoPublicPayload;
     } catch (error) {
       logger.error({ err: error }, 'Failed to verify PASETO v4.public token');
       throw error;
@@ -182,20 +182,20 @@ export class PasetoPublicService {
       const keyPair = await this.keyManager.getKeyPair();
       
       // Verify signature and parse token
-      const payload = await V4.verify(token, keyPair.publicKey);
+      const payload = await V4.verify(token, keyPair.publicKey as any);
       
       // Verify expiration
       const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) {
+      if (payload['exp'] && (payload['exp'] as number) < now) {
         throw new Error('Token expired');
       }
 
       // Verify issued at
-      if (payload.iat && payload.iat > now + 60) {
+      if (payload['iat'] && (payload['iat'] as number) > now + 60) {
         throw new Error('Token issued in future');
       }
       
-      return payload as PasetoPublicPayload;
+      return payload as unknown as PasetoPublicPayload;
     } catch (error) {
       logger.error({ err: error }, 'Failed to verify PASETO v4.public token (read-only)');
       throw error;

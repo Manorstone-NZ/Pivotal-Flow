@@ -11,13 +11,13 @@ import cookiePlugin from '@fastify/cookie';
 // Import database plugin
 import databasePlugin from './plugins/database.js';
 // Import tenant context plugin
-import tenantContextPlugin from './plugins/tenant-context.js';
+// import tenantContextPlugin from './plugins/tenant-context.js'; // TODO: Use when needed
 // Import permission check plugin
 import permissionCheckPlugin from './plugins/permission-check.js';
 // Import audit logging plugin
 // import auditLoggingPlugin from './plugins/audit-logging.js';
 // C0 Backend Readiness imports
-import { getCorsConfig } from './lib/cors-rate-limit.js';
+// import { getCorsConfig } from './lib/cors-rate-limit.js'; // TODO: Use when implementing advanced CORS
 import { globalErrorHandler, requestIdMiddleware, requestLoggingMiddleware } from './lib/error-handler.js';
 import { requestLoggingMiddleware as observabilityRequestLogging } from './lib/observability.js';
 export async function registerPlugins() {
@@ -28,7 +28,7 @@ export async function registerPlugins() {
     app.addHook('preHandler', requestLoggingMiddleware);
     app.addHook('preHandler', observabilityRequestLogging);
     // C0 Backend Readiness - CORS configuration (register before auth)
-    const corsConfig = getCorsConfig();
+    // const _corsConfig = getCorsConfig(); // TODO: Use when implementing CORS configuration // TODO: Use advanced CORS config when needed
     // CORS config with origin header for all routes
     const simpleCorsConfig = {
         origin: true, // Allow all origins for development (sends back requesting origin)
@@ -82,14 +82,17 @@ export async function registerPlugins() {
     await app.register(cookiePlugin, {
         secret: process.env['JWT_SECRET'] || 'your-super-secret-jwt-key-that-is-at-least-32-characters-long'
     });
+    // F1.5: Security hardening plugin (rate limiting, headers, CSRF protection)
+    const { securityHardeningPlugin } = await import('./plugins/security-hardening.js');
+    await app.register(securityHardeningPlugin);
     // Keep existing JWT authentication (stable)
     await app.register(authCleanPlugin);
     // Feature-flagged auth hardening plugins
-    if (process.env.AUTH_USE_OPAQUE === 'true') {
+    if (process.env['AUTH_USE_OPAQUE'] === 'true') {
         const { opaqueAuthPlugin } = await import('./plugins/auth.opaque.js');
         await app.register(opaqueAuthPlugin);
     }
-    if (process.env.AUTH_ENABLE_PASETO_LINKS === 'true') {
+    if (process.env['AUTH_ENABLE_PASETO_LINKS'] === 'true') {
         const { pasetoLinksPlugin } = await import('./plugins/auth.paseto-links.js');
         await app.register(pasetoLinksPlugin);
     }
