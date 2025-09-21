@@ -17,7 +17,7 @@ import { createUserRoute } from './modules/users/routes.create.js';
 // Re-enabling core modules after F1 fixes
 import { registerQuoteRoutes } from './modules/quotes/index.js';
 import { registerPublicQuoteRoutes } from './modules/quotes/routes.public.js';
-// import { rateCardRoutes } from './modules/rate-cards/routes.js';
+import { rateCardRoutes } from './modules/rate-cards/routes.js';
 // import { registerInvoiceRoutes } from './modules/invoices/index.js';
 import { permissionRoutes } from './modules/permissions/routes.js';
 import { currencyRoutes } from './modules/currencies/routes.js';
@@ -86,8 +86,8 @@ export async function registerRoutes() {
   await app.register(permissionRoutes);
   await app.register(currencyRoutes);
   
-  // Still disabled pending fixes:
-  // await app.register(rateCardRoutes, { prefix: '/api/v1' });
+  // Re-enable rate cards
+  await app.register(rateCardRoutes, { prefix: '/api/v1' });
   // await app.register(async (fastify) => {
   //   registerInvoiceRoutes(fastify);
   // }, { prefix: '/api' });

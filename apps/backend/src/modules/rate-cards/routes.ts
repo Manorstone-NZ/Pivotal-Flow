@@ -29,6 +29,9 @@ type AuthenticatedRequest = FastifyRequest & {
 };
 
 export async function rateCardRoutes(fastify: FastifyInstance) {
+  // Add authentication middleware to all routes
+  fastify.addHook('preHandler', fastify.authenticate);
+  
   // Create a new rate card
   fastify.post<{
     Body: CreateRateCard;
