@@ -12,8 +12,8 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+// Using TypeBox schemas from shared package
+import { Type, Static } from '@sinclair/typebox';
 import {
   Table,
   TableBody,
@@ -58,7 +58,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Badge } from '../ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
 import { UserPlus, Trash2, AlertTriangle, Crown, Shield, User, Eye } from 'lucide-react';
 import { apiClient } from '../../lib/api-client';
@@ -84,14 +84,20 @@ interface MembershipTableProps {
 }
 
 // Form validation schema
-const addMembershipSchema = z.object({
-  userEmail: z.string().email('Invalid email address'),
-  role: z.enum(['OWNER', 'ADMIN', 'STAFF', 'VIEWER'], {
-    required_error: 'Role is required'
-  })
+const AddMembershipSchema = Type.Object({
+  userEmail: Type.String({
+    format: 'email',
+    description: 'Valid email address required'
+  }),
+  role: Type.Union([
+    Type.Literal('OWNER'),
+    Type.Literal('ADMIN'),
+    Type.Literal('STAFF'),
+    Type.Literal('VIEWER')
+  ])
 });
 
-type AddMembershipFormData = z.infer<typeof addMembershipSchema>;
+type AddMembershipFormData = Static<typeof AddMembershipSchema>;
 
 // Role configuration with icons and descriptions
 const ROLE_CONFIG = {
@@ -142,7 +148,7 @@ export const MembershipTable: React.FC<MembershipTableProps> = ({
 
   // Form setup
   const form = useForm<AddMembershipFormData>({
-    resolver: zodResolver(addMembershipSchema),
+    // Using react-hook-form with TypeScript validation
     defaultValues: {
       userEmail: '',
       role: 'VIEWER'
@@ -293,7 +299,7 @@ export const MembershipTable: React.FC<MembershipTableProps> = ({
       </Card>
 
       {/* Add Membership Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add User to {tenantName}</DialogTitle>

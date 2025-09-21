@@ -1,4 +1,4 @@
-import type { MoneyAmount } from './money.js';
+import { type MoneyAmount } from './money.js';
 /**
  * Tax calculation functions for GST and future tax rates
  */

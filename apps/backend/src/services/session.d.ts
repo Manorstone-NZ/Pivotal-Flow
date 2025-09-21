@@ -2,6 +2,7 @@
  * Opaque Session Service
  * Implements secure session management with Redis storage
  */
+import type { RedisClientType } from 'redis';
 export interface SessionData {
     userId: string;
     tenantId: string;
@@ -27,19 +28,19 @@ export interface SessionOptions {
 /**
  * Create session with sliding TTL
  */
-export declare function createSession(cache: any, sid: string, value: SessionData, ttlSec?: number): Promise<void>;
+export declare function createSession(cache: RedisClientType, sid: string, value: SessionData, ttlSec?: number): Promise<void>;
 /**
  * Get session with automatic TTL refresh
  */
-export declare function getSession(cache: any, sid: string, options?: SessionOptions): Promise<SessionData | null>;
+export declare function getSession(cache: RedisClientType, sid: string, options?: SessionOptions): Promise<SessionData | null>;
 /**
  * Revoke single session
  */
-export declare function revokeSession(cache: any, sid: string): Promise<boolean>;
+export declare function revokeSession(cache: RedisClientType, sid: string): Promise<boolean>;
 /**
  * Revoke all sessions for a user
  */
-export declare function revokeUserSessions(cache: any, userId: string, tenantId?: string): Promise<number>;
+export declare function revokeUserSessions(cache: RedisClientType, userId: string, tenantId?: string): Promise<number>;
 /**
  * Generate secure session ID
  */
@@ -54,7 +55,7 @@ export declare function validateSessionBinding(stored: SessionData, current: {
 /**
  * Get session statistics
  */
-export declare function getSessionStats(cache: any): Promise<{
+export declare function getSessionStats(cache: RedisClientType): Promise<{
     totalSessions: number;
     activeSessions: number;
     expiringSoon: number;

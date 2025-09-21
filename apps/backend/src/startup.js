@@ -77,7 +77,6 @@ async function startServer() {
         }
     }
 }
-// Single start guard to prevent accidental double starts during watch reloads
 if (globalThis.__appStarted) {
     logger.warn({}, "App already started in this process");
     setTimeout(() => process.exit(0), 50); // Give time for logs to flush

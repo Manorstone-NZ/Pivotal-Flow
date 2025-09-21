@@ -1,7 +1,6 @@
 import { Decimal } from 'decimal.js';
 
-import type { MoneyAmount } from './money.js';
-import { createDecimal, roundToCurrency, calculatePercentage } from './money.js';
+import { createDecimal, roundToCurrency, calculatePercentage, type MoneyAmount } from './money.js';
 
 /**
  * Tax calculation functions for GST and future tax rates

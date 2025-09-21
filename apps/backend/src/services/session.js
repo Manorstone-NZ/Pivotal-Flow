@@ -3,7 +3,6 @@
  * Implements secure session management with Redis storage
  */
 import { randomBytes } from 'crypto';
-// import type { FastifyInstance } from 'fastify'; // TODO: Use when implementing session management
 import { logger } from '../lib/logger.js';
 /**
  * Create session with sliding TTL
@@ -16,7 +15,7 @@ export async function createSession(cache, sid, value, ttlSec = 900 // 15 minute
             issuedAt: Date.now(),
             lastActivity: Date.now()
         });
-        await cache.set(sid, serializedValue, { EX: ttlSec });
+        await cache.setEx(sid, ttlSec, serializedValue);
         logger.debug({
             sid: sid.substring(0, 8) + '...',
             userId: value.userId,
@@ -43,7 +42,7 @@ export async function getSession(cache, sid, options = {}) {
         if (options.slidingExpiry !== false) {
             sessionData.lastActivity = Date.now();
             const ttl = options.ttlSeconds || 900;
-            await cache.set(sid, JSON.stringify(sessionData), { EX: ttl });
+            await cache.setEx(sid, ttl, JSON.stringify(sessionData));
             logger.debug({
                 sid: sid.substring(0, 8) + '...',
                 userId: sessionData.userId,

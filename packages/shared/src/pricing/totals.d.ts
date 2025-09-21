@@ -1,7 +1,7 @@
-import type { DiscountType } from './discounts.js';
+import { type DiscountType } from './discounts.js';
 import type { LineItemCalculation } from './lines.js';
-import type { MoneyAmount } from './money.js';
-import type { TaxBreakdown } from './taxes.js';
+import { type MoneyAmount } from './money.js';
+import { type TaxBreakdown } from './taxes.js';
 /**
  * Quote totals calculation functions
  */

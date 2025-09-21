@@ -4,7 +4,8 @@
  */
 
 import { randomBytes } from 'crypto';
-// import type { FastifyInstance } from 'fastify'; // TODO: Use when implementing session management
+import type { RedisClientType } from 'redis';
+
 import { logger } from '../lib/logger.js';
 
 export interface SessionData {
@@ -35,9 +36,9 @@ export interface SessionOptions {
  * Create session with sliding TTL
  */
 export async function createSession(
-  cache: any, 
-  sid: string, 
-  value: SessionData, 
+  cache: RedisClientType,
+  sid: string,
+  value: SessionData,
   ttlSec: number = 900 // 15 minutes default
 ): Promise<void> {
   try {
@@ -47,7 +48,7 @@ export async function createSession(
       lastActivity: Date.now()
     });
     
-    await cache.set(sid, serializedValue, { EX: ttlSec });
+    await cache.setEx(sid, ttlSec, serializedValue);
     
     logger.debug({ 
       sid: sid.substring(0, 8) + '...', 
@@ -65,8 +66,8 @@ export async function createSession(
  * Get session with automatic TTL refresh
  */
 export async function getSession(
-  cache: any, 
-  sid: string, 
+  cache: RedisClientType,
+  sid: string,
   options: SessionOptions = {}
 ): Promise<SessionData | null> {
   try {
@@ -82,7 +83,7 @@ export async function getSession(
       sessionData.lastActivity = Date.now();
       const ttl = options.ttlSeconds || 900;
       
-      await cache.set(sid, JSON.stringify(sessionData), { EX: ttl });
+      await cache.setEx(sid, ttl, JSON.stringify(sessionData));
       
       logger.debug({ 
         sid: sid.substring(0, 8) + '...', 
@@ -101,7 +102,7 @@ export async function getSession(
 /**
  * Revoke single session
  */
-export async function revokeSession(cache: any, sid: string): Promise<boolean> {
+export async function revokeSession(cache: RedisClientType, sid: string): Promise<boolean> {
   try {
     const result = await cache.del(sid);
     
@@ -121,8 +122,8 @@ export async function revokeSession(cache: any, sid: string): Promise<boolean> {
  * Revoke all sessions for a user
  */
 export async function revokeUserSessions(
-  cache: any, 
-  userId: string, 
+  cache: RedisClientType,
+  userId: string,
   tenantId?: string
 ): Promise<number> {
   try {
@@ -199,7 +200,7 @@ export function validateSessionBinding(
 /**
  * Get session statistics
  */
-export async function getSessionStats(cache: any): Promise<{
+export async function getSessionStats(cache: RedisClientType): Promise<{
   totalSessions: number;
   activeSessions: number;
   expiringSoon: number;

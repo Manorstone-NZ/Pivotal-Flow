@@ -172,10 +172,10 @@ export const TenantListTable: React.FC<TenantListTableProps> = ({
   };
 
   // Handle status filter
-  const handleStatusFilter = (status: 'ACTIVE' | 'SUSPENDED' | 'ALL') => {
+  const handleStatusFilter = (status: string) => {
     setQuery(prev => ({ 
       ...prev, 
-      status, 
+      status: status as 'ACTIVE' | 'SUSPENDED' | 'ALL', 
       page: 1 // Reset to first page on filter
     }));
   };
@@ -256,12 +256,12 @@ export const TenantListTable: React.FC<TenantListTableProps> = ({
                 <Input
                   placeholder="Search tenants by name, slug, or email..."
                   value={query.search || ''}
-                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={query.status} onValueChange={handleStatusFilter}>
+            <Select value={query.status || 'ALL'} onValueChange={handleStatusFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>

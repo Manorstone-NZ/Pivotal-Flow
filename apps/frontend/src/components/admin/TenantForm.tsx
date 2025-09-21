@@ -12,8 +12,8 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+// Using TypeBox schemas from shared package
+import { Type, Static } from '@sinclair/typebox';
 import {
   Dialog,
   DialogContent,
@@ -46,24 +46,35 @@ import { apiClient } from '../../lib/api-client';
 import { logger } from '../../lib/logger';
 
 // Form validation schema (aligned with backend TypeBox schemas)
-const tenantFormSchema = z.object({
-  name: z.string()
-    .min(1, 'Name is required')
-    .max(255, 'Name must be less than 255 characters'),
-  slug: z.string()
-    .min(1, 'Slug is required')
-    .max(100, 'Slug must be less than 100 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
-  billingEmail: z.string()
-    .email('Invalid email address'),
-  defaultCurrency: z.string()
-    .length(3, 'Currency must be 3 characters')
-    .regex(/^[A-Z]{3}$/, 'Currency must be uppercase ISO 4217 code'),
-  timezone: z.string()
-    .min(1, 'Timezone is required')
+const TenantFormSchema = Type.Object({
+  name: Type.String({
+    minLength: 1,
+    maxLength: 255,
+    description: 'Name is required and must be less than 255 characters'
+  }),
+  slug: Type.String({
+    minLength: 1,
+    maxLength: 100,
+    pattern: '^[a-z0-9-]+$',
+    description: 'Slug must contain only lowercase letters, numbers, and hyphens'
+  }),
+  billingEmail: Type.String({
+    format: 'email',
+    description: 'Valid email address required'
+  }),
+  defaultCurrency: Type.String({
+    minLength: 3,
+    maxLength: 3,
+    pattern: '^[A-Z]{3}$',
+    description: 'Currency must be 3-character uppercase ISO 4217 code'
+  }),
+  timezone: Type.String({
+    minLength: 1,
+    description: 'Timezone is required'
+  })
 });
 
-type TenantFormData = z.infer<typeof tenantFormSchema>;
+type TenantFormData = Static<typeof TenantFormSchema>;
 
 interface TenantData {
   id: string;
@@ -123,7 +134,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
 
   // Form setup with validation
   const form = useForm<TenantFormData>({
-    resolver: zodResolver(tenantFormSchema),
+    // Using react-hook-form with TypeScript validation
     defaultValues: {
       name: tenant?.name || '',
       slug: tenant?.slug || '',
@@ -201,7 +212,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
   const isLoading = createTenantMutation.isPending || updateTenantMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onClose={onClose} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
@@ -242,7 +253,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                         <Input
                           placeholder="Enter tenant name"
                           {...field}
-                          onChange={(e) => {
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             field.onChange(e);
                             handleNameChange(e.target.value);
                           }}

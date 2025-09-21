@@ -1,12 +1,9 @@
 import { Decimal } from 'decimal.js';
 
-import type { DiscountType } from './discounts.js';
-import { calculateDiscount } from './discounts.js';
+import { calculateDiscount, type DiscountType } from './discounts.js';
 import type { LineItemCalculation } from './lines.js';
-import { roundToCurrency, sumMoney } from './money.js';
-import type { MoneyAmount } from './money.js';
-import type { TaxBreakdown } from './taxes.js';
-import { calculateTaxBreakdown } from './taxes.js';
+import { roundToCurrency, sumMoney, type MoneyAmount } from './money.js';
+import { calculateTaxBreakdown, type TaxBreakdown } from './taxes.js';
 
 /**
  * Quote totals calculation functions

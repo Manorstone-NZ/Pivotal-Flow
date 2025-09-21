@@ -29,7 +29,7 @@ export function calculateDiscount(originalAmount, discountType, discountValue) {
         case 'fixed_amount':
             // Validate fixed amount discount
             if (decimalValue.greaterThan(originalAmount.amount)) {
-                throw new Error(`Fixed discount cannot exceed original amount: ${discountValue} > ${originalAmount.amount}`);
+                throw new Error(`Fixed discount cannot exceed original amount: ${discountValue} > ${originalAmount.amount.toString()}`);
             }
             discountAmount = {
                 amount: roundToCurrency(decimalValue),
@@ -44,7 +44,7 @@ export function calculateDiscount(originalAmount, discountType, discountValue) {
             };
             break;
         default:
-            throw new Error(`Invalid discount type: ${discountType}`);
+            throw new Error(`Invalid discount type: ${String(discountType)}`);
     }
     // Calculate final amount
     const finalAmount = {

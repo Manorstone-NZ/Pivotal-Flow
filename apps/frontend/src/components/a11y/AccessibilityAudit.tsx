@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { axe } from 'jest-axe';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui/Card';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../Button';
-import { Badge } from '../ui/Badge';
+import { Badge } from '../ui/badge';
 import { Progress } from '../ui/Progress';
 
 interface AccessibilityViolation {

@@ -1,4 +1,4 @@
-import type { MoneyAmount } from './money.js';
+import { type MoneyAmount } from './money.js';
 /**
  * Discount calculation functions with guard rails
  */

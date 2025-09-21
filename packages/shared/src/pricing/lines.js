@@ -11,7 +11,7 @@ export function calculateLineItem(lineItem, currencyDecimals = 2) {
         throw new Error(`Quantity must be positive: ${lineItem.quantity}`);
     }
     if (lineItem.unitPrice.amount.isNegative()) {
-        throw new Error(`Unit price cannot be negative: ${lineItem.unitPrice.amount}`);
+        throw new Error(`Unit price cannot be negative: ${lineItem.unitPrice.amount.toString()}`);
     }
     // Handle tax inclusive pricing
     let workingUnitPrice;

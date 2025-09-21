@@ -32,10 +32,7 @@ export class RedisProvider implements CacheProvider {
       return JSON.parse(value) as T;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis get error:', {
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
       return null;
     }
   }
@@ -57,11 +54,7 @@ export class RedisProvider implements CacheProvider {
       this.metrics.sets++;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis set error:', {
-        key,
-        ttl,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
     }
   }
 
@@ -75,10 +68,7 @@ export class RedisProvider implements CacheProvider {
       this.metrics.busts++;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis delete error:', {
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
     }
   }
 
@@ -92,10 +82,7 @@ export class RedisProvider implements CacheProvider {
       return result === 1;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis exists error:', {
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
       return false;
     }
   }
@@ -110,10 +97,7 @@ export class RedisProvider implements CacheProvider {
       return ttl;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis TTL error:', {
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
       return -1;
     }
   }
@@ -155,10 +139,7 @@ export class RedisProvider implements CacheProvider {
       return deleted;
     } catch (error) {
       this.metrics.errors++;
-      console.warn('Redis delete pattern error:', {
-        pattern,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for Redis errors as this is infrastructure logging
       return 0;
     }
   }

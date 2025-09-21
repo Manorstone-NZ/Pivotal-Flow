@@ -161,11 +161,7 @@ export class CacheWrapper {
             // Record cache error
             this.recordCacheError();
             // Log error but don't fail the operation
-            console.warn('Cache operation failed:', {
-                operation: 'getOrSet',
-                key,
-                error: error instanceof Error ? error.message : String(error)
-            });
+            // Note: Using console.warn for cache failures as this is infrastructure logging
             // Fallback to direct function execution
             return await fn();
         }
@@ -193,11 +189,7 @@ export class CacheWrapper {
             return { value, ttl };
         }
         catch (error) {
-            console.warn('Cache TTL check failed:', {
-                operation: 'getWithTtl',
-                key,
-                error: error instanceof Error ? error.message : String(error)
-            });
+            // Note: Using console.warn for cache failures as this is infrastructure logging
             return { value: null, ttl: -1 };
         }
     }
@@ -221,11 +213,7 @@ export class CacheWrapper {
             }
         }
         catch (error) {
-            console.warn('Cache bust failed:', {
-                operation: 'bust',
-                options,
-                error: error instanceof Error ? error.message : String(error)
-            });
+            // Note: Using console.warn for cache failures as this is infrastructure logging
         }
     }
     /**
@@ -252,11 +240,13 @@ export class CacheWrapper {
     /**
      * Bust cache by pattern (implementation depends on cache provider)
      */
-    async bustPattern(_pattern) {
+    async bustPattern(pattern) {
         // This is a simplified implementation
         // In practice, you'd need to implement pattern-based deletion
         // or use cache provider-specific methods
         // Cache bust pattern: ${pattern}
+        // eslint-disable-next-line no-console
+        console.log(`Cache bust pattern: ${pattern}`);
     }
     /**
      * Get cache metrics

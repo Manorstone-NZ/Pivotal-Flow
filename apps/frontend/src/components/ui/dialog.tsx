@@ -6,6 +6,7 @@ import type { BaseComponentProps } from '../../lib/utils';
 interface DialogProps extends BaseComponentProps {
   open: boolean;
   onClose: () => void;
+  onOpenChange?: (open: boolean) => void; // For compatibility with shadcn/ui pattern
   title?: string;
   description?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -13,9 +14,61 @@ interface DialogProps extends BaseComponentProps {
   closeOnEscape?: boolean;
 }
 
+// Additional Dialog components for composition
+interface DialogContentProps extends BaseComponentProps {
+  children: React.ReactNode;
+}
+
+interface DialogHeaderProps extends BaseComponentProps {
+  children: React.ReactNode;
+}
+
+interface DialogFooterProps extends BaseComponentProps {
+  children: React.ReactNode;
+}
+
+interface DialogTitleProps extends BaseComponentProps {
+  children: React.ReactNode;
+}
+
+interface DialogDescriptionProps extends BaseComponentProps {
+  children: React.ReactNode;
+}
+
+export const DialogContent: React.FC<DialogContentProps> = ({ children, className, ...props }) => (
+  <div className={cn("p-6", className)} {...props}>
+    {children}
+  </div>
+);
+
+export const DialogHeader: React.FC<DialogHeaderProps> = ({ children, className, ...props }) => (
+  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props}>
+    {children}
+  </div>
+);
+
+export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className, ...props }) => (
+  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props}>
+    {children}
+  </div>
+);
+
+export const DialogTitle: React.FC<DialogTitleProps> = ({ children, className, ...props }) => (
+  <h3 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props}>
+    {children}
+  </h3>
+);
+
+export const DialogDescription: React.FC<DialogDescriptionProps> = ({ children, className, ...props }) => (
+  <p className={cn("text-sm text-muted-foreground", className)} {...props}>
+    {children}
+  </p>
+);
+
 export const Dialog: React.FC<DialogProps> = ({
   open,
   onClose,
+  onOpenChange,
   title,
   description,
   size = 'md',
@@ -64,9 +117,14 @@ export const Dialog: React.FC<DialogProps> = ({
     return undefined;
   }, [open, onClose, closeOnEscape]);
   
+  const handleClose = () => {
+    onClose();
+    onOpenChange?.(false);
+  };
+
   const handleOverlayClick = (event: React.MouseEvent) => {
     if (closeOnOverlayClick && event.target === event.currentTarget) {
-      onClose();
+      handleClose();
     }
   };
   
@@ -114,7 +172,7 @@ export const Dialog: React.FC<DialogProps> = ({
         
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 p-2 text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded-lg"
           aria-label="Close dialog"
         >

@@ -1,4 +1,5 @@
 import { register } from 'prom-client';
+
 import { app } from './server.js';
 import { config } from './config/index.js';
 import { logger } from './lib/logger.js';
@@ -6,7 +7,7 @@ import { registerPlugins } from './plugins.js';
 import { registerRoutes } from './routes.js';
 
 // Start server
-async function startServer() {
+async function startServer(): Promise<void> {
   try {
     logger.info(`Startup at ${new Date().toISOString()} - WATCHER WORKING!`);
     logger.info({ 
@@ -57,20 +58,18 @@ async function startServer() {
           name: err.name,
           message: err.message,
           stack: err.stack,
-          code: (err as any)?.code,
-          errno: (err as any)?.errno,
-          syscall: (err as any)?.syscall,
-          address: (err as any)?.address,
-          port: (err as any)?.port,
-          cause: (err as any)?.cause,
+          code: (err as NodeJS.ErrnoException)?.code,
+          errno: (err as NodeJS.ErrnoException)?.errno,
+          syscall: (err as NodeJS.ErrnoException)?.syscall,
+          cause: (err as Error)?.cause,
         },
         'Failed to start server',
       );
 
       if (
-        (err as any).code === 'EADDRINUSE' ||
-        (err as any).code === 'EACCES' ||
-        (err as any).code === 'EADDRNOTAVAIL'
+        (err as NodeJS.ErrnoException).code === 'EADDRINUSE' ||
+        (err as NodeJS.ErrnoException).code === 'EACCES' ||
+        (err as NodeJS.ErrnoException).code === 'EADDRNOTAVAIL'
       ) {
         logger.error({}, 'Critical server error - exiting');
         process.exit(1);
@@ -88,11 +87,16 @@ async function startServer() {
 }
 
 // Single start guard to prevent accidental double starts during watch reloads
-if ((globalThis as any).__appStarted) {
+declare global {
+  // eslint-disable-next-line no-var
+  var __appStarted: boolean | undefined;
+}
+
+if (globalThis.__appStarted) {
   logger.warn({}, "App already started in this process");
   setTimeout(() => process.exit(0), 50); // Give time for logs to flush
 }
-(globalThis as any).__appStarted = true;
+globalThis.__appStarted = true;
 
 startServer().catch((error) => {
   logger.fatal({ err: error }, 'Fatal error during server startup');

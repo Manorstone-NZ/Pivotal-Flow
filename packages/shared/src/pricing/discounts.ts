@@ -1,7 +1,6 @@
 import { Decimal } from 'decimal.js';
 
-import type { MoneyAmount } from './money.js';
-import { createDecimal, roundToCurrency, calculatePercentage, isNegative } from './money.js';
+import { createDecimal, roundToCurrency, calculatePercentage, isNegative, type MoneyAmount } from './money.js';
 
 /**
  * Discount calculation functions with guard rails
@@ -64,7 +63,7 @@ export function calculateDiscount(
     case 'fixed_amount':
       // Validate fixed amount discount
       if (decimalValue.greaterThan(originalAmount.amount)) {
-        throw new Error(`Fixed discount cannot exceed original amount: ${discountValue} > ${originalAmount.amount}`);
+        throw new Error(`Fixed discount cannot exceed original amount: ${discountValue} > ${originalAmount.amount.toString()}`);
       }
       
       discountAmount = {
@@ -82,7 +81,7 @@ export function calculateDiscount(
       break;
       
     default:
-      throw new Error(`Invalid discount type: ${discountType}`);
+      throw new Error(`Invalid discount type: ${String(discountType)}`);
   }
   
   // Calculate final amount

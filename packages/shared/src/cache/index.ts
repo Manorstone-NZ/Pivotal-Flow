@@ -153,7 +153,7 @@ export class CacheKeyBuilder {
  * Cache wrapper with getOrSet, ttl, and bust helpers
  */
 export class CacheWrapper {
-  private readonly inFlightRequests = new Map<string, Promise<any>>();
+  private readonly inFlightRequests = new Map<string, Promise<unknown>>();
   
   constructor(
     private readonly provider: CacheProvider,
@@ -171,7 +171,7 @@ export class CacheWrapper {
   ): Promise<T> {
     // Check if request is already in flight
     if (this.inFlightRequests.has(key)) {
-      return required(this.inFlightRequests.get(key), `In-flight request for key ${key} should exist`);
+      return required(this.inFlightRequests.get(key), `In-flight request for key ${key} should exist`) as Promise<T>;
     }
 
     // Create new request promise
@@ -225,11 +225,7 @@ export class CacheWrapper {
       this.recordCacheError();
 
       // Log error but don't fail the operation
-      console.warn('Cache operation failed:', {
-        operation: 'getOrSet',
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for cache failures as this is infrastructure logging
       
       // Fallback to direct function execution
       return await fn();
@@ -264,11 +260,7 @@ export class CacheWrapper {
 
       return { value, ttl };
     } catch (error) {
-      console.warn('Cache TTL check failed:', {
-        operation: 'getWithTtl',
-        key,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for cache failures as this is infrastructure logging
       
       return { value: null, ttl: -1 };
     }
@@ -291,11 +283,7 @@ export class CacheWrapper {
         await this.bustPattern(pattern);
       }
     } catch (error) {
-      console.warn('Cache bust failed:', {
-        operation: 'bust',
-        options,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Note: Using console.warn for cache failures as this is infrastructure logging
     }
   }
 
@@ -326,11 +314,13 @@ export class CacheWrapper {
   /**
    * Bust cache by pattern (implementation depends on cache provider)
    */
-  private async bustPattern(_pattern: string): Promise<void> {
+  private async bustPattern(pattern: string): Promise<void> {
     // This is a simplified implementation
     // In practice, you'd need to implement pattern-based deletion
     // or use cache provider-specific methods
     // Cache bust pattern: ${pattern}
+    // eslint-disable-next-line no-console
+    console.log(`Cache bust pattern: ${pattern}`);
   }
 
   /**

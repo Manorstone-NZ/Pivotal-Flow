@@ -4,7 +4,7 @@ import type { BaseComponentProps } from '../../lib/utils';
 
 interface BadgeProps extends BaseComponentProps {
   children?: React.ReactNode;
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   shape?: 'rounded' | 'pill' | 'square';
   dot?: boolean;
@@ -37,6 +37,10 @@ export const Badge: React.FC<BadgeProps> = ({
         return 'bg-red-100 text-red-800';
       case 'info':
         return 'bg-blue-100 text-blue-800';
+      case 'outline':
+        return 'border border-gray-300 bg-transparent text-gray-700';
+      case 'destructive':
+        return 'bg-red-500 text-white';
       default:
         return 'bg-gray-100 text-gray-800';
     }

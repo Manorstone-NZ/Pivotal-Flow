@@ -1,9 +1,7 @@
 import { Decimal } from 'decimal.js';
 
-import type { DiscountType } from './discounts.js';
-import { calculateDiscount } from './discounts.js';
-import type { MoneyAmount } from './money.js';
-import { createDecimal, roundToCurrency, roundToCurrencyDecimals, multiplyMoney } from './money.js';
+import { calculateDiscount, type DiscountType } from './discounts.js';
+import { createDecimal, roundToCurrency, roundToCurrencyDecimals, multiplyMoney, type MoneyAmount } from './money.js';
 import { calculateTax, isTaxExempt } from './taxes.js';
 
 /**
@@ -47,7 +45,7 @@ export function calculateLineItem(lineItem: LineItem, currencyDecimals: number =
   }
   
   if (lineItem.unitPrice.amount.isNegative()) {
-    throw new Error(`Unit price cannot be negative: ${lineItem.unitPrice.amount}`);
+    throw new Error(`Unit price cannot be negative: ${lineItem.unitPrice.amount.toString()}`);
   }
   
   // Handle tax inclusive pricing

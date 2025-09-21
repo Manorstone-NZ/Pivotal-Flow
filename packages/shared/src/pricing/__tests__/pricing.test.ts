@@ -1,8 +1,7 @@
 import { Decimal } from 'decimal.js';
 import { describe, it, expect } from 'vitest';
 
-import { calculateQuote } from '../index.js';
-import type { LineItem } from '../index.js';
+import { calculateQuote, type LineItem } from '../index.js';
 
 /**
  * Comprehensive test suite for B1 Quote Calculation
