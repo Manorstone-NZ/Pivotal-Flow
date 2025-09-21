@@ -2,9 +2,38 @@
 
 # eswitch - Emergency Service Switch
 # Cleanly shutdown all services and restart them
-# Usage: ./scripts/eswitch [start|stop|restart|status]
+# Usage: ./scripts/eswitch [start|stop|restart|status] [-v|--verbose]
 
 set -e
+
+# Verbose mode flag
+VERBOSE_MODE=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE_MODE=true
+            shift
+            ;;
+        -h|--help)
+            COMMAND="help"
+            shift
+            ;;
+        start|stop|restart|status)
+            COMMAND="$1"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Default command if none provided
+COMMAND="${COMMAND:-restart}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -34,11 +63,31 @@ init_log_session() {
     echo "================================================" >> "$ESWITCH_LOG"
     echo "ESWITCH SESSION STARTED - $timestamp" >> "$ESWITCH_LOG"
     echo "Command: $0 $*" >> "$ESWITCH_LOG"
+    echo "Verbose Mode: $VERBOSE_MODE" >> "$ESWITCH_LOG"
     echo "PID: $$" >> "$ESWITCH_LOG"
     echo "Working Directory: $(pwd)" >> "$ESWITCH_LOG"
     echo "User: $(whoami)" >> "$ESWITCH_LOG"
     echo "Host: $(hostname)" >> "$ESWITCH_LOG"
+    echo "System: $(uname -a)" >> "$ESWITCH_LOG"
+    echo "Shell: $SHELL" >> "$ESWITCH_LOG"
+    echo "Bash Version: $BASH_VERSION" >> "$ESWITCH_LOG"
     echo "================================================" >> "$ESWITCH_LOG"
+    
+    # Verbose mode initialization
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Eswitch started in verbose mode"
+        verbose "Command: $0 $*"
+        verbose "Working directory: $(pwd)"
+        verbose "User: $(whoami)"
+        verbose "Host: $(hostname)"
+        verbose "System: $(uname -a)"
+        verbose "Shell: $SHELL"
+        verbose "Bash version: $BASH_VERSION"
+        verbose "Current environment variables:"
+        env | grep -E '(DATABASE_URL|REDIS_URL|NODE_ENV|PORT|HOST|CORS_ORIGIN|JWT_SECRET|OPENAPI_ENABLE)' | sort | while read line; do
+            verbose "  $line"
+        done
+    fi
 }
 
 # Log rotation function
@@ -74,7 +123,9 @@ log_message() {
     # Console output with colors
     case "$level" in
         "DEBUG")
-            echo -e "${PURPLE}[DEBUG]${NC} $message" >&2
+            if [ "$VERBOSE_MODE" = true ]; then
+                echo -e "${PURPLE}[DEBUG]${NC} $message" >&2
+            fi
             ;;
         "INFO")
             echo -e "${BLUE}[INFO]${NC} $message"
@@ -89,14 +140,21 @@ log_message() {
             echo -e "${RED}[ERROR]${NC} ❌ $message"
             ;;
         "PERF")
-            echo -e "${CYAN}[PERF]${NC} ⏱️  $message"
+            if [ "$VERBOSE_MODE" = true ]; then
+                echo -e "${CYAN}[PERF]${NC} ⏱️  $message"
+            fi
+            ;;
+        "VERBOSE")
+            if [ "$VERBOSE_MODE" = true ]; then
+                echo -e "${BLUE}[VERBOSE]${NC} 🔍 $message"
+            fi
             ;;
         *)
             echo -e "${BLUE}[eswitch]${NC} $message"
             ;;
     esac
     
-    # File output
+    # File output (always log to file regardless of verbose mode)
     echo "$log_entry" >> "$ESWITCH_LOG"
 }
 
@@ -145,6 +203,32 @@ log_error() {
     return $error_code
 }
 
+# Define logging functions first
+debug() {
+    log_message "DEBUG" "$1"
+}
+
+info() {
+    log_message "INFO" "$1"
+}
+
+verbose() {
+    log_message "VERBOSE" "$1"
+}
+
+# Enhanced verbose logging for command execution
+log_command() {
+    local cmd="$1"
+    local description="${2:-Command execution}"
+    
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Executing: $description"
+        verbose "Command: $cmd"
+        verbose "Working directory: $(pwd)"
+        verbose "Environment: $(env | grep -E '(DATABASE_URL|REDIS_URL|NODE_ENV|PORT|HOST)' | sort)"
+    fi
+}
+
 # Initialize logging for this session
 rotate_logs
 init_log_session "$@"
@@ -176,14 +260,8 @@ error() {
     log_message "ERROR" "$1"
 }
 
-# Additional logging functions
-debug() {
-    log_message "DEBUG" "$1"
-}
-
-info() {
-    log_message "INFO" "$1"
-}
+# Additional logging functions (legacy compatibility)
+# Functions are now defined earlier in the script
 
 # Function to kill processes by pattern
 kill_by_pattern() {
@@ -199,6 +277,15 @@ kill_by_pattern() {
     if [ -n "$pids" ]; then
         debug "Found processes to kill: $pids"
         log "Found $(echo $pids | wc -w) $description processes"
+        
+        # Verbose process details
+        if [ "$VERBOSE_MODE" = true ]; then
+            verbose "Detailed process information for $description:"
+            for pid in $pids; do
+                local process_info=$(ps -p $pid -o pid,ppid,user,cmd --no-headers 2>/dev/null || echo "Process $pid not found")
+                verbose "  PID $pid: $process_info"
+            done
+        fi
     else
         debug "No processes found matching pattern: $pattern"
         log "No $description processes found"
@@ -406,6 +493,10 @@ wait_for_service() {
 setup_environment() {
     log "🔧 Setting up environment..."
     
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Setting up development environment variables"
+    fi
+    
     export DATABASE_URL="postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e"
     export REDIS_URL="redis://localhost:6379"
     export JWT_SECRET="your-super-secret-jwt-key-that-is-at-least-32-characters-long"
@@ -416,6 +507,19 @@ setup_environment() {
     export PORT="3000"
     export HOST="localhost"
     
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Environment variables set:"
+        verbose "  DATABASE_URL: $DATABASE_URL"
+        verbose "  REDIS_URL: $REDIS_URL"
+        verbose "  JWT_SECRET: [HIDDEN]"
+        verbose "  CORS_ORIGIN: $CORS_ORIGIN"
+        verbose "  OPENAPI_ENABLE: $OPENAPI_ENABLE"
+        verbose "  ALLOW_LOCAL_DB_CREATION: $ALLOW_LOCAL_DB_CREATION"
+        verbose "  NODE_ENV: $NODE_ENV"
+        verbose "  PORT: $PORT"
+        verbose "  HOST: $HOST"
+    fi
+    
     success "Environment variables configured"
 }
 
@@ -423,11 +527,29 @@ setup_environment() {
 start_docker_services() {
     log "🐳 Starting Docker services..."
     
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Changing to Docker directory: $PROJECT_ROOT/infra/docker"
+        verbose "Checking Docker compose file..."
+        if [ -f "$PROJECT_ROOT/infra/docker/docker-compose.yml" ]; then
+            verbose "Docker compose file found"
+        else
+            warning "Docker compose file not found at expected location"
+        fi
+    fi
+    
     cd "$PROJECT_ROOT/infra/docker"
+    log_command "docker-compose up -d" "Starting Docker services"
     docker-compose up -d
     cd "$PROJECT_ROOT"
     
     log "Waiting for Docker services to initialize..."
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Waiting 10 seconds for Docker services to start up"
+        verbose "Checking Docker container status..."
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null | while read line; do
+            verbose "  $line"
+        done
+    fi
     sleep 10
     
     # Check PostgreSQL
@@ -488,12 +610,27 @@ start_backend() {
     mkdir -p logs
     touch logs/backend.log
     
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Backend startup details:"
+        verbose "  Backend directory: $PROJECT_ROOT/apps/backend"
+        verbose "  Log file: $PROJECT_ROOT/logs/backend.log"
+        verbose "  PID file: $PROJECT_ROOT/logs/backend.pid"
+        verbose "  Port: $BACKEND_PORT"
+    fi
+    
     cd "$PROJECT_ROOT/apps/backend"
     
     # Start backend in background (exact command from startup script)
+    log_command "nohup pnpm dev > ../../logs/backend.log 2>&1 &" "Starting backend server"
     nohup pnpm dev > ../../logs/backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > ../../logs/backend.pid
+    
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Backend started with PID: $BACKEND_PID"
+        verbose "Backend PID saved to: $PROJECT_ROOT/logs/backend.pid"
+        verbose "Backend logs will be written to: $PROJECT_ROOT/logs/backend.log"
+    fi
     
     cd "$PROJECT_ROOT"
     
@@ -520,12 +657,27 @@ start_frontend() {
     mkdir -p logs
     touch logs/frontend.log
     
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Frontend startup details:"
+        verbose "  Frontend directory: $PROJECT_ROOT/apps/frontend"
+        verbose "  Log file: $PROJECT_ROOT/logs/frontend.log"
+        verbose "  PID file: $PROJECT_ROOT/logs/frontend.pid"
+        verbose "  Port: $FRONTEND_PORT"
+    fi
+    
     cd "$PROJECT_ROOT/apps/frontend"
     
     # Start frontend in background (exact command from startup script)
+    log_command "nohup pnpm dev > ../../logs/frontend.log 2>&1 &" "Starting frontend server"
     nohup pnpm dev > ../../logs/frontend.log 2>&1 &
     FRONTEND_PID=$!
     echo $FRONTEND_PID > ../../logs/frontend.pid
+    
+    if [ "$VERBOSE_MODE" = true ]; then
+        verbose "Frontend started with PID: $FRONTEND_PID"
+        verbose "Frontend PID saved to: $PROJECT_ROOT/logs/frontend.pid"
+        verbose "Frontend logs will be written to: $PROJECT_ROOT/logs/frontend.log"
+    fi
     
     cd "$PROJECT_ROOT"
     
@@ -830,6 +982,9 @@ show_status() {
     log "   Restart: ./scripts/eswitch restart"
     log "   Status: ./scripts/eswitch status"
     log "   View logs: tail -f $ESWITCH_LOG"
+    if [ "$VERBOSE_MODE" = true ]; then
+        log "   Verbose mode: ./scripts/eswitch [command] --verbose"
+    fi
     
     # Log file sizes
     debug "Log file sizes:"
@@ -905,7 +1060,29 @@ cleanup_session() {
 trap 'cleanup_session $?' EXIT
 
 # Main script logic
-case "${1:-restart}" in
+case "$COMMAND" in
+    "help")
+        echo "Usage: $0 [start|stop|restart|status] [-v|--verbose]"
+        echo
+        echo "Emergency service management for Pivotal Flow development"
+        echo
+        echo "Commands:"
+        echo "  start   - Start all services cleanly"
+        echo "  stop    - Stop all services and free ports"
+        echo "  restart - Stop then start all services (default)"
+        echo "  status  - Show current service status"
+        echo
+        echo "Options:"
+        echo "  -v, --verbose  - Enable verbose logging with detailed debug information"
+        echo "  -h, --help     - Show this help message"
+        echo
+        echo "Examples:"
+        echo "  $0 restart              # Normal restart with standard logging"
+        echo "  $0 restart --verbose    # Restart with detailed verbose logging"
+        echo "  $0 status -v            # Show status with verbose process details"
+        echo "  $0 --help               # Show this help message"
+        exit 0
+        ;;
     "stop")
         stop_services
         ;;
@@ -919,15 +1096,8 @@ case "${1:-restart}" in
         show_status
         ;;
     *)
-        echo "Usage: $0 [start|stop|restart|status]"
-        echo
-        echo "Emergency service management for Pivotal Flow development"
-        echo
-        echo "Commands:"
-        echo "  start   - Start all services cleanly"
-        echo "  stop    - Stop all services and free ports"
-        echo "  restart - Stop then start all services (default)"
-        echo "  status  - Show current service status"
+        echo "Usage: $0 [start|stop|restart|status] [-v|--verbose]"
+        echo "Use -h or --help for detailed usage information"
         exit 1
         ;;
 esac

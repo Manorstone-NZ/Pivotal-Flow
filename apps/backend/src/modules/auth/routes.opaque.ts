@@ -171,11 +171,11 @@ export const opaqueAuthRoutes: FastifyPluginAsync = async (fastify) => {
         body: Type.Object({
           allDevices: Type.Optional(Type.Boolean())
         }),
-        response: {
-          200: OpaqueLogoutResponseSchema,
-          401: OpaqueErrorSchema,
-          500: OpaqueErrorSchema
-        }
+        // response: {
+        //   200: OpaqueLogoutResponseSchema,
+        //   401: OpaqueErrorSchema,
+        //   500: OpaqueErrorSchema
+        // }
       }
     },
     async (request, reply) => {

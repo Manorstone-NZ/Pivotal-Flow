@@ -1,12 +1,15 @@
 /**
  * PASETO Service for Auth Hardening
- * Implements v4 public tokens for signed links and service calls
+ * Implements v4.local encrypted tokens per security policy
+ * - XChaCha20-Poly1305 encryption (quantum-resistant)
+ * - 30-day expiration for public links
+ * - Self-contained verification
  */
 
 import { V4 } from "paseto";
-import { readFileSync, existsSync } from 'fs';
 import { randomBytes } from 'crypto';
 import { logger } from "../lib/logger.js";
+import { generateSessionId, createSession, getSession, revokeSession, revokeUserSessions, validateSessionBinding } from "./session.js";
 
 export interface PasetoPayload {
   sub: string;
@@ -24,9 +27,9 @@ export interface LinkPayload extends PasetoPayload {
   purpose: string;
 }
 
-export interface KeyPair {
-  publicKey: Uint8Array;
-  secretKey: Uint8Array;
+export interface EncryptionKey {
+  key: Uint8Array;  // 256-bit key for v4.local
+  keyId: string;
 }
 
 /**

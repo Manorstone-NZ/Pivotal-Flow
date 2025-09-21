@@ -1,5 +1,5 @@
 /**
- * F1 Tenant Administration Routes
+ * F1 Tenant Administration Routes - Clean Version
  * API endpoints for tenant CRUD and membership management
  */
 import type { FastifyInstance } from 'fastify';

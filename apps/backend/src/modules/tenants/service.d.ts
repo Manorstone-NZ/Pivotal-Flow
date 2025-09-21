@@ -3,6 +3,8 @@
  * Business logic for tenant CRUD and membership management
  */
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { Static } from '@sinclair/typebox';
+import type { CreateTenantSchema, UpdateTenantSchema, CreateMembershipSchema, UpdateMembershipSchema, UpdateTenantFeaturesSchema } from './typeboxSchemas.js';
 export declare class TenantService {
     private db;
     constructor(database?: PostgresJsDatabase<any>);
@@ -64,7 +66,7 @@ export declare class TenantService {
     /**
      * Create new tenant
      */
-    createTenant(data: CreateTenantSchema, creatorUserId?: string): Promise<{
+    createTenant(data: Static<typeof CreateTenantSchema>, creatorUserId?: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
@@ -78,7 +80,7 @@ export declare class TenantService {
     /**
      * Update tenant
      */
-    updateTenant(tenantId: string, data: UpdateTenantSchema): Promise<{
+    updateTenant(tenantId: string, data: Static<typeof UpdateTenantSchema>): Promise<{
         id: string;
         name: string;
         slug: string;
@@ -112,12 +114,6 @@ export declare class TenantService {
         includeUser?: boolean;
     }): Promise<{
         memberships: {
-            user?: {
-                id: string;
-                email: string;
-                firstName: string;
-                lastName: string;
-            };
             id: string;
             userId: string;
             tenantId: string;
@@ -146,7 +142,7 @@ export declare class TenantService {
     /**
      * Create membership
      */
-    createMembership(tenantId: string, data: CreateMembershipSchema): Promise<{
+    createMembership(tenantId: string, data: Static<typeof CreateMembershipSchema>): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -157,7 +153,7 @@ export declare class TenantService {
     /**
      * Update membership role
      */
-    updateMembership(userId: string, tenantId: string, data: UpdateMembershipSchema): Promise<{
+    updateMembership(userId: string, tenantId: string, data: Static<typeof UpdateMembershipSchema>): Promise<{
         id: string;
         userId: string;
         tenantId: string;
@@ -192,7 +188,7 @@ export declare class TenantService {
     /**
      * Update tenant features
      */
-    updateTenantFeatures(tenantId: string, data: UpdateTenantFeaturesSchema): Promise<{
+    updateTenantFeatures(tenantId: string, data: Static<typeof UpdateTenantFeaturesSchema>): Promise<{
         features: ({
             id: string;
             createdAt: Date;

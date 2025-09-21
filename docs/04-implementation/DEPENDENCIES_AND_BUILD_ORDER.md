@@ -20,7 +20,7 @@ The Pivotal Flow application consists of multiple interconnected systems:
 
 ### Infrastructure Services
 - **PostgreSQL** - Primary database (port 5433)
-- **Redis** - Caching and session storage (port 6379)
+- **Redis** - Caching, session storage, and authentication (port 6379)
 
 ### API Documentation System
 - **Swagger/OpenAPI 3.0** - Comprehensive API documentation
@@ -54,11 +54,19 @@ The Pivotal Flow application consists of multiple interconnected systems:
   "@sinclair/typebox": "^0.34.41",
   "argon2": "^0.40",
   "decimal.js": "^10.4.3",
-  "pino": "^8.17.2"
+  "pino": "^8.17.2",
+  "paseto": "^4.0.1"
 }
 ```
 
 **Security Note**: The application uses Argon2id for password hashing instead of bcrypt for enhanced security. Argon2id provides better resistance against side-channel attacks and is the recommended choice for new applications according to current security best practices.
+
+**Redis Implementation**: The application now includes comprehensive Redis integration for:
+- **Session Storage**: Opaque token storage for PASETO authentication
+- **Caching**: High-performance caching for rate cards, permissions, and business data
+- **Authentication**: Secure session management with Redis-backed token storage
+- **Rate Limiting**: Distributed rate limiting with Redis for API protection
+- **Idempotency**: Request deduplication for critical operations
 
 #### Core Frontend Dependencies (`apps/frontend`)
 ```json
@@ -128,6 +136,47 @@ docker compose -f infra/docker/docker-compose.yml up -d
 ```
 **Dependencies**: Docker, Docker Compose
 **Services**: PostgreSQL (port 5433), Redis (port 6379)
+
+### Redis Services Configuration
+
+#### Redis Plugin Architecture
+The application includes multiple Redis integrations:
+
+1. **Cache Service** (`src/lib/cache.service.ts`)
+   - High-performance caching for business data
+   - TTL-based expiration management
+   - Health monitoring and statistics
+   - Graceful fallback mechanisms
+
+2. **Auth Redis Plugin** (`src/plugins/redis.ts`)
+   - Opaque token storage for PASETO authentication
+   - Session management with Redis backend
+   - Connection pooling and error handling
+   - Graceful shutdown procedures
+
+3. **Cache Plugin** (`src/plugins/cache.plugin.ts`)
+   - Fastify integration for caching
+   - Admin endpoints for cache management
+   - Health check endpoints
+   - Statistics and monitoring
+
+#### Redis Configuration Options
+```typescript
+// Environment variables
+AUTH_REDIS_URL=redis://localhost:6379  // Primary Redis for auth
+REDIS_URL=redis://localhost:6379       // Fallback Redis URL
+CACHE_TTL_SECS=300                     // Default cache TTL (5 minutes)
+
+// Cache service options
+{
+  host: 'localhost',
+  port: 6379,
+  password: 'optional',
+  db: 0,
+  keyPrefix: 'pivotal-flow:',
+  ttl: 300
+}
+```
 
 ### 2. Shared Packages (Second)
 Build order is critical due to workspace dependencies:
@@ -267,15 +316,20 @@ pnpm -w --filter apps/backend drizzle:migrate
 
 ### Required Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string
-- `REDIS_URL`: Redis connection string  
+- `REDIS_URL`: Redis connection string (fallback)
+- `AUTH_REDIS_URL`: Redis connection for authentication sessions
 - `JWT_SECRET`: JWT signing secret (min 32 characters)
+- `PASETO_SECRET`: PASETO token signing secret (min 32 characters)
 - `CORS_ORIGIN`: Allowed origins for CORS
 - `NODE_ENV`: development/production
 - `OPENAPI_ENABLE`: Enable OpenAPI documentation
+- `CACHE_TTL_SECS`: Default cache TTL in seconds (default: 300)
 
 ### Development Defaults
 - `DATABASE_URL`: `postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e`
 - `REDIS_URL`: `redis://localhost:6379`
+- `AUTH_REDIS_URL`: `redis://localhost:6379` (fallback to REDIS_URL)
+- `CACHE_TTL_SECS`: `300` (5 minutes)
 - `CORS_ORIGIN`: `http://localhost:3000,http://localhost:5173`
 
 ## Key Scripts and Commands
@@ -299,6 +353,12 @@ pnpm -w --filter apps/backend drizzle:migrate
 - Access Swagger UI: `http://localhost:3000/docs` (when `OPENAPI_ENABLE=true`)
 - Access OpenAPI JSON: `http://localhost:3000/api/openapi.json`
 
+### Redis/Cache Management Commands
+- **Cache Health Check**: `curl http://localhost:3000/health/cache`
+- **Cache Statistics**: `curl http://localhost:3000/admin/cache/stats` (admin only)
+- **Clear Cache**: `curl -X POST http://localhost:3000/admin/cache/clear` (admin only)
+- **Redis CLI Access**: `docker compose -f infra/docker/docker-compose.yml exec redis redis-cli`
+
 ### Quality Assurance
 - `pnpm qa:check`: Type check + lint + unit tests + accessibility
 - `pnpm qa:full`: Full QA including E2E tests
@@ -313,6 +373,18 @@ pnpm -w --filter apps/backend drizzle:migrate
 ### Database Connection Issues
 - **Problem**: Backend can't connect to PostgreSQL
 - **Solution**: Ensure Docker services are running: `docker compose -f infra/docker/docker-compose.yml up -d`
+
+### Redis Connection Issues
+- **Problem**: Backend can't connect to Redis
+- **Solution**: 
+  - Check Redis is running: `docker compose -f infra/docker/docker-compose.yml ps redis`
+  - Verify Redis URL: `echo $AUTH_REDIS_URL` or `echo $REDIS_URL`
+  - Test Redis connection: `redis-cli -u $REDIS_URL ping`
+- **Problem**: Cache operations failing
+- **Solution**: 
+  - Check cache health: `curl http://localhost:3000/health/cache`
+  - Verify cache configuration in environment variables
+  - Check Redis logs: `docker compose -f infra/docker/docker-compose.yml logs redis`
 
 ### Port Conflicts
 - **Problem**: Port 3000/5173 already in use
@@ -331,7 +403,9 @@ pnpm -w --filter apps/backend drizzle:migrate
 
 ### Backend → Cache
 - **Client**: Redis via `redis` package
-- **Usage**: Session storage, caching
+- **Usage**: Session storage, caching, authentication tokens
+- **Services**: CacheService, Auth Redis Plugin, Cache Plugin
+- **Features**: TTL management, health monitoring, graceful fallbacks
 
 ### Frontend → Backend
 - **Client**: Custom SDK via Axios

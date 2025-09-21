@@ -18,6 +18,7 @@ This section contains all organizational policies, governance frameworks, and op
 
 ### Development Standards
 - [Development Guardrails](./DEVELOPMENT_GUARDRAILS.md) - Comprehensive development standards and quality controls
+- [Branching Strategy](./BRANCHING_STRATEGY.md) - Git branching strategy and best practices
 - [QA Policy](./QA.md) - Quality assurance standards and procedures
 
 ### Operational Policies
@@ -207,6 +208,7 @@ This section contains all organizational policies, governance frameworks, and op
 
 ### **Essential Policies**
 - [Security Policy](./SECURITY_POLICY.md) - Core security framework
+- [Branching Strategy](./BRANCHING_STRATEGY.md) - Git workflow and branch management
 - [Documentation Policy](./DOCUMENTATION_POLICY.md) - Documentation standards
 - [QA Policy](./QA.md) - Quality assurance procedures
 - [Migration Policy](./MIGRATION_POLICY.md) - System migration procedures

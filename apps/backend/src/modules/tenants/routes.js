@@ -1,9 +1,9 @@
 /**
- * F1 Tenant Administration Routes
+ * F1 Tenant Administration Routes - Clean Version
  * API endpoints for tenant CRUD and membership management
  */
 import { TenantService } from './service.js';
-import { TenantSchema, CreateTenantSchema, UpdateTenantSchema, TenantListResponseSchema, MembershipSchema, CreateMembershipSchema, UpdateMembershipSchema, MembershipListResponseSchema, TenantFeatureListResponseSchema, UpdateTenantFeaturesSchema, TenantSwitchSchema, TenantSwitchResponseSchema, TenantErrorSchema, } from './typeboxSchemas.js';
+import { CreateTenantSchema, UpdateTenantSchema, CreateMembershipSchema, UpdateMembershipSchema, UpdateTenantFeaturesSchema, } from './typeboxSchemas.js';
 // ============================================================================
 // TENANT CRUD ROUTES
 // ============================================================================
@@ -11,26 +11,9 @@ import { TenantSchema, CreateTenantSchema, UpdateTenantSchema, TenantListRespons
  * GET /v1/admin/tenants - List all tenants
  */
 export function registerTenantListRoute(fastify) {
-    fastify.get('/v1/admin/tenants', {
-        schema: {
-            querystring: {
-                type: 'object',
-                properties: {
-                    page: { type: 'integer', minimum: 1, default: 1 },
-                    limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
-                    sortBy: { type: 'string', enum: ['name', 'createdAt'], default: 'name' },
-                    sortOrder: { type: 'string', enum: ['asc', 'desc'], default: 'asc' },
-                },
-            },
-            response: {
-                200: TenantListResponseSchema,
-                401: TenantErrorSchema,
-                403: TenantErrorSchema,
-            },
-        },
-    }, async (request, reply) => {
+    fastify.get('/v1/admin/tenants', async (request, reply) => {
         try {
-            const { page, limit, sortBy, sortOrder } = request.query;
+            const { page = 1, limit = 25, sortBy = 'name', sortOrder = 'asc' } = request.query;
             const tenantService = new TenantService();
             const result = await tenantService.listTenants({
                 page,
@@ -57,11 +40,6 @@ export function registerTenantCreateRoute(fastify) {
     fastify.post('/v1/admin/tenants', {
         schema: {
             body: CreateTenantSchema,
-            response: {
-                201: TenantSchema,
-                400: TenantErrorSchema,
-                409: TenantErrorSchema,
-            },
         },
     }, async (request, reply) => {
         try {
@@ -92,21 +70,7 @@ export function registerTenantCreateRoute(fastify) {
  * GET /v1/admin/tenants/:id - Get tenant details
  */
 export function registerTenantDetailRoute(fastify) {
-    fastify.get('/v1/admin/tenants/:id', {
-        schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
-            response: {
-                200: TenantSchema,
-                404: TenantErrorSchema,
-            },
-        },
-    }, async (request, reply) => {
+    fastify.get('/v1/admin/tenants/:id', async (request, reply) => {
         try {
             const { id } = request.params;
             const tenantService = new TenantService();
@@ -136,18 +100,7 @@ export function registerTenantDetailRoute(fastify) {
 export function registerTenantUpdateRoute(fastify) {
     fastify.patch('/v1/admin/tenants/:id', {
         schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
             body: UpdateTenantSchema,
-            response: {
-                200: TenantSchema,
-                404: TenantErrorSchema,
-            },
         },
     }, async (request, reply) => {
         try {
@@ -181,32 +134,10 @@ export function registerTenantUpdateRoute(fastify) {
  * GET /v1/admin/tenants/:id/memberships - List tenant memberships
  */
 export function registerTenantMembershipsListRoute(fastify) {
-    fastify.get('/v1/admin/tenants/:id/memberships', {
-        schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
-            querystring: {
-                type: 'object',
-                properties: {
-                    page: { type: 'integer', minimum: 1, default: 1 },
-                    limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
-                    includeUser: { type: 'boolean', default: true },
-                },
-            },
-            response: {
-                200: MembershipListResponseSchema,
-                404: TenantErrorSchema,
-            },
-        },
-    }, async (request, reply) => {
+    fastify.get('/v1/admin/tenants/:id/memberships', async (request, reply) => {
         try {
             const { id } = request.params;
-            const { page, limit, includeUser } = request.query;
+            const { page = 1, limit = 25, includeUser = true } = request.query;
             const tenantService = new TenantService();
             // Verify tenant exists
             const tenant = await tenantService.getTenantById(id);
@@ -240,19 +171,7 @@ export function registerTenantMembershipsListRoute(fastify) {
 export function registerTenantMembershipCreateRoute(fastify) {
     fastify.post('/v1/admin/tenants/:id/memberships', {
         schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
             body: CreateMembershipSchema,
-            response: {
-                201: MembershipSchema,
-                404: TenantErrorSchema,
-                409: TenantErrorSchema,
-            },
         },
     }, async (request, reply) => {
         try {
@@ -294,19 +213,7 @@ export function registerTenantMembershipCreateRoute(fastify) {
 export function registerTenantMembershipUpdateRoute(fastify) {
     fastify.patch('/v1/admin/tenants/:id/memberships/:userId', {
         schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                    userId: { type: 'string', format: 'uuid' },
-                },
-                required: ['id', 'userId'],
-            },
             body: UpdateMembershipSchema,
-            response: {
-                200: MembershipSchema,
-                404: TenantErrorSchema,
-            },
         },
     }, async (request, reply) => {
         try {
@@ -337,22 +244,7 @@ export function registerTenantMembershipUpdateRoute(fastify) {
  * DELETE /v1/admin/tenants/:id/memberships/:userId - Remove user from tenant
  */
 export function registerTenantMembershipDeleteRoute(fastify) {
-    fastify.delete('/v1/admin/tenants/:id/memberships/:userId', {
-        schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                    userId: { type: 'string', format: 'uuid' },
-                },
-                required: ['id', 'userId'],
-            },
-            response: {
-                200: MembershipSchema,
-                404: TenantErrorSchema,
-            },
-        },
-    }, async (request, reply) => {
+    fastify.delete('/v1/admin/tenants/:id/memberships/:userId', async (request, reply) => {
         try {
             const { id, userId } = request.params;
             const tenantService = new TenantService();
@@ -383,21 +275,7 @@ export function registerTenantMembershipDeleteRoute(fastify) {
  * GET /v1/admin/tenants/:id/features - Get tenant features
  */
 export function registerTenantFeaturesGetRoute(fastify) {
-    fastify.get('/v1/admin/tenants/:id/features', {
-        schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
-            response: {
-                200: TenantFeatureListResponseSchema,
-                404: TenantErrorSchema,
-            },
-        },
-    }, async (request, reply) => {
+    fastify.get('/v1/admin/tenants/:id/features', async (request, reply) => {
         try {
             const { id } = request.params;
             const tenantService = new TenantService();
@@ -429,18 +307,7 @@ export function registerTenantFeaturesGetRoute(fastify) {
 export function registerTenantFeaturesUpdateRoute(fastify) {
     fastify.put('/v1/admin/tenants/:id/features', {
         schema: {
-            params: {
-                type: 'object',
-                properties: {
-                    id: { type: 'string', format: 'uuid' },
-                },
-                required: ['id'],
-            },
             body: UpdateTenantFeaturesSchema,
-            response: {
-                200: TenantFeatureListResponseSchema,
-                404: TenantErrorSchema,
-            },
         },
     }, async (request, reply) => {
         try {

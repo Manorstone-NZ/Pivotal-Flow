@@ -18,19 +18,29 @@ declare module 'fastify' {
   }
 }
 
-// Routes that use opaque sessions (when flag enabled)
-const OPAQUE_ROUTES = [
-  '/api/v1/auth/login-opaque',
-  '/api/v1/auth/refresh-opaque',
+// Routes that require opaque session validation (exclude login routes)
+const OPAQUE_PROTECTED_ROUTES = [
   '/api/v1/auth/logout-opaque',
   '/api/v1/auth/sessions'
+];
+
+// Routes that are public for opaque auth (don't require session)
+const OPAQUE_PUBLIC_ROUTES = [
+  '/api/v1/auth/login-opaque'
 ];
 
 /**
  * Check if route should use opaque authentication
  */
 function shouldUseOpaqueAuth(url: string): boolean {
-  return OPAQUE_ROUTES.some(route => url.startsWith(route));
+  return OPAQUE_PROTECTED_ROUTES.some(route => url.startsWith(route));
+}
+
+/**
+ * Check if route is public for opaque auth
+ */
+function isOpaquePublicRoute(url: string): boolean {
+  return OPAQUE_PUBLIC_ROUTES.some(route => url.startsWith(route));
 }
 
 /**
@@ -71,7 +81,12 @@ export const opaqueAuthPlugin: FastifyPluginAsync = fp(async (fastify) => {
   
   // Session validation middleware
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Only apply to opaque routes when flag is enabled
+    // Skip public opaque routes (like login)
+    if (isOpaquePublicRoute(request.url)) {
+      return;
+    }
+    
+    // Only apply to opaque protected routes when flag is enabled
     if (!shouldUseOpaqueAuth(request.url)) {
       return;
     }

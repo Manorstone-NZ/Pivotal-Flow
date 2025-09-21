@@ -155,6 +155,11 @@ export default fp(async function authPlugin(app) {
             requestUrl === '/api/v1/auth/login' ||
             requestUrl === '/v1/auth/refresh' ||
             requestUrl === '/api/v1/auth/refresh' ||
+            requestUrl === '/api/v1/auth/login-opaque' ||
+            requestUrl === '/api/v1/auth/logout-opaque' ||
+            requestUrl === '/api/v1/auth/login-paseto' ||
+            requestUrl === '/api/v1/auth/refresh-paseto' ||
+            requestUrl === '/api/v1/auth/logout-paseto' ||
             requestUrl === '/api/v1/auth/debug-db' ||
             requestUrl.startsWith('/v1/test/') ||
             requestUrl.startsWith('/api/public/quotes/')) {
@@ -165,7 +170,7 @@ export default fp(async function authPlugin(app) {
             await request.jwtVerify();
             // F1: Extract enhanced user context from JWT payload with tenant memberships
             const payload = request.user;
-            const user = {
+            const enhancedUser = {
                 userId: payload.sub,
                 organizationId: payload.org, // Legacy compatibility
                 tenantId: payload.tenantId || payload.org, // Current active tenant (fallback to org for legacy)
@@ -174,11 +179,11 @@ export default fp(async function authPlugin(app) {
                 permissions: payload.permissions ?? [], // Permissions for current tenant
                 jti: payload.jti,
             };
-            // F1: Validate tenant membership - user must have at least one membership
-            if (!validateTenantMembership(user)) {
+            // F1: Validate tenant membership - user must have at least one membership (only if memberships exist)
+            if (enhancedUser.memberships.length > 0 && !validateTenantMembership(enhancedUser)) {
                 logger.warn({
-                    userId: user.userId,
-                    memberships: user.memberships,
+                    userId: enhancedUser.userId,
+                    memberships: enhancedUser.memberships,
                     requestUrl: request.url
                 }, 'F1: Access denied - no valid tenant memberships');
                 return reply.status(403).send({
@@ -187,21 +192,29 @@ export default fp(async function authPlugin(app) {
                     code: 'NO_TENANT_MEMBERSHIP',
                 });
             }
-            // F1: Validate current tenant membership
-            if (user.tenantId && !validateTenantMembership(user, user.tenantId)) {
+            // F1: Validate current tenant membership (only if memberships exist)
+            if (enhancedUser.memberships.length > 0 && enhancedUser.tenantId && !validateTenantMembership(enhancedUser, enhancedUser.tenantId)) {
                 logger.warn({
-                    userId: user.userId,
-                    tenantId: user.tenantId,
-                    memberships: user.memberships,
+                    userId: enhancedUser.userId,
+                    tenantId: enhancedUser.tenantId,
+                    memberships: enhancedUser.memberships,
                     requestUrl: request.url
                 }, 'F1: Access denied - no membership in current tenant');
                 return reply.status(403).send({
                     error: 'Forbidden',
-                    message: `No membership found for tenant: ${user.tenantId}`,
+                    message: `No membership found for tenant: ${enhancedUser.tenantId}`,
                     code: 'INVALID_TENANT_MEMBERSHIP',
                 });
             }
-            request.user = user;
+            // Provide both enhanced and legacy user interfaces for backward compatibility
+            request.user = enhancedUser;
+            // Legacy compatibility: Also provide the old user interface
+            request.legacyUser = {
+                userId: enhancedUser.userId,
+                organizationId: enhancedUser.organizationId,
+                roles: enhancedUser.roles,
+                id: enhancedUser.userId, // Some modules expect user.id instead of user.userId
+            };
         }
         catch (err) {
             return reply.status(401).send({

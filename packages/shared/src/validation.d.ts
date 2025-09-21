@@ -247,26 +247,26 @@ export declare const paginatedApiResponseSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     requestId: string;
     success: boolean;
+    timestamp: string;
     pagination: {
         limit: number;
         page: number;
         total: number;
         totalPages: number;
     };
-    timestamp: string;
     data?: unknown[] | undefined;
     error?: string | undefined;
     message?: string | undefined;
 }, {
     requestId: string;
     success: boolean;
+    timestamp: string;
     pagination: {
         limit: number;
         page: number;
         total: number;
         totalPages: number;
     };
-    timestamp: string;
     data?: unknown[] | undefined;
     error?: string | undefined;
     message?: string | undefined;

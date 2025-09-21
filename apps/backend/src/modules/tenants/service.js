@@ -151,32 +151,35 @@ export class TenantService {
             .where(eq(memberships.tenantId, tenantId));
         const total = totalResult?.count || 0;
         // Get memberships with optional user data
-        let query = this.db
-            .select({
-            id: memberships.id,
-            userId: memberships.userId,
-            tenantId: memberships.tenantId,
-            role: memberships.role,
-            createdAt: memberships.createdAt,
-            updatedAt: memberships.updatedAt,
-            ...(includeUser && {
+        const results = includeUser
+            ? await this.db
+                .select({
+                id: memberships.id,
+                userId: memberships.userId,
+                tenantId: memberships.tenantId,
+                role: memberships.role,
+                createdAt: memberships.createdAt,
+                updatedAt: memberships.updatedAt,
                 user: {
                     id: users.id,
                     email: users.email,
                     firstName: users.firstName,
                     lastName: users.lastName,
                 },
-            }),
-        })
-            .from(memberships);
-        if (includeUser) {
-            query = query.leftJoin(users, eq(memberships.userId, users.id));
-        }
-        const results = await query
-            .where(eq(memberships.tenantId, tenantId))
-            .orderBy(asc(memberships.createdAt))
-            .limit(limit)
-            .offset(offset);
+            })
+                .from(memberships)
+                .leftJoin(users, eq(memberships.userId, users.id))
+                .where(eq(memberships.tenantId, tenantId))
+                .orderBy(asc(memberships.createdAt))
+                .limit(limit)
+                .offset(offset)
+            : await this.db
+                .select()
+                .from(memberships)
+                .where(eq(memberships.tenantId, tenantId))
+                .orderBy(asc(memberships.createdAt))
+                .limit(limit)
+                .offset(offset);
         return {
             memberships: results,
             pagination: {

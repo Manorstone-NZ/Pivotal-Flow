@@ -209,6 +209,11 @@ export default fp(async function authPlugin(app: FastifyInstance) {
         requestUrl === '/api/v1/auth/login' ||
         requestUrl === '/v1/auth/refresh' ||
         requestUrl === '/api/v1/auth/refresh' ||
+        requestUrl === '/api/v1/auth/login-opaque' ||
+        requestUrl === '/api/v1/auth/logout-opaque' ||
+        requestUrl === '/api/v1/auth/login-paseto' ||
+        requestUrl === '/api/v1/auth/refresh-paseto' ||
+        requestUrl === '/api/v1/auth/logout-paseto' ||
         requestUrl === '/api/v1/auth/debug-db' ||
         requestUrl.startsWith('/v1/test/') ||
         requestUrl.startsWith('/api/public/quotes/')) {

@@ -4,12 +4,11 @@ import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { app } from './server.js';
-// Import auth plugin
-import { authPlugin } from './modules/auth/index.js';
+// Import auth plugins (clean, no JWT)
+import authCleanPlugin from './plugins/auth.clean.js'; // Clean auth (opaque + PASETO)
+import redisPlugin from './plugins/redis.js'; // Redis for session management
 // Import database plugin
 import databasePlugin from './plugins/database.js';
-// Import cache plugin
-import { cachePlugin } from './plugins/cache.plugin.js';
 // Import tenant context plugin
 import tenantContextPlugin from './plugins/tenant-context.js';
 // Import permission check plugin
@@ -41,8 +40,6 @@ export async function registerPlugins() {
     // Tenant context plugin (before auth for proper request context)
     // TODO: Temporarily disabled - causing serialization errors
     // await app.register(tenantContextPlugin);
-    // Authentication plugin (includes cookie and JWT support)
-    await app.register(authPlugin);
     // Permission check plugin (after authentication)
     await app.register(permissionCheckPlugin);
     // Audit logging plugin (after permission check)
@@ -78,6 +75,19 @@ export async function registerPlugins() {
     });
     // Database plugin (register early for database access)
     await app.register(databasePlugin);
+    // Redis plugin (register before any auth or session plugin)
+    await app.register(redisPlugin);
+    // Keep existing JWT authentication (stable)
+    await app.register(authCleanPlugin);
+    // Feature-flagged auth hardening plugins
+    if (process.env.AUTH_USE_OPAQUE === 'true') {
+        const { opaqueAuthPlugin } = await import('./plugins/auth.opaque.js');
+        await app.register(opaqueAuthPlugin);
+    }
+    if (process.env.AUTH_ENABLE_PASETO_LINKS === 'true') {
+        const { pasetoLinksPlugin } = await import('./plugins/auth.paseto-links.js');
+        await app.register(pasetoLinksPlugin);
+    }
     // Swagger/OpenAPI configuration (conditional registration)
     if (process.env['OPENAPI_ENABLE'] === 'true') {
         await app.register(swagger, {
@@ -98,8 +108,8 @@ export async function registerPlugins() {
                         bearerAuth: {
                             type: 'http',
                             scheme: 'bearer',
-                            bearerFormat: 'JWT',
-                            description: 'JWT Bearer token authentication',
+                            bearerFormat: 'PASETO',
+                            description: 'PASETO Bearer token authentication',
                         },
                     },
                 },

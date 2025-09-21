@@ -3,7 +3,7 @@
  * Replaces raw SQL in auth paths with tenant-safe Drizzle queries
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { users, roles, userRoles, rolePermissions, permissions, memberships, tenants } from '../lib/schema.js';
 import { logger } from '../lib/logger.js';
@@ -280,7 +280,7 @@ export class AuthRepository {
         .update(users)
         .set({ 
           lastLoginAt: new Date(),
-          loginCount: users.loginCount + 1 // This might need raw SQL for increment
+          loginCount: sql`${users.loginCount} + 1` // Use SQL increment
         })
         .where(eq(users.id, userId));
         

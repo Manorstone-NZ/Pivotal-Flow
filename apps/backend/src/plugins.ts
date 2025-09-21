@@ -5,9 +5,9 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { app } from './server.js';
 
-// Import auth plugins
-import { authPlugin } from './modules/auth/index.js'; // Keep existing JWT
-import redisPlugin from './plugins/redis.js'; // New Redis plugin for auth hardening
+// Import auth plugins (clean, no JWT)
+import authCleanPlugin from './plugins/auth.clean.js'; // Clean auth (opaque + PASETO)
+import redisPlugin from './plugins/redis.js'; // Redis for session management
 
 // Import database plugin
 import databasePlugin from './plugins/database.js';
@@ -97,7 +97,7 @@ export async function registerPlugins() {
   await app.register(redisPlugin);
 
   // Keep existing JWT authentication (stable)
-  await app.register(authPlugin);
+  await app.register(authCleanPlugin);
 
   // Feature-flagged auth hardening plugins
   if (process.env.AUTH_USE_OPAQUE === 'true') {

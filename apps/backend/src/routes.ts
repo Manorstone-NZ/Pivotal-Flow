@@ -1,11 +1,8 @@
 import { Type } from '@sinclair/typebox';
 import { app } from './server.js';
 
-// Import existing JWT auth route modules (keep stable)
-import { loginRoute } from './modules/auth/routes.login.js';
-import { refreshRoute } from './modules/auth/routes.refresh.js';
-import { logoutRoute } from './modules/auth/routes.logout.js';
-import { meRoute } from './modules/auth/routes.me.js';
+// Import PASETO service routes (for service-to-service and signed links)
+import { pasetoServiceRoutes } from './modules/auth/routes.paseto-service.js';
 
 // Import user route modules
 import { listUsersRoute } from './modules/users/routes.list.js';
@@ -57,17 +54,12 @@ export async function registerRoutes() {
     };
   });
 
-  // Register existing JWT auth route modules (stable)
-  await app.register(loginRoute, { prefix: '/api/v1/auth' });
-  await app.register(refreshRoute, { prefix: '/api/v1/auth' });
-  await app.register(logoutRoute, { prefix: '/api/v1/auth' });
-  await app.register(meRoute, { prefix: '/api/v1/auth' });
-
-  // Register opaque auth routes (feature flagged)
-  if (process.env.AUTH_USE_OPAQUE === 'true') {
-    const { opaqueAuthRoutes } = await import('./modules/auth/routes.opaque.js');
-    await app.register(opaqueAuthRoutes, { prefix: '/api/v1/auth' });
-  }
+  // Register PASETO service routes (for service-to-service and signed links)
+  await app.register(pasetoServiceRoutes, { prefix: '/api/v1/auth' });
+  
+  // Register opaque auth routes (always enabled now)
+  const { opaqueAuthRoutes } = await import('./modules/auth/routes.opaque.js');
+  await app.register(opaqueAuthRoutes, { prefix: '/api/v1/auth' });
 
   // Register user route modules
   await app.register(listUsersRoute);

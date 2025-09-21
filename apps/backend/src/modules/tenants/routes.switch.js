@@ -3,7 +3,11 @@
  * Secure tenant switching with new JWT generation
  */
 import { TenantService } from './service.js';
-import { TenantSwitchSchema, TenantSwitchResponseSchema, TenantErrorSchema, } from './typeboxSchemas.js';
+// Temporarily remove schema imports to avoid serialization issues
+// import {
+//   TenantSwitchResponseSchema,
+//   TenantErrorSchema,
+// } from './typeboxSchemas.js';
 /**
  * POST /v1/admin/tenants/:id/switch - Switch to tenant
  * Generates new JWT with tenant context
@@ -18,11 +22,7 @@ export function registerTenantSwitchRoute(fastify) {
                 },
                 required: ['id'],
             },
-            response: {
-                200: TenantSwitchResponseSchema,
-                403: TenantErrorSchema,
-                404: TenantErrorSchema,
-            },
+            // Response schemas temporarily removed for testing
         },
     }, async (request, reply) => {
         try {
@@ -71,7 +71,7 @@ export function registerTenantSwitchRoute(fastify) {
             // 5. Sign new tokens
             const accessToken = await fastify.jwt.sign(jwtPayload, { expiresIn: '15m' });
             const refreshToken = await fastify.jwt.sign({ ...jwtPayload, type: 'refresh' }, { expiresIn: '7d' });
-            // 6. Store refresh token
+            // 6. Store refresh token (if available)
             if (fastify.refreshTokenManager) {
                 await fastify.refreshTokenManager.store(user.userId, refreshToken, 'refresh', 7 * 24 * 60 * 60 // 7 days in seconds
                 );

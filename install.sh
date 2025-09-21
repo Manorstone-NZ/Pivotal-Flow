@@ -121,11 +121,22 @@ ${BOLD}System Requirements:${NC}
   - Git
   - curl
 
+${BOLD}Infrastructure Services:${NC}
+  - PostgreSQL 15 (port 5433) - Primary database
+  - Redis 7 (port 6379) - Caching and session storage
+
 ${BOLD}After Installation:${NC}
   - Frontend: http://localhost:5173
   - Backend: http://localhost:3000
   - API Docs: http://localhost:3000/docs
+  - Cache Health: http://localhost:3000/health/cache
   - Login: admin@pivotalflow.com / password123!extra
+
+${BOLD}Redis Features:${NC}
+  - Session storage for PASETO authentication
+  - High-performance caching for business data
+  - Distributed rate limiting
+  - Request idempotency support
 
 EOF
 }
@@ -262,7 +273,10 @@ setup_environment() {
     
     export DATABASE_URL="postgresql://pivotal:pivotal@localhost:5433/pivotal_e2e"
     export REDIS_URL="redis://localhost:6379"
+    export AUTH_REDIS_URL="redis://localhost:6379"
+    export CACHE_TTL_SECS="300"
     export JWT_SECRET="your-super-secret-jwt-key-that-is-at-least-32-characters-long"
+    export PASETO_SECRET="your-super-secret-paseto-key-that-is-at-least-32-characters-long"
     export CORS_ORIGIN="http://localhost:3000,http://localhost:5173,http://localhost:5174"
     export OPENAPI_ENABLE="true"
     export ALLOW_LOCAL_DB_CREATION="yes"
@@ -272,6 +286,8 @@ setup_environment() {
     
     print_substep "Database URL: $DATABASE_URL"
     print_substep "Redis URL: $REDIS_URL"
+    print_substep "Auth Redis URL: $AUTH_REDIS_URL"
+    print_substep "Cache TTL: ${CACHE_TTL_SECS}s"
     print_substep "CORS Origins: $CORS_ORIGIN"
     print_substep "OpenAPI: $OPENAPI_ENABLE"
     
@@ -332,18 +348,84 @@ start_infrastructure() {
         
         # Verify Redis
         print_substep "Verifying Redis connection..."
-        if docker exec docker-redis-1 redis-cli ping >/dev/null 2>&1; then
-            print_substep "✅ Redis ready"
+        local max_attempts=30
+        local attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+            if docker exec docker-redis-1 redis-cli ping >/dev/null 2>&1; then
+                print_substep "✅ Redis ready"
+                break
+            fi
+            
+            if [ $attempt -eq $max_attempts ]; then
+                print_error "Redis failed to start after $max_attempts attempts"
+                exit 1
+            fi
+            
+            echo -n "."
+            sleep 2
+            attempt=$((attempt + 1))
+        done
+        
+        # Test Redis functionality
+        print_substep "Testing Redis functionality..."
+        if docker exec docker-redis-1 redis-cli set test_key "pivotal_flow_test" >/dev/null 2>&1; then
+            if docker exec docker-redis-1 redis-cli get test_key | grep -q "pivotal_flow_test"; then
+                print_substep "✅ Redis read/write operations working"
+                docker exec docker-redis-1 redis-cli del test_key >/dev/null 2>&1
+            else
+                print_warning "⚠️ Redis read operation failed"
+            fi
         else
-            print_error "Redis failed to start"
-            exit 1
+            print_warning "⚠️ Redis write operation failed"
         fi
         
         print_success "Infrastructure services running"
     else
         print_header "SKIPPING INFRASTRUCTURE (--no-docker)"
         print_warning "Assuming external PostgreSQL and Redis are available"
+        validate_external_redis
     fi
+}
+
+# Function to validate external Redis (when --no-docker is used)
+validate_external_redis() {
+    print_step "Validating external Redis connection..."
+    
+    # Check if Redis URL is accessible
+    local redis_url="${AUTH_REDIS_URL:-$REDIS_URL}"
+    if [ -z "$redis_url" ]; then
+        print_error "No Redis URL configured (AUTH_REDIS_URL or REDIS_URL)"
+        exit 1
+    fi
+    
+    # Test Redis connection
+    if command_exists redis-cli; then
+        if redis-cli -u "$redis_url" ping >/dev/null 2>&1; then
+            print_substep "✅ External Redis connection successful"
+            
+            # Test Redis functionality
+            if redis-cli -u "$redis_url" set test_key "pivotal_flow_external_test" >/dev/null 2>&1; then
+                if redis-cli -u "$redis_url" get test_key | grep -q "pivotal_flow_external_test"; then
+                    print_substep "✅ External Redis read/write operations working"
+                    redis-cli -u "$redis_url" del test_key >/dev/null 2>&1
+                else
+                    print_warning "⚠️ External Redis read operation failed"
+                fi
+            else
+                print_warning "⚠️ External Redis write operation failed"
+            fi
+        else
+            print_error "External Redis connection failed"
+            print_error "Please ensure Redis is running at: $redis_url"
+            exit 1
+        fi
+    else
+        print_warning "redis-cli not available - cannot test external Redis"
+        print_warning "Please ensure Redis is running at: $redis_url"
+    fi
+    
+    print_success "External Redis validation completed"
 }
 
 # Function to build shared packages (following dependency order)
@@ -546,6 +628,13 @@ run_validation() {
         print_warning "❌ Backend health check failed"
     fi
     
+    print_step "Testing Redis cache health endpoint..."
+    if curl -s --connect-timeout 10 "http://localhost:3000/health/cache" | grep -q "status"; then
+        print_substep "✅ Redis cache health check passed"
+    else
+        print_warning "❌ Redis cache health check failed"
+    fi
+    
     print_step "Testing OpenAPI documentation..."
     if curl -s --connect-timeout 10 "http://localhost:3000/api/openapi.json" | grep -q "openapi"; then
         print_substep "✅ OpenAPI JSON endpoint working"
@@ -620,6 +709,7 @@ display_final_status() {
     echo "   🌐 Frontend:    http://localhost:5173"
     echo "   🔧 Backend:     http://localhost:3000"
     echo "   📊 Health:      http://localhost:3000/api/v1/health"
+    echo "   🗄️ Cache Health: http://localhost:3000/health/cache"
     echo "   📚 API Docs:    http://localhost:3000/docs"
     echo "   📋 OpenAPI:     http://localhost:3000/api/openapi.json"
     echo ""
@@ -635,6 +725,11 @@ display_final_status() {
     echo "   Stop:     ./scripts/dev-stop.sh"
     echo "   Restart:  ./scripts/start-all.sh"
     echo "   Quick:    ./scripts/quick-start.sh"
+    echo ""
+    echo -e "${CYAN}${BOLD}🗄️ Redis Management:${NC}"
+    echo "   Cache Stats:  curl http://localhost:3000/admin/cache/stats"
+    echo "   Clear Cache:  curl -X POST http://localhost:3000/admin/cache/clear"
+    echo "   Redis CLI:    docker compose -f infra/docker/docker-compose.yml exec redis redis-cli"
     echo ""
     echo -e "${CYAN}${BOLD}🧪 Development Commands:${NC}"
     echo "   Tests:    pnpm -w test"
