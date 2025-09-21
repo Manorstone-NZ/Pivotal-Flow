@@ -668,8 +668,63 @@ run_health_checks() {
     if [ -n "$LOGIN_RESPONSE" ] && echo "$LOGIN_RESPONSE" | grep -q "accessToken"; then
         success "Login test passed! (${login_duration}s)"
         success "🔑 Login credentials: admin@pivotalflow.com / password123!extra"
+        
+        # Test Redis session storage for PASETO tokens
+        debug "Testing Redis session storage..."
+        log "Testing Redis session storage..."
+        
+        # Extract access token for session testing
+        local access_token=$(echo "$LOGIN_RESPONSE" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
+        if [ -n "$access_token" ]; then
+            # Test API call with PASETO token
+            local api_response=$(curl -s -H "Authorization: Bearer $access_token" \
+                "http://localhost:3000/api/v1/auth/me" \
+                --connect-timeout 5 --max-time 10 2>/dev/null || echo "")
+            
+            if [ -n "$api_response" ] && echo "$api_response" | grep -q "id"; then
+                success "PASETO session validation passed"
+                debug "PASETO token type: $(echo "$access_token" | head -c 20)..."
+            else
+                warning "PASETO session validation failed"
+                debug "API response: ${api_response:0:200}..."
+                health_failed=true
+            fi
+        else
+            warning "Could not extract access token for session testing"
+            health_failed=true
+        fi
     else
         warning "Login test failed. Response: $LOGIN_RESPONSE"
+        health_failed=true
+    fi
+    
+    # Redis connectivity test for PASETO sessions
+    debug "Testing Redis connectivity for PASETO..."
+    log "Testing Redis connectivity for PASETO..."
+    
+    if docker exec docker_redis_1 redis-cli ping >/dev/null 2>&1; then
+        # Test Redis session operations
+        local test_key="test:session:$(date +%s)"
+        local test_value='{"userId":"test","sessionId":"test-session"}'
+        
+        if docker exec docker_redis_1 redis-cli setex "$test_key" 60 "$test_value" >/dev/null 2>&1; then
+            local retrieved_value=$(docker exec docker_redis_1 redis-cli get "$test_key" 2>/dev/null || echo "")
+            if [ "$retrieved_value" = "$test_value" ]; then
+                success "Redis session storage test passed"
+                # Clean up test key
+                docker exec docker_redis_1 redis-cli del "$test_key" >/dev/null 2>&1
+            else
+                warning "Redis session retrieval failed"
+                debug "Expected: $test_value"
+                debug "Got: $retrieved_value"
+                health_failed=true
+            fi
+        else
+            warning "Redis session storage test failed"
+            health_failed=true
+        fi
+    else
+        error "Redis connectivity test failed - PASETO sessions will not work"
         health_failed=true
     fi
     

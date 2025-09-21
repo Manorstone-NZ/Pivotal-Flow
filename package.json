@@ -65,9 +65,12 @@
     "@fastify/swagger": "9.5.1",
     "@fastify/swagger-ui": "5.2.3",
     "@fastify/type-provider-typebox": "^5.2.0",
+    "@noble/ciphers": "^2.0.0",
+    "@noble/hashes": "^2.0.0",
     "@sinclair/typebox": "^0.34.41",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
+    "paseto": "^3.1.4",
     "postgres": "^3.4.7"
   }
 }
