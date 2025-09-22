@@ -115,8 +115,10 @@ export const TimeApprovalsPage: React.FC = () => {
           // Get time entries for this page
           const response = await fetch(`${import.meta.env['VITE_API_BASE_URL'] || 'http://localhost:3000'}/api/v1/time-entries?${params}`, {
             headers: {
-              'Authorization': `Bearer ${getAuthToken()}`
-            }
+              // F2B: No Authorization header needed - using secure cookies
+              // 'Authorization': `Bearer ${getAuthToken()}`
+            },
+            credentials: 'include' // F2B: Essential for cookie-based auth
           });
           
           if (!response.ok) {

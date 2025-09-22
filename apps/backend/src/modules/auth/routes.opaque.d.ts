@@ -9,4 +9,5 @@ import type { FastifyPluginAsync } from "fastify";
  * Only registered when AUTH_USE_OPAQUE=true
  */
 export declare const opaqueAuthRoutes: FastifyPluginAsync;
+export default opaqueAuthRoutes;
 //# sourceMappingURL=routes.opaque.d.ts.map

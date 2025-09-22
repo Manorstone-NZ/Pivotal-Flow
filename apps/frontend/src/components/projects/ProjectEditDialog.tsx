@@ -7,10 +7,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Button } from '../Button';
-import { Select } from '../ui/Select';
-import { TextArea } from '../ui/TextArea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
 import { useUpdateProject } from '../../features/projects/api';
-import type { ProjectDetailResponse, UpdateProject, ProjectStatus } from '../../features/projects/types';
+import type { ProjectDetailResponse, UpdateProject } from '../../features/projects/types';
 
 interface ProjectEditDialogProps {
   open: boolean;

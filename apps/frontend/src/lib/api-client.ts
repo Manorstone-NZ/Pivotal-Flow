@@ -20,6 +20,8 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      // F2B: Ensure cookies are sent with all requests
+      withCredentials: true,
     });
 
     // Tenant ID is now derived from server-issued tokens only
@@ -45,24 +47,25 @@ class ApiClient {
           });
           
           if (parsed.accessToken) {
-            config.headers.Authorization = `Bearer ${parsed.accessToken}`;
-            console.log('🔑 API call with auth token:', config.method?.toUpperCase(), config.url);
+            // F2B: No Authorization header needed - using secure cookies
+            // config.headers.Authorization = `Bearer ${parsed.accessToken}`;
+            // F2B: Auth via cookies, no token logging needed
           } else {
-            console.log('⚠️ API call without auth token (no accessToken in authData):', config.method?.toUpperCase(), config.url);
+            // F2B: Auth via cookies, no token required
           }
         } catch (error) {
-          console.error('Failed to parse auth data:', error);
+          // Failed to parse auth data
         }
       } else {
-        console.log('⚠️ API call without auth token (no authData in localStorage):', config.method?.toUpperCase(), config.url);
+        // F2B: Auth via cookies, no localStorage auth data needed
       }
 
       // Add tenant context header
       if (this.tenantId) {
         config.headers['X-Tenant-ID'] = this.tenantId;
-        console.log('🔗 API call with tenant context:', this.tenantId, config.method?.toUpperCase(), config.url);
+        // API call with tenant context
       } else {
-        console.log('⚠️ API call WITHOUT tenant context:', config.method?.toUpperCase(), config.url);
+        // API call without tenant context
       }
 
       return config;

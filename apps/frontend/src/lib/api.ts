@@ -8,33 +8,15 @@ import { PivotalFlowClient } from '@pivotal-flow/sdk';
 // Example configuration
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
-// Create client instance
+// F2B: Create client instance for cookie-based authentication
 const client = new PivotalFlowClient({
   baseURL: API_BASE_URL,
-  getAccessToken: () => localStorage.getItem('accessToken'),
-  refreshToken: async () => {
-    // Implement token refresh logic
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) return null;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('accessToken', data.accessToken);
-        return data.accessToken;
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-    }
-    
-    return null;
-  }
+  // F2B: No access token needed - using secure HttpOnly cookies
+  getAccessToken: () => null,
+  // F2B: No refresh token needed - sessions auto-expire and renew
+  refreshToken: async () => null,
+  // F2B: Ensure cookies are sent with all requests
+  credentials: 'include'
 });
 
 // Example usage with traditional client
@@ -43,11 +25,11 @@ export async function listQuotesExample() {
     // Using the traditional client
     const quotes = await client.quotes.list();
     
-    console.log('Quotes:', quotes);
+    // Quotes retrieved successfully
     
     return quotes;
   } catch (error) {
-    console.error('Failed to list quotes:', error);
+    // Failed to list quotes
     throw error;
   }
 }
@@ -81,11 +63,11 @@ export async function createQuoteExample() {
     
     const newQuote = await client.quotes.create(quoteData);
     
-    console.log('Created quote:', newQuote);
+    // Quote created successfully
     
     return newQuote;
   } catch (error) {
-    console.error('Failed to create quote:', error);
+    // Failed to create quote
     throw error;
   }
 }

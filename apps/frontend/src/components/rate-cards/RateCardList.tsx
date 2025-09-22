@@ -6,7 +6,7 @@
 import React from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
-import { Select } from '../ui/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { LoadingSkeleton } from '../ui/LoadingSkeleton';
 import type { RateCard, RateCardsFilters } from '../../features/rate-cards/types';

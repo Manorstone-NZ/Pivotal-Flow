@@ -145,21 +145,13 @@ export function globalErrorHandler(
         documentation_url: 'https://api.pivotalflow.com/docs'
       }
     };
-  } else if (error.name === 'ValidationError') {
-    // Handle validation errors (generic)
-    errorResponse = {
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Request validation failed',
-        details: error.message,
-        timestamp: new Date().toISOString(),
-        request_id: requestId
-      },
-      meta: {
-        api_version: '1.0.0',
-        documentation_url: 'https://api.pivotalflow.com/docs'
-      }
-    };
+  } else if (error.name === 'ValidationError' || error.message?.includes('must have required property')) {
+    // Handle validation errors (generic) - return flat structure for rate card routes
+    return reply.status(400).send({
+      error: 'Bad Request',
+      message: error.message || 'Request validation failed',
+      code: 'VALIDATION_ERROR'
+    });
   } else if (error.statusCode === 429) {
     // Handle rate limiting errors
     errorResponse = {

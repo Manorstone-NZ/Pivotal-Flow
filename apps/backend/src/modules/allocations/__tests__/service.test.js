@@ -39,7 +39,7 @@ describe('AllocationService', () => {
     describe('Allocation Creation', () => {
         it('should reject creation without proper permissions', async () => {
             const allocationData = {
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 50,
@@ -53,9 +53,9 @@ describe('AllocationService', () => {
         it('should detect allocation conflicts when total exceeds 100%', async () => {
             // Create an existing allocation first
             await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 80,
@@ -65,7 +65,7 @@ describe('AllocationService', () => {
                 notes: {}
             });
             const newAllocationData = {
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DESIGNER,
                 allocationPercent: 50, // This would make total 130%
@@ -87,9 +87,9 @@ describe('AllocationService', () => {
         it('should allow non-overlapping allocations', async () => {
             // Create an existing allocation
             await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 80,
@@ -99,7 +99,7 @@ describe('AllocationService', () => {
                 notes: {}
             });
             const newAllocationData = {
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 60,
@@ -125,9 +125,9 @@ describe('AllocationService', () => {
         let existingAllocation;
         beforeEach(async () => {
             existingAllocation = await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 50,
@@ -166,9 +166,9 @@ describe('AllocationService', () => {
         let existingAllocation;
         beforeEach(async () => {
             existingAllocation = await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 50,
@@ -204,9 +204,9 @@ describe('AllocationService', () => {
         it('should detect overlapping date ranges', async () => {
             // Create first allocation: Jan 1-31
             await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 60,
@@ -224,9 +224,9 @@ describe('AllocationService', () => {
         it('should not detect conflicts for non-overlapping dates', async () => {
             // Create first allocation: Jan 1-31
             await testDb.insert(resourceAllocations).values({
-                id: testUtils.generateId(),
+                id: `alloc-test-${Date.now()}`,
                 organizationId: testOrg.id,
-                projectId: testProject[0]?.id,
+                projectId: testProject[0].id,
                 userId: testUser.id,
                 role: ALLOCATION_ROLES.DEVELOPER,
                 allocationPercent: 80,
@@ -248,7 +248,7 @@ describe('AllocationService', () => {
                     userId: testUser.id,
                     projectId: 'test-project-1',
                     role: 'Developer',
-                    allocationPercent: 50,
+                    allocationPercent: '50.00',
                     startDate: new Date('2025-01-01'),
                     endDate: new Date('2025-01-07'),
                     isBillable: true,
@@ -263,7 +263,7 @@ describe('AllocationService', () => {
                     userId: testUser.id,
                     projectId: 'test-project-1',
                     role: 'Developer',
-                    allocationPercent: 75,
+                    allocationPercent: '75.00',
                     startDate: new Date('2025-01-08'),
                     endDate: new Date('2025-01-14'),
                     isBillable: true,
@@ -282,32 +282,35 @@ describe('AllocationService', () => {
     describe('Query Operations', () => {
         beforeEach(async () => {
             // Create test allocations
-            await testDb.insert(resourceAllocations).values([
+            const allocations = [
                 {
-                    id: testUtils.generateId(),
+                    id: `alloc-test-${Date.now()}`,
                     organizationId: testOrg.id,
-                    projectId: testProject[0]?.id,
+                    projectId: testProject[0].id,
                     userId: testUser.id,
                     role: ALLOCATION_ROLES.DEVELOPER,
-                    allocationPercent: 50,
+                    allocationPercent: '50.00',
                     startDate: '2025-01-01',
                     endDate: '2025-01-31',
                     isBillable: true,
                     notes: {}
                 },
                 {
-                    id: testUtils.generateId(),
+                    id: `alloc-test-${Date.now()}`,
                     organizationId: testOrg.id,
-                    projectId: testProject[0]?.id,
+                    projectId: testProject[0].id,
                     userId: testApprover.id,
                     role: ALLOCATION_ROLES.DESIGNER,
-                    allocationPercent: 75,
+                    allocationPercent: '75.00',
                     startDate: '2025-02-01',
                     endDate: '2025-02-28',
                     isBillable: false,
                     notes: {}
                 }
-            ]);
+            ];
+            for (const allocation of allocations) {
+                await testDb.insert(resourceAllocations).values(allocation);
+            }
         });
         it('should reject queries without proper permissions', async () => {
             await expect(allocationService.getAllocations())
@@ -320,9 +323,8 @@ describe('AllocationService', () => {
             // allocationService['permissionService'] = {
             //   hasPermission: async () => ({ hasPermission: true })
             // } as any;
-            const result = await allocationService.getAllocations({
-                projectId: testProject[0]?.id
-            });
+            const filters = testProject[0]?.id ? { projectId: testProject[0].id } : {};
+            const result = await allocationService.getAllocations(filters);
             expect(result.allocations).toHaveLength(2);
             expect(result.total).toBe(2);
             // Restore original service

@@ -10,7 +10,7 @@ import { Type, type Static } from '@sinclair/typebox';
 import { useCreateContact, useUpdateContact, type CustomerContact, type CreateContactData, type UpdateContactData } from '../../features/customers/api';
 import { Button } from '../Button';
 import { Input } from '../ui/input';
-import { TextArea } from '../ui/TextArea';
+import { Textarea } from '../ui/textarea';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 // TypeBox schema for frontend validation (matching backend approach)
@@ -28,23 +28,23 @@ const ContactFormSchema = Type.Object({
 type ContactFormData = Static<typeof ContactFormSchema>;
 
 // Simple validation function using TypeBox schema
-const validateContactForm = (data: ContactFormData): Record<string, string> => {
-  const errors: Record<string, string> = {};
+// const validateContactForm = (data: ContactFormData): Record<string, string> => {
+//   const errors: Record<string, string> = {};
+//   
+//   if (!data.firstName || data.firstName.trim().length === 0) {
+//     errors.firstName = 'First name is required';
+//   }
+//   
+//   if (!data.lastName || data.lastName.trim().length === 0) {
+//     errors.lastName = 'Last name is required';
+//   }
   
-  if (!data.firstName || data.firstName.trim().length === 0) {
-    errors.firstName = 'First name is required';
-  }
-  
-  if (!data.lastName || data.lastName.trim().length === 0) {
-    errors.lastName = 'Last name is required';
-  }
-  
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = 'Invalid email format';
-  }
-  
-  return errors;
-};
+//   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+//     errors.email = 'Invalid email format';
+//   }
+//   
+//   return errors;
+// };
 
 interface ContactFormProps {
   customerId: string;

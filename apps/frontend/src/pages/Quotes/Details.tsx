@@ -428,12 +428,14 @@ export const QuoteDetailsPage: React.FC = () => {
                   className="w-full justify-start"
                   onClick={async () => {
                     try {
-                      console.log('PDF Download - Access Token:', accessToken ? 'Present' : 'Missing');
+                      // F2B: PDF download with cookie-based authentication
                       const response = await fetch(`http://localhost:3000/api/v1/quotes/${quote.id}/pdf`, {
                         method: 'GET',
                         headers: {
-                          'Authorization': `Bearer ${accessToken}`,
+                          // F2B: No Authorization header needed - using secure cookies
+                          // 'Authorization': `Bearer ${accessToken}`,
                         },
+                        credentials: 'include', // F2B: Essential for cookie-based auth
                       });
                       
                       if (response.ok) {

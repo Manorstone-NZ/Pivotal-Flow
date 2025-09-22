@@ -40,8 +40,8 @@ const ModalWrapper = ({
         onConfirm={handleConfirm}
         action={action}
         itemCount={itemCount}
-        isLoading={isLoading}
-        title={title}
+        {...(isLoading !== undefined && { isLoading })}
+        {...(title && { title })}
       />
     </div>
   );

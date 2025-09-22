@@ -6,8 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../Button';
 import { Input } from '../ui/input';
-import { TextArea } from '../ui/TextArea';
-import { Select } from '../ui/Select';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { LoadingSkeleton } from '../ui/LoadingSkeleton';
 import { RateCardItemRow, RateCardItemTableHeader } from './RateCardItemRow';
 import { 
@@ -254,7 +254,7 @@ export const RateCardDrawer: React.FC<RateCardDrawerProps> = ({
                 />
               </div>
 
-              <TextArea
+                <Textarea
                 label="Description"
                 value={formData.description || ''}
                 onChange={(value: string) => setFormData({ ...formData, description: value })}

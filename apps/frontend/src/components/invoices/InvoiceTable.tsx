@@ -6,7 +6,7 @@ import { InvoiceTotalsSummary } from './InvoiceTotals';
 import { PaymentSummary } from './PaymentTimeline';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
-import type { Invoice, InvoiceListFilters } from '../../features/invoices/api';
+import type { Invoice } from '../../features/invoices/api';
 
 export interface InvoiceTableProps {
   invoices: Invoice[];

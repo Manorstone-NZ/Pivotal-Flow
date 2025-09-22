@@ -94,6 +94,10 @@ export default fp(async function authPlugin(app: FastifyInstance) {
   // JWT removed - using PASETO v4 only per F1.5 requirements
   // TODO: Complete PASETO v4.public (access) and v4.local (refresh) implementation
 
+  // Register session verification
+  const { registerSessionVerification } = await import('../../lib/auth/session-verification.js');
+  await registerSessionVerification(app);
+
   // Register rate limiting for auth routes with tiers
   await app.register(rateLimit as any, {
     max: config.rateLimit.RATE_LIMIT_UNAUTH_MAX, // Default for unauthenticated
@@ -308,6 +312,10 @@ export default fp(async function authPlugin(app: FastifyInstance) {
       // This is a placeholder for future rate limiting implementation
     }
   });
+
+  // Register auth routes
+  await app.register(import('./routes.opaque.js').then(m => m.default), { prefix: '/api/v1/auth' });
+  await app.register(import('./routes.me.js').then(m => m.default), { prefix: '/api/v1/auth' });
 
   logger.info({}, 'Authentication plugin registered');
 });

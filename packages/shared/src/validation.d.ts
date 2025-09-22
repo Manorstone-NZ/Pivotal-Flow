@@ -12,15 +12,15 @@ export declare const paginationQuerySchema: z.ZodObject<{
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
+    sortOrder: "asc" | "desc";
     limit: number;
     page: number;
-    sortOrder: "asc" | "desc";
     sortBy?: string | undefined;
 }, {
+    sortOrder?: "asc" | "desc" | undefined;
     limit?: number | undefined;
     page?: number | undefined;
     sortBy?: string | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
 }>;
 export declare const paginationResponseSchema: z.ZodObject<{
     page: z.ZodNumber;

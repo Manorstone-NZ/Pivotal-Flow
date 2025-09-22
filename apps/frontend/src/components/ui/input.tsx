@@ -64,7 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     // Always call react-hook-form's onChange first if it exists
     rhfOnChange?.(event);
     // Then call our custom onChange with the value
-    onChange?.(event.target.value);
+    onChange?.(event?.target?.value);
   };
   
   // Separate react-hook-form props from other props
@@ -73,7 +73,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     onBlur: rhfOnBlur, 
     name: rhfName,
     ...otherRestProps 
-  } = restProps as any;
+  } = restProps || {};
   
   return (
     <div className="space-y-1">

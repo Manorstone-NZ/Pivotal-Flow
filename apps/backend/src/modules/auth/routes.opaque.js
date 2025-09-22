@@ -4,7 +4,7 @@
  * Existing JWT routes remain unchanged
  */
 import { Type } from '@sinclair/typebox';
-import { randomBytes } from 'crypto';
+// import { randomBytes } from 'crypto'; // No longer needed for F2B
 import { logger } from "../../lib/logger.js";
 import { AuthService } from "./service.drizzle.js";
 // import { AuthenticationError } from "../../lib/error-handler.js";
@@ -12,7 +12,7 @@ import { AuditLogger } from "../../lib/audit-logger.drizzle.js";
 // Helper function to extract session ID from request
 function extractSessionId(request) {
     // Try to get session ID from cookie first
-    const sessionCookie = request.cookies?.['pf-session'];
+    const sessionCookie = request.cookies?.['sid'];
     if (sessionCookie) {
         return sessionCookie;
     }
@@ -69,7 +69,7 @@ export const opaqueAuthRoutes = async (fastify) => {
     }, async (request, reply) => {
         const { email: rawEmail, password, rememberMe = false } = request.body;
         const authService = new AuthService(fastify);
-        const cache = fastify.cache; // Use Redis cache directly
+        // const cache = (fastify as any).cache; // No longer needed for F2B
         const auditLogger = new AuditLogger(fastify);
         // TODO: Fix authRepository access - need to check what's available on fastify instance
         const email = rawEmail.trim().toLowerCase();
@@ -105,8 +105,9 @@ export const opaqueAuthRoutes = async (fastify) => {
             //   userAgent: request.headers['user-agent'] || '',
             //   fingerprint: request.headers['x-client-fingerprint'] as string
             // };
-            // Create simple session ID and store in Redis
-            const sessionId = `sess_${randomBytes(32).toString('hex')}`;
+            // Create session using SessionService
+            const { SessionService } = await import('../../lib/auth/session-service.js');
+            const sessionService = new SessionService();
             const sessionData = {
                 userId: user.id,
                 tenantId: user.organizationId,
@@ -118,16 +119,18 @@ export const opaqueAuthRoutes = async (fastify) => {
                         role: user.roles[0] || 'STAFF'
                     }],
                 ipAddress: request.ip,
-                userAgent: request.headers['user-agent'],
-                fingerprint: request.headers['x-client-fingerprint'],
-                issuedAt: Date.now(),
-                lastActivity: Date.now()
+                userAgent: request.headers['user-agent'] || '',
+                fingerprint: request.headers['x-client-fingerprint']
             };
-            // Store session in Redis with 15-minute TTL
-            const ttl = rememberMe ? 30 * 24 * 60 * 60 : 15 * 60; // 30 days or 15 minutes
-            await cache.set(`session:${sessionId}`, JSON.stringify(sessionData), { EX: ttl });
+            const sessionId = await sessionService.createSession(user.id, 'fc86afa8-9319-4e1f-be7b-4bc1c1ab7e68', // Use the default tenant ID
+            sessionData, {
+                rememberMe,
+                ipAddress: request.ip,
+                userAgent: request.headers['user-agent'] || '',
+                fingerprint: request.headers['x-client-fingerprint']
+            });
             // Set HttpOnly cookie for browser sessions
-            reply.setCookie('pf-session', sessionId, {
+            reply.setCookie('sid', sessionId, {
                 httpOnly: true,
                 secure: process.env['NODE_ENV'] === 'production',
                 sameSite: 'lax',
@@ -202,7 +205,7 @@ export const opaqueAuthRoutes = async (fastify) => {
         }
     }, async (request, reply) => {
         const { allDevices = false } = request.body;
-        const cache = fastify.cache; // Use Redis cache directly
+        // const cache = (fastify as any).cache; // No longer needed for F2B
         const auditLogger = new AuditLogger(fastify);
         try {
             const sessionId = extractSessionId(request);
@@ -213,27 +216,27 @@ export const opaqueAuthRoutes = async (fastify) => {
                     code: "NO_SESSION"
                 });
             }
+            // Use SessionService for logout
+            const { SessionService } = await import('../../lib/auth/session-service.js');
+            const sessionService = new SessionService();
             // Get session data for user context
-            const sessionDataStr = await cache.get(`session:${sessionId}`);
-            if (!sessionDataStr) {
+            const sessionData = await sessionService.validateSession(sessionId);
+            if (!sessionData) {
                 return reply.status(401).send({
                     error: "Unauthorized",
                     message: "Invalid session",
                     code: "INVALID_SESSION"
                 });
             }
-            const sessionData = JSON.parse(sessionDataStr);
             let revokedCount = 0;
             if (allDevices) {
-                // TODO: Implement revoke all sessions for user
-                // For now, just revoke current session
-                await cache.del(`session:${sessionId}`);
-                revokedCount = 1;
+                // Revoke all sessions for user
+                revokedCount = await sessionService.revokeUserSessions(sessionData.userId, 'user_logout_all_devices');
             }
             else {
                 // Revoke current session only
-                await cache.del(`session:${sessionId}`);
-                revokedCount = 1;
+                const success = await sessionService.revokeSession(sessionId, 'user_logout');
+                revokedCount = success ? 1 : 0;
             }
             // Log logout action
             await auditLogger.logEvent({
@@ -252,7 +255,7 @@ export const opaqueAuthRoutes = async (fastify) => {
                 }
             }, request);
             // Clear cookie
-            reply.clearCookie('pf-session', { path: '/' });
+            reply.clearCookie('sid', { path: '/' });
             logger.info({
                 request_id: request.id,
                 user_id: sessionData.userId,
@@ -302,7 +305,7 @@ export const opaqueAuthRoutes = async (fastify) => {
             }
         }
     }, async (request, reply) => {
-        const cache = fastify.cache; // Use Redis cache directly
+        // const cache = (fastify as any).cache; // No longer needed for F2B
         try {
             const sessionId = extractSessionId(request);
             if (!sessionId) {
@@ -312,15 +315,18 @@ export const opaqueAuthRoutes = async (fastify) => {
                     code: "SESSION_REQUIRED"
                 });
             }
-            const sessionDataStr = await cache.get(`session:${sessionId}`);
-            if (!sessionDataStr) {
+            // F2B: Session validation using SessionService instead of cache
+            const { SessionService } = await import('../../lib/auth/session-service.js');
+            const sessionService = new SessionService();
+            const sessionData = await sessionService.validateSession(sessionId);
+            if (!sessionData) {
                 return reply.status(401).send({
                     error: "Unauthorized",
                     message: "Invalid session",
                     code: "INVALID_SESSION"
                 });
             }
-            const sessionData = JSON.parse(sessionDataStr);
+            // sessionData is already parsed from SessionService
             // Get session stats (this would need to be implemented in SessionService)
             const stats = {
                 total: 1, // Placeholder
@@ -331,7 +337,7 @@ export const opaqueAuthRoutes = async (fastify) => {
                 sessions: [{
                         sessionId: sessionId.substring(0, 12) + '...', // Masked
                         tenantId: sessionData.tenantId,
-                        lastActivity: new Date(sessionData.lastActivity).toISOString(),
+                        lastActivity: new Date().toISOString(), // Use current time as lastActivity
                         ipAddress: sessionData.ipAddress,
                         userAgent: sessionData.userAgent
                     }],
@@ -350,6 +356,69 @@ export const opaqueAuthRoutes = async (fastify) => {
             });
         }
     });
+    // Add /me endpoint for user profile
+    fastify.get("/me", {
+        schema: {
+            response: {
+                200: Type.Object({
+                    id: Type.String(),
+                    email: Type.String(),
+                    displayName: Type.String(),
+                    roles: Type.Array(Type.String()),
+                    organizationId: Type.String(),
+                }),
+                401: Type.Object({
+                    error: Type.String(),
+                    message: Type.String(),
+                    code: Type.String(),
+                }),
+                500: Type.Object({
+                    error: Type.String(),
+                    message: Type.String(),
+                    code: Type.String(),
+                }),
+            },
+        },
+    }, async (request, reply) => {
+        try {
+            const sessionId = extractSessionId(request);
+            if (!sessionId) {
+                return reply.status(401).send({
+                    error: "Unauthorized",
+                    message: "No active session",
+                    code: "NO_SESSION"
+                });
+            }
+            // Validate session using SessionService
+            const { SessionService } = await import('../../lib/auth/session-service.js');
+            const sessionService = new SessionService();
+            const sessionData = await sessionService.validateSession(sessionId);
+            if (!sessionData) {
+                return reply.status(401).send({
+                    error: "Unauthorized",
+                    message: "Invalid session",
+                    code: "INVALID_SESSION"
+                });
+            }
+            // Return user data from session
+            return reply.status(200).send({
+                id: sessionData.userId,
+                email: sessionData.email || '',
+                displayName: sessionData.displayName || '',
+                roles: sessionData.roles,
+                organizationId: sessionData.organizationId,
+            });
+        }
+        catch (error) {
+            logger.error({ err: error, event: 'auth.me_error' }, 'Me route error occurred');
+            return reply.status(500).send({
+                error: "Internal Server Error",
+                message: "An error occurred while retrieving user profile",
+                code: "PROFILE_RETRIEVAL_ERROR"
+            });
+        }
+    });
     logger.info('Opaque auth routes registered (AUTH_USE_OPAQUE=true)');
 };
+export default opaqueAuthRoutes;
 //# sourceMappingURL=routes.opaque.js.map

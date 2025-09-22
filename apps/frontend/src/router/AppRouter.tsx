@@ -15,7 +15,7 @@ const InvoicesPage = lazy(() => import('../pages/Invoices/List').then(m => ({ de
 const InvoiceDetailPage = lazy(() => import('../pages/Invoices/Details').then(m => ({ default: m.InvoiceDetailsPage })));
 const ProjectsPage = lazy(() => import('../pages/Projects/List').then(m => ({ default: m.ProjectsListPage })));
 const ProjectDetailPage = lazy(() => import('../pages/Projects/Details').then(m => ({ default: m.ProjectDetailPage })));
-const RateCardsPage = lazy(() => import('../pages/RateCards/List').then(m => ({ default: m.RateCardsListPage })));
+const RateCardsPage = lazy(() => import('../pages/RateCards/List').then(m => ({ default: m.RateCardsList })));
 const TimePage = lazy(() => import('../pages/Time/Time').then(m => ({ default: m.TimePage })));
 const TimeApprovalsPage = lazy(() => import('../pages/Time/Approvals').then(m => ({ default: m.TimeApprovalsPage })));
 const CustomersListPage = lazy(() => import('../pages/Customers/List').then(m => ({ default: m.CustomersListPage })));

@@ -39,6 +39,8 @@ const createApiClient = () => {
     // For opaque tokens, we rely on cookies for authentication
     getAccessToken: () => null, // No token needed, uses cookies
     // No refresh token needed for opaque tokens - they auto-renew
+    // Ensure cookies are sent with requests
+    credentials: 'include'
   });
 };
 
@@ -54,50 +56,35 @@ export const useAuthStore = create<AuthState>()(
 
       // Login action
       login: async (email: string, password: string, rememberMe = false) => {
-        // Starting opaque token login process
         set({ isLoading: true, error: null });
         
         try {
-          // Making login request
+          // Making login request to opaque authentication endpoint
           const response = await fetch(`${API_BASE_URL}/auth/login-opaque`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // For secure cookies (opaque tokens)
+            credentials: 'include', // Essential for cookie-based auth
             body: JSON.stringify({ email, password, rememberMe }),
           });
 
-          // Login response received
-
           if (!response.ok) {
             const errorData = await response.json();
-            // Login failed
             throw new Error(errorData.message || 'Login failed');
           }
 
           const data = await response.json();
-          // Login successful, data received
           
-          // Set session and user (opaque tokens are handled via cookies)
+          // F2B: Session is managed via secure HttpOnly cookies
+          // We only store user info and auth status in localStorage
           set({
-            sessionId: data.sessionId,
+            sessionId: null, // No longer stored client-side for security
             user: data.user,
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
 
-          // Auth state updated successfully
-
-          // Manually save to localStorage to ensure it's persisted immediately
-          localStorage.setItem('pivotal-flow-auth', JSON.stringify({
-            sessionId: data.sessionId,
-            user: data.user,
-            isAuthenticated: true,
-          }));
-          // Auth data manually saved to localStorage
-
         } catch (error) {
-          // Login error occurred
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Login failed',
@@ -109,27 +96,22 @@ export const useAuthStore = create<AuthState>()(
 
       // Logout action
       logout: async () => {
-        // Opaque token logout called
-        const { sessionId } = get();
-        
         try {
-          // Call logout endpoint if we have a session
-          if (sessionId) {
-            // Calling opaque logout endpoint
-            await fetch(`${API_BASE_URL}/auth/logout-opaque`, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include', // Uses cookies for authentication
-              body: JSON.stringify({}), // Empty body for logout
-            });
-          }
+          // F2B: Always call logout endpoint to revoke server-side session
+          await fetch(`${API_BASE_URL}/auth/logout-opaque`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include', // Uses cookies for authentication
+            body: JSON.stringify({}), // Empty body for logout
+          });
         } catch (error) {
-          // Logout request failed
+          // Continue with logout even if server call fails
+          // Logout request failed, but continue with local cleanup
         } finally {
           // Clear state regardless of API call success
-          // Clearing auth state and localStorage
+          // F2B: Session cookie is cleared by server, we just clear local state
           set({
             user: null,
             sessionId: null,
@@ -161,55 +143,40 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuthStatus: async () => {
-        // Checking opaque auth status
-        const { sessionId } = get();
-        // Current sessionId check
-        
-        if (!sessionId) {
-          // No session ID
-          set({ isAuthenticated: false, isLoading: false });
-          return;
-        }
-
-        // Checking auth with backend
         set({ isLoading: true });
 
         try {
-          // Check session validity by calling sessions endpoint
-          const response = await fetch(`${API_BASE_URL}/auth/sessions`, {
+          // F2B: Check session validity using cookie-based auth
+          // Call any protected endpoint to verify session
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
             credentials: 'include', // Uses cookies for authentication
           });
 
-          // Auth check response received
-
           if (response.ok) {
-            await response.json();
-            // Auth check successful
-            // If we can get sessions, we're authenticated
-            // The user data should already be in state from login
+            const userData = await response.json();
+            // Session is valid, update user data
             set({ 
+              user: userData,
               isAuthenticated: true, 
               isLoading: false 
             });
           } else if (response.status === 401) {
-            // Session invalid
-            // Session invalid, logout
+            // Session invalid or expired
             get().logout();
           } else {
             throw new Error('Failed to verify authentication');
           }
         } catch (error) {
-          // Auth check failed
-          // Auth check failed, calling logout
+          // Auth check failed, clear authentication
           get().logout();
-          set({ isLoading: false }); // Ensure loading is set to false
+          set({ isLoading: false });
         }
       },
     }),
     {
       name: 'pivotal-flow-auth',
       partialize: (state) => ({
-        sessionId: state.sessionId,
+        // F2B: Only persist user data and auth status, not sessionId
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),

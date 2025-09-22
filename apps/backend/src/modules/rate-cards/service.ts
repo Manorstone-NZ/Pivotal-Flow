@@ -395,4 +395,41 @@ export class RateCardService {
       };
     }
   }
+
+  /**
+   * Delete a rate card by ID
+   */
+  async deleteRateCard(id: string): Promise<boolean> {
+    try {
+      // First, check if the rate card exists with the exact same conditions
+      const existingCard = await this.db
+        .select()
+        .from(rateCards)
+        .where(
+          and(
+            eq(rateCards.id, id),
+            eq(rateCards.organizationId, this.context.organizationId)
+          )
+        );
+      
+      if (existingCard.length === 0) {
+        return false;
+      }
+      
+      // If the card exists, proceed with deletion
+      await this.db
+        .delete(rateCards)
+        .where(
+          and(
+            eq(rateCards.id, id),
+            eq(rateCards.organizationId, this.context.organizationId)
+          )
+        );
+
+      // Since we confirmed the card exists, return true if deletion was attempted
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to delete rate card: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

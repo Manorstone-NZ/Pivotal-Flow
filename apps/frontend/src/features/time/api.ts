@@ -104,7 +104,8 @@ const createApiClient = () => {
   return axios.create({
     baseURL: API_BASE_URL,
     headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
+      // F2B: No Authorization header needed - using secure cookies
+      // 'Authorization': token ? `Bearer ${token}` : '',
       'Content-Type': 'application/json',
     },
   });

@@ -2,8 +2,9 @@ import { Type } from '@sinclair/typebox';
 import { RateCardService } from './service.js';
 import { CreateRateCardSchema, CreateRateCardItemSchema, UpdateRateCardItemSchema, RateCardResponseSchema, RateCardItemResponseSchema, RateCardErrorSchema } from './typeboxSchemas.js';
 export async function rateCardRoutes(fastify) {
-    // Add authentication middleware to all routes
-    fastify.addHook('preHandler', fastify.authenticate);
+    // Add session verification middleware to all routes
+    const { verifySession } = await import('../../lib/auth/session-verification.js');
+    fastify.addHook('preHandler', verifySession);
     // Create a new rate card
     fastify.post('/rate-cards', {
         schema: {

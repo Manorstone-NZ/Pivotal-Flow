@@ -29,8 +29,9 @@ type AuthenticatedRequest = FastifyRequest & {
 };
 
 export async function rateCardRoutes(fastify: FastifyInstance) {
-  // Add authentication middleware to all routes
-  fastify.addHook('preHandler', fastify.authenticate);
+  // Add session verification middleware to all routes
+  const { verifySession } = await import('../../lib/auth/session-verification.js');
+  fastify.addHook('preHandler', verifySession);
   
   // Create a new rate card
   fastify.post<{
@@ -358,6 +359,54 @@ export async function rateCardRoutes(fastify: FastifyInstance) {
         error: 'Internal Server Error',
         message: 'Failed to update rate card item',
         code: 'INTERNAL_ERROR'
+      });
+    }
+  });
+
+  // Delete a specific rate card
+  fastify.delete<{
+    Params: { id: string };
+    Reply: { success: boolean } | RateCardError;
+  }>('/rate-cards/:id', {
+    schema: {
+      params: Type.Object({
+        id: Type.String()
+      }),
+      response: {
+        200: Type.Object({
+          success: Type.Boolean()
+        }),
+        401: RateCardErrorSchema,
+        404: RateCardErrorSchema,
+        500: RateCardErrorSchema
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params;
+      const authenticatedRequest = request as AuthenticatedRequest;
+      
+      const rateCardService = new RateCardService({
+        organizationId: authenticatedRequest.user.organizationId,
+        userId: authenticatedRequest.user.userId
+      });
+      
+      const result = await rateCardService.deleteRateCard(id);
+      
+      if (!result) {
+        return reply.status(404).send({
+          error: 'Not Found',
+          message: 'Rate card not found',
+          code: 'RATE_CARD_NOT_FOUND'
+        });
+      }
+      
+      return reply.status(200).send({ success: true });
+    } catch (error) {
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to delete rate card',
+        code: 'DELETE_RATE_CARD_ERROR'
       });
     }
   });

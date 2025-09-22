@@ -11,7 +11,7 @@ interface Logger {
 }
 
 const createLogger = (): Logger => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = import.meta.env.DEV;
   
   return {
     info: (message: string, ...args: any[]) => {

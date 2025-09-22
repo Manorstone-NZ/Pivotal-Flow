@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# eswitch - Emergency Service Switch
-# Cleanly shutdown all services and restart them
-# Usage: ./scripts/eswitch [start|stop|restart|status] [-v|--verbose]
+# estart - Emergency Service Start
+# Cleanly shutdown all services and restart them with Redis support
+# Usage: ./scripts/estart [start|stop|restart|status] [-v|--verbose]
 
 set -e
 
@@ -523,7 +523,7 @@ setup_environment() {
     success "Environment variables configured"
 }
 
-# Function to start Docker services (from startup script)
+# Function to start Docker services with improved Redis handling
 start_docker_services() {
     log "🐳 Starting Docker services..."
     
@@ -538,37 +538,84 @@ start_docker_services() {
     fi
     
     cd "$PROJECT_ROOT/infra/docker"
-    log_command "docker-compose up -d" "Starting Docker services"
-    docker-compose up -d
+    
+    # Stop any existing containers first
+    log "Stopping existing Docker containers..."
+    docker compose down 2>/dev/null || true
+    
+    # Start services
+    log_command "docker compose up -d" "Starting Docker services"
+    docker compose up -d
     cd "$PROJECT_ROOT"
     
     log "Waiting for Docker services to initialize..."
     if [ "$VERBOSE_MODE" = true ]; then
-        verbose "Waiting 10 seconds for Docker services to start up"
+        verbose "Waiting 15 seconds for Docker services to start up"
         verbose "Checking Docker container status..."
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null | while read line; do
             verbose "  $line"
         done
     fi
-    sleep 10
+    sleep 15
     
-    # Check PostgreSQL
-    if docker exec docker_postgres_1 pg_isready -U pivotal -d pivotal_e2e >/dev/null 2>&1; then
-        success "PostgreSQL is ready"
+    # Check PostgreSQL with retries
+    log "Checking PostgreSQL connection..."
+    local pg_attempts=0
+    local pg_max_attempts=10
+    while [ $pg_attempts -lt $pg_max_attempts ]; do
+        if docker exec docker-postgres-1 pg_isready -U pivotal -d pivotal_e2e >/dev/null 2>&1; then
+            success "PostgreSQL is ready"
+            break
+        else
+            pg_attempts=$((pg_attempts + 1))
+            if [ $pg_attempts -lt $pg_max_attempts ]; then
+                log "PostgreSQL not ready yet (attempt $pg_attempts/$pg_max_attempts)..."
+                sleep 2
+            else
+                error "PostgreSQL failed to start after $pg_max_attempts attempts"
+                return 1
+            fi
+        fi
+    done
+    
+    # Check Redis with retries and improved error handling
+    log "Checking Redis connection..."
+    local redis_attempts=0
+    local redis_max_attempts=10
+    while [ $redis_attempts -lt $redis_max_attempts ]; do
+        if docker exec docker-redis-1 redis-cli ping >/dev/null 2>&1; then
+            success "Redis is ready"
+            break
+        else
+            redis_attempts=$((redis_attempts + 1))
+            if [ $redis_attempts -lt $redis_max_attempts ]; then
+                log "Redis not ready yet (attempt $redis_attempts/$redis_max_attempts)..."
+                sleep 2
+            else
+                error "Redis failed to start after $redis_max_attempts attempts"
+                log "Redis container logs:"
+                docker logs docker-redis-1 --tail 20 2>/dev/null || true
+                return 1
+            fi
+        fi
+    done
+    
+    # Additional Redis health check
+    log "Performing Redis health check..."
+    if docker exec docker-redis-1 redis-cli set test:estart:health "ok" >/dev/null 2>&1; then
+        if docker exec docker-redis-1 redis-cli get test:estart:health >/dev/null 2>&1 | grep -q "ok"; then
+            docker exec docker-redis-1 redis-cli del test:estart:health >/dev/null 2>&1
+            success "Redis read/write test passed"
+        else
+            warning "Redis read/write test failed"
+            return 1
+        fi
     else
-        error "PostgreSQL failed to start"
+        warning "Redis read/write test failed"
         return 1
     fi
     
-    # Check Redis  
-    if docker exec docker_redis_1 redis-cli ping >/dev/null 2>&1; then
-        success "Redis is ready"
-    else
-        error "Redis failed to start"
-        return 1
-    fi
-    
-    success "Docker services are running"
+    success "Docker services are running and healthy"
 }
 
 # Function to setup database (from startup script)
@@ -854,17 +901,17 @@ run_health_checks() {
     debug "Testing Redis connectivity for PASETO..."
     log "Testing Redis connectivity for PASETO..."
     
-    if docker exec docker_redis_1 redis-cli ping >/dev/null 2>&1; then
+    if docker exec docker-redis-1 redis-cli ping >/dev/null 2>&1; then
         # Test Redis session operations
         local test_key="test:session:$(date +%s)"
         local test_value='{"userId":"test","sessionId":"test-session"}'
         
-        if docker exec docker_redis_1 redis-cli setex "$test_key" 60 "$test_value" >/dev/null 2>&1; then
-            local retrieved_value=$(docker exec docker_redis_1 redis-cli get "$test_key" 2>/dev/null || echo "")
+        if docker exec docker-redis-1 redis-cli setex "$test_key" 60 "$test_value" >/dev/null 2>&1; then
+            local retrieved_value=$(docker exec docker-redis-1 redis-cli get "$test_key" 2>/dev/null || echo "")
             if [ "$retrieved_value" = "$test_value" ]; then
                 success "Redis session storage test passed"
                 # Clean up test key
-                docker exec docker_redis_1 redis-cli del "$test_key" >/dev/null 2>&1
+                docker exec docker-redis-1 redis-cli del "$test_key" >/dev/null 2>&1
             else
                 warning "Redis session retrieval failed"
                 debug "Expected: $test_value"
@@ -1065,9 +1112,10 @@ case "$COMMAND" in
         echo "Usage: $0 [start|stop|restart|status] [-v|--verbose]"
         echo
         echo "Emergency service management for Pivotal Flow development"
+        echo "Includes Docker services (PostgreSQL + Redis) with improved reliability"
         echo
         echo "Commands:"
-        echo "  start   - Start all services cleanly"
+        echo "  start   - Start all services cleanly (Docker + Backend + Frontend)"
         echo "  stop    - Stop all services and free ports"
         echo "  restart - Stop then start all services (default)"
         echo "  status  - Show current service status"

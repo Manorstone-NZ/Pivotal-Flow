@@ -100,20 +100,12 @@ export function globalErrorHandler(error, request, reply) {
             }
         };
     }
-    else if (error.name === 'ValidationError') {
+    else if (error.name === 'ValidationError' || error.message?.includes('must have required property')) {
         // Handle validation errors (generic)
         errorResponse = {
-            error: {
-                code: 'VALIDATION_ERROR',
-                message: 'Request validation failed',
-                details: error.message,
-                timestamp: new Date().toISOString(),
-                request_id: requestId
-            },
-            meta: {
-                api_version: '1.0.0',
-                documentation_url: 'https://api.pivotalflow.com/docs'
-            }
+            error: 'Bad Request',
+            message: error.message || 'Request validation failed',
+            code: 'VALIDATION_ERROR'
         };
     }
     else if (error.statusCode === 429) {

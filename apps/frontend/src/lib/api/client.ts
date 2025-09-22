@@ -27,10 +27,11 @@ apiClient.interceptors.request.use(
         const parsed = JSON.parse(authData);
         const accessToken = parsed.state?.accessToken;
         if (accessToken) {
-          config.headers.Authorization = `Bearer ${accessToken}`;
+          // F2B: No Authorization header needed - using secure cookies
+          // config.headers.Authorization = `Bearer ${accessToken}`;
         }
       } catch (error) {
-        console.warn('Failed to parse auth data from localStorage:', error);
+        // Failed to parse auth data from localStorage
       }
     }
     return config;

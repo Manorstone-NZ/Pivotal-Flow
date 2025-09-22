@@ -92,7 +92,7 @@ describe('Allocation Service Integration', () => {
 
         // 4. List allocations with filters
         const allocationsList = await allocationService.getAllocations({
-          projectId: testProject[0]?.id,
+          ...(testProject[0]?.id && { projectId: testProject[0].id }),
           role: ALLOCATION_ROLES.ARCHITECT
         });
         expect(allocationsList.allocations).toHaveLength(1);
@@ -154,7 +154,7 @@ describe('Allocation Service Integration', () => {
 
         // Create non-conflicting allocation: 50% for March
         const nonConflictingAllocation = {
-          projectId: testProject[0]?.id,
+          projectId: testProject[0]!.id,
           userId: testUser.id,
           role: ALLOCATION_ROLES.DESIGNER,
           allocationPercent: 50,
@@ -183,7 +183,7 @@ describe('Allocation Service Integration', () => {
         // Create multiple allocations for capacity testing
         const allocations = [
           {
-            projectId: testProject[0]?.id,
+            projectId: testProject[0]!.id,
             userId: testUser.id,
             role: ALLOCATION_ROLES.DEVELOPER,
             allocationPercent: 50,
@@ -192,7 +192,7 @@ describe('Allocation Service Integration', () => {
             isBillable: true
           },
           {
-            projectId: testProject[0]?.id,
+            projectId: testProject[0]!.id,
             userId: testApprover.id,
             role: ALLOCATION_ROLES.DESIGNER,
             allocationPercent: 75,
@@ -207,10 +207,10 @@ describe('Allocation Service Integration', () => {
         }
 
         // Get capacity summary
-        const capacity = await allocationService.getProjectCapacity(testProject[0]?.id, 4);
+        const capacity = await allocationService.getProjectCapacity(testProject[0]!.id, 4);
         
         expect(capacity).toBeDefined();
-        expect(capacity.projectId).toBe(testProject[0]?.id);
+        expect(capacity.projectId).toBe(testProject[0]!.id);
         expect(capacity.projectName).toBe('Test Project');
         expect(capacity.allocations.length).toBeGreaterThan(0);
 
@@ -270,7 +270,7 @@ describe('Allocation Service Integration', () => {
         const allocations = [];
         for (let i = 0; i < 5; i++) {
           allocations.push({
-            projectId: testProject[0]?.id,
+            projectId: testProject[0]!.id,
             userId: testUser.id,
             role: ALLOCATION_ROLES.DEVELOPER,
             allocationPercent: 20,
@@ -316,9 +316,9 @@ describe('Allocation Service Integration', () => {
         // Create some existing allocations to test against
         for (let i = 0; i < 10; i++) {
           await testDb.insert(resourceAllocations).values({
-            id: testUtils.generateId(),
+            id: `alloc-${i}`, // Use string ID
             organizationId: testOrg.id,
-            projectId: testProject[0]?.id,
+            projectId: testProject[0]!.id,
             userId: testUser.id,
             role: ALLOCATION_ROLES.DEVELOPER,
             allocationPercent: 10,

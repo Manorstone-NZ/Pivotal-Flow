@@ -376,6 +376,33 @@ export const rateCardItems = pgTable('rate_card_items', {
     createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
 });
+// F2 Service Rate Cards - Simplified Services-Only Implementation
+export const f2RateCards = pgTable('f2_rate_cards', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // F1: Multitenant isolation
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    currency: varchar('currency', { length: 3 }).notNull().default('NZD'),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
+// F2 Services table - Simple services with buy/sell prices
+export const f2Services = pgTable('f2_services', {
+    id: text('id').primaryKey(),
+    rateCardId: text('rate_card_id').notNull().references(() => f2RateCards.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    unitOfMeasure: varchar('unit_of_measure', { length: 10 }).notNull().default('hour'), // hour, day, fixed
+    buyPrice: decimal('buy_price', { precision: 15, scale: 4 }).notNull(), // Cost
+    sellPrice: decimal('sell_price', { precision: 15, scale: 4 }).notNull(), // Revenue
+    taxClass: varchar('tax_class', { length: 20 }).notNull().default('standard'),
+    isActive: boolean('is_active').notNull().default(true),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date', precision: 3 }).notNull().defaultNow(),
+});
 // Quotes table - core fields as columns, metadata in JSONB
 export const quotes = pgTable('quotes', {
     id: text('id').primaryKey(),
@@ -993,6 +1020,24 @@ export const rateCardItemsRelations = relations(rateCardItems, ({ one }) => ({
     currency: one(currencies, {
         fields: [rateCardItems.currency],
         references: [currencies.code],
+    }),
+}));
+// F2 Rate Cards Relations
+export const f2RateCardsRelations = relations(f2RateCards, ({ one, many }) => ({
+    organization: one(organizations, {
+        fields: [f2RateCards.organizationId],
+        references: [organizations.id],
+    }),
+    tenant: one(tenants, {
+        fields: [f2RateCards.tenantId],
+        references: [tenants.id],
+    }),
+    services: many(f2Services),
+}));
+export const f2ServicesRelations = relations(f2Services, ({ one }) => ({
+    rateCard: one(f2RateCards, {
+        fields: [f2Services.rateCardId],
+        references: [f2RateCards.id],
     }),
 }));
 export const quotesRelations = relations(quotes, ({ one, many }) => ({

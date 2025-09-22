@@ -312,7 +312,8 @@ async function authPlugin(fastify: FastifyInstance) {
     // Authentication failed
     return reply.status(401).send({
       error: 'Unauthorized',
-      message: 'Authentication required'
+      message: 'Authentication required',
+      code: 'AUTHENTICATION_REQUIRED'
     });
   });
 

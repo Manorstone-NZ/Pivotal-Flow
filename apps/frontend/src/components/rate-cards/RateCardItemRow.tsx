@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Money, CurrencyInput } from './Money';
-import { Select } from '../ui/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../Button';
 import { Badge } from '../ui/badge';
 import { useUpdateRateCardItem } from '../../features/rate-cards/api';

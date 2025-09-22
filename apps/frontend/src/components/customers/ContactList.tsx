@@ -237,7 +237,7 @@ export const ContactList: React.FC<ContactListProps> = ({
       >
         <ContactForm
           customerId={customerId}
-          contact={editingContact || undefined}
+          {...(editingContact && { contact: editingContact })}
           onSuccess={handleContactSuccess}
           onCancel={handleContactCancel}
         />

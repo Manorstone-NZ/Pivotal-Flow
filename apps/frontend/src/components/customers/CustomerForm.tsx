@@ -10,7 +10,7 @@ import { Type, type Static } from '@sinclair/typebox';
 import { useCreateCustomer, useUpdateCustomer, type Customer, type CreateCustomerData, type UpdateCustomerData } from '../../features/customers/api';
 import { Button } from '../Button';
 import { Input } from '../ui/input';
-import { TextArea } from '../ui/TextArea';
+import { Textarea } from '../ui/textarea';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 // TypeBox schema for frontend validation (matching backend approach)
@@ -38,23 +38,23 @@ const CustomerFormSchema = Type.Object({
 type CustomerFormData = Static<typeof CustomerFormSchema>;
 
 // Simple validation function using TypeBox schema
-const validateCustomerForm = (data: CustomerFormData): Record<string, string> => {
-  const errors: Record<string, string> = {};
+// const validateCustomerForm = (data: CustomerFormData): Record<string, string> => {
+//   const errors: Record<string, string> = {};
+//   
+//   if (!data.companyName || data.companyName.trim().length === 0) {
+//     errors.companyName = 'Company name is required';
+//   }
+//   
+//   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+//     errors.email = 'Invalid email format';
+//   }
   
-  if (!data.companyName || data.companyName.trim().length === 0) {
-    errors.companyName = 'Company name is required';
-  }
-  
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = 'Invalid email format';
-  }
-  
-  if (data.website && data.website && !/^https?:\/\/.+/.test(data.website)) {
-    errors.website = 'Invalid website URL';
-  }
-  
-  return errors;
-};
+//   if (data.website && data.website && !/^https?:\/\/.+/.test(data.website)) {
+//     errors.website = 'Invalid website URL';
+//   }
+//   
+//   return errors;
+// };
 
 interface CustomerFormProps {
   customer?: Customer;
@@ -77,7 +77,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<CustomerFormData>({
     mode: 'onChange',
     defaultValues: customer ? {

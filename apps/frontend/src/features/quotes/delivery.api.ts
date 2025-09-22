@@ -92,7 +92,8 @@ const createApiClient = () => {
     transformRequest: [(data, headers) => {
       const token = getAccessToken();
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        // F2B: No Authorization header needed - using secure cookies
+        // headers['Authorization'] = `Bearer ${token}`;
       }
       return JSON.stringify(data);
     }],

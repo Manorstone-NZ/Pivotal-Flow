@@ -136,7 +136,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     // Log to console in development
-    if (process.env['NODE_ENV'] === 'development') {
+    if (import.meta.env.DEV) {
       console.group('🚨 Error Boundary Caught Error');
       console.error('Error:', error);
       console.error('Error Info:', errorInfo);
@@ -145,7 +145,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     // Store error locally for debugging (development only)
-    if (process.env['NODE_ENV'] === 'development') {
+    if (import.meta.env.DEV) {
       this.storeErrorLocally(errorContext);
     }
   };
@@ -334,7 +334,7 @@ export const ErrorReporter = {
 
   // Get stored errors (development only)
   getStoredErrors: () => {
-    if (process.env['NODE_ENV'] === 'development') {
+    if (import.meta.env.DEV) {
       try {
         return JSON.parse(localStorage.getItem('errorLog') || '[]');
       } catch {
@@ -346,7 +346,7 @@ export const ErrorReporter = {
 
   // Clear stored errors
   clearStoredErrors: () => {
-    if (process.env['NODE_ENV'] === 'development') {
+    if (import.meta.env.DEV) {
       localStorage.removeItem('errorLog');
     }
   },
